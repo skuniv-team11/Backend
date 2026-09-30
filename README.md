@@ -51,8 +51,9 @@ Render Free는 15분 동안 요청이 없으면 잠들어서, 첫 요청이 1분
 ./gradlew bootJar
 ANTHROPIC_API_KEY=... java -jar build/libs/coop-radar-backend-0.0.1.jar --spring.profiles.active=spike "<운영계획서.pdf>"
 ```
-- **결과:** `build/spike-out/*.json`에 저장됩니다.
-- **추출 형식:** `spike/OperationPlanLite.java` 레코드입니다(SDK가 이 레코드에서 JSON 스키마를 만듭니다).
+- **결과:** `build/spike-out/*.json`에 저장됩니다(`{institution, jobs, inconsistencies}` — 파이썬 파이프라인과 같은 모양).
+- **호출 2번:** PDF 1건마다 `OperationPlanInstitutionPart`(기관+불일치)와 `OperationPlanJobsPart`(직무)를 따로 부릅니다. 셋을 한 스키마에 담으면 문법 크기 한도를 넘습니다([ADR-0003](docs/decisions/0003-structured-output-schema.md)).
+- **추출 형식:** 위 두 레코드입니다. SDK가 레코드에서 JSON 스키마를 만들고, 반복되는 `SourcedText`를 `$defs`로 묶습니다.
 - **한글 경로 오류:** 경로에 한글이 있어서 오류가 나면 `-Dsun.jnu.encoding=UTF-8`을 붙입니다.
 
 ## 선행 실험 현황 (10/1~10/3)
@@ -61,7 +62,7 @@ ANTHROPIC_API_KEY=... java -jar build/libs/coop-radar-backend-0.0.1.jar --spring
 |---|---|---|
 | E1 운영계획서 추출 | 스키마 제약 준수, 실행 스크립트, 채점·인용문 대조 | 실제 추출 정확도(API 키) |
 | E2 수기 추출 | 48.9MB → 5.0MB 압축과 글자 판독성, 채점 로직 | 실제 추출(API 키) |
-| E3 Java SDK | 빌드·테스트, SDK가 만든 스키마, 실제 API까지 요청 도달(401) | 실제 추출(API 키) |
+| E3 Java SDK | **합격**(10/1). 호출 2번으로 full 필드 추출 성공, 파이썬 E1과 겹치는 15항목 중 14개 값·쪽 일치 | — |
 | E4 배포 | 테스트, 로컬 실행·CORS·메모리(RSS 약 213MB), 브라우저로 프론트→백엔드 호출 | Docker 빌드·Render 실제 배포 |
 | E5 임베딩 | 병합 셀 파싱, Hit@K 계산(합성 데이터) | Voyage 한국어 품질 |
 | E6 외부 데이터 | ODsay 실제 API 오류 응답 처리 | 키 발급 후 적재 |
