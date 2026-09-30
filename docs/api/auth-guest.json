@@ -1,0 +1,26 @@
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiJ9.예시.서명",
+  "tokenType": "Bearer",
+  "expiresAt": "2026-10-02T14:00:00+09:00",
+  "user": {
+    "id": 1043,
+    "email": null,
+    "role": "STUDENT",
+    "isGuest": true,
+    "expiresAt": "2026-10-02T14:00:00+09:00",
+    "hasProfile": true
+  },
+  "profile": {
+    "departmentId": 31,
+    "grade": 3,
+    "completedSemesters": 5,
+    "gpa": 3.4,
+    "graduationExpected": false,
+    "interestText": "뷰티 브랜드 SNS 마케팅",
+    "department": {
+      "id": 31,
+      "name": "메이크업디자인학과"
+    },
+    "isExample": true
+  }
+}

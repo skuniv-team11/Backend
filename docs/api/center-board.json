@@ -1,0 +1,150 @@
+{
+  "asOf": "2026-07-18",
+  "isVirtual": true,
+  "signalSource": "REPLAY",
+  "round": {
+    "id": 1,
+    "termCode": "2026-2"
+  },
+  "summary": {
+    "jobs": 40,
+    "seats": 59,
+    "intentTotal": 27,
+    "crowdedJobs": 3,
+    "zeroSignalJobs": 14,
+    "closedJobs": 1
+  },
+  "historyAvailable": false,
+  "rows": [
+    {
+      "jobId": 101,
+      "institution": {
+        "id": 3,
+        "name": "누리뷰티(가상)"
+      },
+      "title": "국내 마케팅",
+      "headcount": 2,
+      "signal": {
+        "intent": 3,
+        "interest": 7,
+        "headcount": 2,
+        "ratio": 1.5,
+        "status": "CROWDED",
+        "closesOn": null,
+        "closeReason": null,
+        "closesOnIsVirtual": false,
+        "expectedFullOn": null
+      },
+      "eligiblePool": 910,
+      "risks": [],
+      "alertCount": 0,
+      "pastZeroRounds": []
+    },
+    {
+      "jobId": 102,
+      "institution": {
+        "id": 3,
+        "name": "누리뷰티(가상)"
+      },
+      "title": "해외 마케팅",
+      "headcount": 2,
+      "signal": {
+        "intent": 0,
+        "interest": 2,
+        "headcount": 2,
+        "ratio": 0.0,
+        "status": "OPEN",
+        "closesOn": null,
+        "closeReason": null,
+        "closesOnIsVirtual": false,
+        "expectedFullOn": null
+      },
+      "eligiblePool": 910,
+      "risks": [],
+      "alertCount": 0,
+      "pastZeroRounds": []
+    },
+    {
+      "jobId": 105,
+      "institution": {
+        "id": 9,
+        "name": "라온스튜디오(가상)"
+      },
+      "title": "콘텐츠 디자인",
+      "headcount": 1,
+      "signal": {
+        "intent": 0,
+        "interest": 1,
+        "headcount": 1,
+        "ratio": 0.0,
+        "status": "OPEN",
+        "closesOn": null,
+        "closeReason": null,
+        "closesOnIsVirtual": false,
+        "expectedFullOn": null
+      },
+      "eligiblePool": 120,
+      "risks": [
+        {
+          "code": "NARROW_POOL",
+          "label": "대상 학과가 좁음",
+          "detail": "선호 전공 재학생 120명"
+        },
+        {
+          "code": "PORTFOLIO_REQUIRED",
+          "label": "포트폴리오 필수",
+          "detail": null
+        }
+      ],
+      "alertCount": 0,
+      "pastZeroRounds": []
+    },
+    {
+      "jobId": 103,
+      "institution": {
+        "id": 5,
+        "name": "가온소프트(가상)"
+      },
+      "title": "웹 서비스 개발",
+      "headcount": 1,
+      "signal": {
+        "intent": 1,
+        "interest": 3,
+        "headcount": 1,
+        "ratio": 1.0,
+        "status": "CROWDED",
+        "closesOn": null,
+        "closeReason": null,
+        "closesOnIsVirtual": false,
+        "expectedFullOn": null
+      },
+      "eligiblePool": 750,
+      "risks": [
+        {
+          "code": "DOC_ALERT",
+          "label": "문서 검토 필요",
+          "detail": "선호 전공 표기가 문서 안에서 다름"
+        }
+      ],
+      "alertCount": 1,
+      "pastZeroRounds": []
+    }
+  ],
+  "alerts": [
+    {
+      "id": 7,
+      "institution": {
+        "id": 5,
+        "name": "가온소프트(가상)"
+      },
+      "jobId": 103,
+      "kind": "DOC_INCONSISTENCY",
+      "fieldKey": "majorRequirement",
+      "description": "(가상) 교육목표에 적힌 전공과 학생요건의 전공이 다름",
+      "pageA": 2,
+      "quoteA": "(가상) 소프트웨어 전공",
+      "pageB": 3,
+      "quoteB": "(가상) 경영 계열 전공"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "jobId": 101,
+  "source": "LLM",
+  "text": "뷰티 브랜드 SNS 마케팅에 관심이 있다면, 이 자리의 온라인 채널 운영 보조 업무와 바로 이어집니다. 2025-1 선배도 같은 기관에서 SNS 콘텐츠 기획을 맡았습니다.",
+  "citations": [
+    {
+      "sourceType": "TESTIMONIAL",
+      "documentTitle": "2025-1 우수 참여수기",
+      "page": 7,
+      "quote": "(가상) 브랜드 SNS 콘텐츠를 기획하고 반응을 주마다 정리"
+    },
+    {
+      "sourceType": "OPERATION_PLAN",
+      "documentTitle": "누리뷰티(가상) 운영계획서",
+      "page": 3,
+      "quote": "(가상) 온라인 채널 마케팅 운영 보조"
+    }
+  ]
+}

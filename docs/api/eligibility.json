@@ -1,0 +1,145 @@
+{
+  "round": {
+    "id": 1,
+    "termCode": "2026-2"
+  },
+  "summary": {
+    "total": 40,
+    "eligible": 12,
+    "needsCheck": 28,
+    "ineligible": 0
+  },
+  "jobs": [
+    {
+      "jobId": 101,
+      "title": "국내 마케팅",
+      "team": "마케팅팀",
+      "institution": {
+        "id": 3,
+        "name": "누리뷰티(가상)"
+      },
+      "verdict": "ELIGIBLE",
+      "majorMatch": "MATCH",
+      "reasons": [
+        {
+          "layer": "SCHOOL_RULE",
+          "item": "이수 학기",
+          "requirement": "4학기 이상",
+          "mine": "5학기",
+          "result": "MET"
+        },
+        {
+          "layer": "INSTITUTION",
+          "item": "학년",
+          "requirement": "3·4학년",
+          "mine": "3학년",
+          "result": "MET"
+        },
+        {
+          "layer": "INSTITUTION",
+          "item": "학점",
+          "requirement": "3.0 이상",
+          "mine": "3.4",
+          "result": "MET"
+        },
+        {
+          "layer": "MAJOR",
+          "item": "선호 전공",
+          "requirement": "미용예술대학, 경영학과",
+          "mine": "메이크업디자인학과",
+          "result": "INFO"
+        }
+      ]
+    },
+    {
+      "jobId": 105,
+      "title": "콘텐츠 디자인",
+      "team": "디자인팀",
+      "institution": {
+        "id": 9,
+        "name": "라온스튜디오(가상)"
+      },
+      "verdict": "NEEDS_CHECK",
+      "majorMatch": "NOT_LISTED",
+      "reasons": [
+        {
+          "layer": "SCHOOL_RULE",
+          "item": "이수 학기",
+          "requirement": "4학기 이상",
+          "mine": "5학기",
+          "result": "MET"
+        },
+        {
+          "layer": "INSTITUTION",
+          "item": "학년",
+          "requirement": "3·4학년",
+          "mine": "3학년",
+          "result": "MET"
+        },
+        {
+          "layer": "INSTITUTION",
+          "item": "학점",
+          "requirement": "3.5 이상",
+          "mine": "3.4",
+          "result": "NOT_MET"
+        },
+        {
+          "layer": "INSTITUTION",
+          "item": "포트폴리오",
+          "requirement": "필수",
+          "mine": "직접 확인",
+          "result": "CHECK"
+        },
+        {
+          "layer": "MAJOR",
+          "item": "선호 전공",
+          "requirement": "시각디자인 관련 전공",
+          "mine": "메이크업디자인학과",
+          "result": "INFO"
+        }
+      ]
+    },
+    {
+      "jobId": 103,
+      "title": "웹 서비스 개발",
+      "team": "개발팀",
+      "institution": {
+        "id": 5,
+        "name": "가온소프트(가상)"
+      },
+      "verdict": "NEEDS_CHECK",
+      "majorMatch": "NOT_LISTED",
+      "reasons": [
+        {
+          "layer": "SCHOOL_RULE",
+          "item": "이수 학기",
+          "requirement": "4학기 이상",
+          "mine": "5학기",
+          "result": "MET"
+        },
+        {
+          "layer": "INSTITUTION",
+          "item": "학년",
+          "requirement": "4학년",
+          "mine": "3학년",
+          "result": "NOT_MET"
+        },
+        {
+          "layer": "INSTITUTION",
+          "item": "선호 전공 표기",
+          "requirement": "문서 안에서 서로 다르게 적혀 있음",
+          "mine": "—",
+          "result": "CHECK",
+          "alertId": 7
+        },
+        {
+          "layer": "MAJOR",
+          "item": "선호 전공",
+          "requirement": "소프트웨어·컴퓨터 관련 전공",
+          "mine": "메이크업디자인학과",
+          "result": "INFO"
+        }
+      ]
+    }
+  ]
+}
