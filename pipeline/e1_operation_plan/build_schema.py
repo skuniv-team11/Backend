@@ -121,7 +121,7 @@ schema = {
     "type": "object",
     "properties": {
         "institution": institution,
-        "jobs": {"type": "array", "items": job, "description": "직무기술서 블록(부서명·직무명 한 묶음)마다 1개"},
+        "jobs": {"type": "array", "items": job, "description": "직무 1개 = 팀 1개. 직무기술서 블록의 부서명 칸에 팀이 여러 개 적혀 있으면 팀마다 1개(시스템 프롬프트 '직무(jobs) 나누기' 참고)"},
         "inconsistencies": {"type": "array", "items": inconsistency,
                             "description": "같은 문서 안에서 같은 항목이 서로 다르게 적힌 경우만. 없으면 빈 배열"},
     },
