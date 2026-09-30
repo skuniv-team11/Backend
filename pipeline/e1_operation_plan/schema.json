@@ -267,7 +267,7 @@
         ],
         "additionalProperties": false
       },
-      "description": "직무기술서 블록(부서명·직무명 한 묶음)마다 1개"
+      "description": "직무 1개 = 팀 1개. 직무기술서 블록의 부서명 칸에 팀이 여러 개 적혀 있으면 팀마다 1개(시스템 프롬프트 '직무(jobs) 나누기' 참고)"
     },
     "inconsistencies": {
       "type": "array",

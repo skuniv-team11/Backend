@@ -50,6 +50,16 @@ def walk(node, path, src):
             walk(v, f"{path}[{i}]", src)
 
 
+# 같은 시스템 프롬프트를 파이썬(실험)과 Java(서비스)가 각각 들고 있다. 한쪽만 고치면 E1과 E3가 달라진다.
+PROMPT_PAIRS = [(PIPE / "e1_operation_plan" / "prompt_system.md",
+                 ROOT / "src" / "main" / "resources" / "prompts" / "operation-plan-system.md")]
+for a, b in PROMPT_PAIRS:
+    ra, rb = a.relative_to(ROOT).as_posix(), b.relative_to(ROOT).as_posix()
+    if not b.exists():
+        err(rb, "파일이 없음", f"cp {ra} {rb}")
+    elif a.read_text(encoding="utf-8") != b.read_text(encoding="utf-8"):
+        err(rb, f"{ra} 와 내용이 다름", f"둘은 같아야 합니다. 고친 쪽을 다른 쪽에 복사하세요: cp {ra} {rb}")
+
 schemas = sorted(PIPE.rglob("schema*.json"))
 for s in schemas:
     try:

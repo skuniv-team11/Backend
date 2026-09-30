@@ -25,7 +25,7 @@ run "비밀·원본 파일" "출력된 파일을 git rm --cached 하고 값은 �
 run "커밋 메시지" "공동 작성자·도구 표기 줄을 지우고 git commit --amend 로 다시 쓰세요" scripts/check-commits.sh "$(git merge-base HEAD origin/main 2>/dev/null)" HEAD
 touched '^(src/|build\.gradle|settings\.gradle|gradle/|scripts/verify)' && \
   run "backend 테스트" "build/reports/tests/test/index.html 에서 실패한 테스트를 보세요" ./gradlew test -q
-touched '^(pipeline/|scripts/)' && \
+touched '^(pipeline/|scripts/|src/main/resources/prompts/)' && \
   run "pipeline 검사" "출력된 → 안내를 따르세요(스키마는 build_schema.py 를 고쳐 다시 생성)" python3 scripts/check_pipeline.py
 touched '^(scripts/|\.githooks/)' && \
   run "하네스 자체 테스트" "규칙이 막아야 할 것을 못 막거나, 통과해야 할 것을 막고 있습니다" scripts/test-harness.sh

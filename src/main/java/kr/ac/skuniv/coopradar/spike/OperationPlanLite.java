@@ -9,6 +9,13 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
  * E3 스파이크용 운영계획서 추출 결과(핵심 필드만, E1의 schema_lite.json과 같은 범위).
  * Anthropic Java SDK가 이 레코드에서 JSON 스키마를 만들어 structured outputs로 보낸다.
  *
+ * E3에서 먼저 확인할 것(ADR-0003 '문법 크기 한도'):
+ *  1. SDK가 만든 스키마가 반복되는 Text·선택형 레코드를 $defs 로 묶는지. 펼쳐서 넣으면
+ *     이 lite 범위에서도 400 "The compiled grammar is too large" 가 난다(파이썬 쪽 lite 는
+ *     $ref 로 6,807 토큰이고 여유가 거의 없다).
+ *  2. 본 추출은 PDF 1건당 호출 2번(기관+불일치 / 직무)으로 정했다. 이 레코드는 아직 1회용
+ *     lite 범위라, E3에서 full 필드로 두 레코드로 나눈다.
+ *
  * 규칙: 모든 필드를 채우고(null 없음), 값이 없으면 "" / page 0.
  *
  * 선택형 값은 한글 enum 상수로 둔다. SDK의 스키마 생성기는 enum의 @JsonProperty를 무시하고
@@ -19,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 @JsonClassDescription("표준 현장실습학기제(Co-op) 운영 계획서 추출 결과")
 public record OperationPlanLite(
         Institution institution,
-        @JsonPropertyDescription("직무기술서 블록(부서명·직무명 한 묶음)마다 1개")
+        @JsonPropertyDescription("직무 1개 = 팀 1개. 직무기술서 블록의 부서명 칸에 팀이 여러 개 적혀 있으면 팀마다 1개(시스템 프롬프트 '직무(jobs) 나누기' 참고)")
         List<Job> jobs,
         @JsonPropertyDescription("같은 문서 안에서 같은 항목이 서로 다르게 적힌 경우만. 없으면 빈 배열")
         List<Inconsistency> inconsistencies) {
