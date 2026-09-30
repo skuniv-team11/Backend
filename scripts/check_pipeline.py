@@ -6,6 +6,9 @@
 """
 import json, pathlib, py_compile, sys
 
+# Windows 기본 콘솔은 cp949라 ✓·✗ 에서 UnicodeEncodeError 로 죽는다. CI(리눅스)는 영향 없다.
+sys.stdout.reconfigure(encoding="utf-8")
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PIPE = ROOT / "pipeline"
 FORBIDDEN = {"minLength", "maxLength", "pattern", "minimum", "maximum", "exclusiveMinimum",
