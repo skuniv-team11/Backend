@@ -50,7 +50,8 @@ def main():
         sys.exit("out/ 에 결과가 없습니다. run_extract.py 를 먼저 실행하세요.")
 
     lines, rows, links = ["# E2 참여수기 추출 결과", ""], [], Counter()
-    total = expected_total = 0
+    # 한 학기 PDF를 나눠서 추출할 수도 있다(max_tokens 대처). 건수는 파일이 아니라 학기 단위로 센다.
+    per_sem = Counter()
     for r in recs:
         res = r.get("result")
         sem = semester_of(r["source_file"])
@@ -58,11 +59,10 @@ def main():
         if not res:
             lines += ["- **JSON 파싱 실패**", ""]; continue
         items = res["records"]
-        exp = EXPECTED_PER_SEMESTER.get(sem)
-        total += len(items); expected_total += exp or 0
+        per_sem[sem] += len(items)
         lines.append(f"- {r['elapsed_sec']}초, 입력 {r['usage']['input_tokens']:,} / 출력 {r['usage']['output_tokens']:,} 토큰, "
                      f"stop_reason={r['stop_reason']}, 약 ${r['cost_usd_est']}")
-        lines.append(f"- 수기 {len(items)}건 (기대 {exp if exp is not None else '?'}건)" + ("" if exp == len(items) else " ✗"))
+        lines.append(f"- 수기 {len(items)}건")
         pages = Counter(x["text_page"] for x in items)
         dup = [p for p, c in pages.items() if c > 1]
         if dup: lines.append(f"- ✗ 같은 글 쪽이 두 번 나옴: {dup}")
@@ -77,7 +77,14 @@ def main():
                          "2026-2연결": link, "판정_기관부서": "", "판정_학과학년": "", "판정_실습내용": "", "메모": ""})
         lines.append("")
 
-    summary = ["## 요약", "", f"- 수기 건수: **{total}건** (기대 {expected_total}건)"]
+    total = sum(per_sem.values())
+    expected_total = sum(EXPECTED_PER_SEMESTER.get(s, 0) for s in per_sem)
+    summary = ["## 요약", "", f"- 수기 건수: **{total}건** (기대 {expected_total}건)"
+               + ("" if total == expected_total else " ✗")]
+    for sem in sorted(per_sem):
+        exp = EXPECTED_PER_SEMESTER.get(sem)
+        mark = "" if exp == per_sem[sem] else " ✗"
+        summary.append(f"    - {sem}: {per_sem[sem]} / 기대 {exp if exp is not None else '?'}{mark}")
     got = sum(links.values())
     summary.append(f"- 2026-2 참여기관 연결: **{got}건** (기대 17건)")
     for k, v in EXPECTED_LINKS.items():
