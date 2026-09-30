@@ -11,8 +11,8 @@ git config user.email "<숫자>+<아이디>@users.noreply.github.com"   # GitHub
 ## 브랜치
 | 브랜치 | 용도 | 규칙 |
 |---|---|---|
-| `main` | 개발 기준 | 직접 push 금지. PR + CI(`ci-ok`) 통과 후 squash merge(커밋 메시지는 PR 제목) |
-| `release` | 배포(백엔드 Render) | `main` → `release` PR로만 반영. 빌드 시간(월 500분) 때문에 하루 1~2번 |
+| `develop` | 개발 기준(기본 브랜치) | 직접 push 금지. PR + CI(`ci-ok`) 통과 후 squash merge(커밋 메시지는 PR 제목) |
+| `main` | 배포(Render·Vercel) | `develop`에서 fast-forward push로만 올린다: `git push origin origin/develop:refs/heads/main`. PR로 올리면 squash 때문에 갈라진다. 빌드 시간(월 500분) 때문에 하루 1~2번 |
 | `feat/<영역>-<주제>` | 작업 | 예: `feat/be-eligibility`, `feat/fe-profile`, `fix/fe-cors` |
 
 ## 커밋

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 범위 안의 커밋을 검사한다. CI의 commits job이 쓰고, 로컬에서도 돌릴 수 있다.
-#   scripts/check-commits.sh <base> <head>     예: scripts/check-commits.sh origin/main HEAD
+#   scripts/check-commits.sh <base> <head>     예: scripts/check-commits.sh origin/develop HEAD
 #   base가 비었거나 0000…(첫 push)이면 head까지 전부 본다.
 # 검사
 #   1) 메시지 규칙(scripts/check-commit-msg.sh)

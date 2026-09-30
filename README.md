@@ -35,7 +35,7 @@ git config user.email "<숫자>+<아이디>@users.noreply.github.com"   # GitHub
 | `ANTHROPIC_API_KEY` | — | 추천 설명, E3 실험 |
 
 ## 배포 (Render)
-1. `release` 브랜치를 만듭니다(`main`에서 분기).
+1. `develop`의 내용을 `main`에 올립니다: `git push origin origin/develop:refs/heads/main`
 2. Render → New → **Blueprint** → 이 저장소를 고르면 `render.yaml`을 읽습니다.
 3. `CORS_ORIGINS`와 `ANTHROPIC_API_KEY`를 입력합니다. 프론트 주소가 나오기 전에는 `CORS_ORIGINS`에 `http://localhost:5173`을 넣어 둡니다.
 4. 첫 빌드가 끝나면 세 가지를 확인합니다.
@@ -44,7 +44,7 @@ git config user.email "<숫자>+<아이디>@users.noreply.github.com"   # GitHub
     - Metrics의 메모리
 5. `pipeline/`, `docs/` 변경은 빌드하지 않습니다(`buildFilter`).
 
-Render Free는 15분 동안 요청이 없으면 잠들어서, 첫 요청이 1분쯤 걸릴 수 있습니다. 제출 전(10/25 무렵) Starter로 올립니다.
+Render Free는 15분 동안 요청이 없으면 잠들어서, 첫 요청이 1분쯤 걸릴 수 있습니다. 1차 평가가 시작되기 전에 Starter로 올립니다.
 
 ## E3: 운영계획서 추출 (Java SDK)
 ```
