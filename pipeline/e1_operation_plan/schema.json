@@ -1,0 +1,1280 @@
+{
+  "type": "object",
+  "properties": {
+    "institution": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false,
+          "description": "기관(법인)명"
+        },
+        "business_no": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false,
+          "description": "사업자등록번호"
+        },
+        "opened_on": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false,
+          "description": "개업년월일(적힌 그대로)"
+        },
+        "ksic_code": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false,
+          "description": "한국표준산업분류코드. 쪽마다 다르면 첫 쪽 값을 넣고 inconsistencies에 기록"
+        },
+        "employees": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false,
+          "description": "종업원 수(적힌 그대로)"
+        },
+        "revenue": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false,
+          "description": "매출액(적힌 그대로)"
+        },
+        "address": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false,
+          "description": "사업장 소재지"
+        },
+        "homepage": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false,
+          "description": "홈페이지"
+        },
+        "size": {
+          "type": "object",
+          "description": "기관현황 규모 체크",
+          "properties": {
+            "value": {
+              "type": "string",
+              "enum": [
+                "대기업",
+                "중견기업",
+                "중소기업",
+                "공공기관",
+                "협회/기타",
+                "미기재",
+                "판독불가"
+              ]
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false
+        },
+        "listing": {
+          "type": "object",
+          "description": "상장여부 체크",
+          "properties": {
+            "value": {
+              "type": "string",
+              "enum": [
+                "코스피",
+                "코스닥",
+                "비상장",
+                "미기재",
+                "판독불가"
+              ]
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false
+        },
+        "business_type": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false,
+          "description": "사업의 종류(업태)"
+        },
+        "business_item": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false,
+          "description": "사업의 종류(종목)"
+        },
+        "daily_hours": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false,
+          "description": "정규 근로시간 1일 기준 시간"
+        },
+        "weekly_hours": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false,
+          "description": "정규 근로시간 1주 기준 시간"
+        },
+        "weekly_days": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false,
+          "description": "정규 근로일수(주 N일)"
+        },
+        "work_days_text": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false,
+          "description": "근로요일(예: 월~금)"
+        },
+        "selection_method": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false,
+          "description": "전형방법"
+        },
+        "application_deadline": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false,
+          "description": "접수마감일자(일정별도협의 표시 포함, 적힌 그대로)"
+        },
+        "interview_date": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false,
+          "description": "면접일자(적힌 그대로)"
+        },
+        "final_selection_date": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+            },
+            "page": {
+              "type": "integer",
+              "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+            },
+            "quote": {
+              "type": "string",
+              "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+            }
+          },
+          "required": [
+            "value",
+            "page",
+            "quote"
+          ],
+          "additionalProperties": false,
+          "description": "최종선발일자(적힌 그대로)"
+        }
+      },
+      "required": [
+        "name",
+        "business_no",
+        "opened_on",
+        "ksic_code",
+        "employees",
+        "revenue",
+        "address",
+        "homepage",
+        "size",
+        "listing",
+        "business_type",
+        "business_item",
+        "daily_hours",
+        "weekly_hours",
+        "weekly_days",
+        "work_days_text",
+        "selection_method",
+        "application_deadline",
+        "interview_date",
+        "final_selection_date"
+      ],
+      "additionalProperties": false
+    },
+    "jobs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "department": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false,
+            "description": "부서명"
+          },
+          "job_title": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false,
+            "description": "직무명"
+          },
+          "work_address": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false,
+            "description": "직무기술서의 주소(근무지)"
+          },
+          "course": {
+            "type": "object",
+            "description": "운영과정 체크",
+            "properties": {
+              "value": {
+                "type": "string",
+                "enum": [
+                  "방학과정",
+                  "학기과정",
+                  "방학/학기 연계과정",
+                  "미기재",
+                  "판독불가"
+                ]
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false
+          },
+          "job_type": {
+            "type": "object",
+            "description": "운영유형 체크",
+            "properties": {
+              "value": {
+                "type": "string",
+                "enum": [
+                  "직무체험형",
+                  "채용연계형",
+                  "미기재",
+                  "판독불가"
+                ]
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false
+          },
+          "period": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false,
+            "description": "실습기간(연도 오기가 있어도 적힌 그대로)"
+          },
+          "hours": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false,
+            "description": "정규실습 시간(적힌 그대로)"
+          },
+          "weekdays": {
+            "type": "object",
+            "description": "실습요일 중 체크된 요일",
+            "properties": {
+              "value": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "월",
+                    "화",
+                    "수",
+                    "목",
+                    "금",
+                    "토",
+                    "일"
+                  ]
+                }
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false
+          },
+          "overtime": {
+            "type": "object",
+            "description": "연장실습 여부 체크",
+            "properties": {
+              "value": {
+                "type": "string",
+                "enum": [
+                  "없음",
+                  "상황별 실시",
+                  "주기적/상시적 실시",
+                  "미기재",
+                  "판독불가"
+                ]
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false
+          },
+          "labor_contract": {
+            "type": "object",
+            "description": "별도 근로계약 체결 여부 체크",
+            "properties": {
+              "value": {
+                "type": "string",
+                "enum": [
+                  "Y",
+                  "N",
+                  "미기재",
+                  "판독불가"
+                ]
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false
+          },
+          "stipend_basis": {
+            "type": "object",
+            "description": "정규실습시간 실습지원비 지급기준",
+            "properties": {
+              "value": {
+                "type": "string",
+                "enum": [
+                  "월 기준",
+                  "시간 기준",
+                  "미기재",
+                  "판독불가"
+                ]
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false
+          },
+          "stipend_amount": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false,
+            "description": "정규실습시간 실습지원비 금액(적힌 그대로, 예: 1,620,000)"
+          },
+          "overtime_pay": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false,
+            "description": "연장실습시간 지원비(적힌 그대로)"
+          },
+          "pay_day": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false,
+            "description": "지급예정일(당월/익월 N일, 적힌 그대로)"
+          },
+          "benefits": {
+            "type": "object",
+            "description": "기타 지원 사항 중 체크된 항목",
+            "properties": {
+              "value": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "식사",
+                    "교통",
+                    "기숙사",
+                    "현물"
+                  ]
+                }
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false
+          },
+          "education_goal": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false,
+            "description": "교육목표 원문"
+          },
+          "job_overview": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false,
+            "description": "직무개요 원문"
+          },
+          "weekly_plan": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "weeks": {
+                  "type": "string",
+                  "description": "주차 표기(예: 1~2주차)"
+                },
+                "content": {
+                  "type": "string",
+                  "description": "그 주차의 계획 내용 원문"
+                }
+              },
+              "required": [
+                "weeks",
+                "content"
+              ],
+              "additionalProperties": false
+            },
+            "description": "운영/지도 계획의 주차별 항목. 없으면 빈 배열"
+          },
+          "major_requirement": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false,
+            "description": "학생요건의 전공(인원) 칸 원문 전체"
+          },
+          "headcount": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false,
+            "description": "모집 인원(전공(인원) 칸 등에 적힌 그대로, 예: 1명)"
+          },
+          "grade_requirement": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false,
+            "description": "학년 요건 원문"
+          },
+          "gpa_requirement": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false,
+            "description": "학점/평점 요건 원문"
+          },
+          "competencies": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false,
+            "description": "요구역량 원문"
+          },
+          "notes": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false,
+            "description": "기타사항 원문"
+          },
+          "portfolio": {
+            "type": "object",
+            "description": "포트폴리오: '필수/제출'이면 필수, '우대'면 우대, 언급 없으면 언급 없음",
+            "properties": {
+              "value": {
+                "type": "string",
+                "enum": [
+                  "필수",
+                  "우대",
+                  "언급 없음"
+                ]
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false
+          },
+          "certificate": {
+            "type": "object",
+            "description": "자격증: '필수'면 필수, '우대'면 우대, 언급 없으면 언급 없음",
+            "properties": {
+              "value": {
+                "type": "string",
+                "enum": [
+                  "필수",
+                  "우대",
+                  "언급 없음"
+                ]
+              },
+              "page": {
+                "type": "integer",
+                "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
+              },
+              "quote": {
+                "type": "string",
+                "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
+              }
+            },
+            "required": [
+              "value",
+              "page",
+              "quote"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "department",
+          "job_title",
+          "work_address",
+          "course",
+          "job_type",
+          "period",
+          "hours",
+          "weekdays",
+          "overtime",
+          "labor_contract",
+          "stipend_basis",
+          "stipend_amount",
+          "overtime_pay",
+          "pay_day",
+          "benefits",
+          "education_goal",
+          "job_overview",
+          "weekly_plan",
+          "major_requirement",
+          "headcount",
+          "grade_requirement",
+          "gpa_requirement",
+          "competencies",
+          "notes",
+          "portfolio",
+          "certificate"
+        ],
+        "additionalProperties": false
+      },
+      "description": "직무기술서 블록(부서명·직무명 한 묶음)마다 1개"
+    },
+    "inconsistencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "무엇과 무엇이 어떻게 다른지 한 문장"
+          },
+          "page_a": {
+            "type": "integer"
+          },
+          "quote_a": {
+            "type": "string"
+          },
+          "page_b": {
+            "type": "integer"
+          },
+          "quote_b": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "description",
+          "page_a",
+          "quote_a",
+          "page_b",
+          "quote_b"
+        ],
+        "additionalProperties": false
+      },
+      "description": "같은 문서 안에서 같은 항목이 서로 다르게 적힌 경우만. 없으면 빈 배열"
+    }
+  },
+  "required": [
+    "institution",
+    "jobs",
+    "inconsistencies"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,16 @@
+# 로컬 개발용 Postgres. Render 무료 Postgres(기본 최신 18)와 같은 메이저 버전을 쓴다.
+# 백엔드에 DB 연결을 붙이는 건 ERD 확정 후(10/9~) — 지금은 띄워 두기만 하면 된다.
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: coopradar
+      POSTGRES_USER: coopradar
+      POSTGRES_PASSWORD: coopradar   # 로컬 전용 값
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+
+volumes:
+  pgdata:

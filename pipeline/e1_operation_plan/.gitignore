@@ -1,0 +1,9 @@
+# 원본·결과·정답셋은 공개 저장소에 올리지 않는다
+out/
+data/
+review_jobs.csv
+e1_report.md
+*.pdf
+*.xlsx
+.env
+__pycache__/

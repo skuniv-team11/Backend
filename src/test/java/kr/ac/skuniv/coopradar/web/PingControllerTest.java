@@ -1,0 +1,52 @@
+package kr.ac.skuniv.coopradar.web;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.test.web.servlet.MockMvc;
+
+@SpringBootTest(properties = "app.cors.allowed-origin-patterns=https://coop-radar.vercel.app,https://coop-radar-*.vercel.app")
+@AutoConfigureMockMvc
+class PingControllerTest {
+
+    @Autowired
+    MockMvc mvc;
+
+    @Test
+    void ping() throws Exception {
+        mvc.perform(get("/api/ping"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ok"));
+    }
+
+    @Test
+    void 허용된_프론트_주소는_CORS_통과() throws Exception {
+        mvc.perform(options("/api/ping")
+                        .header("Origin", "https://coop-radar-git-main.vercel.app")
+                        .header("Access-Control-Request-Method", "GET"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "https://coop-radar-git-main.vercel.app"));
+    }
+
+    @Test
+    void 다른_주소는_CORS_거부() throws Exception {
+        mvc.perform(options("/api/ping")
+                        .header("Origin", "https://evil.example.com")
+                        .header("Access-Control-Request-Method", "GET"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void 헬스체크() throws Exception {
+        mvc.perform(get("/actuator/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"));
+    }
+}

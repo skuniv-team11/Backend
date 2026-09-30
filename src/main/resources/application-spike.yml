@@ -1,0 +1,4 @@
+# E3 스파이크 실행용: 웹 서버를 띄우지 않고 PDF 추출만 하고 끝난다
+spring:
+  main:
+    web-application-type: none

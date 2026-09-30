@@ -1,0 +1,12 @@
+build/
+.gradle/
+pipeline/
+docs/
+scripts/
+.github/
+.githooks/
+README.md
+AGENTS.md
+*.pdf
+*.xlsx
+.env

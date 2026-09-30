@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, release]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 바뀐 영역만 검사한다. 건너뛴 job은 브랜치 보호에서 통과로 친다.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.f.outputs.backend }}
+      pipeline: ${{ steps.f.outputs.pipeline }}
+      harness: ${{ steps.f.outputs.harness }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: f
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then BASE="${{ github.event.pull_request.base.sha }}"; else BASE="${{ github.event.before }}"; fi
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then FILES=$(git ls-files); else FILES=$(git diff --name-only "$BASE" HEAD); fi
+          has() { echo "$FILES" | grep -qE "$1" && echo true || echo false; }
+          echo "backend=$(has '^(src/|build\.gradle|settings\.gradle|gradle/|Dockerfile|\.github/workflows/)')" >> "$GITHUB_OUTPUT"
+          echo "pipeline=$(has '^(pipeline/|scripts/|\.github/workflows/)')" >> "$GITHUB_OUTPUT"
+          echo "harness=$(has '^(scripts/|\.githooks/|\.github/workflows/)')" >> "$GITHUB_OUTPUT"
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: 비밀·원본 파일 검사
+        run: scripts/check-secrets.sh --all
+
+  # 커밋 작성자가 GitHub 계정에 연결된 팀원인지, 공동 작성자·도구 표기 줄이 없는지(ADR-0006)
+  commits:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: 커밋 작성자·메시지 검사
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            scripts/check-commits.sh "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+          else
+            scripts/check-commits.sh "${{ github.event.before }}" "${{ github.sha }}"
+          fi
+
+  harness:
+    needs: changes
+    if: needs.changes.outputs.harness == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: 하네스 규칙 자체 테스트
+        run: scripts/test-harness.sh
+
+  backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v6
+      - run: ./gradlew test --no-daemon
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-test-report
+          path: build/reports/tests/test
+
+  pipeline:
+    needs: changes
+    if: needs.changes.outputs.pipeline == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: pip install -r pipeline/requirements.txt
+      - run: python scripts/check_pipeline.py
+
+  # 브랜치 보호에는 이 job 하나만 필수로 건다.
+  ci-ok:
+    if: always()
+    needs: [changes, secrets, commits, harness, backend, pipeline]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo '${{ toJSON(needs) }}' | grep -qE '"result": "(failure|cancelled)"' && { echo "실패한 검사가 있습니다"; exit 1; } || echo "모든 검사 통과"

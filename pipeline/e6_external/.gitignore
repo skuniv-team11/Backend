@@ -1,0 +1,3 @@
+*.csv
+odsay_cache/
+__pycache__/

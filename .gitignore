@@ -1,0 +1,31 @@
+# ---- 원본 데이터·키: 공개 저장소에 절대 올리지 않는다 ----
+data/raw/
+*.pdf
+*.xlsx
+*.xls
+*.hwp
+.env
+.env.*
+!.env.example
+
+# ---- 빌드 ----
+build/
+.gradle/
+out/
+__pycache__/
+*.pyc
+
+# ---- 실험 결과(사업자번호 등 화면 비노출 값 포함) ----
+pipeline/**/out/
+pipeline/**/review_*.csv
+pipeline/**/e*_report.md
+pipeline/e1_operation_plan/data/
+pipeline/e6_external/*.csv
+pipeline/e6_external/odsay_cache/
+
+# ---- IDE·OS ----
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db

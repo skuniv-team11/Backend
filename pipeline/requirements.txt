@@ -1,0 +1,5 @@
+anthropic>=1.9
+pypdf
+pymupdf
+openpyxl
+requests

@@ -1,0 +1,85 @@
+{
+  "type": "object",
+  "properties": {
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "semester": {
+            "type": "string",
+            "description": "학기 표기(예: 2025-2학기). 적힌 그대로"
+          },
+          "institution": {
+            "type": "string",
+            "description": "기관명(적힌 그대로)"
+          },
+          "department": {
+            "type": "string",
+            "description": "부서(적힌 그대로)"
+          },
+          "one_line": {
+            "type": "string",
+            "description": "'나에게 현장실습은 ___ 이다'의 빈칸에 적힌 말"
+          },
+          "company_intro": {
+            "type": "string",
+            "description": "[1] 기업 및 직무 소개 원문"
+          },
+          "activities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "[2] 실습 내용의 항목들(원문 그대로)"
+          },
+          "results": {
+            "type": "string",
+            "description": "[3] 실습결과 원문"
+          },
+          "reflection": {
+            "type": "string",
+            "description": "[4] 참여소감 원문"
+          },
+          "major": {
+            "type": "string",
+            "description": "학과(적힌 그대로)"
+          },
+          "grade": {
+            "type": "string",
+            "description": "학년(적힌 그대로)"
+          },
+          "text_page": {
+            "type": "integer",
+            "description": "글이 있는 쪽 번호(PDF 순서, 1부터)"
+          },
+          "photo_page": {
+            "type": "integer",
+            "description": "같은 사람의 사진 쪽 번호. 없으면 0"
+          }
+        },
+        "required": [
+          "semester",
+          "institution",
+          "department",
+          "one_line",
+          "company_intro",
+          "activities",
+          "results",
+          "reflection",
+          "major",
+          "grade",
+          "text_page",
+          "photo_page"
+        ],
+        "additionalProperties": false,
+        "description": "실습생 1명의 수기"
+      },
+      "description": "실습생 1명당 1개"
+    }
+  },
+  "required": [
+    "records"
+  ],
+  "additionalProperties": false
+}

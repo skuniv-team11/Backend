@@ -1,0 +1,25 @@
+server:
+  # Render는 PORT(기본 10000)를 넣어 준다. 로컬은 8080
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: coop-radar
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+app:
+  cors:
+    # 쉼표로 구분. Vercel 배포 주소가 정해지면 Render 환경변수 CORS_ORIGINS에 넣는다
+    allowed-origin-patterns: ${CORS_ORIGINS:http://localhost:5173}
+  spike:
+    model: ${SPIKE_MODEL:claude-sonnet-5-5}
+    max-tokens: ${SPIKE_MAX_TOKENS:16000}

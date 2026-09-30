@@ -1,0 +1,23 @@
+# Render Blueprint. DB는 여기 넣지 않는다: 무료 Postgres는 만든 날부터 30일 뒤 만료되므로 10/15 이후 대시보드에서 따로 만든다(ADR-0005).
+services:
+  - type: web
+    name: coop-radar-api
+    runtime: docker
+    region: singapore
+    plan: free                  # 제출 전(10/25 무렵) 대시보드에서 Starter로 올리고 11/12 뒤 내린다
+    branch: release             # release에 push할 때만 배포(빌드 시간 월 500분 절약)
+    autoDeployTrigger: commit
+    healthCheckPath: /actuator/health
+    buildFilter:                # 서비스와 무관한 변경은 빌드하지 않는다
+      ignoredPaths:
+        - pipeline/**
+        - docs/**
+        - scripts/**
+        - .github/**
+        - README.md
+        - AGENTS.md           # src/main/resources/prompts/*.md 는 서비스 코드라 빌드 대상으로 남긴다
+    envVars:
+      - key: CORS_ORIGINS       # 예: https://coop-radar.vercel.app,https://coop-radar-*.vercel.app (Vercel 프로젝트 이름 coop-radar 기준)
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false

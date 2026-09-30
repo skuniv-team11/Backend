@@ -1,0 +1,21 @@
+name: 버그
+description: 동작이 기대와 다를 때
+labels: [bug]
+body:
+  - type: textarea
+    id: repro
+    attributes:
+      label: 재현 방법
+      placeholder: "1. 예시 프로필 불러오기 → 2. ... → 3. ..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대한 결과 / 실제 결과
+    validations:
+      required: true
+  - type: input
+    id: where
+    attributes:
+      label: 어디서 (로컬 / Vercel 미리보기 / 운영 주소)
