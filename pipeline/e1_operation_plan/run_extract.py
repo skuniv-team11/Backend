@@ -94,8 +94,9 @@ def main():
             rec = extract(client, pdf, schema, system, a.model, a.max_tokens)
         except anthropic.BadRequestError as e:
             print(f"   [실패] 400: {e.message}")
-            if "complex" in str(e.message).lower():
-                print("   → 스키마가 너무 복잡하다는 오류입니다. --lite 로 다시 실행하세요.")
+            m = str(e.message).lower()
+            if "complex" in m or "grammar is too large" in m:
+                print("   → 스키마가 문법 한도를 넘었다는 오류입니다. --lite 로 다시 실행하세요.")
             continue
         except Exception as e:  # noqa: BLE001
             print(f"   [실패] {type(e).__name__}: {e}")
