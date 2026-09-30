@@ -5,7 +5,7 @@ services:
     runtime: docker
     region: singapore
     plan: free                  # 제출 전(10/25 무렵) 대시보드에서 Starter로 올리고 11/12 뒤 내린다
-    branch: release             # release에 push할 때만 배포(빌드 시간 월 500분 절약)
+    branch: main                # main에 push할 때만 배포(빌드 시간 월 500분 절약). 개발은 develop
     autoDeployTrigger: commit
     healthCheckPath: /actuator/health
     buildFilter:                # 서비스와 무관한 변경은 빌드하지 않는다

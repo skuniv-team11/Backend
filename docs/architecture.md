@@ -28,6 +28,6 @@ flowchart LR
 P1: 체크리스트 → NCS 직무 풀이
 
 ## 저장소·배포
-- `skuniv-team11/Backend`(이 저장소): Spring Boot + pipeline + docs. Render Docker, Singapore, `release` 브랜치만 자동 배포, `/actuator/health`
+- `skuniv-team11/Backend`(이 저장소): Spring Boot + pipeline + docs. Render Docker, Singapore, `main` 브랜치만 자동 배포, `/actuator/health`
 - `skuniv-team11/Frontend`: React. Vercel, `VITE_API_BASE_URL`로 이 백엔드를 부름. API 계약은 이 저장소 `docs/api/`
 - DB: Render 무료 Postgres(10/15 이후 생성, 11/14 만료) / 로컬 `docker-compose.yml`
