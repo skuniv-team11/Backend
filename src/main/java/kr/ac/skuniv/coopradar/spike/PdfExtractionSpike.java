@@ -6,7 +6,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.anthropic.client.AnthropicClient;
 import com.anthropic.client.okhttp.AnthropicOkHttpClient;
@@ -23,7 +25,10 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * E3 스파이크: 운영계획서 PDF → Claude(structured outputs) → OperationPlanLite.
+ * E3 스파이크: 운영계획서 PDF → Claude(structured outputs) → 레코드.
+ *
+ * PDF 1건당 호출 2번이다(기관+불일치 / 직무, ADR-0003). 두 결과를 합쳐 파이썬 파이프라인과
+ * 같은 모양({institution, jobs, inconsistencies})으로 저장한다.
  *
  * 실행(backend 폴더에서):
  *   ./gradlew bootJar
@@ -78,22 +83,43 @@ public class PdfExtractionSpike implements ApplicationRunner {
             }
             String name = pdf.getFileName().toString();
             long t0 = System.nanoTime();
-            StructuredMessage<OperationPlanLite> msg =
-                    client.messages().create(OperationPlanRequests.build(system, name, b64, model, maxTokens));
+
+            StructuredMessage<OperationPlanInstitutionPart> m1 = client.messages()
+                    .create(OperationPlanRequests.institutionPart(system, name, b64, model, maxTokens));
+            OperationPlanInstitutionPart part1 = only(m1, name, "기관");
+
+            StructuredMessage<OperationPlanJobsPart> m2 = client.messages()
+                    .create(OperationPlanRequests.jobsPart(system, name, b64, model, maxTokens));
+            OperationPlanJobsPart part2 = only(m2, name, "직무");
+
             long ms = (System.nanoTime() - t0) / 1_000_000;
 
-            OperationPlanLite plan = msg.content().stream()
-                    .flatMap(b -> b.text().stream())
-                    .map(StructuredTextBlock::text)
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalStateException("응답에 텍스트 블록이 없습니다: " + msg.stopReason()));
+            Map<String, Object> merged = new LinkedHashMap<>();
+            merged.put("institution", part1.institution());
+            merged.put("jobs", part2.jobs());
+            merged.put("inconsistencies", part1.inconsistencies());
 
-            Path out = outDir.resolve(name.replaceAll("\\.pdf$", "") + ".json");
-            write(out, json.writerWithDefaultPrettyPrinter().writeValueAsString(plan));
-            log.info("{} → {} | {}ms, 입력 {} / 출력 {} 토큰, stop={}, 직무 {}개",
-                    name, out, ms, msg.usage().inputTokens(), msg.usage().outputTokens(),
-                    msg.stopReason().map(Object::toString).orElse("-"), plan.jobs().size());
+            String stem = name.endsWith(".pdf") ? name.substring(0, name.length() - 4) : name;
+            Path out = outDir.resolve(stem + ".json");
+            write(out, json.writerWithDefaultPrettyPrinter().writeValueAsString(merged));
+            log.info("{} → {} | {}ms, 입력 {} / 출력 {} 토큰(2회 합), stop={}·{}, 직무 {}개, 불일치 {}건",
+                    name, out, ms,
+                    m1.usage().inputTokens() + m2.usage().inputTokens(),
+                    m1.usage().outputTokens() + m2.usage().outputTokens(),
+                    m1.stopReason().map(Object::toString).orElse("-"),
+                    m2.stopReason().map(Object::toString).orElse("-"),
+                    part2.jobs().size(), part1.inconsistencies().size());
         }
+    }
+
+    /** 구조화 출력 응답에서 레코드 하나를 꺼낸다. */
+    private static <T> T only(StructuredMessage<T> msg, String name, String part) {
+        return msg.content().stream()
+                .flatMap(b -> b.text().stream())
+                .map(StructuredTextBlock::text)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        name + " " + part + " 응답에 텍스트 블록이 없습니다: " + msg.stopReason()));
     }
 
     private static void write(Path path, String content) throws IOException {
