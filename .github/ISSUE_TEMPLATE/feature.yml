@@ -14,7 +14,7 @@ body:
     attributes:
       label: 완료 조건
       description: 무엇이 되면 끝인지 확인할 수 있게 적는다
-      placeholder: "- [ ] 예시 프로필로 가능/조건부/불가와 이유가 보인다"
+      placeholder: "- [ ] 예시 프로필로 지원 가능/확인 필요/지원 불가와 이유가 보인다"
     validations:
       required: true
   - type: dropdown
