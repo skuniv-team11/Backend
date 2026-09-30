@@ -5,6 +5,9 @@ Claude structured outputs 제약(2026-09 문서 기준):
 - 선택(optional) 속성은 전체 24개, 유니언 타입(anyOf, ["string","null"])은 16개까지
   -> 이 스키마는 모든 속성을 required로 두고 null을 쓰지 않는다. 값이 없으면 "" / page 0.
 - minLength, pattern, minimum 같은 제약은 지원하지 않음 -> 숫자·형식 검증은 score.py(코드)가 한다.
+- 컴파일된 문법에 크기 한도가 있다(초과 시 400 "The compiled grammar is too large").
+  필드 수가 아니라 스키마 전체 크기가 기준이라, 잎 객체를 $defs 로 모아 참조한다(refify).
+  2026-09-30 확인: lite 는 $ref 로 통과, 전체 스키마는 $ref 를 써도 여전히 한도를 넘는다.
 """
 import json, pathlib
 
@@ -13,7 +16,7 @@ def obj(props):
 
 
 def text_field(desc):
-    # $ref에 description을 나란히 두는 형태는 피하려고 매번 펼쳐서 넣는다
+    # 여기서는 펼쳐 두고, 마지막에 refify 가 같은 모양끼리 $defs 로 모은다
     f = obj({
         "value": {"type": "string", "description": "문서에 적힌 값 그대로. 없으면 빈 문자열"},
         "page": {"type": "integer", "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"},
@@ -146,7 +149,38 @@ schema_lite = {
     "additionalProperties": False,
 }
 
+def refify(sc):
+    """value/page/quote 잎 객체를 $defs 로 모으고 $ref 로 바꾼다.
+
+    잎이 스키마마다 100개 가까이 같은 모양으로 반복돼 컴파일된 문법이 한도를 넘는다.
+    $ref 옆에 description 을 나란히 두는 형태는 API 가 받아들인다(2026-09-30 확인).
+    """
+    defs, index = {}, {}
+
+    def walk(node):
+        if isinstance(node, dict):
+            props = node.get("properties")
+            if props and set(props) == {"value", "page", "quote"}:
+                key = json.dumps(props["value"], ensure_ascii=False, sort_keys=True)
+                if key not in index:
+                    index[key] = f"Sourced{len(index)}"
+                    defs[index[key]] = {k: v for k, v in node.items() if k != "description"}
+                ref = {"$ref": f"#/$defs/{index[key]}"}
+                if "description" in node:
+                    ref["description"] = node["description"]
+                return ref
+            return {k: walk(v) for k, v in node.items()}
+        if isinstance(node, list):
+            return [walk(v) for v in node]
+        return node
+
+    out = walk(sc)
+    out["$defs"] = defs
+    return out
+
+
 here = pathlib.Path(__file__).parent
 for name, sc in [("schema.json", schema), ("schema_lite.json", schema_lite)]:
+    sc = refify(sc)
     (here / name).write_text(json.dumps(sc, ensure_ascii=False, indent=2), encoding="utf-8")
-    print("wrote", here / name)
+    print(f"wrote {here / name}  ($defs {len(sc['$defs'])}개)")
