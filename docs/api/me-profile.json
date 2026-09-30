@@ -1,0 +1,15 @@
+{
+  "departmentId": 31,
+  "grade": 3,
+  "completedSemesters": 5,
+  "gpa": 3.4,
+  "graduationExpected": false,
+  "interestText": "뷰티 브랜드 SNS 마케팅",
+  "department": {
+    "id": 31,
+    "name": "메이크업디자인학과"
+  },
+  "isExample": false,
+  "consentedAt": "2026-10-01T14:00:00+09:00",
+  "updatedAt": "2026-10-01T14:00:00+09:00"
+}

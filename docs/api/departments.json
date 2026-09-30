@@ -1,0 +1,19 @@
+{
+  "departments": [
+    {
+      "id": 31,
+      "name": "메이크업디자인학과",
+      "college": null
+    },
+    {
+      "id": 52,
+      "name": "소프트웨어학과",
+      "college": null
+    },
+    {
+      "id": 57,
+      "name": "경영학과",
+      "college": null
+    }
+  ]
+}

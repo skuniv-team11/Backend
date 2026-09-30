@@ -1,0 +1,13 @@
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiJ9.예시.서명",
+  "tokenType": "Bearer",
+  "expiresAt": "2026-10-08T14:00:00+09:00",
+  "user": {
+    "id": 42,
+    "email": "student@example.com",
+    "role": "STUDENT",
+    "isGuest": false,
+    "expiresAt": null,
+    "hasProfile": false
+  }
+}

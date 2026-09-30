@@ -1,0 +1,92 @@
+{
+  "round": {
+    "id": 1,
+    "termCode": "2026-2"
+  },
+  "items": [
+    {
+      "rank": 1,
+      "jobId": 101,
+      "title": "국내 마케팅",
+      "institution": {
+        "id": 3,
+        "name": "누리뷰티(가상)"
+      },
+      "verdict": "ELIGIBLE",
+      "fit": "HIGH",
+      "jobType": "EXPERIENCE",
+      "stipend": {
+        "basis": "MONTHLY",
+        "amount": 2156880,
+        "minWageRatio": 100.0
+      },
+      "commuteMinutes": 41,
+      "reasonTemplate": "관심 분야와 직무 개요가 가깝고, 선호 전공에 소속 학과가 들어 있어요.",
+      "reasonStatus": "PENDING",
+      "citations": [
+        {
+          "sourceType": "TESTIMONIAL",
+          "documentTitle": "2025-1 우수 참여수기",
+          "page": 7,
+          "quote": "(가상) 브랜드 SNS 콘텐츠를 기획하고 반응을 주마다 정리"
+        },
+        {
+          "sourceType": "OPERATION_PLAN",
+          "documentTitle": "누리뷰티(가상) 운영계획서",
+          "page": 3,
+          "quote": "(가상) 온라인 채널 마케팅 운영 보조"
+        }
+      ]
+    },
+    {
+      "rank": 2,
+      "jobId": 102,
+      "title": "해외 마케팅",
+      "institution": {
+        "id": 3,
+        "name": "누리뷰티(가상)"
+      },
+      "verdict": "ELIGIBLE",
+      "fit": "HIGH",
+      "jobType": "EXPERIENCE",
+      "stipend": {
+        "basis": "MONTHLY",
+        "amount": 2156880,
+        "minWageRatio": 100.0
+      },
+      "commuteMinutes": 41,
+      "reasonTemplate": "관심 분야와 직무 개요가 가깝고, 선호 전공에 소속 학과가 들어 있어요.",
+      "reasonStatus": "PENDING",
+      "citations": [
+        {
+          "sourceType": "OPERATION_PLAN",
+          "documentTitle": "누리뷰티(가상) 운영계획서",
+          "page": 3,
+          "quote": "(가상) 온라인 채널 마케팅 운영 보조"
+        }
+      ]
+    },
+    {
+      "rank": 3,
+      "jobId": 104,
+      "title": "MD 보조",
+      "institution": {
+        "id": 7,
+        "name": "다온커머스(가상)"
+      },
+      "verdict": "NEEDS_CHECK",
+      "fit": "MEDIUM",
+      "jobType": "HIRING",
+      "stipend": {
+        "basis": "MONTHLY",
+        "amount": 1620000,
+        "minWageRatio": 75.1
+      },
+      "commuteMinutes": 58,
+      "reasonTemplate": "관심 분야와 일부 업무가 겹치고, 채용연계형이에요.",
+      "reasonStatus": "PENDING",
+      "citations": []
+    }
+  ],
+  "blockedBy": []
+}

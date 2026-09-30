@@ -1,0 +1,156 @@
+"""docs/api 예시 검증: 파싱, README 링크, 코드값↔DDL, 계산값, 판정 규칙, 이름 규칙."""
+import json, re, pathlib, sys
+
+# 저장소 루트에서: python scripts/check_api_docs.py
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+API = ROOT / "docs" / "api"
+DDL = (ROOT / "src" / "main" / "resources" / "db" / "migration" / "V1__init.sql").read_text(encoding="utf-8")
+fails, checks = [], 0
+
+def check(cond, msg):
+    global checks
+    checks += 1
+    if not cond:
+        fails.append(msg)
+
+docs = {}
+for p in sorted(API.glob("*.json")):
+    try:
+        docs[p.name] = json.loads(p.read_text(encoding="utf-8"))
+        check(True, "")
+    except Exception as e:
+        check(False, f"JSON 파싱 실패 {p.name}: {e}")
+
+readme = (API / "README.md").read_text(encoding="utf-8")
+linked = set(re.findall(r"\]\(([\w.-]+\.json)\)", readme))
+check(linked == set(docs), f"README 링크 ↔ 파일 불일치: 링크만 {linked - set(docs)}, 파일만 {set(docs) - linked}")
+
+# 목록 표의 번호가 1..N 연속인지
+nums = [int(m) for m in re.findall(r"^\| (\d+) \|", readme, re.M)]
+check(nums == list(range(1, len(nums) + 1)), f"목록 번호 {nums}")
+
+# 코드값 ↔ DDL CHECK
+def ddl_set(col):
+    m = re.search(rf"{col}\s+[^\n]*?\n?\s*CHECK \({col} IN \(([^)]*)\)\)", DDL)
+    if not m:
+        m = re.search(rf"CHECK \({col}\s+IN \(([^)]*)\)\)", DDL)
+    return set(re.findall(r"'([A-Z0-9_]+)'", m.group(1)))
+
+def ddl_array(col):
+    m = re.search(rf"CHECK \({col} <@ ARRAY\[([^\]]*)\]", DDL)
+    return set(re.findall(r"'([A-Z_]+)'", m.group(1)))
+
+codes = docs["codes.json"]
+pairs = {"size": "size", "listing": "listing", "course": "course", "jobType": "job_type",
+         "overtime": "overtime", "stipendBasis": "stipend_basis", "gradeRule": "grade_rule",
+         "requirement": "portfolio", "alertKind": "kind", "closeReason": "close_reason", "role": "role"}
+for k, col in pairs.items():
+    d = ddl_set(col) if col != "kind" else set(re.findall(r"'([A-Z_]+)'", re.search(r"kind\s+varchar\(20\)\s+NOT NULL CHECK \(kind IN \('DOC[^)]*\)\)", DDL).group(0)))
+    check(set(codes[k]) == d, f"코드표 {k} ≠ DDL {col}: {set(codes[k]) ^ d}")
+check(set(codes["benefit"]) == ddl_array("benefits"), "benefit ≠ DDL")
+check(set(codes["weekday"]) == ddl_array("weekdays"), "weekday ≠ DDL")
+src_kind = set(re.findall(r"'([A-Z_]+)'", re.search(r"kind\s+varchar\(20\)\s+NOT NULL CHECK \(kind IN \('OPERATION_PLAN[^)]*\)\)", DDL).group(0)))
+check(set(codes["sourceType"]) == src_kind, "sourceType ≠ source_document.kind")
+
+# 예시 안의 모든 코드값이 코드표에 있는지
+FIELD_CODE = {"verdict": "verdict", "layer": "reasonLayer", "result": "reasonResult", "majorMatch": "majorMatch",
+              "fit": "fit", "status": "signalStatus", "signalSource": "signalSource", "closeReason": "closeReason",
+              "code": "risk", "kind": "alertKind", "size": "size", "listing": "listing", "course": "course",
+              "jobType": "jobType", "overtime": "overtime", "basis": "stipendBasis", "gradeRule": "gradeRule",
+              "portfolio": "requirement", "certificate": "requirement", "sourceType": "sourceType",
+              "source": "reasonSource", "role": "role"}
+def walk(o, path, fn):
+    if isinstance(o, dict):
+        for k, v in o.items():
+            fn(k, v, path)
+            walk(v, f"{path}.{k}", fn)
+    elif isinstance(o, list):
+        for i, v in enumerate(o):
+            walk(v, f"{path}[{i}]", fn)
+
+def code_check(fname):
+    def fn(k, v, path):
+        if fname == "codes.json":
+            return
+        check(re.fullmatch(r"[a-z][A-Za-z0-9]*", k) is not None, f"{fname}{path}.{k}: camelCase 아님")
+        if k in FIELD_CODE and isinstance(v, str) and v.isupper():
+            check(v in codes[FIELD_CODE[k]], f"{fname}{path}.{k}={v} 코드표에 없음")
+        if k in ("weekdays",):
+            check(all(x in codes["weekday"] for x in v), f"{fname}{path} 요일 코드")
+        if k == "benefits":
+            check(all(x in codes["benefit"] for x in v), f"{fname}{path} 복리 코드")
+        if k == "name" and "institution" in path:
+            check(v.endswith("(가상)"), f"{fname}{path}.name={v} 가상 표시 없음")
+        if k == "stipend" and isinstance(v, dict):
+            base = 2156880 if v["basis"] == "MONTHLY" else 10320
+            check(v["minWageRatio"] == round(v["amount"] / base * 100, 1), f"{fname}{path} 최저임금 대비 % 틀림")
+        if k == "signal" and isinstance(v, dict):
+            check(v["ratio"] == round(v["intent"] / v["headcount"], 2), f"{fname}{path} ratio 틀림")
+            check(v["interest"] >= v["intent"], f"{fname}{path} 관심 < 지원 의사")
+            check((v["closesOn"] is None) == (v["closeReason"] is None), f"{fname}{path} 마감일·사유 짝")
+    return fn
+for name, d in docs.items():
+    walk(d, "", code_check(name))
+
+# 신호 status 규칙(asOf 기준)
+RECRUIT_END = docs["rounds-current.json"]["recruitEnd"]
+for name in ("me-plan-check.json", "center-board.json"):
+    d = docs[name]
+    check(d["isVirtual"] is True and d["signalSource"] == "REPLAY", f"{name} 가상 표시")
+    rows = d.get("items", []) + d.get("alternatives", []) + d.get("rows", [])
+    for r in rows:
+        s = r["signal"]
+        closed = d["asOf"] > RECRUIT_END or (s["closesOn"] is not None and s["closesOn"] <= d["asOf"])
+        want = "CLOSED" if closed else ("CROWDED" if s["ratio"] >= 1.0 else "OPEN")
+        check(s["status"] == want, f"{name} job {r['jobId']} status {s['status']} ≠ {want}")
+    for a in d.get("alternatives", []):
+        check(a["remaining"] == a["signal"]["headcount"] - a["signal"]["intent"] and a["remaining"] > 0, f"대안 {a['jobId']} 남은 자리")
+        check(a["verdict"] != "INELIGIBLE" and a["signal"]["status"] != "CLOSED", f"대안 {a['jobId']} 조건")
+    r0 = docs["rounds-current.json"]["replay"]
+    check(r0["minDate"] <= d["asOf"] <= r0["maxDate"], f"{name} asOf 범위")
+
+# 판정 규칙
+for j in docs["eligibility.json"]["jobs"]:
+    rs = j["reasons"]
+    if any(r["layer"] == "SCHOOL_RULE" and r["result"] == "NOT_MET" for r in rs):
+        want = "INELIGIBLE"
+    elif any(r["layer"] == "INSTITUTION" and r["result"] in ("NOT_MET", "CHECK") for r in rs):
+        want = "NEEDS_CHECK"
+    else:
+        want = "ELIGIBLE"
+    check(j["verdict"] == want, f"판정 {j['jobId']} {j['verdict']} ≠ {want}")
+    check(all(r["result"] == "INFO" for r in rs if r["layer"] == "MAJOR"), f"판정 {j['jobId']} MAJOR는 INFO만")
+s = docs["eligibility.json"]["summary"]
+check(s["eligible"] + s["needsCheck"] + s["ineligible"] == s["total"], "판정 요약 합계")
+
+# 추천: 5개 이하, INELIGIBLE 없음, 순위 연속, 점수 노출 없음
+items = docs["recommendations.json"]["items"]
+check(len(items) <= 5 and [i["rank"] for i in items] == list(range(1, len(items) + 1)), "추천 순위")
+check(all(i["verdict"] != "INELIGIBLE" for i in items), "추천에 지원 불가 포함")
+check(all("score" not in i for i in items), "추천에 점수 노출")
+
+# 지망 순위: 1~3, 중복 없음
+ranks = [i["rank"] for i in docs["me-plan.json"]["items"] if i["rank"] is not None]
+check(len(ranks) == len(set(ranks)) and all(1 <= r <= 3 for r in ranks), "지망 순위")
+req = docs["me-plan-ranks.request.json"]["ranks"]
+check(len({r["rank"] for r in req}) == len(req), "순위 요청 중복")
+
+# 프로필 규칙
+for name in ("profile-body.request.json", "me-plan-check.request.json"):
+    p = docs[name]["profile"]
+    check(1 <= p["grade"] <= 4 and 0 <= p["completedSemesters"] <= 8 and 0 <= p["gpa"] <= 4.5
+          and round(p["gpa"], 1) == p["gpa"], f"{name} 프로필 범위")
+check(docs["me-profile.request.json"]["consent"] is True, "프로필 저장 동의")
+
+# 개인정보: GET 경로·쿼리에 프로필 필드가 없는지(README 목록)
+for line in re.findall(r"^\| \d+ \|.*$", readme, re.M):
+    cols = [c.strip() for c in line.split("|")]
+    if cols[3] == "GET":
+        check(not re.search(r"[?&].*(gpa|grade|departmentId|completedSemesters)", cols[4]), f"GET 쿼리에 프로필: {cols[4]}")
+
+print(f"검사 {checks}개, 실패 {len(fails)}개")
+for f in fails:
+    print(" -", f)
+sys.exit(1 if fails else 0)

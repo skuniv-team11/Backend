@@ -1,0 +1,8 @@
+{
+  "id": 42,
+  "email": "student@example.com",
+  "role": "STUDENT",
+  "isGuest": false,
+  "expiresAt": null,
+  "hasProfile": true
+}

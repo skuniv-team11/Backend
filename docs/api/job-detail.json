@@ -1,0 +1,113 @@
+{
+  "id": 101,
+  "round": {
+    "id": 1,
+    "termCode": "2026-2"
+  },
+  "institution": {
+    "id": 3,
+    "name": "누리뷰티(가상)",
+    "size": "SME",
+    "listing": "UNLISTED",
+    "businessType": "도소매",
+    "businessItem": "화장품",
+    "address": "서울 성동구 (가상)",
+    "ntsStatus": "ACTIVE",
+    "ntsCheckedOn": "2026-10-01"
+  },
+  "team": "마케팅팀",
+  "title": "국내 마케팅",
+  "overview": "(가상) 국내 온라인 채널 마케팅 운영 보조",
+  "educationGoal": "(가상) 브랜드 마케팅 실무 이해",
+  "competencies": "(가상) SNS 채널 이해, 문서 작성",
+  "weeklyPlan": [
+    {
+      "seq": 1,
+      "weeksLabel": "1~2주차",
+      "content": "(가상) 오리엔테이션, 브랜드 이해"
+    },
+    {
+      "seq": 2,
+      "weeksLabel": "3~8주차",
+      "content": "(가상) SNS 콘텐츠 기획 보조"
+    }
+  ],
+  "conditions": {
+    "course": "SEMESTER",
+    "jobType": "EXPERIENCE",
+    "period": {
+      "start": "2026-09-01",
+      "end": "2026-12-18"
+    },
+    "workHoursText": "09:00~18:00",
+    "weeklyHours": 40.0,
+    "weekdays": [
+      "MON",
+      "TUE",
+      "WED",
+      "THU",
+      "FRI"
+    ],
+    "overtime": "NONE",
+    "laborContract": true,
+    "stipend": {
+      "basis": "MONTHLY",
+      "amount": 2156880,
+      "minWageRatio": 100.0
+    },
+    "benefits": [
+      "MEAL"
+    ],
+    "headcount": 2
+  },
+  "requirements": {
+    "gradeRule": "Y3_4",
+    "gpaMin": 3.0,
+    "portfolio": "NONE",
+    "certificate": "NONE",
+    "certificateText": null,
+    "majorText": "미용예술대학, 경영학과",
+    "majorOpen": false
+  },
+  "commute": {
+    "origin": "서경대",
+    "minutes": 41,
+    "transfers": 1
+  },
+  "closing": {
+    "closesOn": null,
+    "closeReason": null,
+    "closesOnIsVirtual": false
+  },
+  "evidence": [
+    {
+      "fieldKey": "stipendAmount",
+      "label": "실습지원비",
+      "rawValue": "2,156,880",
+      "documentTitle": "누리뷰티(가상) 운영계획서",
+      "page": 2,
+      "quote": "(가상) 월 2,156,880원"
+    },
+    {
+      "fieldKey": "gpaRequirement",
+      "label": "학점 요건",
+      "rawValue": "3.0 이상",
+      "documentTitle": "누리뷰티(가상) 운영계획서",
+      "page": 3,
+      "quote": "(가상) 평점 3.0 이상"
+    }
+  ],
+  "alerts": [],
+  "seniorNotes": [
+    {
+      "termCode": "2025-1",
+      "teamText": "마케팅팀",
+      "documentTitle": "2025-1 우수 참여수기",
+      "page": 7,
+      "activities": [
+        "(가상) SNS 콘텐츠 기획",
+        "(가상) 주간 성과 정리"
+      ]
+    }
+  ]
+}
