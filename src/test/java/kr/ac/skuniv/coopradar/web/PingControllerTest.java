@@ -47,6 +47,17 @@ class PingControllerTest {
     }
 
     @Test
+    void 로그인이_필요한_API도_CORS_사전요청은_토큰_없이_통과하고_DELETE를_허용() throws Exception {
+        mvc.perform(options("/api/me")
+                        .header("Origin", "https://coop-radar.vercel.app")
+                        .header("Access-Control-Request-Method", "DELETE")
+                        .header("Access-Control-Request-Headers", "Authorization"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "https://coop-radar.vercel.app"))
+                .andExpect(header().string("Access-Control-Allow-Methods", org.hamcrest.Matchers.containsString("DELETE")));
+    }
+
+    @Test
     void 헬스체크() throws Exception {
         mvc.perform(get("/actuator/health"))
                 .andExpect(status().isOk())
