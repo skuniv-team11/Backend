@@ -27,6 +27,7 @@ final class CodeLabels {
             group("size", "LARGE", "대기업", "MIDSIZE", "중견기업", "SME", "중소기업", "PUBLIC", "공공기관",
                     "ASSOCIATION_ETC", "협회·기타", "UNSPECIFIED", "미기재"),
             group("listing", "KOSPI", "코스피", "KOSDAQ", "코스닥", "UNLISTED", "비상장", "UNSPECIFIED", "미기재"),
+            group("ntsStatus", "ACTIVE", "계속사업자", "SUSPENDED", "휴업자", "CLOSED", "폐업자"),
             group("course", "VACATION", "방학과정", "SEMESTER", "학기과정", "VACATION_SEMESTER", "방학·학기 연계과정",
                     "UNSPECIFIED", "미기재"),
             group("jobType", "EXPERIENCE", "직무체험형", "HIRING", "채용연계형", "UNSPECIFIED", "미기재"),

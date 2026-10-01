@@ -67,7 +67,27 @@
     "certificate": "NONE",
     "certificateText": null,
     "majorText": "미용예술대학, 경영학과",
-    "majorOpen": false
+    "majorOpen": false,
+    "majorAliases": [
+      {
+        "label": "미용예술대학",
+        "departments": [
+          {
+            "id": 31,
+            "name": "메이크업디자인학과"
+          }
+        ]
+      },
+      {
+        "label": "경영학과",
+        "departments": [
+          {
+            "id": 57,
+            "name": "경영학과"
+          }
+        ]
+      }
+    ]
   },
   "workplace": {
     "address": "서울 성동구 (가상)",
