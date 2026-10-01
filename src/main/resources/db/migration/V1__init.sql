@@ -9,6 +9,8 @@
 --   · 시드 테이블 PK는 자동 증가 없이 시드가 정한다. 다시 시드해도 /jobs/:id와 담아 둔 직무가 같은 행을 가리켜야 한다.
 --     계정 테이블은 실행 중에 행이 생기므로 자동 증가다.
 --   · 추천 이유 문장 캐시·IP별 호출 제한은 메모리에 둔다(DB 테이블 없음).
+--   · 통근 시간은 저장하지 않는다. 직무 상세를 열 때 카카오 대중교통 API를 부르고 버린다(ADR-0007).
+--     DB에는 출발점(area)과 도착점(workplace) 좌표만 둔다. 둘 다 공공 주소 API로 구한 값이다.
 --   · 확장 구조: 사업 → 모집 회차 → 기관 → 직무 → 요건 → 근거. 다른 사업·학교는 행과 판정 규칙만 바꾼다.
 --   · 대상 DB: Postgres 18(Render). 쓰는 기능은 Postgres 12 이상이면 모두 있다.
 --
@@ -63,6 +65,21 @@ CREATE TABLE major_alias_department (
 );
 COMMENT ON TABLE major_alias_department IS '전공 표기 1개 → 서경대 학과 N개';
 
+-- ───────────────────────── 사는 곳 ─────────────────────────
+
+CREATE TABLE area (
+    code       varchar(5)    PRIMARY KEY CHECK (code ~ '^(11|28|41)[0-9]{3}$'),
+    sido       varchar(10)   NOT NULL,
+    name       varchar(20)   NOT NULL,
+    lat        numeric(8, 6) NOT NULL CHECK (lat BETWEEN 33 AND 39),
+    lng        numeric(9, 6) NOT NULL CHECK (lng BETWEEN 124 AND 132),
+    sort_order smallint      NOT NULL UNIQUE,
+    UNIQUE (sido, name)
+);
+COMMENT ON TABLE  area IS '사는 곳 선택지(서울·인천·경기 시·군·구, 시드). 통근 조회 출발점. 정확한 주소는 받지 않는다';
+COMMENT ON COLUMN area.code IS '행정표준코드 시·군·구 5자리(예: 11350 노원구). 앞 두 자리 11 서울 · 28 인천 · 41 경기';
+COMMENT ON COLUMN area.lat IS '대표점 = 시·군·구청 위치(WGS84). 행정안전부 좌표제공 API로 구한다';
+
 -- ───────────────────────── 기관·직무 ─────────────────────────
 
 CREATE TABLE institution (
@@ -85,15 +102,19 @@ COMMENT ON COLUMN institution.business_item IS '종목';
 COMMENT ON COLUMN institution.nts_status IS '국세청 사업자 상태. 사업자번호는 저장하지 않고 조회 결과만 둔다';
 
 CREATE TABLE workplace (
-    id                integer      PRIMARY KEY,
-    institution_id    integer      NOT NULL REFERENCES institution(id) ON DELETE CASCADE,
-    address           varchar(200) NOT NULL,
-    commute_minutes   smallint CHECK (commute_minutes > 0),
-    commute_transfers smallint CHECK (commute_transfers >= 0),
+    id             integer       PRIMARY KEY,
+    institution_id integer       NOT NULL REFERENCES institution(id) ON DELETE CASCADE,
+    address        varchar(200)  NOT NULL,
+    lat            numeric(8, 6) CHECK (lat BETWEEN 33 AND 39),
+    lng            numeric(9, 6) CHECK (lng BETWEEN 124 AND 132),
+    coord_source   varchar(20)   CHECK (coord_source IN ('JUSO', 'MANUAL')),
     UNIQUE (institution_id, address),
-    UNIQUE (id, institution_id)
+    UNIQUE (id, institution_id),
+    CONSTRAINT workplace_coord_shape CHECK (num_nonnulls(lat, lng, coord_source) IN (0, 3))
 );
-COMMENT ON TABLE  workplace IS '근로지. 서경대 기준 대중교통 소요시간은 ODsay로 미리 계산(ADR-0002). 좌표는 오프라인에만 둔다';
+COMMENT ON TABLE  workplace IS '근로지. 좌표는 통근 조회(카카오 대중교통, ADR-0007)의 도착점. 좌표가 없으면 통근 칸에 ''불러올 수 없음''을 보인다';
+COMMENT ON COLUMN workplace.lat IS 'WGS84 위도. 카카오 API 결과는 저장할 수 없어서 넣지 않는다';
+COMMENT ON COLUMN workplace.coord_source IS 'JUSO = 행정안전부 도로명주소 좌표제공 API(UTM-K → WGS84 변환). MANUAL = 사람이 공공 자료로 확인해 넣음';
 
 CREATE TABLE job (
     id                   integer      PRIMARY KEY,
@@ -302,11 +323,13 @@ CREATE TABLE student_profile (
     gpa                 numeric(2, 1) NOT NULL CHECK (gpa BETWEEN 0 AND 4.5),
     graduation_expected boolean      NOT NULL DEFAULT false,
     interest_text       varchar(200),
+    home_area_code      varchar(5)   REFERENCES area(code),
     consented_at        timestamptz  NOT NULL,
     updated_at          timestamptz  NOT NULL DEFAULT now()
 );
 COMMENT ON TABLE  student_profile IS '학생이 [저장]을 누르고 동의했을 때만 생긴다. 저장 안 하면 판정 요청 본문으로만 쓰고 버린다. 탈퇴 시 즉시 삭제';
 COMMENT ON COLUMN student_profile.graduation_expected IS '현재 회차 기준 다음 졸업 예정(2026-2 → 2027년 2월). 졸업예정자 요건 판정';
+COMMENT ON COLUMN student_profile.home_area_code IS '사는 곳(시·군·구, 선택). NULL이면 서경대에서 출발하는 통근 시간을 보인다';
 COMMENT ON COLUMN student_profile.consented_at IS '수집 동의 시각(항목·목적·보관기간 고지 후)';
 
 CREATE TABLE plan_item (

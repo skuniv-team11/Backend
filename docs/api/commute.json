@@ -1,0 +1,18 @@
+{
+  "jobId": 101,
+  "available": true,
+  "origin": {
+    "type": "HOME_AREA",
+    "areaCode": "11350",
+    "label": "노원구"
+  },
+  "destination": {
+    "address": "서울 성동구 (가상)"
+  },
+  "minutes": 43,
+  "transfers": 1,
+  "fareWon": 1550,
+  "provider": "KAKAO_MAP",
+  "queriedAt": "2026-10-01T14:10:00+09:00",
+  "unavailableReason": null
+}

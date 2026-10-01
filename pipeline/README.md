@@ -12,12 +12,12 @@ pip install -r requirements.txt
 | `e2_reviews/` | E2 참여수기 추출 | `ANTHROPIC_API_KEY` | — | 약 $0.6~1 |
 | (저장소 루트, `spike` 프로필) | E3 Java SDK 연동 | `ANTHROPIC_API_KEY` | — | 1건 약 $0.05 |
 | `e5_embedding/` | E5 한국어 임베딩 품질 | `VOYAGE_API_KEY`(또는 `OPENAI_API_KEY`) | E2 결과 | 0원(무료 토큰) |
-| `e6_external/` | E6 국세청·ODsay·NCS | 각 서비스 키 | — | 0원 |
+| `e6_external/` | E6 국세청·NCS·주소 좌표 | 각 서비스 키 | — | 0원 |
 | `common/` | 참여기관 리스트 xlsx 파서(병합 셀 처리) | — | — | — |
 
 ## 권하는 순서
 
-1. **키 발급을 먼저 걸어 둡니다.** 공공데이터포털 두 건(국세청, NCS)과 ODsay는 반영까지 시간이 걸릴 수 있습니다.
+1. **키 발급을 먼저 걸어 둡니다.** 공공데이터포털 두 건(국세청, NCS)과 도로명주소 좌표제공 API는 반영까지 시간이 걸릴 수 있습니다.
 2. **E1은 선도소프트 1건만 먼저 돌립니다.** API와 스키마가 받아들여지는지 확인한 뒤 나머지 4건을 돌립니다.
 3. E2를 돌립니다. 2025-1 수기는 먼저 압축합니다.
 4. E3를 돌립니다(저장소 루트에서 `spike` 프로필, `README.md` 참고).

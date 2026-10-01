@@ -60,7 +60,8 @@ FIELD_CODE = {"verdict": "verdict", "layer": "reasonLayer", "result": "reasonRes
               "code": "risk", "kind": "alertKind", "size": "size", "listing": "listing", "course": "course",
               "jobType": "jobType", "overtime": "overtime", "basis": "stipendBasis", "gradeRule": "gradeRule",
               "portfolio": "requirement", "certificate": "requirement", "sourceType": "sourceType",
-              "source": "reasonSource", "role": "role"}
+              "source": "reasonSource", "role": "role",
+              "provider": "commuteProvider", "unavailableReason": "commuteUnavailable"}
 def walk(o, path, fn):
     if isinstance(o, dict):
         for k, v in o.items():
@@ -144,11 +145,33 @@ for name in ("profile-body.request.json", "me-plan-check.request.json"):
           and round(p["gpa"], 1) == p["gpa"], f"{name} 프로필 범위")
 check(docs["me-profile.request.json"]["consent"] is True, "프로필 저장 동의")
 
+# 통근: 저장하지 않으므로 상세·추천에 통근 값이 없어야 하고, 조회 응답은 성공·실패 모양이 맞아야 한다
+for name, d in docs.items():
+    if name == "codes.json" or name.startswith("commute"):
+        continue
+    walk(d, "", lambda k, v, path, name=name: check(not k.lower().startswith("commute"), f"{name}{path}.{k}: 통근 값은 통근 조회에서만"))
+area_codes = [a["code"] for a in docs["areas.json"]["areas"]]
+check(all(re.fullmatch(r"(11|28|41)\d{3}", c) for c in area_codes) and len(set(area_codes)) == len(area_codes), "areas 코드 형식·중복")
+for name in ("profile-body.request.json", "me-plan-check.request.json", "me-profile.request.json", "commute.request.json"):
+    d = docs[name]; hc = (d.get("profile") or d).get("homeAreaCode")
+    check(hc is None or hc in area_codes, f"{name} homeAreaCode가 areas 예시에 없음")
+for name in ("commute.json", "commute-unavailable.json"):
+    c = docs[name]
+    check(c["origin"]["type"] in codes["commuteOrigin"], f"{name} origin.type")
+    check((c["origin"]["type"] == "SCHOOL") == (c["origin"]["areaCode"] is None), f"{name} 출발지 코드 짝")
+    vals = (c["minutes"], c["transfers"], c["fareWon"])
+    if c["available"]:
+        check(c["unavailableReason"] is None and c["minutes"] > 0 and c["transfers"] >= 0, f"{name} 성공 모양")
+    else:
+        check(c["unavailableReason"] in codes["commuteUnavailable"] and vals == (None, None, None), f"{name} 실패 모양")
+check(docs["commute.json"]["available"] is True and docs["commute-unavailable.json"]["available"] is False, "통근 예시 성공·실패 한 쌍")
+check(isinstance(docs["job-detail.json"]["workplace"]["hasCoordinates"], bool), "직무 상세 workplace.hasCoordinates")
+
 # 개인정보: GET 경로·쿼리에 프로필 필드가 없는지(README 목록)
 for line in re.findall(r"^\| \d+ \|.*$", readme, re.M):
     cols = [c.strip() for c in line.split("|")]
     if cols[3] == "GET":
-        check(not re.search(r"[?&].*(gpa|grade|departmentId|completedSemesters)", cols[4]), f"GET 쿼리에 프로필: {cols[4]}")
+        check(not re.search(r"[?&].*(gpa|grade|departmentId|completedSemesters|homeAreaCode)", cols[4]), f"GET 쿼리에 프로필: {cols[4]}")
 
 print(f"검사 {checks}개, 실패 {len(fails)}개")
 for f in fails:

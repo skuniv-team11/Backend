@@ -20,7 +20,6 @@
         "amount": 2156880,
         "minWageRatio": 100.0
       },
-      "commuteMinutes": 41,
       "reasonTemplate": "관심 분야와 직무 개요가 가깝고, 선호 전공에 소속 학과가 들어 있어요.",
       "reasonStatus": "PENDING",
       "citations": [
@@ -54,7 +53,6 @@
         "amount": 2156880,
         "minWageRatio": 100.0
       },
-      "commuteMinutes": 41,
       "reasonTemplate": "관심 분야와 직무 개요가 가깝고, 선호 전공에 소속 학과가 들어 있어요.",
       "reasonStatus": "PENDING",
       "citations": [
@@ -82,7 +80,6 @@
         "amount": 1620000,
         "minWageRatio": 75.1
       },
-      "commuteMinutes": 58,
       "reasonTemplate": "관심 분야와 일부 업무가 겹치고, 채용연계형이에요.",
       "reasonStatus": "PENDING",
       "citations": []

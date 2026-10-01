@@ -122,5 +122,18 @@
   "role": {
     "STUDENT": "학생",
     "CENTER": "센터 담당자"
+  },
+  "commuteOrigin": {
+    "HOME_AREA": "사는 곳",
+    "SCHOOL": "서경대"
+  },
+  "commuteUnavailable": {
+    "NO_WORKPLACE": "근무지 위치 없음",
+    "NO_ROUTE": "대중교통 경로 없음",
+    "LIMITED": "조회 한도 초과",
+    "PROVIDER_ERROR": "카카오맵 응답 없음"
+  },
+  "commuteProvider": {
+    "KAKAO_MAP": "카카오맵"
   }
 }
