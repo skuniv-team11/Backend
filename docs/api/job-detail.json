@@ -69,10 +69,9 @@
     "majorText": "미용예술대학, 경영학과",
     "majorOpen": false
   },
-  "commute": {
-    "origin": "서경대",
-    "minutes": 41,
-    "transfers": 1
+  "workplace": {
+    "address": "서울 성동구 (가상)",
+    "hasCoordinates": true
   },
   "closing": {
     "closesOn": null,

@@ -5,9 +5,15 @@
   "gpa": 3.4,
   "graduationExpected": false,
   "interestText": "뷰티 브랜드 SNS 마케팅",
+  "homeAreaCode": "11350",
   "department": {
     "id": 31,
     "name": "메이크업디자인학과"
+  },
+  "homeArea": {
+    "code": "11350",
+    "sido": "서울",
+    "name": "노원구"
   },
   "isExample": false,
   "consentedAt": "2026-10-01T14:00:00+09:00",
