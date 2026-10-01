@@ -79,6 +79,7 @@ ANTHROPIC_API_KEY=... java -jar build/libs/coop-radar-backend-0.0.1.jar --spring
 
 ## DB
 - **로컬:** `docker compose up -d`로 Postgres 18을 띄웁니다. 스키마는 Flyway(`src/main/resources/db/migration/`), 접근은 `JdbcClient`입니다(ADR-0010).
+- **시드:** 앱이 뜰 때 Flyway가 `R__seed.sql`(2026-2 실제 자료: 18기관·40직무·학과 60·근거·수기 17·리플레이 신호)을 넣습니다. 바꾸면 다음 기동 때 다시 적용됩니다. 만드는 법은 [pipeline/seed/README.md](pipeline/seed/README.md)(ADR-0014).
 - **Render:** 무료 Postgres는 10/15 이후 대시보드에서 만듭니다. Internal Database URL(`postgresql://USER:PASSWORD@HOST:PORT/DB`)을 JDBC 형식으로 바꿔 환경변수 3개를 넣습니다.
     - `DB_URL=jdbc:postgresql://HOST:PORT/DB`
     - `DB_USER`

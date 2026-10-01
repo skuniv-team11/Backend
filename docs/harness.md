@@ -14,6 +14,7 @@
 | 커밋 메시지 검사 | `.githooks/commit-msg` → `scripts/check-commit-msg.sh` | 공동 작성자·링크 트레일러, 생성 도구 표기 줄 차단 |
 | 커밋 작성자 검사 | CI `commits` → `scripts/check-commits.sh`, `.github/authors` | PR 커밋 작성자가 GitHub 계정에 연결된 팀원인지 |
 | 스키마 검사 | `scripts/check_pipeline.py` | 구조화 출력 스키마 제약 위반 차단 |
+| 시드 검사 | `check_pipeline.py`(단위 테스트·`to_sql.py --check`), `SeedFileTest`, `SeedTest` | `R__seed.sql`이 `seed.json`에서 만든 그대로인지(머리글 해시), 적용 결과가 원본 숫자(18·40·59·21·17)와 리플레이 규칙을 지키는지 |
 | API 계약 스펙 | `scripts/build_openapi.py --check`(verify.sh) | Swagger 계약 스펙이 `docs/api`와 같은지, 예시 JSON이 스키마(타입·null·코드값·범위)에 맞는지 |
 | 규칙 테스트 | `src/test/.../StructuredOutputRulesTest` | 구조화 출력 enum에 `@JsonProperty` 금지 |
 | 계약 대조 테스트 | `src/test/.../contract/ContractTest`, `Contract.assertSameShape` | 구현한 `/api/**`가 계약에 있고 권한(`@PublicApi`·`@RequireRole`)이 같은지, 오류 코드·HTTP 상태가 같은지, 응답이 계약 예시와 같은 모양인지 |
@@ -30,6 +31,7 @@
 | 스키마에 null·anyOf·pattern 금지 | 선택 속성 24개·유니언 16개 한도, 숫자·문자 제약 미지원 (ADR-0003) | API 제약이 바뀌면 |
 | 외부 API 실행 중 호출은 Claude·임베딩·카카오 대중교통만 | 시연 중 외부 장애 방지, ODsay 결과 저장에 사전 동의 필요 (ADR-0002) | 운영 전환 시 |
 | 카카오 결과 저장 금지 | 카카오 운영정책이 결과·가공 데이터의 DB·캐시 저장과 미리 조회 보관을 금지 (ADR-0007) | 카카오 정책이 바뀌면 |
+| 시드 SQL은 생성만, 해시로 검사 | 220KB SQL을 손으로 고치면 seed.json·근거와 어긋나도 아무도 모른다. 리뷰는 seed.json diff로 한다 (ADR-0014) | 센터가 관리 화면으로 직접 올리게 되면 |
 | `main`만 배포 | Render 빌드 월 500분 | 유료 플랜 전환 시 |
 | `/api/**`는 기본이 로그인 필요, 권한은 계약과 대조 | 공개 표시를 빠뜨리면 막히고(안전한 쪽), 잘못 붙이면 `ContractTest`가 잡는다. 인증을 직접 짠 대가로 테스트가 지킨다 (ADR-0013) | Spring Security로 옮길 때 |
 | Swagger 계약 스펙은 생성·검사 | README·예시 JSON·Swagger 셋을 손으로 맞추면 갈라진다. 프론트는 구현 전에 24개 전부를 봐야 한다 (ADR-0011) | 컨트롤러가 다 구현되면 |

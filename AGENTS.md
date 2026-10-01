@@ -49,7 +49,7 @@ scripts/verify.sh          # 바뀐 부분만. 전체는 scripts/verify.sh --all
 - Render 빌드 월 500분 → `main` 브랜치만 배포(개발은 `develop`). `pipeline/`·`docs/` 변경은 빌드하지 않는다(`render.yaml` buildFilter).
 - 구조화 출력용 Java enum은 **한글 상수명**, `@JsonProperty` 금지 → `StructuredOutputRulesTest`(ADR-0003).
 - Boot 4는 Jackson 3(`tools.jackson`), Anthropic SDK는 Jackson 2. SDK 모델 직렬화는 `com.anthropic.core.ObjectMappers.jsonMapper()`.
-- DB 접근은 `JdbcClient`로 SQL을 직접 쓴다(JPA 없음). 스키마 변경은 새 `V2__*.sql`로만, 적용한 파일은 고치지 않는다(ADR-0010). 새 `@SpringBootTest`에는 `@Import(TestcontainersConfiguration.class)`.
+- DB 접근은 `JdbcClient`로 SQL을 직접 쓴다(JPA 없음). 스키마 변경은 새 `V2__*.sql`로만, 적용한 파일은 고치지 않는다(ADR-0010). 시드는 `R__seed.sql`(반복 마이그레이션)이고 `pipeline/seed/`에서 생성한다 — 손으로 고치지 않는다(ADR-0014). 새 `@SpringBootTest`에는 `@Import(TestcontainersConfiguration.class)`.
 - 배포 DB는 10/15 이후 Render 무료 Postgres(ADR-0005). `postgresql://` URL을 `jdbc:postgresql://host:port/db`로 바꿔 `DB_URL`에. **DB 없이는 앱이 뜨지 않으므로 그 전에 `develop`을 `main`에 올리지 않는다.**
 - 로컬에서 `JWT_SECRET`을 비우면 서버가 뜰 때마다 임시 키를 만든다(다시 뜨면 로그인이 풀림). 배포에는 반드시 넣는다.
 - 응답 테스트는 `Contract.assertSameShape(응답, Contract.responseExample(operationId, 상태, null))`로 계약 예시와 모양을 맞춘다.

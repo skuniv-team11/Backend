@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""pipeline 검사: 파이썬 문법 + 구조화 출력(JSON 스키마) 제약.
+"""pipeline 검사: 파이썬 문법 + 구조화 출력(JSON 스키마) 제약 + 시드(단위 테스트, R__seed.sql ↔ seed.json).
 
 제약은 Claude structured outputs 문서(2026-09) 기준이다. 어기면 API가 400을 내거나 결과가 어긋난다(ADR-0003).
 실패하면 무엇을 어떻게 고칠지 출력하고 1로 끝난다.
 """
-import json, pathlib, py_compile, sys
+import json, os, pathlib, py_compile, subprocess, sys
 
 # Windows 기본 콘솔은 cp949라 ✓·✗ 에서 UnicodeEncodeError 로 죽는다. CI(리눅스)는 영향 없다.
 sys.stdout.reconfigure(encoding="utf-8")
@@ -66,6 +66,18 @@ for s in schemas:
         walk(json.loads(s.read_text(encoding="utf-8")), "$", s.relative_to(ROOT))
     except json.JSONDecodeError as e:
         err(s.relative_to(ROOT), "JSON 파싱 실패", str(e))
+
+# 시드(ADR-0014): 단위 테스트 + R__seed.sql이 seed.json에서 만든 그대로인지(손으로 고치지 않았는지)
+env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+seed_dir = PIPE / "seed"
+r = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", str(seed_dir), "-p", "test_*.py"],
+                   capture_output=True, text=True, encoding="utf-8", env=env)
+if r.returncode:
+    err("pipeline/seed", "단위 테스트 실패\n" + r.stderr.strip(), "python -m unittest discover -s pipeline/seed -v 로 실패한 테스트를 보세요")
+r = subprocess.run([sys.executable, str(seed_dir / "to_sql.py"), "--check"],
+                   capture_output=True, text=True, encoding="utf-8", env=env)
+if r.returncode:
+    err("src/main/resources/db/migration/R__seed.sql", "seed.json과 다름", "python pipeline/seed/to_sql.py 로 다시 만들어 같이 커밋하세요(손으로 고치지 않는다)")
 
 if errors:
     print("\n".join(errors))

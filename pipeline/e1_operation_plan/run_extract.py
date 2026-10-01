@@ -9,11 +9,12 @@
   한 스키마에 다 담으면 문법 한도를 넘는다(ADR-0003). 지시문은 Java OperationPlanRequests 와 같다.
 - --lite: E1 채점용 핵심 필드만, 호출 1번.
 - 폴더를 주면 그 아래의 '*운영계획서*.pdf'를 전부 찾습니다.
-- 결과: out/<파일명>.json  (호출별 메타데이터 + 합친 추출 결과 {institution, jobs, inconsistencies})
+- 결과: out/<파일명>.json  (쪽수·호출별 메타데이터 + 합친 추출 결과 {institution, jobs, inconsistencies})
 """
-import argparse, base64, json, pathlib, sys, time
+import argparse, base64, io, json, pathlib, sys, time
 
 import anthropic
+from pypdf import PdfReader
 
 HERE = pathlib.Path(__file__).parent
 PRICE_IN, PRICE_OUT = 2.0, 10.0          # Sonnet 5.5, 백만 토큰당 USD (기획안 11장 기준)
@@ -85,6 +86,7 @@ def extract(client, pdf, parts, system, model, max_tokens):
     return {
         "source_file": pdf.name,
         "source_bytes": len(data),
+        "source_pages": len(PdfReader(io.BytesIO(data)).pages),   # 시드의 source_document.page_count(ADR-0014)
         "model": model,
         "calls": len(calls),
         "stop_reason": "max_tokens" if any(c["stop_reason"] == "max_tokens" for c in calls) else calls[-1]["stop_reason"],

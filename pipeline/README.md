@@ -13,6 +13,7 @@ pip install -r requirements.txt
 | (저장소 루트, `spike` 프로필) | E3 Java SDK 연동 | `ANTHROPIC_API_KEY` | — | 1건 약 $0.05 |
 | `e5_embedding/` | E5 한국어 임베딩 품질 | `VOYAGE_API_KEY`(또는 `OPENAI_API_KEY`) | E2 결과 | 0원(무료 토큰) |
 | `e6_external/` | E6 국세청·NCS·주소 좌표 | 각 서비스 키 | — | 0원 |
+| `seed/` | 시드 만들기 → `R__seed.sql`(ADR-0014) | — | E1 본 추출·E2·E6 결과, 원본 리스트·매칭 결과 | 0원 |
 | `common/` | 참여기관 리스트 xlsx 파서(병합 셀 처리) | — | — | — |
 
 ## 권하는 순서
