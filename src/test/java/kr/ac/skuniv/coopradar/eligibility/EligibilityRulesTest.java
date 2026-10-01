@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -15,6 +16,7 @@ import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Result;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Verdict;
 import kr.ac.skuniv.coopradar.eligibility.JobRequirement.AlertRef;
 import kr.ac.skuniv.coopradar.job.InstitutionRef;
+import kr.ac.skuniv.coopradar.job.JobDetail.Closing;
 import org.junit.jupiter.api.Test;
 
 /** 3층 판정 규칙(docs/api/README.md '판정', ADR-0012). DB 없이 규칙만 본다. */
@@ -114,23 +116,42 @@ class EligibilityRulesTest {
     }
 
     @Test
-    void 판정_항목에_걸린_검토_알림만_확인_필요와_alertId를_붙인다() {
-        EligibilityJob r = judge(job(b -> b.alerts = List.of(
+    void 판정_항목_알림은_그_항목_행을_확인_필요로_바꾸고_나머지_알림은_판정을_바꾸지_않는다() {
+        // ADR-0016: 학년·학점·포트폴리오·자격증 알림만 판정에 들어간다. 선호 전공·기간 알림은 alertCount로만 보인다
+        EligibilityJob ignored = judge(job(b -> b.alerts = List.of(
                 new AlertRef(4, "LIST_MISMATCH", "majorRequirement"),
-                new AlertRef(5, "LIST_MISMATCH", "period"),
+                new AlertRef(5, "LIST_MISMATCH", "period"))), me(3, 5, "3.4", false));
+        assertThat(ignored.verdict()).isEqualTo(Verdict.ELIGIBLE);
+        assertThat(ignored.reasons()).allSatisfy(l -> assertThat(l.alertId()).isNull());
+
+        EligibilityJob r = judge(job(b -> b.alerts = List.of(
                 new AlertRef(6, "DOC_INCONSISTENCY", "gpaRequirement"))), me(3, 5, "3.4", false));
         assertThat(r.verdict()).isEqualTo(Verdict.NEEDS_CHECK);
-        List<ReasonLine> alertLines = r.reasons().stream().filter(l -> l.alertId() != null).toList();
-        assertThat(alertLines).extracting(ReasonLine::alertId).containsExactly(4, 6);
-        assertThat(alertLines.get(0).item()).isEqualTo("선호 전공 표기");
-        assertThat(alertLines.get(0).requirement()).isEqualTo("참여기관 리스트와 운영계획서가 다르게 적혀 있음");
-        assertThat(alertLines.get(1).item()).isEqualTo("학점 요건 표기");
-        assertThat(alertLines.get(1).requirement()).isEqualTo("문서 안에서 서로 다르게 적혀 있음");
-        assertThat(alertLines).allSatisfy(l -> {
-            assertThat(l.layer()).isEqualTo(Layer.INSTITUTION);
-            assertThat(l.result()).isEqualTo(Result.CHECK);
-            assertThat(l.mine()).isEqualTo("—");
-        });
+        ReasonLine gpa = line(r, "학점");
+        assertThat(gpa.result()).isEqualTo(Result.CHECK);
+        assertThat(gpa.alertId()).isEqualTo(6);
+        assertThat(gpa.requirement()).isEqualTo("3.0 이상"); // 요건·내 값은 그대로
+        assertThat(gpa.mine()).isEqualTo("3.4");
+        assertThat(r.reasons()).filteredOn(l -> l.item().equals("학점")).hasSize(1);
+
+        // 행이 없던 항목(포트폴리오 없음)은 새로 만든다
+        EligibilityJob added = judge(job(b -> b.alerts = List.of(
+                new AlertRef(7, "LIST_MISMATCH", "portfolio"))), me(3, 5, "3.4", false));
+        ReasonLine portfolio = line(added, "포트폴리오");
+        assertThat(portfolio.result()).isEqualTo(Result.CHECK);
+        assertThat(portfolio.alertId()).isEqualTo(7);
+        assertThat(portfolio.requirement()).isEqualTo("참여기관 리스트와 운영계획서가 다르게 적혀 있음");
+        assertThat(portfolio.mine()).isEqualTo("—");
+    }
+
+    @Test
+    void 판정_행에_마감과_직무_알림_수를_그대로_싣는다() {
+        EligibilityJob r = judge(job(b -> {
+            b.closing = new Closing(LocalDate.of(2026, 7, 18), "CENTER_CLOSED", false);
+            b.alertCount = 2;
+        }), me(3, 5, "3.4", false));
+        assertThat(r.closing().closesOn()).hasToString("2026-07-18");
+        assertThat(r.alertCount()).isEqualTo(2);
     }
 
     @Test
@@ -172,7 +193,7 @@ class EligibilityRulesTest {
         change.accept(b);
         return new JobRequirement(101, 1, "(가상)마케팅", "(가상)마케팅팀", new InstitutionRef(1, "(가상)기관"), b.course,
                 b.gradeRule, b.gpaMin, b.portfolio, b.certificate, b.certificateText, "미용예술대학", b.majorOpen,
-                b.majorDepartmentIds, b.alerts);
+                b.majorDepartmentIds, b.alerts, b.closing, b.alertCount);
     }
 
     private static final class Builder {
@@ -185,5 +206,7 @@ class EligibilityRulesTest {
         boolean majorOpen = false;
         Set<Integer> majorDepartmentIds = Set.of(DEPT);
         List<AlertRef> alerts = List.of();
+        Closing closing = new Closing(null, null, false);
+        int alertCount = 0;
     }
 }

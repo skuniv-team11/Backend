@@ -81,15 +81,10 @@ def ddl_field_keys():
     m = re.search(r"CONSTRAINT field_evidence_allowed_key CHECK \((.*?)\n\s*\)\n\);", DDL, re.S)
     return sorted(set(re.findall(r"'([A-Za-z]+)'", m.group(1))))
 
-def ddl_in(column):
-    m = re.search(rf"CHECK \({column} IN \(([^)]*)\)\)", DDL)
-    return re.findall(r"'([A-Z_]+)'", m.group(1))
-
 # ───────────────────────── 스키마 ─────────────────────────
 
 S = {enum_name(k): code_enum(k) for k in CODES}
-S["NtsStatus"] = {"type": "string", "enum": ddl_in("nts_status"),
-                  "description": "국세청 사업자 상태(오프라인 조회 결과). `ACTIVE` 계속 · `SUSPENDED` 휴업 · `CLOSED` 폐업"}
+S["NtsStatus"] = d(S["NtsStatus"], "국세청 사업자 상태(오프라인 조회 결과). " + S["NtsStatus"]["description"])
 S["EvidenceFieldKey"] = {"type": "string", "enum": ddl_field_keys(),
                          "description": "근거를 보여 줄 수 있는 추출 필드명(V1 field_evidence 허용 목록). 사업자번호·매출액 등은 없다"}
 
@@ -124,6 +119,10 @@ SIGNAL = obj({
     "closesOnIsVirtual": d(BOOL, "true면 closesOn이 생성기가 정한 가상 날짜"),
     "expectedFullOn": d(nul(DATE), "정원 도달 예상일. 모집기간 안에 닿지 않거나 이미 닿았으면 null"),
 }, desc="모집 신호. status: asOf가 회차 종료일보다 뒤이거나 closesOn ≤ asOf면 CLOSED → 아니면 OPEN. 지원 의사가 정원을 넘어도 몰림 표시·경고는 하지 않는다(ADR-0015)")
+
+CLOSING = obj({"closesOn": d(nul(DATE), "이 날부터 지원 불가. 화면은 하루 전 날짜를 마감일로 보여 준다"),
+               "closeReason": nul(R("CloseReason")), "closesOnIsVirtual": BOOL},
+              desc="직무의 모집마감(기준일과 상관없이 고정). 마감이 없으면 closesOn·closeReason이 null")
 
 S.update({
     "Error": obj({
@@ -197,13 +196,15 @@ S.update({
         "requirement": STR,
         "mine": STR,
         "result": R("ReasonResult"),
-        "alertId": d(ID, "문서 안에서 요건이 서로 다르게 적힌 항목(M2 검토 알림)이면 붙는다"),
+        "alertId": d(ID, "검토 알림(M2)의 fieldKey가 판정 항목(gradeRequirement·gpaRequirement·portfolio·certificate)이면 그 항목 행(CHECK)에 붙는다"),
     }, optional=("alertId",)),
     "EligibilityJob": obj({
         "jobId": ID, "title": STR, "team": STR,
         "institution": R("InstitutionRef"),
         "verdict": R("Verdict"),
         "majorMatch": R("MajorMatch"),
+        "closing": d(CLOSING, "직무 상세의 closing과 같은 값. 목록은 closesOn ≤ 기준일이면 '마감' 꼬리표를 단다"),
+        "alertCount": d({"type": "integer", "minimum": 0}, "그 직무에 걸린 검토 알림 수(jobId가 그 직무인 것만, 기관 단위 알림은 세지 않는다). '문서 검토' 꼬리표"),
         "reasons": arr(R("ReasonLine")),
     }),
     "Eligibility": obj({
@@ -232,7 +233,7 @@ S.update({
     }),
     "Recommendations": obj({
         "round": R("RoundRef"),
-        "items": d(arr(R("Recommendation"), maxItems=5), "INELIGIBLE을 뺀 상위 5개. 점수는 주지 않는다"),
+        "items": d(arr(R("Recommendation"), maxItems=5), "INELIGIBLE과 기준일에 마감된 직무를 뺀 적합도 점수 상위 5개. 점수는 주지 않는다"),
         "blockedBy": d(arr(obj({"item": STR, "count": INT})), "items가 비었을 때 막은 요건별 직무 수"),
     }),
     "RecommendationReason": obj({
@@ -287,12 +288,16 @@ S.update({
             "certificateText": nul(STR),
             "majorText": d(nul(STR), "선호 전공 원문(표시용). 자격 조건이 아니다"),
             "majorOpen": d(BOOL, "전공 무관이면 true"),
+            "majorAliases": d(arr(obj({
+                "label": d(STR, "선호 전공 표기(job_major_alias)"),
+                "departments": d(arr(R("DepartmentRef")), "확정된 학과 대응(major_alias_department, EXACT·CONFIRMED만)"),
+            })), "선호 전공 표기 → 학과. majorOpen이면 []. '선호 전공 안내'와 판정 이유의 '표기 해석'에 쓴다"),
         }),
         "workplace": d(nul(obj({
             "address": STR,
             "hasCoordinates": d(BOOL, "true면 프론트가 `POST /api/jobs/{jobId}/commute`를 부른다"),
         })), "근로지. V1 job.workplace_id가 null을 허용해 null일 수 있다"),
-        "closing": obj({"closesOn": nul(DATE), "closeReason": nul(R("CloseReason")), "closesOnIsVirtual": BOOL}),
+        "closing": CLOSING,
         "evidence": d(arr(obj({
             "fieldKey": R("EvidenceFieldKey"),
             "label": STR,
@@ -358,8 +363,8 @@ S.update({
             "fit": R("Fit"),
             "remaining": {"type": "integer", "minimum": 1},
             "signal": R("Signal"),
-            "why": STR,
-        }), maxItems=5), "요건이 맞는 빈 자리. INELIGIBLE·CLOSED·남은 자리 0 제외, fit → 남은 자리 순 최대 5개"),
+            "why": d(STR, "규칙 문장. 1지망과 같은 기관이면 '1지망과 같은 기관의 직무이고', 아니면 '관심 분야와 가깝고' + 지원 의사 0이면 '지금 지원 의사가 0명이에요.', 아니면 '남은 자리가 N개예요.'"),
+        }), maxItems=5), "verdict ELIGIBLE · CLOSED 아님 · 남은 자리(headcount − intent) > 0 · 이미 담은 직무 아님. 적합도 점수 → 남은 자리 순 최대 5개"),
     }),
     "CenterBoard": obj({
         "asOf": DATE,
@@ -375,7 +380,7 @@ S.update({
             "title": STR,
             "headcount": {"type": "integer", "minimum": 1},
             "signal": R("Signal"),
-            "eligiblePool": d({"type": "integer", "minimum": 0}, "선호 전공 재학생 수"),
+            "eligiblePool": d({"type": "integer", "minimum": 0}, "적격 학생 풀(선호 전공 재학생 수). 200명 미만이면 NARROW_POOL"),
             "risks": arr(obj({"code": R("Risk"), "label": STR, "detail": nul(STR)})),
             "alertCount": {"type": "integer", "minimum": 0},
             "pastZeroRounds": d(arr({}), "지난 회차 0명 이력. 원소 모양은 지난 회차 결과를 적재할 때 정한다(지금 예시는 빈 배열)"),

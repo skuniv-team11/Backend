@@ -4,13 +4,18 @@ import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import kr.ac.skuniv.coopradar.job.JobDetail.Closing;
 import kr.ac.skuniv.coopradar.job.JobDetail.Conditions;
+import kr.ac.skuniv.coopradar.job.JobDetail.DepartmentRef;
 import kr.ac.skuniv.coopradar.job.JobDetail.Evidence;
 import kr.ac.skuniv.coopradar.job.JobDetail.Institution;
+import kr.ac.skuniv.coopradar.job.JobDetail.MajorAlias;
 import kr.ac.skuniv.coopradar.job.JobDetail.Period;
 import kr.ac.skuniv.coopradar.job.JobDetail.Requirements;
 import kr.ac.skuniv.coopradar.job.JobDetail.SeniorNote;
@@ -80,7 +85,8 @@ public class JobRepository {
                                 rs.getString("certificate"),
                                 rs.getString("certificate_text"),
                                 rs.getString("major_text"),
-                                rs.getBoolean("major_open")),
+                                rs.getBoolean("major_open"),
+                                List.of()),
                         rs.getString("w_address") == null ? null
                                 : new Workplace(rs.getString("w_address"), rs.getBoolean("w_has_coordinates")),
                         new Closing(rs.getObject("closes_on", LocalDate.class), rs.getString("close_reason"),
@@ -122,6 +128,33 @@ public class JobRepository {
                 .param("institution", institutionId)
                 .query((rs, n) -> alert(rs))
                 .list();
+    }
+
+    /** 직무의 선호 전공 표기와 확정된 학과(표기 id 순, 학과 id 순). */
+    List<MajorAlias> majorAliases(int jobId) {
+        Map<Integer, String> labels = new LinkedHashMap<>();
+        Map<Integer, List<DepartmentRef>> departments = new LinkedHashMap<>();
+        db.sql("""
+                        SELECT m.id, m.label, d.id AS department_id, d.name AS department_name
+                        FROM job_major_alias jma
+                        JOIN major_alias m ON m.id = jma.alias_id
+                        LEFT JOIN major_alias_department mad ON mad.alias_id = m.id
+                        LEFT JOIN department d ON d.id = mad.department_id
+                        WHERE jma.job_id = :job
+                        ORDER BY m.id, d.id""")
+                .param("job", jobId)
+                .query(rs -> {
+                    int aliasId = rs.getInt("id");
+                    labels.putIfAbsent(aliasId, rs.getString("label"));
+                    List<DepartmentRef> list = departments.computeIfAbsent(aliasId, k -> new ArrayList<>());
+                    int departmentId = rs.getInt("department_id");
+                    if (!rs.wasNull()) {
+                        list.add(new DepartmentRef(departmentId, rs.getString("department_name")));
+                    }
+                });
+        List<MajorAlias> out = new ArrayList<>();
+        labels.forEach((id, label) -> out.add(new MajorAlias(label, List.copyOf(departments.get(id)))));
+        return out;
     }
 
     /** 같은 기관의 선배 수기. 최근 학기 먼저, 같은 학기는 쪽 순. */

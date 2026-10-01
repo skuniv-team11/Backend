@@ -11,13 +11,14 @@ import kr.ac.skuniv.coopradar.eligibility.EligibilityService.Judged;
 import kr.ac.skuniv.coopradar.eligibility.JobRequirement;
 import kr.ac.skuniv.coopradar.eligibility.ProfileInput;
 import kr.ac.skuniv.coopradar.job.InstitutionRef;
+import kr.ac.skuniv.coopradar.job.JobDetail.Closing;
 import kr.ac.skuniv.coopradar.job.Stipend;
 import kr.ac.skuniv.coopradar.recommend.FitScorer.Features;
 import kr.ac.skuniv.coopradar.recommend.FitScorer.Scored;
 import kr.ac.skuniv.coopradar.recommend.RecommendDtos.Fit;
 import org.junit.jupiter.api.Test;
 
-/** 적합도 점수·등급·기본 이유 문장(ADR-0017). DB 없이 본다. 학생 학과는 43. */
+/** 적합도 점수·등급·기본 이유 문장(ADR-0018). DB 없이 본다. 학생 학과는 43. */
 class FitScorerTest {
 
     private static final int DEPT = 43;
@@ -88,7 +89,8 @@ class FitScorerTest {
 
     private static JobRequirement job(int id, int seq, Set<Integer> majorDepartments, String gradeRule) {
         return new JobRequirement(id, seq, "(가상)직무" + id, "(가상)팀", new InstitutionRef(id, "(가상)기관" + id), "SEMESTER",
-                gradeRule, null, "NONE", "NONE", null, "(가상)전공", false, majorDepartments, List.of());
+                gradeRule, null, "NONE", "NONE", null, "(가상)전공", false, majorDepartments, List.of(),
+                new Closing(null, null, false), 0);
     }
 
     private static Features features(String text, String jobType, int monthly) {

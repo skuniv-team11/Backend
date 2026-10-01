@@ -20,6 +20,12 @@
       },
       "verdict": "ELIGIBLE",
       "majorMatch": "MATCH",
+      "closing": {
+        "closesOn": null,
+        "closeReason": null,
+        "closesOnIsVirtual": false
+      },
+      "alertCount": 0,
       "reasons": [
         {
           "layer": "SCHOOL_RULE",
@@ -61,6 +67,12 @@
       },
       "verdict": "NEEDS_CHECK",
       "majorMatch": "NOT_LISTED",
+      "closing": {
+        "closesOn": null,
+        "closeReason": null,
+        "closesOnIsVirtual": false
+      },
+      "alertCount": 0,
       "reasons": [
         {
           "layer": "SCHOOL_RULE",
@@ -109,6 +121,12 @@
       },
       "verdict": "NEEDS_CHECK",
       "majorMatch": "NOT_LISTED",
+      "closing": {
+        "closesOn": null,
+        "closeReason": null,
+        "closesOnIsVirtual": false
+      },
+      "alertCount": 1,
       "reasons": [
         {
           "layer": "SCHOOL_RULE",
@@ -123,14 +141,6 @@
           "requirement": "4학년",
           "mine": "3학년",
           "result": "NOT_MET"
-        },
-        {
-          "layer": "INSTITUTION",
-          "item": "선호 전공 표기",
-          "requirement": "문서 안에서 서로 다르게 적혀 있음",
-          "mine": "—",
-          "result": "CHECK",
-          "alertId": 7
         },
         {
           "layer": "MAJOR",

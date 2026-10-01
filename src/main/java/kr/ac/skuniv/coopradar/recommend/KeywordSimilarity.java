@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.Map;
 
 /**
- * 관심 문장 ↔ 직무 텍스트의 키워드 유사도: 글자 2~3-gram TF-IDF 코사인(ADR-0017).
+ * 관심 문장 ↔ 직무 텍스트의 키워드 유사도: 글자 2~3-gram TF-IDF 코사인(ADR-0018).
  * E5의 키워드 기준선({@code pipeline/e5_embedding/hit_at_k.py}의 TfidfChar)과 같은 방식이다. 외부 호출이 없다.
  */
 final class KeywordSimilarity {

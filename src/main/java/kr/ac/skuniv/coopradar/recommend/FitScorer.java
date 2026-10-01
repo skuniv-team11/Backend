@@ -12,7 +12,7 @@ import kr.ac.skuniv.coopradar.job.Stipend;
 import kr.ac.skuniv.coopradar.recommend.RecommendDtos.Fit;
 
 /**
- * 적합도 점수(ADR-0017). 규칙 + 키워드이고 임베딩은 쓰지 않는다(E5: 임베딩이 선호 전공 규칙보다 낫지 않았다).
+ * 적합도 점수(ADR-0018). 규칙 + 키워드이고 임베딩은 쓰지 않는다(E5: 임베딩이 선호 전공 규칙보다 낫지 않았다).
  * <pre>
  * 점수 = 5 × 선호 전공 일치(MATCH·OPEN)
  *      + 2 × 관심 키워드 유사도(후보 중 최댓값으로 나눈 0~1, 관심 문장이 없으면 0)

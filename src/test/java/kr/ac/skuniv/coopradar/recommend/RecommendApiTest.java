@@ -59,6 +59,18 @@ class RecommendApiTest {
     }
 
     @Test
+    void 기준일에_마감된_직무는_추천에서_빠진다() throws Exception {
+        // 광고홍보콘텐츠학과(10) 4학년: 선호 전공이 맞는 101 AE는 7/18(기준일) 센터 모집마감이라 빠진다(ADR-0016)
+        String body = recommend(guestToken("STUDENT"), """
+                {"profile": {"departmentId": 10, "grade": 4, "completedSemesters": 7, "gpa": 4.0,
+                 "graduationExpected": false, "interestText": "광고 캠페인 기획", "homeAreaCode": null}}""")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(5))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<List<Integer>>read(body, "$.items[*].jobId")).doesNotContain(101);
+    }
+
+    @Test
     void 전부_지원_불가면_items는_비고_blockedBy에_막은_요건별_직무_수() throws Exception {
         recommend(guestToken("STUDENT"), profile(2, 3, "null"))
                 .andExpect(status().isOk())

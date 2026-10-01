@@ -27,7 +27,8 @@ public class JobService {
                 .sorted(Comparator.comparingInt((Evidence e) -> EvidenceLabels.order(e.fieldKey())))
                 .toList();
         return new JobDetail(row.id(), row.round(), row.institution(), row.team(), row.title(), row.overview(),
-                row.educationGoal(), row.competencies(), jobs.weeklyPlan(row.id()), row.conditions(), row.requirements(),
+                row.educationGoal(), row.competencies(), jobs.weeklyPlan(row.id()), row.conditions(),
+                row.requirements().withMajorAliases(jobs.majorAliases(row.id())),
                 row.workplace(), row.closing(), evidence, jobs.alerts(row.id(), institutionId),
                 jobs.seniorNotes(institutionId));
     }

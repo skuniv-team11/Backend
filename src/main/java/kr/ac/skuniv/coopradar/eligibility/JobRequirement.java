@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 import kr.ac.skuniv.coopradar.job.InstitutionRef;
+import kr.ac.skuniv.coopradar.job.JobDetail.Closing;
 
 /**
  * 판정에 쓰는 직무 1개의 요건(시드 job + 선호 전공 매핑 + 판정 항목에 걸린 검토 알림).
@@ -14,7 +15,9 @@ import kr.ac.skuniv.coopradar.job.InstitutionRef;
  * @param portfolio              REQUIRED · PREFERRED · NONE
  * @param certificate            REQUIRED · PREFERRED · NONE
  * @param majorDepartmentIds     선호 전공 표기에서 사람이 확정한 학과 id(M3). 확정 안 된 표기는 들어 있지 않다
- * @param alerts                 판정 항목(학년·학점·전공·포트폴리오·자격증·과정)에 걸린 검토 알림
+ * @param alerts                 판정 항목(학년·학점·포트폴리오·자격증, ADR-0016)에 걸린 검토 알림
+ * @param closing                모집마감(직무 상세의 closing과 같은 값)
+ * @param alertCount             그 직무에 걸린 검토 알림 수(종류 무관, 기관 단위 알림은 세지 않음)
  * @param listSeq                센터 참여기관 리스트 순번(목록 정렬용)
  */
 public record JobRequirement(
@@ -32,7 +35,9 @@ public record JobRequirement(
         String majorText,
         boolean majorOpen,
         Set<Integer> majorDepartmentIds,
-        List<AlertRef> alerts) {
+        List<AlertRef> alerts,
+        Closing closing,
+        int alertCount) {
 
     public record AlertRef(int id, String kind, String fieldKey) {
     }

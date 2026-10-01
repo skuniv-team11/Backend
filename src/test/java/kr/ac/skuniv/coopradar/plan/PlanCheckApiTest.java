@@ -56,7 +56,7 @@ class PlanCheckApiTest {
                 .andExpect(jsonPath("$.alternatives[0].jobId").value(123))
                 .andExpect(jsonPath("$.alternatives[0].fit").value("HIGH"))
                 .andExpect(jsonPath("$.alternatives[0].remaining").value(2))
-                .andExpect(jsonPath("$.alternatives[0].why").value("지망한 직무와 같은 기관이고, 지금 지원 의사가 0명이에요."))
+                .andExpect(jsonPath("$.alternatives[0].why").value("1지망과 같은 기관의 직무이고, 지금 지원 의사가 0명이에요."))
                 .andReturn().getResponse().getContentAsString();
         Contract.assertSameShape(body, Contract.responseExample("checkPlan", 200, null));
 
@@ -66,8 +66,12 @@ class PlanCheckApiTest {
         assertThat(statuses).containsOnly("OPEN");
         List<Integer> remaining = JsonPath.read(body, "$.alternatives[*].remaining");
         assertThat(remaining).allSatisfy(r -> assertThat(r).isPositive());
+        // ADR-0016: 대안은 ELIGIBLE만, 1지망 기관이 아니면 '관심 분야와 가깝고'
         List<String> verdicts = JsonPath.read(body, "$.alternatives[*].verdict");
-        assertThat(verdicts).doesNotContain("INELIGIBLE");
+        assertThat(verdicts).containsOnly("ELIGIBLE");
+        List<String> whys = JsonPath.read(body, "$.alternatives[1:].why");
+        assertThat(whys).allSatisfy(w -> assertThat(w).matches("(1지망과 같은 기관의 직무이고|관심 분야와 가깝고), "
+                + "(지금 지원 의사가 0명이에요\\.|남은 자리가 \\d+개예요\\.)"));
     }
 
     @Test
@@ -90,12 +94,19 @@ class PlanCheckApiTest {
     }
 
     @Test
-    void 순위를_안_정했으면_items는_비고_대안만_준다_센터는_403() throws Exception {
+    void 순위를_안_정했으면_items는_비고_대안만_준다_담은_직무는_대안에서_빠진다_센터는_403() throws Exception {
         String token = guestToken();
         check(token, "{\"profile\": " + PROFILE + "}")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items").isEmpty())
-                .andExpect(jsonPath("$.alternatives.length()").value(5));
+                .andExpect(jsonPath("$.alternatives.length()").value(5))
+                .andExpect(jsonPath("$.alternatives[0].jobId").value(123))
+                .andExpect(jsonPath("$.alternatives[0].why").value("관심 분야와 가깝고, 지금 지원 의사가 0명이에요."));
+        // 순위 없이 담기만 해도 대안에서 빠진다
+        mvc.perform(post("/api/me/plan/items").header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"jobId\": 123}"));
+        String body = check(token, "{\"profile\": " + PROFILE + "}").andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<List<Integer>>read(body, "$.alternatives[*].jobId")).doesNotContain(123);
         String center = JsonPath.read(mvc.perform(post("/api/auth/guest").header("CF-Connecting-IP", "203.0.113.250")
                         .contentType(MediaType.APPLICATION_JSON).content("{\"role\":\"CENTER\"}"))
                 .andReturn().getResponse().getContentAsString(), "$.accessToken");
