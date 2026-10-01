@@ -22,8 +22,17 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     // Claude API (E3 스파이크, 이후 추천 설명·오프라인 추출에서 사용)
     implementation 'com.anthropic:anthropic-java:2.66.0'
+    // DB: 스키마는 Flyway(V1__init.sql), 접근은 JdbcClient(ADR-0010)
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation 'org.springframework.boot:spring-boot-starter-flyway'
+    implementation 'org.flywaydb:flyway-database-postgresql'
+    runtimeOnly 'org.postgresql:postgresql'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    // 테스트 DB: V1이 Postgres 전용 기능을 써서 H2로는 못 돈다 → 진짜 Postgres 18 컨테이너(Docker 필요)
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
+    testImplementation 'org.testcontainers:testcontainers-postgresql'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 

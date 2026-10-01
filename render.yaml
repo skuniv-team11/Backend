@@ -21,3 +21,8 @@ services:
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: JWT_SECRET         # 로그인 토큰 서명 키(HS256, ADR-0008). 32바이트 이상 무작위 값
+        sync: false
+      - key: KAKAO_REST_API_KEY # 통근 조회(카카오 대중교통, ADR-0007)
+        sync: false
+      # DB_URL·DB_USER·DB_PASSWORD는 10/15 이후 DB를 만들고 대시보드에서 넣는다(ADR-0005, README 'DB')

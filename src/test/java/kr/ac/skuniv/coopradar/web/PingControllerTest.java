@@ -6,14 +6,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import kr.ac.skuniv.coopradar.TestcontainersConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest(properties = "app.cors.allowed-origin-patterns=https://coop-radar.vercel.app,https://coop-radar-*.vercel.app")
 @AutoConfigureMockMvc
+@Import(TestcontainersConfiguration.class)
 class PingControllerTest {
 
     @Autowired

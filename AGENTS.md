@@ -43,11 +43,12 @@ scripts/verify.sh          # 바뀐 부분만. 전체는 scripts/verify.sh --all
 - 외부 조건(요금·한도·버전)은 추측하지 말고 공식 문서를 확인해 출처를 남긴다.
 
 ## 알아두면 막히지 않는 것
-- 명령: `./gradlew test`(필수) · `./gradlew bootRun`(:8080, `/api/ping`, `/actuator/health`) · `./gradlew bootJar`
+- 명령: `./gradlew test`(필수, **Docker 필요** — 테스트가 Postgres 18 컨테이너를 띄운다) · `docker compose up -d` 뒤 `./gradlew bootRun`(:8080, `/api/ping`, `/actuator/health`) · `./gradlew bootJar`
 - Render 512MB: JVM 옵션은 `Dockerfile`의 `JAVA_TOOL_OPTIONS`. 요청마다 큰 PDF를 메모리에 올리지 않는다.
 - Render 빌드 월 500분 → `main` 브랜치만 배포(개발은 `develop`). `pipeline/`·`docs/` 변경은 빌드하지 않는다(`render.yaml` buildFilter).
 - 구조화 출력용 Java enum은 **한글 상수명**, `@JsonProperty` 금지 → `StructuredOutputRulesTest`(ADR-0003).
 - Boot 4는 Jackson 3(`tools.jackson`), Anthropic SDK는 Jackson 2. SDK 모델 직렬화는 `com.anthropic.core.ObjectMappers.jsonMapper()`.
-- DB는 10/15 이후 Render 무료 Postgres(ADR-0005). `postgresql://` URL을 `jdbc:postgresql://host:port/db`로 바꿔 `DB_URL`에.
+- DB 접근은 `JdbcClient`로 SQL을 직접 쓴다(JPA 없음). 스키마 변경은 새 `V2__*.sql`로만, 적용한 파일은 고치지 않는다(ADR-0010). 새 `@SpringBootTest`에는 `@Import(TestcontainersConfiguration.class)`.
+- 배포 DB는 10/15 이후 Render 무료 Postgres(ADR-0005). `postgresql://` URL을 `jdbc:postgresql://host:port/db`로 바꿔 `DB_URL`에. **DB 없이는 앱이 뜨지 않으므로 그 전에 `develop`을 `main`에 올리지 않는다.**
 - 한글 경로 `InvalidPathException` → `-Dsun.jnu.encoding=UTF-8`.
 - 모집기간 지원 신호는 **가상 데이터**다. 응답에 가상 여부 필드를 빼지 않는다.
