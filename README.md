@@ -65,7 +65,7 @@ ANTHROPIC_API_KEY=... java -jar build/libs/coop-radar-backend-0.0.1.jar --spring
 | E3 Java SDK | **합격**(10/1). 호출 2번으로 full 필드 추출 성공, 파이썬 E1과 겹치는 15항목 중 14개 값·쪽 일치 | — |
 | E4 배포 | 테스트, 로컬 실행·CORS·메모리(RSS 약 213MB), 브라우저로 프론트→백엔드 호출 | Docker 빌드·Render 실제 배포 |
 | E5 임베딩 | 병합 셀 파싱, Hit@K 계산(합성 데이터) | Voyage 한국어 품질 |
-| E6 외부 데이터 | ODsay 실제 API 오류 응답 처리 | 키 발급 후 적재 |
+| E6 외부 데이터 | **합격**(10/1). 국세청·NCS 적재. ODsay는 호출만 확인하고 시드에는 쓰지 않음(ADR-0002 개정) | 통근은 카카오 실시간(ADR-0007) — 키 발급 후 첫 호출 |
 
 실행 방법은 [pipeline/README.md](pipeline/README.md)에 있습니다.
 

@@ -49,7 +49,7 @@ patterns=(
   '(^|[^A-Za-z0-9])pa-[A-Za-z0-9_-]{30,}::Voyage API 키'
   'gh[pousr]_[A-Za-z0-9]{36,}::GitHub 토큰'
   '-----BEGIN [A-Z ]*PRIVATE KEY-----::개인 키'
-  '(ANTHROPIC_API_KEY|VOYAGE_API_KEY|OPENAI_API_KEY|NTS_SERVICE_KEY|NCS_SERVICE_KEY|ODSAY_API_KEY|DB_PASSWORD)[[:space:]]*[:=][[:space:]]*["'"'"']?[^[:space:]"'"'"'$<{.]{16,}::환경변수에 실제 값 대입'
+  '(ANTHROPIC_API_KEY|VOYAGE_API_KEY|OPENAI_API_KEY|NTS_SERVICE_KEY|NCS_SERVICE_KEY|ODSAY_API_KEY|KAKAO_REST_API_KEY|JUSO_COORD_API_KEY|DB_PASSWORD)[[:space:]]*[:=][[:space:]]*["'"'"']?[^[:space:]"'"'"'$<{.]{16,}::환경변수에 실제 값 대입'
   'serviceKey=[A-Za-z0-9%+/=]{40,}::공공데이터포털 서비스 키'
 )
 self="scripts/check-secrets.sh"
