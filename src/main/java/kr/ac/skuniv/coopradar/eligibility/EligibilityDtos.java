@@ -3,6 +3,7 @@ package kr.ac.skuniv.coopradar.eligibility;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 import kr.ac.skuniv.coopradar.job.InstitutionRef;
+import kr.ac.skuniv.coopradar.job.JobDetail.Closing;
 import kr.ac.skuniv.coopradar.job.RoundRef;
 
 /** 판정 응답 모양(docs/api #14, 계약 스키마 Eligibility, eligibility.json). 필드 이름이 JSON 이름이다. */
@@ -28,8 +29,12 @@ public final class EligibilityDtos {
         }
     }
 
+    /**
+     * @param closing    모집마감(직무 상세와 같은 값, 기준일과 상관없이 고정). 목록은 closesOn ≤ 기준일이면 '마감' 꼬리표
+     * @param alertCount 그 직무에 걸린 검토 알림 수(기관 단위 제외). 목록의 '문서 검토' 꼬리표
+     */
     public record EligibilityJob(int jobId, String title, String team, InstitutionRef institution, Verdict verdict,
-                                 MajorMatch majorMatch, List<ReasonLine> reasons) {
+                                 MajorMatch majorMatch, Closing closing, int alertCount, List<ReasonLine> reasons) {
     }
 
     public record Summary(int total, int eligible, int needsCheck, int ineligible) {
