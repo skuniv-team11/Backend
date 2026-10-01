@@ -8,7 +8,7 @@
 ## 저장소 지도
 | 경로 | 내용 |
 |---|---|
-| `src/` | Spring Boot 4.1 · Java 21. 패키지 루트 `kr.ac.skuniv.coopradar` (`auth/` 로그인·체험 계정, `me/` 내 정보, `common/` 오류 코드·시간, `web/` 공통 컨트롤러, `config/` 설정, `spike/` 추출 실험) |
+| `src/` | Spring Boot 4.1 · Java 21. 패키지 루트 `kr.ac.skuniv.coopradar` (`auth/` 로그인·체험 계정, `me/` 내 정보, `commute/` 통근 조회(카카오, 저장 안 함), `common/` 오류 코드·시간, `web/` 공통 컨트롤러, `config/` 설정, `spike/` 추출 실험) |
 | `src/main/resources/prompts/` | LLM 시스템 프롬프트(코드와 같이 버전 관리) |
 | `pipeline/` | 오프라인 작업(문서 추출·외부 데이터 적재·실험), Python → `pipeline/AGENTS.md` |
 | `docs/` | 아키텍처, 결정 기록(ADR), **API 계약(`docs/api/`, 프론트와 공유)**, 협업 규칙, 하네스 설명 |
