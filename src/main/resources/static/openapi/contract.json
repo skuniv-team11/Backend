@@ -117,7 +117,6 @@
                       },
                       "signalStatus": {
                         "OPEN": "모집 중",
-                        "CROWDED": "몰림",
                         "CLOSED": "마감"
                       },
                       "signalSource": {
@@ -2641,7 +2640,7 @@
           "지망"
         ],
         "operationId": "checkPlan",
-        "summary": "지망별 몰림 점검 + 빈 자리 제안",
+        "summary": "지망별 모집 신호 + 빈 자리 제안",
         "x-auth": "STUDENT",
         "description": "권한: **STUDENT** · 화면: S5 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "requestBody": {
@@ -2705,13 +2704,12 @@
                             "interest": 7,
                             "headcount": 2,
                             "ratio": 1.5,
-                            "status": "CROWDED",
+                            "status": "OPEN",
                             "closesOn": null,
                             "closeReason": null,
                             "closesOnIsVirtual": false,
                             "expectedFullOn": null
-                          },
-                          "warning": "지원 의사가 정원(2명)보다 많아요(3명)."
+                          }
                         },
                         {
                           "rank": 2,
@@ -2731,8 +2729,7 @@
                             "closeReason": "CENTER_CLOSED",
                             "closesOnIsVirtual": true,
                             "expectedFullOn": null
-                          },
-                          "warning": null
+                          }
                         }
                       ],
                       "alternatives": [
@@ -2890,7 +2887,6 @@
                         "jobs": 40,
                         "seats": 59,
                         "intentTotal": 27,
-                        "crowdedJobs": 3,
                         "zeroSignalJobs": 14,
                         "closedJobs": 1
                       },
@@ -2909,7 +2905,7 @@
                             "interest": 7,
                             "headcount": 2,
                             "ratio": 1.5,
-                            "status": "CROWDED",
+                            "status": "OPEN",
                             "closesOn": null,
                             "closeReason": null,
                             "closesOnIsVirtual": false,
@@ -2992,7 +2988,7 @@
                             "interest": 3,
                             "headcount": 1,
                             "ratio": 1.0,
-                            "status": "CROWDED",
+                            "status": "OPEN",
                             "closesOn": null,
                             "closeReason": null,
                             "closesOnIsVirtual": false,
@@ -3287,9 +3283,6 @@
               "intentTotal": {
                 "type": "integer"
               },
-              "crowdedJobs": {
-                "type": "integer"
-              },
               "zeroSignalJobs": {
                 "type": "integer"
               },
@@ -3301,7 +3294,6 @@
               "jobs",
               "seats",
               "intentTotal",
-              "crowdedJobs",
               "zeroSignalJobs",
               "closedJobs"
             ]
@@ -4542,12 +4534,6 @@
                 },
                 "signal": {
                   "$ref": "#/components/schemas/Signal"
-                },
-                "warning": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
                 }
               },
               "required": [
@@ -4555,8 +4541,7 @@
                 "jobId",
                 "title",
                 "institution",
-                "signal",
-                "warning"
+                "signal"
               ]
             }
           },
@@ -5274,7 +5259,7 @@
           "closesOnIsVirtual",
           "expectedFullOn"
         ],
-        "description": "모집 신호. status: asOf가 회차 종료일보다 뒤이거나 closesOn ≤ asOf면 CLOSED → ratio ≥ 1.0이면 CROWDED → 아니면 OPEN. 몰림은 마감이 아니다"
+        "description": "모집 신호. status: asOf가 회차 종료일보다 뒤이거나 closesOn ≤ asOf면 CLOSED → 아니면 OPEN. 지원 의사가 정원을 넘어도 몰림 표시·경고는 하지 않는다(ADR-0015)"
       },
       "SignalSource": {
         "type": "string",
@@ -5288,10 +5273,9 @@
         "type": "string",
         "enum": [
           "OPEN",
-          "CROWDED",
           "CLOSED"
         ],
-        "description": "`OPEN` 모집 중 · `CROWDED` 몰림 · `CLOSED` 마감"
+        "description": "`OPEN` 모집 중 · `CLOSED` 마감"
       },
       "Size": {
         "type": "string",

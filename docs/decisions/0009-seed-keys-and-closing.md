@@ -1,6 +1,6 @@
 # ADR-0009 시드 기본키와 모집마감·몰림 정의
 
-- 상태: 확정 (2026-10-01)
+- 상태: 확정 (2026-10-01). 몰림 정의는 [ADR-0015](0015-no-crowded-status.md)로 대체(10/1 회의 — 몰림 표시·경고를 하지 않는다)
 - 결정
   - **시드 테이블의 기본키는 시드가 정한다**(자동 증가 없음). 실행 중에 행이 생기는 `app_user`만 자동 증가이고, `student_profile`·`plan_item`은 그 id를 키로 쓴다.
   - **모집마감**은 `job.closes_on` + `close_reason`이다. `APPLICATION_DEADLINE` = 운영계획서 접수마감일자, `CENTER_CLOSED` = 센터 참여기관 리스트의 모집마감 표시. 둘 다 있으면 이른 날짜를 쓴다. `CENTER_CLOSED`인데 날짜 기록이 없으면 리플레이 생성기가 날짜를 정하고 `closes_on_is_virtual = true`로 둔다(화면에 가상 표시).

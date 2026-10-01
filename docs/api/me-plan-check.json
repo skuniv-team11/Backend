@@ -16,13 +16,12 @@
         "interest": 7,
         "headcount": 2,
         "ratio": 1.5,
-        "status": "CROWDED",
+        "status": "OPEN",
         "closesOn": null,
         "closeReason": null,
         "closesOnIsVirtual": false,
         "expectedFullOn": null
-      },
-      "warning": "지원 의사가 정원(2명)보다 많아요(3명)."
+      }
     },
     {
       "rank": 2,
@@ -42,8 +41,7 @@
         "closeReason": "CENTER_CLOSED",
         "closesOnIsVirtual": true,
         "expectedFullOn": null
-      },
-      "warning": null
+      }
     }
   ],
   "alternatives": [

@@ -123,7 +123,7 @@ SIGNAL = obj({
     "closeReason": nul(R("CloseReason")),
     "closesOnIsVirtual": d(BOOL, "true면 closesOn이 생성기가 정한 가상 날짜"),
     "expectedFullOn": d(nul(DATE), "정원 도달 예상일. 모집기간 안에 닿지 않거나 이미 닿았으면 null"),
-}, desc="모집 신호. status: asOf가 회차 종료일보다 뒤이거나 closesOn ≤ asOf면 CLOSED → ratio ≥ 1.0이면 CROWDED → 아니면 OPEN. 몰림은 마감이 아니다")
+}, desc="모집 신호. status: asOf가 회차 종료일보다 뒤이거나 closesOn ≤ asOf면 CLOSED → 아니면 OPEN. 지원 의사가 정원을 넘어도 몰림 표시·경고는 하지 않는다(ADR-0015)")
 
 S.update({
     "Error": obj({
@@ -350,7 +350,6 @@ S.update({
             "jobId": ID, "title": STR,
             "institution": R("InstitutionRef"),
             "signal": R("Signal"),
-            "warning": nul(STR),
         })),
         "alternatives": d(arr(obj({
             "jobId": ID, "title": STR,
@@ -367,7 +366,7 @@ S.update({
         "isVirtual": BOOL,
         "signalSource": R("SignalSource"),
         "round": R("RoundRef"),
-        "summary": obj({"jobs": INT, "seats": INT, "intentTotal": INT, "crowdedJobs": INT,
+        "summary": obj({"jobs": INT, "seats": INT, "intentTotal": INT,
                         "zeroSignalJobs": INT, "closedJobs": INT}),
         "historyAvailable": d(BOOL, "false면 pastZeroRounds 열을 숨긴다"),
         "rows": d(arr(obj({
