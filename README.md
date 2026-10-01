@@ -29,6 +29,8 @@ docker compose up -d   # 로컬 Postgres 18. 앱이 뜰 때 Flyway가 스키마�
 ./gradlew test         # Docker가 떠 있어야 한다(테스트용 Postgres 컨테이너를 따로 띄움)
 ```
 
+API 문서(Swagger)는 http://localhost:8080/swagger-ui.html 입니다. 드롭다운 '계약'은 `docs/api` 24개 전부, '구현'은 지금 코드에 있는 것만 보입니다(ADR-0011).
+
 | 환경변수 | 기본값 | 설명 |
 |---|---|---|
 | `PORT` | 8080 | Render가 10000을 넣어 줍니다 |

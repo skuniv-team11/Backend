@@ -1,0 +1,21 @@
+# ADR-0011 Swagger UI에 계약 스펙(docs/api에서 생성)과 구현 스펙(springdoc)을 같이 띄운다
+
+- 상태: 확정 (2026-10-01)
+- 결정
+  - `springdoc-openapi-starter-webmvc-ui` 3.1.1을 쓴다. 화면은 `/swagger-ui.html`, 위 드롭다운에 스펙 두 개가 있다.
+    - **계약**(기본): `/openapi/contract.json`. `scripts/build_openapi.py`가 `docs/api`(README 목록 표·공통 규칙·오류 코드, 예시 JSON)와 V1 DDL로 만든 OpenAPI 3.1 파일이다. 출력은 `src/main/resources/static/openapi/contract.json`이고 손으로 고치지 않는다.
+    - **구현**: `/v3/api-docs`. springdoc이 지금 컨트롤러에서 만든다(`/api/**`만).
+  - 원본은 그대로 `docs/api/README.md`와 예시 JSON이다. 필드 모양(타입·null 허용·범위)만 `build_openapi.py`의 스키마에 둔다. null 허용은 V1 컬럼을 따른다.
+  - `build_openapi.py`는 예시 JSON을 스키마로 검사한다. 스키마에 없는 필드, 빠진 필수 필드, 없는 코드값, 타입·형식·범위가 틀리면 실패한다. README 목록 표와 스크립트의 엔드포인트·예시 링크·상태 코드가 다르면 실패한다.
+  - `scripts/verify.sh`가 `docs/api/`·DDL·스크립트·스펙 파일이 바뀌면 `build_openapi.py --check`를 돈다(파일이 최신인지·예시가 맞는지).
+- 이유
+  - 컨트롤러가 `/api/ping` 하나라 springdoc만으로는 Swagger에 1개만 보인다. 프론트는 구현 전에 24개 전부의 요청·응답 모양을 봐야 목업을 붙일 수 있다.
+  - 계약을 손으로 한 번 더 쓰면 README·예시 JSON·Swagger 셋이 갈라진다. 만들어 쓰고 검사로 막는다.
+  - 스펙 파일을 `docs/`가 아니라 `src/main/resources/static/`에 두는 건 Docker 빌드가 `src`만 복사하고, Render가 `docs/**` 변경으로는 빌드하지 않아서다(`Dockerfile`·`render.yaml`을 고치지 않으려고).
+  - 스크립트는 표준 라이브러리만 쓴다(예시 검사기도 직접 구현). 검증: OpenAPI 3.1 검사기(openapi-spec-validator) 통과, 예시 99건을 jsonschema 2020-12로 다시 검사해 같은 결과.
+- 결과
+  - 메모리(Render와 같은 512MB·JVM 옵션, 로컬 측정 10/1): 기동 직후 181.5 → 199.7MiB, Swagger를 연 뒤 219.8MiB(43%). jar 65.1 → 70.0MB.
+  - API 형태를 바꾸면 `docs/api/`를 고친 뒤 `python scripts/build_openapi.py`로 다시 만들어 같은 PR에 넣는다. 새 엔드포인트는 스크립트의 `ENDPOINTS`·`S`(스키마)에도 한 줄 넣는다.
+  - CI에는 아직 이 검사가 없다(워크플로 변경이라 따로 묻는다). CI의 `SwaggerTest`는 화면·두 스펙이 뜨는지만 본다.
+  - 배포 뒤 확인할 것(추정): Render 프록시 뒤에서는 같은 주소에서 보낸 POST도 다른 출처로 보일 수 있다. Swagger의 Try it out에서 POST·PUT·DELETE가 403이면 `CORS_ORIGINS`에 Render 주소를 더한다.
+- 다시 볼 때: 컨트롤러가 다 구현되면 계약 스펙을 지우고 구현 스펙만 남길지, 둘을 비교하는 테스트를 둘지 정한다. 공개 평가(11/2~11/9) 때 Swagger를 끌지는 그 전에 정한다(`springdoc.swagger-ui.enabled`·`springdoc.api-docs.enabled`).

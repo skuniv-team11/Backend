@@ -38,12 +38,12 @@ scripts/verify.sh          # 바뀐 부분만. 전체는 scripts/verify.sh --all
 
 ## 항상 할 것 (Always)
 - 커밋·PR·주석은 한국어. 커밋은 `feat|fix|docs|refactor|test|chore(범위): 요약` (`docs/conventions.md`).
-- 새 엔드포인트는 `/api/**` 아래에 두고 MockMvc 테스트(정상 1 + 오류 또는 CORS 1)와 `docs/api/` 예시 JSON을 같은 PR에 넣는다.
+- 새 엔드포인트는 `/api/**` 아래에 두고 MockMvc 테스트(정상 1 + 오류 또는 CORS 1)와 `docs/api/` 예시 JSON을 같은 PR에 넣는다. `docs/api/`를 고치면 `python scripts/build_openapi.py`로 Swagger 계약 스펙을 다시 만들어 같이 넣는다(ADR-0011).
 - 결정이 생기면 `docs/decisions/`에 ADR 한 장(무엇을, 왜, 언제 다시 볼지).
 - 외부 조건(요금·한도·버전)은 추측하지 말고 공식 문서를 확인해 출처를 남긴다.
 
 ## 알아두면 막히지 않는 것
-- 명령: `./gradlew test`(필수, **Docker 필요** — 테스트가 Postgres 18 컨테이너를 띄운다) · `docker compose up -d` 뒤 `./gradlew bootRun`(:8080, `/api/ping`, `/actuator/health`) · `./gradlew bootJar`
+- 명령: `./gradlew test`(필수, **Docker 필요** — 테스트가 Postgres 18 컨테이너를 띄운다) · `docker compose up -d` 뒤 `./gradlew bootRun`(:8080, `/api/ping`, `/actuator/health`, `/swagger-ui.html`) · `./gradlew bootJar`
 - Render 512MB: JVM 옵션은 `Dockerfile`의 `JAVA_TOOL_OPTIONS`. 요청마다 큰 PDF를 메모리에 올리지 않는다.
 - Render 빌드 월 500분 → `main` 브랜치만 배포(개발은 `develop`). `pipeline/`·`docs/` 변경은 빌드하지 않는다(`render.yaml` buildFilter).
 - 구조화 출력용 Java enum은 **한글 상수명**, `@JsonProperty` 금지 → `StructuredOutputRulesTest`(ADR-0003).

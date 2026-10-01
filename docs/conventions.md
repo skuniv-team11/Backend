@@ -25,7 +25,7 @@ git config user.email "<숫자>+<아이디>@users.noreply.github.com"   # GitHub
 
 ## PR
 - 작게(파일 10개 안쪽 권장). 템플릿의 확인 항목을 채운다.
-- API 형태가 바뀌면 이 저장소 `docs/api/`를 같은 PR에서 고치고, 프론트 저장소에 이슈로 알린다(프론트가 목업으로 먼저 작업).
+- API 형태가 바뀌면 이 저장소 `docs/api/`를 같은 PR에서 고치고, 프론트 저장소에 이슈로 알린다(프론트가 목업으로 먼저 작업). Swagger 계약 스펙도 `python scripts/build_openapi.py`로 다시 만들어 같은 PR에 넣는다.
 - 리뷰어는 CODEOWNERS로 자동 지정된다.
 
 ## 환경변수

@@ -3,6 +3,10 @@
 프론트는 이 문서의 응답 예시로 목업을 만들고, 백엔드는 이 형태를 지킨다. 형태를 바꾸려면 이 문서를 먼저 고친다.
 Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 맞다.
 
+**Swagger**: 서버를 띄우고 `/swagger-ui.html`(로컬 http://localhost:8080/swagger-ui.html). 드롭다운 '계약'은 이 문서와 예시 JSON으로 만든 24개 전부, '구현'은 지금 코드에 있는 것만 보여 준다(ADR-0011).
+- '계약' 스펙은 `python scripts/build_openapi.py`가 이 폴더로 만든다(`src/main/resources/static/openapi/contract.json`). 이 문서나 예시 JSON을 고쳤으면 다시 돌려 같은 PR에 넣는다. 예시가 스키마(타입·null·코드값·범위)에 안 맞으면 여기서 실패한다.
+- 새 엔드포인트는 스크립트의 `ENDPOINTS`(요청·응답 스키마와 예시 파일)와 `S`(스키마)에도 넣는다.
+
 ## 공통
 - 기본 경로 `/api`, JSON, 필드는 camelCase, 날짜는 ISO 8601(`2026-07-18`, `2026-09-30T14:00:00+09:00`).
 - **인증**: `Authorization: Bearer <accessToken>`. 쿠키는 쓰지 않는다 — Vercel과 Render는 사이트가 달라 서드파티 쿠키 차단에 걸린다.
