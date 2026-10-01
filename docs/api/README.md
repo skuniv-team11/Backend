@@ -69,6 +69,15 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 **판정** — `verdict`는 `ELIGIBLE`(지원 가능) · `NEEDS_CHECK`(확인 필요) · `INELIGIBLE`(지원 불가).
 - 이유 한 줄은 `{layer, item, requirement, mine, result, alertId?}`. `layer`는 `SCHOOL_RULE` · `INSTITUTION` · `MAJOR`, `result`는 `MET` · `NOT_MET` · `CHECK` · `INFO`.
 - 정하는 순서: `SCHOOL_RULE`에 `NOT_MET`이 하나라도 있으면 `INELIGIBLE` → 아니면 `INSTITUTION`에 `NOT_MET`·`CHECK`가 하나라도 있으면 `NEEDS_CHECK` → 아니면 `ELIGIBLE`. `MAJOR`는 판정에 넣지 않는다(참고 표시).
+- 학교 규정(`SCHOOL_RULE`) 행은 두 가지뿐이다(근거: 2026-2 학생 모집안내, 10/1 확정). 결과는 `MET`·`NOT_MET`만 쓴다.
+
+  | `item` | `requirement` | 쓰는 값 | `NOT_MET` |
+  |---|---|---|---|
+  | 이수 학기 | 4학기 이상 | `completedSemesters` | 4 미만 |
+  | 졸업예정자 계절제 | 졸업예정자는 방학 과정 불가 | `graduationExpected`, 직무 `course` | `graduationExpected`가 true이고 `course`가 `VACATION` |
+
+  - 이수 학기 행은 모든 직무에, 졸업예정자 계절제 행은 `course`가 `VACATION`인 직무에만 붙는다. `VACATION_SEMESTER`(방학·학기 연계)가 계절제에 드는지는 센터 확인 항목이라, 확인 전까지는 이 행을 붙이지 않는다.
+  - 모집안내의 나머지 참여 제한 네 가지(휴학·수료·학사학위취득유예·대학원생, 현장실습 학점 18학점 초과, 재직 중, 부정 실습 제재)는 프로필로 묻지도 저장하지도 않는다. 화면에 고정 안내로만 보여 준다(프론트 상수, 최소 수집 — ADR-0008).
 - 문서 안에서 요건이 서로 다르게 적힌 항목(M2 검토 알림)은 `CHECK`이고 `alertId`가 붙는다.
 - `majorMatch`는 `MATCH` · `NOT_LISTED` · `OPEN`(전공 무관).
 
