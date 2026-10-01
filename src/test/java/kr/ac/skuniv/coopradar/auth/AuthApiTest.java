@@ -15,7 +15,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import kr.ac.skuniv.coopradar.TestcontainersConfiguration;
 import kr.ac.skuniv.coopradar.contract.Contract;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -43,13 +42,6 @@ class AuthApiTest {
     JwtService jwt;
     @Autowired
     GuestCleanup cleanup;
-
-    @BeforeEach
-    void 학과_시드() {
-        // 예시 프로필 학과. 실제 시드 id는 시드가 정한다 — 테스트는 이름으로만 찾는지 본다
-        db.sql("INSERT INTO department (id, name, college, enrolled_count, enrolled_as_of) "
-                + "VALUES (31, '메이크업디자인학과', NULL, 100, DATE '2025-10-01') ON CONFLICT DO NOTHING").update();
-    }
 
     // ───────── 가입·로그인 ─────────
 
@@ -221,16 +213,20 @@ class AuthApiTest {
 
     @Test
     void 학과_시드가_없으면_체험_STUDENT는_프로필_없이_201() throws Exception {
-        db.sql("DELETE FROM student_profile WHERE department_id = 31").update();
-        db.sql("DELETE FROM department WHERE id = 31").update();
-        String body = guest("STUDENT")
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.user.role").value("STUDENT"))
-                .andExpect(jsonPath("$.user.hasProfile").value(false))
-                .andExpect(jsonPath("$.profile").isEmpty())
-                .andReturn().getResponse().getContentAsString();
-        // 토큰은 정상으로 쓴다
-        mvc.perform(get("/api/me").header("Authorization", "Bearer " + token(body))).andExpect(status().isOk());
+        // 실제 시드(R__seed.sql)에는 예시 학과가 있다. 이름을 잠시 바꿔 '시드 전'을 만들고 끝나면 되돌린다
+        db.sql("UPDATE department SET name = '메이크업디자인학과(시험 중)' WHERE name = '메이크업디자인학과'").update();
+        try {
+            String body = guest("STUDENT")
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.user.role").value("STUDENT"))
+                    .andExpect(jsonPath("$.user.hasProfile").value(false))
+                    .andExpect(jsonPath("$.profile").isEmpty())
+                    .andReturn().getResponse().getContentAsString();
+            // 토큰은 정상으로 쓴다
+            mvc.perform(get("/api/me").header("Authorization", "Bearer " + token(body))).andExpect(status().isOk());
+        } finally {
+            db.sql("UPDATE department SET name = '메이크업디자인학과' WHERE name = '메이크업디자인학과(시험 중)'").update();
+        }
     }
 
     @Test

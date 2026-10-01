@@ -1,0 +1,6 @@
+{
+  "program": {"id": 1, "code": "STANDARD_COOP", "name": "표준 현장실습학기제"},
+  "round": {"id": 1, "program_id": 1, "term_code": "2026-2", "round_no": 1,
+            "recruit_start": "2026-07-13", "recruit_end": "2026-07-24"},
+  "replay_seed": "2026-2"
+}
