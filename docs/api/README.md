@@ -21,7 +21,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - 요청·응답 본문을 로그에 남기지 않는다.
 - **가상 데이터**: 모집 신호는 모집기간 리플레이용 가상 데이터다. 신호를 주는 응답에는 `isVirtual`과 `signalSource`를 반드시 넣는다.
 - **호출 제한**(초기값, 설정으로 조정): 체험 계정 만들기 IP당 1시간 300회(환경변수 `GUEST_PER_IP_PER_HOUR`, 0이면 끔 — 시연장·학교 와이파이는 여럿이 한 IP) → 넘으면 429 + `Retry-After`(초). 이유 문장(LLM) 계정당 1시간 30회·IP당 60회 → 넘으면 **200 + 기본 문장**(화면이 깨지지 않게). 통근 조회 계정당 1시간 30회·서버 전체 하루 900회(카카오 무료 하루 1,000건 안에서 멈춤) → 넘으면 **200 + `available: false`**.
-- **실행 중 외부 호출**은 Claude(이유 문장)·임베딩·카카오 대중교통(통근 조회) 셋뿐이다(ADR-0002, ADR-0007). 셋 다 실패해도 200으로 화면을 유지한다.
+- **실행 중 외부 호출**은 Claude(이유 문장)·카카오 대중교통(통근 조회) 둘뿐이다(ADR-0002, ADR-0007). 임베딩은 쓰지 않는다(E5 결과, ADR-0017). 둘 다 실패해도 200으로 화면을 유지한다.
 - **코드값**은 영문 대문자이고 DB CHECK와 같은 집합이다(`V1__init.sql`). 화면 표기는 `GET /api/codes`에서 가져간다.
 - **예시 값**: 기관·직무·인용문은 전부 가상이다(`(가상)` 표시). 실제 값은 시드에서 나온다. 목록 응답의 예시는 일부 행만 보여 준다.
 - CORS: `CorsConfig`가 `GET`·`POST`·`PUT`·`DELETE`·`OPTIONS`와 모든 헤더(`Authorization` 포함)를 허용한다(Backend#16). 통근 조회에는 환경변수 `KAKAO_REST_API_KEY`(카카오 디벨로퍼스 REST API 키)가 필요하다.
@@ -94,7 +94,10 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 
 **Citation** — `{sourceType, documentTitle, page, quote}`. `sourceType`은 `OPERATION_PLAN` · `TESTIMONIAL`. 원문 PDF 링크는 주지 않는다.
 
-**적합도** — `fit`은 `HIGH` · `MEDIUM`. 점수는 응답에 넣지 않는다(정렬에만 쓴다).
+**적합도** — `fit`은 `HIGH` · `MEDIUM`. 점수는 응답에 넣지 않는다(정렬에만 쓴다). 규칙 + 키워드이고 임베딩은 쓰지 않는다(E5 결과, ADR-0017).
+- 점수 = 5 × 선호 전공 일치(`MATCH`·`OPEN`) + 2 × 관심 키워드 유사도(0~1) + 1 × `ELIGIBLE` + 0.5 × 지원비(최저임금 대비 75% → 0, 100% 이상 → 1) + 0.5 × 채용연계형. 같은 점수면 리스트 순번. 선호 전공이 맞는 직무가 늘 먼저다.
+- 관심 키워드 유사도: `interestText` ↔ 직무 텍스트(부서·직무명·직무 개요·교육 목표·요구 역량·주차 계획·기관 업태·종목)의 글자 2~3-gram TF-IDF 코사인을 후보 중 최댓값으로 나눈 값. `interestText`가 없으면 0.
+- `HIGH`: 선호 전공이 맞고, `interestText`가 없거나 관심 유사도 ≥ 0.5. 그 밖은 `MEDIUM`.
 
 ## 엔드포인트별 규칙
 **인증**
@@ -114,8 +117,13 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 
 **판정·추천**
 - `eligibility`: 회차 직무 **전부**(2026-2는 40행)를 돌려준다. S4의 '요건 ↔ 내 판정'도 이 응답의 해당 행을 쓴다(별도 API 없음). 순서는 판정(`ELIGIBLE` → `NEEDS_CHECK` → `INELIGIBLE`) → 센터 참여기관 리스트 순번. 학과가 `departments`에 없으면 400 `INVALID_INPUT`(`profile.departmentId`). `homeAreaCode`는 판정에 쓰지 않아 형식만 본다.
-- `recommendations`: `INELIGIBLE`을 뺀 직무 중 상위 5개. 이유는 `reasonTemplate`을 바로 주고 `reasonStatus: PENDING`이면 프론트가 카드마다 15번을 부른다. 0개면 `items: []`와 `blockedBy: [{item, count}]`(막은 요건별 직무 수).
-- `reason`: `source`는 `LLM` · `CACHE` · `TEMPLATE`. LLM이 실패하거나 5초를 넘기거나 호출 제한에 걸려도 **200 + `TEMPLATE`**. 캐시는 메모리(프로필+직무+프롬프트 버전 해시)라 서버가 다시 뜨면 비워진다.
+- `recommendations`: `INELIGIBLE`을 뺀 직무 중 상위 5개. 이유는 `reasonTemplate`(규칙 문장)을 바로 주고 `reasonStatus: PENDING`이면 프론트가 카드마다 16번을 부른다. 0개면 `items: []`와 `blockedBy: [{item, count}]`(학교 규정에서 막은 항목별 직무 수, 예: 이수 학기 40).
+  - `reasonTemplate`: 해당하는 이유를 '관심 분야와 직무 내용이 가까움 → 선호 전공 포함(또는 전공 무관) → 채용연계형' 순으로 두 개까지 잇는다. 하나도 없으면 '지원 조건을 모두 통과한 자리예요.'(`ELIGIBLE`) 또는 '확인할 조건만 챙기면 지원할 수 있는 자리예요.'.
+  - `citations`: 최대 2개 — 같은 기관의 가장 최근 선배 수기(첫 실습 내용) → 운영계획서의 직무 개요(없으면 교육 목표) 근거.
+- `reason`: `source`는 `LLM` · `CACHE` · `TEMPLATE`. LLM이 실패하거나 5초를 넘기거나 호출 제한에 걸려도 **200 + `TEMPLATE`**(`text` = 그 직무의 `reasonTemplate`). 캐시는 메모리(프롬프트 버전 + 모델 + 직무 + 학과·학년·관심 문장 + 판정·적합도 해시)라 서버가 다시 뜨면 비워진다. 없는 직무는 404 `JOB_NOT_FOUND`, `INELIGIBLE` 직무는 LLM 없이 `TEMPLATE`.
+  - LLM(Haiku)에는 학과·학년·관심 문장과 직무 원문·근거만 보낸다. 평점·사는 곳은 보내지 않는다.
+  - LLM 문장은 검증을 통과해야 `LLM`이다: 10~200자 · 해요체로 끝남('습니다'·'당신' 없음) · 근거 번호가 준 범위 안 · 따옴표 인용이 근거·직무 원문에 그대로 있음(공백 무시). 별표는 지운다. `citations`는 카드와 같은 근거다.
+  - 키(`ANTHROPIC_API_KEY`)가 없으면 부르지 않고 `TEMPLATE`.
 
 **직무** — 없으면 404 `JOB_NOT_FOUND`. `evidence`는 AI가 운영계획서에서 뽑은 값과 근거(허용 필드만), `seniorNotes`는 같은 기관의 선배 수기(이름·학과·학년 없음). 통근 시간은 이 응답에 없다 — `workplace.hasCoordinates`가 true면 프론트가 통근 조회를 따로 부른다.
 - `evidence`: 이 직무의 근거 + 그 기관의 근거(기관명·규모·소재지·접수 마감 등). 순서는 직무 필드(V1 허용 목록 순서: 부서 → 직무명 → … → 자격증) 다음 기관 필드. `label`은 서버가 붙이는 한글 표기(예: `stipendAmount` → '실습지원비').
@@ -135,7 +143,9 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - 담기(`POST items`): 새로 담으면 201, 이미 담겨 있으면 200(그대로). 본문 없음. 현재 회차에 없는 직무는 400 `INVALID_INPUT`(`jobId`). 취소는 204, 없으면 404 `PLAN_ITEM_NOT_FOUND`.
 - `GET /api/me/plan`·`PUT ranks` 응답의 `items` 순서: 순위 있는 것(1 → 3) 먼저, 그다음 담은 순.
 - `PUT ranks`는 **순위 전체**를 보낸다. 여기 없는 담은 직무는 순위가 지워진다(`rank: null`). 순위는 1~3, 중복 불가, 한 직무에 하나, 3개까지, 담은 직무만 → 어기면 400 `RANK_INVALID`(아무것도 바꾸지 않음). `ranks`가 없거나 원소의 `jobId`·`rank`가 빠지면 400 `INVALID_INPUT`. `[]`이면 순위를 모두 지운다.
-- `check`: 순위가 있는 직무의 신호와 대안을 준다(경고 문장 없음, ADR-0015). 대안은 요건이 맞는 빈 자리 — `INELIGIBLE`·`CLOSED`·남은 자리 0을 빼고, `fit` → 남은 자리 순으로 최대 5개.
+- `check`: 순위가 있는 직무의 신호와 대안을 준다(경고 문장 없음, ADR-0015). `items`는 순위 순, 순위를 안 정했으면 `[]`. 대안은 요건이 맞는 빈 자리 — `INELIGIBLE`·`CLOSED`·남은 자리 0·이미 순위를 정한 직무를 빼고, `fit`(`HIGH` 먼저) → 남은 자리 많은 순 → 적합도 점수 순으로 최대 5개. `remaining` = 정원 − asOf까지 지원 의사.
+  - `why`(규칙 문장): 앞 — 지망한 직무와 같은 기관 / 선호 전공 포함 / 전공 무관 / 관심 분야와 가까움 / 지원 조건 통과 / 확인할 조건만 챙기면 됨 중 처음 맞는 것, 뒤 — 지원 의사 0이면 '지금 지원 의사가 0명이에요.', 아니면 '남은 자리가 N석이에요.'
+  - 본문 `{profile, asOf?}`. `profile`이 없으면 400 `INVALID_INPUT`(`profile`), `asOf` 형식이 틀리면 400 `INVALID_INPUT`.
 - `asOf`는 회차 기간 안이어야 한다(아니면 400 `AS_OF_OUT_OF_RANGE`). 생략하면 `rounds/current`의 `replay.defaultAsOf`.
 
 **센터** — CENTER만(아니면 403 `FORBIDDEN_ROLE`). 회차 직무 전부를 리스트 순번대로 행으로 준다. `asOf` 규칙은 지망 점검과 같다(생략하면 `replay.defaultAsOf`, 모집기간 밖이면 400 `AS_OF_OUT_OF_RANGE`, 날짜 형식이 아니면 400 `INVALID_INPUT`).
