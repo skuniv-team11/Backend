@@ -30,11 +30,11 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | 3 | 인증 | POST | `/api/auth/signup` | 공개 | 가입 | 이메일 가입 | [요청](auth-signup.request.json) · [응답](auth-token.json) |
 | 4 | 인증 | POST | `/api/auth/login` | 공개 | 로그인 | 이메일 로그인 | [요청](auth-login.request.json) · [응답](auth-token.json) |
 | 5 | 인증 | POST | `/api/auth/guest` | 공개 | 시작 | 체험 계정 만들기([예시 프로필로 시작]·[센터 담당자로 보기]) | [요청](auth-guest.request.json) · [응답](auth-guest.json) |
-| 6 | 내 정보 | GET | `/api/me` | 로그인 | 공통 | 내 계정 | [응답](me.json) |
-| 7 | 내 정보 | DELETE | `/api/me` | 로그인 | 설정 | 탈퇴(계정·프로필·담은 지망 즉시 삭제) | 204 |
+| 6 | 내 정보 | GET | `/api/me` | 로그인 | M1·공통 | 내 계정 | [응답](me.json) |
+| 7 | 내 정보 | DELETE | `/api/me` | 로그인 | M1 | 탈퇴(계정·프로필·담은 지망 즉시 삭제) | 204 |
 | 8 | 내 정보 | GET | `/api/me/profile` | STUDENT | S1 | 저장한 프로필 | [응답](me-profile.json) |
 | 9 | 내 정보 | PUT | `/api/me/profile` | STUDENT | S1 | 프로필 저장(동의 필수) | [요청](me-profile.request.json) · [응답](me-profile.json) |
-| 10 | 내 정보 | DELETE | `/api/me/profile` | STUDENT | S1 | 저장한 프로필만 삭제 | 204 |
+| 10 | 내 정보 | DELETE | `/api/me/profile` | STUDENT | M1 | 저장한 프로필만 삭제 | 204 |
 | 11 | 기준 정보 | GET | `/api/departments` | 공개 | S1 | 학과 72개 | [응답](departments.json) |
 | 12 | 기준 정보 | GET | `/api/areas` | 공개 | S1 | 사는 곳 선택지(서울·인천·경기 시·군·구) | [응답](areas.json) |
 | 13 | 기준 정보 | GET | `/api/rounds/current` | 공개 | S5·C4 | 현재 모집 회차와 리플레이 날짜 범위 | [응답](rounds-current.json) |
