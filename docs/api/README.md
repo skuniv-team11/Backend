@@ -95,9 +95,13 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 
 ## 엔드포인트별 규칙
 **인증**
-- `signup`: 이메일은 소문자로 맞춰 저장, 비밀번호 8자 이상(BCrypt). 이메일 인증은 없다(MVP). 201 + 토큰. 이미 있으면 409 `EMAIL_TAKEN`.
-- `login`: 틀리면 401 `LOGIN_FAILED`. 이메일과 비밀번호 중 무엇이 틀렸는지 말하지 않는다.
-- `guest`: `role`은 `STUDENT` 또는 `CENTER`. `STUDENT`는 예시 프로필(메이크업디자인학과 3학년)이 저장된 체험 계정을 만들고 응답에 그 프로필을 준다(`isExample: true`). `CENTER`는 현황판용. 201 + 토큰. CENTER 역할은 이 경로와 시드로만 생기고 가입으로는 못 만든다.
+- `signup`: 이메일은 소문자로 맞춰 저장, 비밀번호 8자 이상·UTF-8 72바이트 이하(BCrypt 한도 — 영문 72자, 한글 24자). 이메일 인증은 없다(MVP). 201 + 토큰. 이미 있으면 409 `EMAIL_TAKEN`(대소문자만 달라도 같은 이메일).
+- `login`: 틀리면 401 `LOGIN_FAILED`. 이메일과 비밀번호 중 무엇이 틀렸는지 말하지 않는다(응답 본문도 같다).
+- `guest`: `role`은 `STUDENT` 또는 `CENTER`. `STUDENT`는 예시 프로필(메이크업디자인학과 3학년)이 저장된 체험 계정을 만들고 응답에 그 프로필을 준다(`isExample: true`). `CENTER`는 현황판용이고 `profile`은 null. 201 + 토큰. CENTER 역할은 이 경로와 시드로만 생기고 가입으로는 못 만든다.
+  - 예시 프로필의 사는 곳(`homeAreaCode`)은 `area` 시드가 들어오기 전까지 null이다(좌표 대기, ADR-0007).
+  - 24시간이 지난 체험 계정은 서버가 10분마다 계정째 지운다. 지우기 전이라도 그 토큰은 401 `TOKEN_EXPIRED`.
+  - 호출 제한의 IP는 `CF-Connecting-IP` 헤더(Render 앞단 Cloudflare가 넣음)로 센다. 없으면 연결 주소(ADR-0012).
+- 토큰: 역할·체험 여부는 토큰이 아니라 매 요청 DB에서 읽는다. 탈퇴했거나 정리된 계정의 토큰은 401 `AUTH_REQUIRED`.
 
 **내 정보**
 - `DELETE /api/me` → 204. 계정·프로필·담은 지망이 함께 지워진다(DB cascade).
