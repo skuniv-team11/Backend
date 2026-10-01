@@ -50,7 +50,7 @@ app:
     # 시연 기본 기준일(GET /api/rounds/current의 replay.defaultAsOf). 현재 회차 모집기간 밖이면 가까운 끝 날짜로 맞춘다
     default-as-of: ${REPLAY_DEFAULT_AS_OF:2026-07-18}
   center:
-    # 현황판 위험 요인 NARROW_POOL: 선호 전공 재학생 수가 이 값보다 적으면 표시(2026-2 시드 분포로 정한 제안값, docs/api '센터')
+    # 현황판 위험 요인 NARROW_POOL: 선호 전공 재학생 수가 이 값보다 적으면 표시(2026-2 시드 분포로 정함, ADR-0016)
     narrow-pool-below: ${CENTER_NARROW_POOL_BELOW:200}
   auth:
     # 로그인(ADR-0008·0012). JWT_SECRET이 비면 서버가 뜰 때마다 임시 키를 만든다(로컬 전용 — 다시 뜨면 로그인이 풀림)

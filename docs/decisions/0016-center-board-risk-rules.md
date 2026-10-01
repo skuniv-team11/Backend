@@ -1,6 +1,6 @@
 # ADR-0016 센터 현황판 위험 요인 기준
 
-- 상태: 제안 (2026-10-01) — `NARROW_POOL` 기준값과 `zeroSignalJobs` 정의는 사용자 확인 전
+- 상태: 확정 (2026-10-01, 사용자 확인)
 - 결정
   - 위험 요인은 규칙으로만 낸다(AI 없음). 순서는 `NARROW_POOL` → `PORTFOLIO_REQUIRED` → `CERTIFICATE_REQUIRED` → `WEEKEND` → `DOC_ALERT`.
   - **적격 학생 풀(`eligiblePool`)** = 직무의 선호 전공 표기에서 사람이 확정한 학과(중복 없이)의 재학생 수 합(교육통계 2025-10-01). 전공 무관이면 전체 재학생. 확정 전 표기(중어전공)는 0으로 센다.

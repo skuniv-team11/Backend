@@ -142,7 +142,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - `summary`: `jobs` 직무 수 · `seats` 정원 합 · `intentTotal` asOf까지 지원 의사 합 · `zeroSignalJobs` 지원 의사가 0인 직무 수 · `closedJobs` `CLOSED` 직무 수.
 - `eligiblePool`: 직무의 선호 전공 표기에서 사람이 확정한 학과(중복 없이)의 재학생 수 합. 전공 무관이면 전체 재학생. 확정 전 표기(중어전공)는 0으로 센다.
 - `risks[].code`(이 순서): `NARROW_POOL`(`eligiblePool`이 기준값 미만, `detail` '선호 전공 재학생 N명') · `PORTFOLIO_REQUIRED` · `CERTIFICATE_REQUIRED`(`detail`은 자격증 원문) · `WEEKEND`(토·일 실습, `detail` '토'·'토·일') · `DOC_ALERT`(검토 알림 있음, `detail` '검토 알림 N건'). `label`은 `codes`의 `risk` 표기.
-  - **`NARROW_POOL` 기준값: 200명 미만(제안, ADR-0016 — 사용자 확인 전)**. 설정 `app.center.narrow-pool-below`(환경변수 `CENTER_NARROW_POOL_BELOW`). 2026-2 시드에서는 8직무.
+  - **`NARROW_POOL` 기준값: 200명 미만(ADR-0016)**. 설정 `app.center.narrow-pool-below`(환경변수 `CENTER_NARROW_POOL_BELOW`). 2026-2 시드에서는 8직무.
 - `alertCount`·`alerts`: 그 직무에 걸린 알림 + 기관 전체(`jobId` null)에 걸린 알림. `alerts`는 회차 기관들의 알림 전부, id 순.
 - `historyAvailable`이 false면 `pastZeroRounds` 열을 숨긴다. 지난 회차 결과는 센터 동의 뒤에만 적재하고 원소 모양도 그때 정한다 — 그 전까지는 항상 false · `[]`.
 
