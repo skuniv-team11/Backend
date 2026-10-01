@@ -9,7 +9,7 @@ import java.util.Map;
  * (ReferenceApiTest가 값까지 대조). 코드 집합은 V1 CHECK와 같다(check_api_docs.py가 codes.json ↔ DDL을 대조).
  * 코드를 더하거나 표기를 바꿀 때는 codes.json을 먼저 고치고 여기를 맞춘다.
  */
-final class CodeLabels {
+public final class CodeLabels {
 
     static final Map<String, Map<String, String>> ALL = build(
             group("verdict", "ELIGIBLE", "지원 가능", "NEEDS_CHECK", "확인 필요", "INELIGIBLE", "지원 불가"),
@@ -46,6 +46,13 @@ final class CodeLabels {
             group("commuteProvider", "KAKAO_MAP", "카카오맵"));
 
     private CodeLabels() {
+    }
+
+    /** 코드값의 화면 표기. 모르는 묶음·코드면 코드값 그대로. */
+    public static String label(String group, String code) {
+        Map<String, String> labels = ALL.get(group);
+        String label = labels == null ? null : labels.get(code);
+        return label == null ? code : label;
     }
 
     private record Group(String name, Map<String, String> labels) {
