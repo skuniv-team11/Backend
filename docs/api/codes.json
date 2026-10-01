@@ -26,7 +26,6 @@
   },
   "signalStatus": {
     "OPEN": "모집 중",
-    "CROWDED": "몰림",
     "CLOSED": "마감"
   },
   "signalSource": {

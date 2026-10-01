@@ -104,7 +104,7 @@ for name in ("me-plan-check.json", "center-board.json"):
     for r in rows:
         s = r["signal"]
         closed = d["asOf"] > RECRUIT_END or (s["closesOn"] is not None and s["closesOn"] <= d["asOf"])
-        want = "CLOSED" if closed else ("CROWDED" if s["ratio"] >= 1.0 else "OPEN")
+        want = "CLOSED" if closed else "OPEN"  # 몰림 표시는 하지 않는다(ADR-0015)
         check(s["status"] == want, f"{name} job {r['jobId']} status {s['status']} ≠ {want}")
     for a in d.get("alternatives", []):
         check(a["remaining"] == a["signal"]["headcount"] - a["signal"]["intent"] and a["remaining"] > 0, f"대안 {a['jobId']} 남은 자리")
