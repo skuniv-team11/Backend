@@ -1,0 +1,674 @@
+"""docs/api(README 목록 표 + 예시 JSON)로 Swagger UI가 읽는 OpenAPI 3.1 계약 스펙을 만든다.
+
+    python scripts/build_openapi.py           # 스펙을 다시 만든다
+    python scripts/build_openapi.py --check   # 파일이 최신인지·예시가 스키마에 맞는지만 본다(verify.sh)
+
+출력: src/main/resources/static/openapi/contract.json → 서버가 /openapi/contract.json 으로 내보내고
+Swagger UI(/swagger-ui.html)의 '계약' 탭이 읽는다(ADR-0011). 출력 파일은 손으로 고치지 않는다.
+
+어디서 무엇을 가져오나
+- 엔드포인트 목록·요약·권한·태그: docs/api/README.md '목록' 표
+- 공통 규칙(info 설명)·오류 코드: README '공통'·'오류 코드' 절
+- 응답·요청 예시: docs/api/*.json 그대로
+- 코드값(enum): docs/api/codes.json(= V1 CHECK, check_api_docs.py가 맞춰 봄), 근거 필드명은 V1 DDL
+- 필드 모양(타입·null 허용·범위): 이 파일의 SCHEMAS. null 허용은 V1 컬럼을 따른다
+표준 라이브러리만 쓴다.
+"""
+import json, re, sys, pathlib, copy
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+API = ROOT / "docs" / "api"
+OUT = ROOT / "src" / "main" / "resources" / "static" / "openapi" / "contract.json"
+README = (API / "README.md").read_text(encoding="utf-8")
+DDL = (ROOT / "src" / "main" / "resources" / "db" / "migration" / "V1__init.sql").read_text(encoding="utf-8")
+GRADLE = (ROOT / "build.gradle").read_text(encoding="utf-8")
+EXAMPLES = {p.name: json.loads(p.read_text(encoding="utf-8")) for p in sorted(API.glob("*.json"))}
+CODES = EXAMPLES["codes.json"]
+REPO_DOC = "https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md"
+
+fails = []
+
+# ───────────────────────── 스키마 작성 도구 ─────────────────────────
+
+def R(name):
+    return {"$ref": f"#/components/schemas/{name}"}
+
+def nul(s):
+    """null 허용. $ref는 anyOf로 감싼다."""
+    if "$ref" in s:
+        return {"anyOf": [s, {"type": "null"}]}
+    s = dict(s)
+    t = s["type"]
+    s["type"] = [t, "null"] if isinstance(t, str) else [*t, "null"]
+    if "enum" in s:
+        s["enum"] = [*s["enum"], None]
+    return s
+
+def d(s, text):
+    """설명을 붙인다. $ref 옆 설명은 3.1에서 허용된다."""
+    return {**s, "description": text}
+
+STR = {"type": "string"}
+INT = {"type": "integer"}
+NUM = {"type": "number"}
+BOOL = {"type": "boolean"}
+DATE = {"type": "string", "format": "date"}
+DATETIME = {"type": "string", "format": "date-time"}
+ID = {"type": "integer", "minimum": 1}
+PAGE = {"type": "integer", "minimum": 1}
+
+def arr(items, **kw):
+    return {"type": "array", "items": items, **kw}
+
+def obj(props, optional=(), desc=None):
+    s = {"type": "object", "properties": props, "required": [k for k in props if k not in optional]}
+    if desc:
+        s["description"] = desc
+    return s
+
+def code_enum(key):
+    """codes.json의 코드 묶음 하나를 enum 스키마로. 설명에 화면 표기를 붙인다."""
+    labels = CODES[key]
+    return {"type": "string", "enum": list(labels),
+            "description": " · ".join(f"`{k}` {v}" for k, v in labels.items())}
+
+def enum_name(key):
+    return key[0].upper() + key[1:]
+
+def ddl_field_keys():
+    m = re.search(r"CONSTRAINT field_evidence_allowed_key CHECK \((.*?)\n\s*\)\n\);", DDL, re.S)
+    return sorted(set(re.findall(r"'([A-Za-z]+)'", m.group(1))))
+
+def ddl_in(column):
+    m = re.search(rf"CHECK \({column} IN \(([^)]*)\)\)", DDL)
+    return re.findall(r"'([A-Z_]+)'", m.group(1))
+
+# ───────────────────────── 스키마 ─────────────────────────
+
+S = {enum_name(k): code_enum(k) for k in CODES}
+S["NtsStatus"] = {"type": "string", "enum": ddl_in("nts_status"),
+                  "description": "국세청 사업자 상태(오프라인 조회 결과). `ACTIVE` 계속 · `SUSPENDED` 휴업 · `CLOSED` 폐업"}
+S["EvidenceFieldKey"] = {"type": "string", "enum": ddl_field_keys(),
+                         "description": "근거를 보여 줄 수 있는 추출 필드명(V1 field_evidence 허용 목록). 사업자번호·매출액 등은 없다"}
+
+AREA_CODE = {"type": "string", "pattern": r"^(11|28|41)\d{3}$",
+             "description": "시·군·구 5자리(서울 11·인천 28·경기 41). `GET /api/areas`의 code"}
+
+PROFILE_PROPS = {
+    "departmentId": d(ID, "`GET /api/departments`의 id"),
+    "grade": {"type": "integer", "minimum": 1, "maximum": 4},
+    "completedSemesters": {"type": "integer", "minimum": 0, "maximum": 8},
+    "gpa": {"type": "number", "minimum": 0, "maximum": 4.5, "description": "소수 첫째 자리까지"},
+    "graduationExpected": d(BOOL, "다음 졸업(2026-2 회차 → 2027년 2월) 예정이면 true"),
+    "interestText": nul({"type": "string", "maxLength": 200, "description": "적합도 추천의 질의. 200자 이하"}),
+    "homeAreaCode": d(nul(AREA_CODE), "사는 곳(선택). null이면 통근을 서경대에서 출발로 본다. 통근 조회에만 쓴다"),
+}
+PROFILE_OPTIONAL = ("interestText", "homeAreaCode")
+PROFILE_VIEW_PROPS = {
+    **PROFILE_PROPS,
+    "department": R("DepartmentRef"),
+    "homeArea": nul(R("Area")),
+    "isExample": d(BOOL, "체험 계정의 예시 프로필이면 true"),
+}
+
+SIGNAL = obj({
+    "intent": d({"type": "integer", "minimum": 0}, "asOf까지 누적한 지원 의사 수"),
+    "interest": d({"type": "integer", "minimum": 0}, "asOf까지 누적한 관심 수"),
+    "headcount": {"type": "integer", "minimum": 1},
+    "ratio": d({"type": "number", "minimum": 0}, "intent ÷ headcount, 소수 둘째 자리"),
+    "status": R("SignalStatus"),
+    "closesOn": nul(DATE),
+    "closeReason": nul(R("CloseReason")),
+    "closesOnIsVirtual": d(BOOL, "true면 closesOn이 생성기가 정한 가상 날짜"),
+    "expectedFullOn": d(nul(DATE), "정원 도달 예상일. 모집기간 안에 닿지 않거나 이미 닿았으면 null"),
+}, desc="모집 신호. status: asOf가 회차 종료일보다 뒤이거나 closesOn ≤ asOf면 CLOSED → ratio ≥ 1.0이면 CROWDED → 아니면 OPEN. 몰림은 마감이 아니다")
+
+S.update({
+    "Error": obj({
+        "code": R("ErrorCode"),
+        "message": d(STR, "사람이 읽는 설명(예시 문구는 서버 문구와 다를 수 있다)"),
+        "fields": d(arr(obj({"field": STR, "reason": STR})), "INVALID_INPUT일 때만"),
+    }, optional=("fields",)),
+    "Ping": obj({"status": STR, "service": STR, "time": DATETIME}),
+    "Codes": {"type": "object", "description": "코드 묶음 이름 → {코드값: 화면 표기}. 값 집합은 각 enum 스키마와 같다",
+              "additionalProperties": {"type": "object", "additionalProperties": STR}},
+    "Credentials": obj({
+        "email": {"type": "string", "format": "email", "description": "소문자로 맞춰 저장"},
+        "password": {"type": "string", "minLength": 8},
+    }),
+    "GuestRequest": obj({"role": R("Role")}),
+    "User": obj({
+        "id": ID,
+        "email": d(nul({"type": "string", "format": "email"}), "체험 계정은 null"),
+        "role": R("Role"),
+        "isGuest": BOOL,
+        "expiresAt": d(nul(DATETIME), "체험 계정이 지워지는 시각. 가입 계정은 null"),
+        "hasProfile": d(BOOL, "false여도 판정·추천은 된다(프로필을 본문에 넣어 보냄)"),
+    }),
+    "AuthToken": obj({
+        "accessToken": d(STR, "JWT(HS256). `Authorization: Bearer <accessToken>`"),
+        "tokenType": {"type": "string", "enum": ["Bearer"]},
+        "expiresAt": d(DATETIME, "가입 계정 7일, 체험 계정 24시간"),
+        "user": R("User"),
+    }),
+    "GuestAuthToken": obj({
+        "accessToken": d(STR, "JWT(HS256). `Authorization: Bearer <accessToken>`"),
+        "tokenType": {"type": "string", "enum": ["Bearer"]},
+        "expiresAt": d(DATETIME, "체험 계정 24시간"),
+        "user": R("User"),
+        "profile": d(nul(R("ProfileView")), "role이 STUDENT일 때 저장된 예시 프로필(isExample: true)"),
+    }, optional=("profile",)),
+    "Profile": obj(PROFILE_PROPS, optional=PROFILE_OPTIONAL,
+                   desc="학생 프로필. 요청 본문으로만 보낸다(URL·쿼리에 넣지 않는다)"),
+    "ProfileBody": obj({"profile": R("Profile")}),
+    "ProfileSaveRequest": obj({
+        **PROFILE_PROPS,
+        "consent": d(BOOL, "true가 아니면 400 CONSENT_REQUIRED"),
+    }, optional=PROFILE_OPTIONAL),
+    "ProfileView": obj(PROFILE_VIEW_PROPS, optional=PROFILE_OPTIONAL),
+    "SavedProfile": obj({**PROFILE_VIEW_PROPS, "consentedAt": DATETIME, "updatedAt": DATETIME},
+                        optional=PROFILE_OPTIONAL),
+    "DepartmentRef": obj({"id": ID, "name": STR}),
+    "Department": obj({"id": ID, "name": STR, "college": nul(STR)}),
+    "Departments": obj({"departments": arr(R("Department"))}),
+    "Area": obj({"code": AREA_CODE, "sido": STR, "name": STR}),
+    "Areas": obj({"areas": arr(R("Area"))}),
+    "RoundRef": obj({"id": ID, "termCode": {"type": "string", "pattern": r"^\d{4}-[12]$"}}),
+    "CurrentRound": obj({
+        "id": ID,
+        "programName": STR,
+        "termCode": {"type": "string", "pattern": r"^\d{4}-[12]$"},
+        "roundNo": ID,
+        "recruitStart": DATE,
+        "recruitEnd": DATE,
+        "replay": obj({
+            "defaultAsOf": d(DATE, "asOf를 생략하면 이 날짜"),
+            "minDate": DATE,
+            "maxDate": DATE,
+            "signalsAreVirtual": BOOL,
+        }),
+    }),
+    "InstitutionRef": obj({"id": ID, "name": STR}),
+    "ReasonLine": obj({
+        "layer": R("ReasonLayer"),
+        "item": STR,
+        "requirement": STR,
+        "mine": STR,
+        "result": R("ReasonResult"),
+        "alertId": d(ID, "문서 안에서 요건이 서로 다르게 적힌 항목(M2 검토 알림)이면 붙는다"),
+    }, optional=("alertId",)),
+    "EligibilityJob": obj({
+        "jobId": ID, "title": STR, "team": STR,
+        "institution": R("InstitutionRef"),
+        "verdict": R("Verdict"),
+        "majorMatch": R("MajorMatch"),
+        "reasons": arr(R("ReasonLine")),
+    }),
+    "Eligibility": obj({
+        "round": R("RoundRef"),
+        "summary": obj({"total": INT, "eligible": INT, "needsCheck": INT, "ineligible": INT}),
+        "jobs": d(arr(R("EligibilityJob")), "회차 직무 전부"),
+    }),
+    "Stipend": obj({
+        "basis": R("StipendBasis"),
+        "amount": d(nul({"type": "integer", "minimum": 1}), "원. MONTHLY면 월액, HOURLY면 시급"),
+        "minWageRatio": d(nul(NUM), "2026 최저임금(월 2,156,880원 / 시 10,320원) 대비 %, 소수 첫째 자리"),
+    }),
+    "Citation": obj({"sourceType": R("SourceType"), "documentTitle": STR, "page": PAGE, "quote": STR},
+                    desc="근거 인용. 원문 PDF 링크는 주지 않는다"),
+    "Recommendation": obj({
+        "rank": {"type": "integer", "minimum": 1, "maximum": 5},
+        "jobId": ID, "title": STR,
+        "institution": R("InstitutionRef"),
+        "verdict": R("Verdict"),
+        "fit": R("Fit"),
+        "jobType": R("JobType"),
+        "stipend": R("Stipend"),
+        "reasonTemplate": d(STR, "바로 보여 줄 기본 이유 문장"),
+        "reasonStatus": d(STR, "PENDING이면 카드마다 `POST /api/recommendations/{jobId}/reason`을 부른다"),
+        "citations": arr(R("Citation")),
+    }),
+    "Recommendations": obj({
+        "round": R("RoundRef"),
+        "items": d(arr(R("Recommendation"), maxItems=5), "INELIGIBLE을 뺀 상위 5개. 점수는 주지 않는다"),
+        "blockedBy": d(arr(obj({"item": STR, "count": INT})), "items가 비었을 때 막은 요건별 직무 수"),
+    }),
+    "RecommendationReason": obj({
+        "jobId": ID,
+        "source": R("ReasonSource"),
+        "text": STR,
+        "citations": arr(R("Citation")),
+    }, desc="LLM 실패·5초 초과·호출 제한이어도 200 + source TEMPLATE"),
+    "Alert": obj({
+        "id": ID,
+        "institution": R("InstitutionRef"),
+        "jobId": nul(ID),
+        "kind": R("AlertKind"),
+        "fieldKey": nul(STR),
+        "description": STR,
+        "pageA": nul(PAGE), "quoteA": nul(STR),
+        "pageB": nul(PAGE), "quoteB": nul(STR),
+    }, desc="M2 검토 알림"),
+    "JobDetail": obj({
+        "id": ID,
+        "round": R("RoundRef"),
+        "institution": obj({
+            "id": ID, "name": STR,
+            "size": R("Size"), "listing": R("Listing"),
+            "businessType": nul(STR), "businessItem": nul(STR), "address": nul(STR),
+            "ntsStatus": nul(R("NtsStatus")), "ntsCheckedOn": nul(DATE),
+        }),
+        "team": STR,
+        "title": STR,
+        "overview": nul(STR),
+        "educationGoal": nul(STR),
+        "competencies": nul(STR),
+        "weeklyPlan": arr(obj({"seq": ID, "weeksLabel": STR, "content": STR})),
+        "conditions": obj({
+            "course": R("Course"),
+            "jobType": R("JobType"),
+            "period": obj({"start": nul(DATE), "end": nul(DATE)}),
+            "workHoursText": nul(STR),
+            "weeklyHours": nul({"type": "number", "exclusiveMinimum": 0}),
+            "weekdays": arr(R("Weekday")),
+            "overtime": R("Overtime"),
+            "laborContract": nul(BOOL),
+            "stipend": R("Stipend"),
+            "benefits": arr(R("Benefit")),
+            "headcount": {"type": "integer", "minimum": 1},
+        }),
+        "requirements": obj({
+            "gradeRule": R("GradeRule"),
+            "gpaMin": nul({"type": "number", "minimum": 0, "maximum": 4.5}),
+            "portfolio": R("Requirement"),
+            "certificate": R("Requirement"),
+            "certificateText": nul(STR),
+            "majorText": d(nul(STR), "선호 전공 원문(표시용). 자격 조건이 아니다"),
+            "majorOpen": d(BOOL, "전공 무관이면 true"),
+        }),
+        "workplace": d(nul(obj({
+            "address": STR,
+            "hasCoordinates": d(BOOL, "true면 프론트가 `POST /api/jobs/{jobId}/commute`를 부른다"),
+        })), "근로지. V1 job.workplace_id가 null을 허용해 null일 수 있다"),
+        "closing": obj({"closesOn": nul(DATE), "closeReason": nul(R("CloseReason")), "closesOnIsVirtual": BOOL}),
+        "evidence": d(arr(obj({
+            "fieldKey": R("EvidenceFieldKey"),
+            "label": STR,
+            "rawValue": d(STR, "문서에 적힌 그대로"),
+            "documentTitle": STR,
+            "page": PAGE,
+            "quote": {"type": "string", "maxLength": 200},
+        })), "AI가 운영계획서에서 뽑은 값과 근거(허용 필드만)"),
+        "alerts": arr(R("Alert")),
+        "seniorNotes": d(arr(obj({
+            "termCode": {"type": "string", "pattern": r"^\d{4}-[12]$"},
+            "teamText": nul(STR),
+            "documentTitle": STR,
+            "page": PAGE,
+            "activities": arr(STR, minItems=1),
+        })), "같은 기관의 선배 수기(이름·학과·학년 없음)"),
+    }, desc="통근 시간은 이 응답에 없다(통근 조회를 따로 부른다)"),
+    "CommuteRequest": obj({"homeAreaCode": d(nul(AREA_CODE), "null이거나 빠지면 서경대에서 출발")},
+                          optional=("homeAreaCode",)),
+    "Commute": obj({
+        "jobId": ID,
+        "available": BOOL,
+        "origin": obj({"type": R("CommuteOrigin"), "areaCode": nul(AREA_CODE), "label": STR}),
+        "destination": obj({"address": STR}),
+        "minutes": nul({"type": "integer", "minimum": 1}),
+        "transfers": nul({"type": "integer", "minimum": 0}),
+        "fareWon": nul({"type": "integer", "minimum": 0}),
+        "provider": R("CommuteProvider"),
+        "queriedAt": DATETIME,
+        "unavailableReason": nul(R("CommuteUnavailable")),
+    }, desc="카카오 대중교통 실시간 결과. 저장하지 않는다. 실패해도 200 + available false(minutes·transfers·fareWon null)"),
+    "PlanItem": obj({
+        "jobId": ID, "title": STR,
+        "institution": R("InstitutionRef"),
+        "rank": d(nul({"type": "integer", "minimum": 1, "maximum": 3}), "1~3지망. 순위를 안 정했으면 null"),
+        "addedAt": DATETIME,
+    }),
+    "Plan": obj({"items": arr(R("PlanItem"))}),
+    "PlanAddRequest": obj({"jobId": ID}),
+    "PlanRanksRequest": obj({
+        "ranks": d(arr(obj({"jobId": ID, "rank": {"type": "integer", "minimum": 1, "maximum": 3}}), maxItems=3),
+                   "순위 전체. 여기 없는 담은 직무는 순위가 지워진다. 1~3, 중복 불가, 담은 직무만"),
+    }),
+    "PlanCheckRequest": obj({
+        "profile": R("Profile"),
+        "asOf": d(DATE, "회차 모집기간 안. 생략하면 rounds/current의 replay.defaultAsOf"),
+    }, optional=("asOf",)),
+    "Signal": SIGNAL,
+    "PlanCheck": obj({
+        "asOf": DATE,
+        "isVirtual": BOOL,
+        "signalSource": R("SignalSource"),
+        "items": arr(obj({
+            "rank": {"type": "integer", "minimum": 1, "maximum": 3},
+            "jobId": ID, "title": STR,
+            "institution": R("InstitutionRef"),
+            "signal": R("Signal"),
+            "warning": nul(STR),
+        })),
+        "alternatives": d(arr(obj({
+            "jobId": ID, "title": STR,
+            "institution": R("InstitutionRef"),
+            "verdict": R("Verdict"),
+            "fit": R("Fit"),
+            "remaining": {"type": "integer", "minimum": 1},
+            "signal": R("Signal"),
+            "why": STR,
+        }), maxItems=5), "요건이 맞는 빈 자리. INELIGIBLE·CLOSED·남은 자리 0 제외, fit → 남은 자리 순 최대 5개"),
+    }),
+    "CenterBoard": obj({
+        "asOf": DATE,
+        "isVirtual": BOOL,
+        "signalSource": R("SignalSource"),
+        "round": R("RoundRef"),
+        "summary": obj({"jobs": INT, "seats": INT, "intentTotal": INT, "crowdedJobs": INT,
+                        "zeroSignalJobs": INT, "closedJobs": INT}),
+        "historyAvailable": d(BOOL, "false면 pastZeroRounds 열을 숨긴다"),
+        "rows": d(arr(obj({
+            "jobId": ID,
+            "institution": R("InstitutionRef"),
+            "title": STR,
+            "headcount": {"type": "integer", "minimum": 1},
+            "signal": R("Signal"),
+            "eligiblePool": d({"type": "integer", "minimum": 0}, "선호 전공 재학생 수"),
+            "risks": arr(obj({"code": R("Risk"), "label": STR, "detail": nul(STR)})),
+            "alertCount": {"type": "integer", "minimum": 0},
+            "pastZeroRounds": d(arr({}), "지난 회차 0명 이력. 원소 모양은 지난 회차 결과를 적재할 때 정한다(지금 예시는 빈 배열)"),
+        })), "회차 직무 전부"),
+        "alerts": arr(R("Alert")),
+    }),
+})
+
+# 오류 코드 표(README) → ErrorCode enum과 HTTP 상태
+ERR = {}
+for code, http, when in re.findall(r"^\| `([A-Z_]+)` \| (\d{3}) \| (.+?) \|$", README.split("## 오류 코드", 1)[1], re.M):
+    ERR[code] = (int(http), when.strip())
+S["ErrorCode"] = {"type": "string", "enum": list(ERR),
+                  "description": " · ".join(f"`{c}` {h}" for c, (h, _) in ERR.items())}
+
+# ───────────────────────── 엔드포인트 ─────────────────────────
+# req: (스키마, [예시 파일]) / ok: {상태: (스키마 또는 None, [예시 파일])} / errors: 공통 규칙 밖에서 더 나는 오류 코드
+# 공통 규칙: 본문이 있으면 INVALID_INPUT, 공개가 아니면 AUTH_REQUIRED·TOKEN_EXPIRED, STUDENT·CENTER면 FORBIDDEN_ROLE
+PB = ("ProfileBody", ["profile-body.request.json"])
+ENDPOINTS = {
+    "GET /api/ping": dict(op="ping", ok={200: ("Ping", ["ping.json"])}),
+    "GET /api/codes": dict(op="getCodes", ok={200: ("Codes", ["codes.json"])}),
+    "POST /api/auth/signup": dict(op="signup", req=("Credentials", ["auth-signup.request.json"]),
+                                  ok={201: ("AuthToken", ["auth-token.json"])}, errors=["EMAIL_TAKEN"]),
+    "POST /api/auth/login": dict(op="login", req=("Credentials", ["auth-login.request.json"]),
+                                 ok={200: ("AuthToken", ["auth-token.json"])}, errors=["LOGIN_FAILED"]),
+    "POST /api/auth/guest": dict(op="createGuest", req=("GuestRequest", ["auth-guest.request.json"]),
+                                 ok={201: ("GuestAuthToken", ["auth-guest.json"])}, errors=["RATE_LIMITED"]),
+    "GET /api/me": dict(op="getMe", ok={200: ("User", ["me.json"])}),
+    "DELETE /api/me": dict(op="deleteMe", ok={204: (None, [])}),
+    "GET /api/me/profile": dict(op="getMyProfile", ok={200: ("SavedProfile", ["me-profile.json"])},
+                                errors=["PROFILE_NOT_FOUND"]),
+    "PUT /api/me/profile": dict(op="saveMyProfile", req=("ProfileSaveRequest", ["me-profile.request.json"]),
+                                ok={200: ("SavedProfile", ["me-profile.json"])}, errors=["CONSENT_REQUIRED"]),
+    "DELETE /api/me/profile": dict(op="deleteMyProfile", ok={204: (None, [])}),
+    "GET /api/departments": dict(op="getDepartments", ok={200: ("Departments", ["departments.json"])}),
+    "GET /api/areas": dict(op="getAreas", ok={200: ("Areas", ["areas.json"])}),
+    "GET /api/rounds/current": dict(op="getCurrentRound", ok={200: ("CurrentRound", ["rounds-current.json"])}),
+    "POST /api/eligibility": dict(op="checkEligibility", req=PB, ok={200: ("Eligibility", ["eligibility.json"])}),
+    "POST /api/recommendations": dict(op="getRecommendations", req=PB,
+                                      ok={200: ("Recommendations", ["recommendations.json"])}),
+    "POST /api/recommendations/{jobId}/reason": dict(op="getRecommendationReason", req=PB,
+                                                     ok={200: ("RecommendationReason", ["recommendation-reason.json"])},
+                                                     errors=["JOB_NOT_FOUND"]),
+    "GET /api/jobs/{jobId}": dict(op="getJob", ok={200: ("JobDetail", ["job-detail.json"])}, errors=["JOB_NOT_FOUND"]),
+    "POST /api/jobs/{jobId}/commute": dict(op="getCommute", req=("CommuteRequest", ["commute.request.json"]),
+                                           ok={200: ("Commute", ["commute.json", "commute-unavailable.json"])},
+                                           errors=["JOB_NOT_FOUND"]),
+    "GET /api/me/plan": dict(op="getMyPlan", ok={200: ("Plan", ["me-plan.json"])}),
+    "POST /api/me/plan/items": dict(op="addPlanItem", req=("PlanAddRequest", ["me-plan-items.request.json"]),
+                                    ok={201: (None, []), 200: (None, [])}),
+    "DELETE /api/me/plan/items/{jobId}": dict(op="removePlanItem", ok={204: (None, [])}, errors=["PLAN_ITEM_NOT_FOUND"]),
+    "PUT /api/me/plan/ranks": dict(op="setPlanRanks", req=("PlanRanksRequest", ["me-plan-ranks.request.json"]),
+                                   ok={200: ("Plan", ["me-plan.json"])}, errors=["RANK_INVALID"]),
+    "POST /api/me/plan/check": dict(op="checkPlan", req=("PlanCheckRequest", ["me-plan-check.request.json"]),
+                                    ok={200: ("PlanCheck", ["me-plan-check.json"])}, errors=["AS_OF_OUT_OF_RANGE"]),
+    "GET /api/center/board": dict(op="getCenterBoard", ok={200: ("CenterBoard", ["center-board.json"])},
+                                  errors=["AS_OF_OUT_OF_RANGE"]),
+}
+OK_TEXT = {200: "성공", 201: "만들었음", 204: "본문 없음"}
+STATUS_TEXT = {200: "이미 담겨 있음(그대로)", 201: "새로 담음"}  # POST /api/me/plan/items
+
+# ───────────────────────── 예시 검증(표준 라이브러리 미니 검증기) ─────────────────────────
+# 예시에 스키마에 없는 필드가 있으면 실패로 본다(닫힌 객체) — 예시와 스키마가 갈라지는 걸 잡으려고.
+
+FORMATS = {
+    "date": r"^\d{4}-\d{2}-\d{2}$",
+    "date-time": r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$",
+    "email": r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+}
+PY_TYPES = {"string": str, "integer": int, "number": (int, float), "boolean": bool,
+            "object": dict, "array": list, "null": type(None)}
+
+def type_ok(v, t):
+    if t in ("integer", "number") and isinstance(v, bool):
+        return False
+    if t == "integer":
+        return isinstance(v, int)  # 정수 필드에 1.0을 쓰지 않는다
+    return isinstance(v, PY_TYPES[t])
+
+def validate(v, s, path, errs):
+    if "$ref" in s:
+        s = {**S[s["$ref"].rsplit("/", 1)[1]], **{k: x for k, x in s.items() if k != "$ref"}}
+    if "anyOf" in s:
+        if not any(not _errs(v, sub) for sub in s["anyOf"]):
+            errs.append(f"{path}: anyOf 어느 쪽에도 맞지 않음 ({json.dumps(v, ensure_ascii=False)[:60]})")
+        return
+    if "type" in s:
+        ts = s["type"] if isinstance(s["type"], list) else [s["type"]]
+        if not any(type_ok(v, t) for t in ts):
+            errs.append(f"{path}: 타입 {ts} 아님 ({json.dumps(v, ensure_ascii=False)[:60]})")
+            return
+    if "enum" in s and v not in s["enum"]:
+        errs.append(f"{path}: {v!r} 가 enum에 없음")
+    if v is None:
+        return
+    if isinstance(v, str):
+        if "minLength" in s and len(v) < s["minLength"]:
+            errs.append(f"{path}: {s['minLength']}자보다 짧음")
+        if "maxLength" in s and len(v) > s["maxLength"]:
+            errs.append(f"{path}: {s['maxLength']}자보다 김")
+        if "pattern" in s and not re.search(s["pattern"], v):
+            errs.append(f"{path}: 형식 {s['pattern']} 아님 ({v})")
+        if s.get("format") in FORMATS and not re.match(FORMATS[s["format"]], v):
+            errs.append(f"{path}: {s['format']} 형식 아님 ({v})")
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        if "minimum" in s and v < s["minimum"]:
+            errs.append(f"{path}: {v} < {s['minimum']}")
+        if "maximum" in s and v > s["maximum"]:
+            errs.append(f"{path}: {v} > {s['maximum']}")
+        if "exclusiveMinimum" in s and v <= s["exclusiveMinimum"]:
+            errs.append(f"{path}: {v} ≤ {s['exclusiveMinimum']}")
+    if isinstance(v, list):
+        if "minItems" in s and len(v) < s["minItems"]:
+            errs.append(f"{path}: 원소 {s['minItems']}개 미만")
+        if "maxItems" in s and len(v) > s["maxItems"]:
+            errs.append(f"{path}: 원소 {s['maxItems']}개 초과")
+        for i, x in enumerate(v):
+            validate(x, s.get("items", {}), f"{path}[{i}]", errs)
+    if isinstance(v, dict):
+        props = s.get("properties")
+        if props is not None:
+            for k in s.get("required", []):
+                if k not in v:
+                    errs.append(f"{path}.{k}: 필수 필드 없음")
+            for k, x in v.items():
+                if k not in props:
+                    errs.append(f"{path}.{k}: 스키마에 없는 필드")
+                else:
+                    validate(x, props[k], f"{path}.{k}", errs)
+        elif isinstance(s.get("additionalProperties"), dict):
+            for k, x in v.items():
+                validate(x, s["additionalProperties"], f"{path}.{k}", errs)
+
+def _errs(v, s):
+    e = []
+    validate(v, s, "", e)
+    return e
+
+def check_refs(o, where):
+    if isinstance(o, dict):
+        if "$ref" in o and o["$ref"].rsplit("/", 1)[1] not in S:
+            fails.append(f"{where}: 없는 스키마 {o['$ref']}")
+        for k, x in o.items():
+            check_refs(x, f"{where}.{k}")
+    elif isinstance(o, list):
+        for x in o:
+            check_refs(x, where)
+
+# ───────────────────────── README 목록 표 → paths ─────────────────────────
+
+def section(title):
+    m = re.search(rf"^## {title}\n(.*?)(?=^## |\Z)", README, re.S | re.M)
+    return m.group(1).strip()
+
+rows = []
+for line in re.findall(r"^\| \d+ \|.*$", README, re.M):
+    c = [x.strip() for x in line.strip("|").split("|")]
+    num, tag, method, path, auth, screen, summary, ex = c
+    rows.append(dict(num=int(num), tag=tag, method=method, raw_path=path.strip("`"), auth=auth,
+                     screen=screen, summary=summary, ex=ex))
+
+def example_obj(files):
+    return {f: {"summary": f"docs/api/{f}", "value": EXAMPLES[f]} for f in files}
+
+def error_responses(codes):
+    by_status = {}
+    for c in codes:
+        by_status.setdefault(ERR[c][0], []).append(c)
+    out = {}
+    for st in sorted(by_status):
+        exs = {}
+        for c in by_status[st]:
+            val = {"code": c, "message": ERR[c][1]}
+            if c == "INVALID_INPUT":
+                val["fields"] = [{"field": "profile.gpa", "reason": "0.0~4.5, 소수 첫째 자리까지"}]
+            exs[c] = {"value": val}
+        out[str(st)] = {"description": " · ".join(by_status[st]),
+                        "content": {"application/json": {"schema": R("Error"), "examples": exs}}}
+    return out
+
+paths, tags, used_examples = {}, [], set()
+seen_ops = set()
+for r in rows:
+    path, _, query = r["raw_path"].partition("?")
+    key = f"{r['method']} {path}"
+    e = ENDPOINTS.get(key)
+    if e is None:
+        fails.append(f"README {r['num']}번 {key}: build_openapi.py ENDPOINTS에 없음 → 요청·응답 스키마를 정해 추가하세요")
+        continue
+    seen_ops.add(key)
+    if r["tag"] not in tags:
+        tags.append(r["tag"])
+
+    # README 예시 칸 ↔ ENDPOINTS 예시·상태 코드가 같은지
+    linked = set(re.findall(r"\]\(([\w.-]+\.json)\)", r["ex"]))
+    mine = set((e.get("req") or (None, []))[1]) | {f for _, fs in e["ok"].values() for f in fs}
+    if linked != mine:
+        fails.append(f"{key}: README 예시 링크 {sorted(linked)} ≠ build_openapi.py {sorted(mine)}")
+    for st in re.findall(r"\b(20[014])\b", r["ex"]):
+        if int(st) not in e["ok"]:
+            fails.append(f"{key}: README 예시 칸의 {st}이 ok 상태에 없음")
+
+    op = {"tags": [r["tag"]], "operationId": e["op"], "summary": r["summary"],
+          "description": f"권한: **{r['auth']}** · 화면: {r['screen']} · 규칙은 [docs/api/README.md]({REPO_DOC}) '엔드포인트별 규칙'"}
+    params = []
+    for name in re.findall(r"\{(\w+)\}", path):
+        params.append({"name": name, "in": "path", "required": True, "schema": ID})
+    for name in re.findall(r"(\w+)=", query):
+        params.append({"name": name, "in": "query", "required": False, "schema": DATE,
+                       "description": "회차 모집기간 안의 날짜. 생략하면 rounds/current의 replay.defaultAsOf"})
+    if params:
+        op["parameters"] = params
+    errors = list(e.get("errors", []))
+    if e.get("req"):
+        schema, files = e["req"]
+        op["requestBody"] = {"required": True, "content": {"application/json": {
+            "schema": R(schema), "examples": example_obj(files)}}}
+        errors.insert(0, "INVALID_INPUT")
+        for f in files:
+            used_examples.add(f)
+            for msg in _errs(EXAMPLES[f], R(schema)):
+                fails.append(f"{f} ↔ {schema}{msg}")
+    if r["auth"] != "공개":
+        op["security"] = [{"bearerAuth": []}]
+        errors += ["AUTH_REQUIRED", "TOKEN_EXPIRED"]
+        if r["auth"] in ("STUDENT", "CENTER"):
+            errors.append("FORBIDDEN_ROLE")
+    responses = {}
+    for st, (schema, files) in sorted(e["ok"].items()):
+        desc = STATUS_TEXT[st] if e["op"] == "addPlanItem" else OK_TEXT[st]
+        resp = {"description": desc}
+        if schema:
+            resp["content"] = {"application/json": {"schema": R(schema), "examples": example_obj(files)}}
+            for f in files:
+                used_examples.add(f)
+                for msg in _errs(EXAMPLES[f], R(schema)):
+                    fails.append(f"{f} ↔ {schema}{msg}")
+        responses[str(st)] = resp
+    for c in errors:
+        if c not in ERR:
+            fails.append(f"{key}: README 오류 코드 표에 없는 {c}")
+    responses.update(error_responses([c for c in dict.fromkeys(errors) if c in ERR]))
+    op["responses"] = responses
+    paths.setdefault(path, {})[r["method"].lower()] = op
+
+for key in ENDPOINTS:
+    if key not in seen_ops:
+        fails.append(f"{key}: build_openapi.py에는 있는데 README 목록 표에 없음")
+unused = set(EXAMPLES) - used_examples
+if unused:
+    fails.append(f"스펙에 들어가지 않은 예시 파일: {sorted(unused)}")
+if len(paths) == 0:
+    fails.append("README 목록 표를 읽지 못함")
+
+version = re.search(r"^version = '([^']+)'", GRADLE, re.M).group(1)
+info_desc = "\n\n".join([
+    "**계약 스펙** — 아직 구현되지 않은 엔드포인트도 보인다. 지금 코드에 있는 것만 보려면 위 드롭다운에서 '구현'을 고른다.",
+    f"`scripts/build_openapi.py`가 `docs/api`(README 목록 표·예시 JSON)로 만든다. 손으로 고치지 않는다. 원본은 [docs/api/README.md]({REPO_DOC}).",
+    "인증이 필요한 API는 오른쪽 **Authorize**에 `POST /api/auth/guest` 응답의 accessToken을 넣는다.",
+    "## 공통 규칙 (README에서 옮김)",
+    section("공통"),
+])
+
+spec = {
+    "openapi": "3.1.0",
+    "info": {"title": "현장뛰자 API — 계약", "version": version, "description": info_desc},
+    "externalDocs": {"description": "docs/api/README.md", "url": REPO_DOC},
+    "tags": [{"name": t} for t in tags],
+    "paths": paths,
+    "components": {
+        "securitySchemes": {"bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}},
+        "schemas": dict(sorted(S.items())),
+    },
+}
+check_refs(spec, "spec")
+
+text = json.dumps(spec, ensure_ascii=False, indent=2) + "\n"
+n_ops = sum(len(v) for v in paths.values())
+summary = f"엔드포인트 {n_ops}개 · 스키마 {len(S)}개 · 예시 {len(used_examples)}개"
+
+if "--check" in sys.argv:
+    if not OUT.exists() or OUT.read_text(encoding="utf-8") != text:
+        fails.append(f"{OUT.relative_to(ROOT)}이 docs/api와 다릅니다 → python scripts/build_openapi.py 로 다시 만들어 같이 커밋하세요")
+else:
+    if not fails:
+        OUT.parent.mkdir(parents=True, exist_ok=True)
+        OUT.write_text(text, encoding="utf-8", newline="\n")
+
+if fails:
+    print(f"OpenAPI 계약 스펙: 실패 {len(fails)}개 ({summary})")
+    for f in fails:
+        print(" -", f)
+    sys.exit(1)
+print(f"✓ OpenAPI 계약 스펙 {'최신' if '--check' in sys.argv else '생성'} — {summary}")
