@@ -29,7 +29,7 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
     // Swagger UI(/swagger-ui.html). 3.x가 Boot 4용, 3.1.x가 Boot 4.1 기준(ADR-0011)
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
-    // 로그인(ADR-0012): Spring Security 전체가 아니라 BCrypt 모듈과 JWT 라이브러리만.
+    // 로그인(ADR-0013): Spring Security 전체가 아니라 BCrypt 모듈과 JWT 라이브러리만.
     // crypto는 Boot가 버전 관리, nimbus는 Boot가 관리하지 않아 Spring Security 7.1.1(oauth2-jose)이 쓰는 버전에 맞춘다
     implementation 'org.springframework.security:spring-security-crypto'
     implementation 'com.nimbusds:nimbus-jose-jwt:10.9.1'

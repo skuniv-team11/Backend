@@ -11,7 +11,7 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * {@code /api/**}의 로그인·역할 확인(ADR-0012).
+ * {@code /api/**}의 로그인·역할 확인(ADR-0013).
  * 기본은 로그인 필요. {@link PublicApi}가 붙은 것만 통과시키고, {@link RequireRole}이 있으면 역할도 본다.
  * 여기서 던진 예외는 컨트롤러 예외와 같이 ApiErrorHandler가 계약 형식으로 바꾼다.
  */

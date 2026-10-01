@@ -22,7 +22,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 import tools.jackson.databind.JsonNode;
 
 /**
- * 구현이 계약(docs/api → contract.json)에서 벗어나지 않게 막는다(ADR-0012).
+ * 구현이 계약(docs/api → contract.json)에서 벗어나지 않게 막는다(ADR-0013).
  * - 구현한 /api/** 엔드포인트는 모두 계약에 있어야 하고, 권한 표시(@PublicApi·@RequireRole)가 계약의 권한과 같아야 한다.
  * - 서버 ErrorCode는 계약 오류 코드 표와 같은 집합·HTTP 상태여야 한다.
  */

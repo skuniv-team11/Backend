@@ -1,4 +1,4 @@
-# ADR-0012 로그인은 Spring Security 없이 BCrypt 모듈 + nimbus JWT + MVC 인터셉터로
+# ADR-0013 로그인은 Spring Security 없이 BCrypt 모듈 + nimbus JWT + MVC 인터셉터로
 
 - 상태: 확정 (2026-10-01)
 - 결정

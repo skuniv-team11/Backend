@@ -39,7 +39,7 @@ scripts/verify.sh          # 바뀐 부분만. 전체는 scripts/verify.sh --all
 ## 항상 할 것 (Always)
 - 커밋·PR·주석은 한국어. 커밋은 `feat|fix|docs|refactor|test|chore(범위): 요약` (`docs/conventions.md`).
 - 새 엔드포인트는 `/api/**` 아래에 두고 MockMvc 테스트(정상 1 + 오류 또는 CORS 1)와 `docs/api/` 예시 JSON을 같은 PR에 넣는다. `docs/api/`를 고치면 `python scripts/build_openapi.py`로 Swagger 계약 스펙을 다시 만들어 같이 넣는다(ADR-0011).
-- `/api/**`는 기본이 로그인 필요다. 로그인 없이 부르는 API에만 `@PublicApi`, 역할 제한은 `@RequireRole`을 붙이고 사용자는 `AuthUser` 인자로 받는다. 권한은 `docs/api` 목록의 권한과 같아야 한다(`ContractTest`가 대조, ADR-0012). 오류는 `ApiException(ErrorCode, 메시지)`로 던진다.
+- `/api/**`는 기본이 로그인 필요다. 로그인 없이 부르는 API에만 `@PublicApi`, 역할 제한은 `@RequireRole`을 붙이고 사용자는 `AuthUser` 인자로 받는다. 권한은 `docs/api` 목록의 권한과 같아야 한다(`ContractTest`가 대조, ADR-0013). 오류는 `ApiException(ErrorCode, 메시지)`로 던진다.
 - 결정이 생기면 `docs/decisions/`에 ADR 한 장(무엇을, 왜, 언제 다시 볼지).
 - 외부 조건(요금·한도·버전)은 추측하지 말고 공식 문서를 확인해 출처를 남긴다.
 
