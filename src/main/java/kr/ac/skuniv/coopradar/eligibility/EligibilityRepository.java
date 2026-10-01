@@ -1,5 +1,6 @@
 package kr.ac.skuniv.coopradar.eligibility;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import kr.ac.skuniv.coopradar.eligibility.JobRequirement.AlertRef;
 import kr.ac.skuniv.coopradar.job.InstitutionRef;
+import kr.ac.skuniv.coopradar.job.JobDetail.Closing;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
@@ -43,7 +45,7 @@ public class EligibilityRepository {
                     majors.computeIfAbsent(rs.getInt("job_id"), k -> new HashSet<>()).add(rs.getInt("department_id"));
                 });
 
-        // 직무에 걸린 알림 + 기관 전체(job_id NULL)에 걸린 알림. 판정 항목 필드만
+        // 직무에 걸린 알림 + 기관 전체(job_id NULL)에 걸린 알림. 판정 항목 필드(ADR-0016)만
         Map<Integer, List<AlertRef>> byJob = new HashMap<>();
         Map<Integer, List<AlertRef>> byInstitution = new HashMap<>();
         db.sql("""
@@ -51,7 +53,7 @@ public class EligibilityRepository {
                         FROM review_alert
                         WHERE field_key IN (:fields)
                         ORDER BY id""")
-                .param("fields", EligibilityRules.JUDGED_FIELDS)
+                .param("fields", EligibilityRules.JUDGED_FIELDS.keySet())
                 .query(rs -> {
                     AlertRef ref = new AlertRef(rs.getInt("id"), rs.getString("kind"), rs.getString("field_key"));
                     Integer jobId = (Integer) rs.getObject("job_id");
@@ -65,7 +67,8 @@ public class EligibilityRepository {
         return db.sql("""
                         SELECT j.id, j.list_seq, j.title, j.team, j.institution_id, i.name AS institution_name,
                                j.course, j.grade_rule, j.gpa_min, j.portfolio, j.certificate, j.certificate_text,
-                               j.major_text, j.major_open
+                               j.major_text, j.major_open, j.closes_on, j.close_reason, j.closes_on_is_virtual,
+                               (SELECT count(*) FROM review_alert a WHERE a.job_id = j.id) AS alert_count
                         FROM job j
                         JOIN institution i ON i.id = j.institution_id
                         WHERE j.round_id = :round
@@ -82,7 +85,10 @@ public class EligibilityRepository {
                             rs.getString("course"), rs.getString("grade_rule"), rs.getBigDecimal("gpa_min"),
                             rs.getString("portfolio"), rs.getString("certificate"), rs.getString("certificate_text"),
                             rs.getString("major_text"), rs.getBoolean("major_open"),
-                            Set.copyOf(majors.getOrDefault(jobId, Set.of())), List.copyOf(alerts));
+                            Set.copyOf(majors.getOrDefault(jobId, Set.of())), List.copyOf(alerts),
+                            new Closing(rs.getObject("closes_on", LocalDate.class), rs.getString("close_reason"),
+                                    rs.getBoolean("closes_on_is_virtual")),
+                            rs.getInt("alert_count"));
                 })
                 .list();
     }

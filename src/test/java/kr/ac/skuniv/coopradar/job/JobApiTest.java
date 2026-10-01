@@ -74,6 +74,11 @@ class JobApiTest {
         assertThat(labels).doesNotContainAnyElementsOf(keys);
         assertThat((String) JsonPath.read(body, "$.evidence[0].documentTitle")).isEqualTo("더에스엠씨 운영계획서");
 
+        // 선호 전공 표기 → 확정 학과(ADR-0016): 101은 광고홍보콘텐츠학과 하나
+        assertThat(JsonPath.<List<String>>read(body, "$.requirements.majorAliases[*].label")).containsExactly("광고홍보콘텐츠학과");
+        assertThat(JsonPath.<List<String>>read(body, "$.requirements.majorAliases[0].departments[*].name"))
+                .containsExactly("광고홍보콘텐츠학과");
+
         List<Integer> weeks = JsonPath.read(body, "$.weeklyPlan[*].seq");
         assertThat(weeks).hasSize(count("SELECT count(*) FROM job_weekly_plan WHERE job_id = 101")).isSorted();
 
@@ -102,6 +107,23 @@ class JobApiTest {
         List<Object> jobIds = JsonPath.read(body, "$.alerts[?(@.id == 1)].jobId");
         assertThat(jobIds).containsOnlyNulls();
         Contract.assertSameShape(body, Contract.responseExample("getJob", 200, null));
+    }
+
+    @Test
+    void 선호_전공_표기마다_확정된_학과를_주고_확정_전_표기는_빈_목록() throws Exception {
+        String token = guestToken("STUDENT");
+        String body = detail(token, "120").andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<List<String>>read(body, "$.requirements.majorAliases[*].label"))
+                .containsExactly("광고홍보콘텐츠학과", "경영학부", "미용예술대학");
+        List<String> beauty = JsonPath.read(body, "$.requirements.majorAliases[2].departments[*].name");
+        assertThat(beauty).hasSize(8).contains("메이크업디자인학과", "헤어디자인학과");
+        List<Integer> ids = JsonPath.read(body, "$.requirements.majorAliases[2].departments[*].id");
+        assertThat(ids).isSorted();
+
+        String jungeo = detail(token, "128").andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<List<String>>read(jungeo, "$.requirements.majorAliases[*].label"))
+                .containsExactly("경영학부", "중어전공");
+        assertThat(JsonPath.<List<Object>>read(jungeo, "$.requirements.majorAliases[1].departments")).isEmpty();
     }
 
     @Test
