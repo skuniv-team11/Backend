@@ -13,6 +13,6 @@
 - 결과
   - 로컬 `./gradlew test`에 Docker가 필요하다(Windows는 Docker Desktop). 첫 실행은 `postgres:18` 이미지를 받느라 느리다.
   - `bootRun` 전에 `docker compose up -d`. DB가 없으면 앱이 뜨지 않는다.
-  - **Render DB를 만들기 전(ADR-0005, 10/15 이후)에 `develop`을 `main`에 올리면 배포가 실패한다.** `main` 승격은 DB를 만들고 `DB_URL`·`DB_USER`·`DB_PASSWORD`를 넣은 뒤에 한다.
+  - **Render DB 없이 `main`을 배포하면 실패한다.** DB를 만들고 `DB_URL`·`DB_USER`·`DB_PASSWORD`를 넣은 뒤에 배포한다(ADR-0005, 10/2 개정으로 DB를 지금 만든다).
   - 검증(10/1): 테스트 13개 통과(Flyway가 Postgres 18.6에 V1 적용, 테이블 21개), `docker compose` + `bootRun`에서 `/actuator/health` UP.
 - 다시 볼 때: 같은 매핑 코드가 반복돼 부담이 될 때(Spring Data JDBC 검토), 또는 CI 테스트 시간이 문제가 될 때.
