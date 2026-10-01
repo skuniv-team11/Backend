@@ -33,6 +33,8 @@ git config user.email "<숫자>+<아이디>@users.noreply.github.com"   # GitHub
 |---|---|---|
 | `CORS_ORIGINS` | Render | Vercel 운영·미리보기 주소 패턴 |
 | `ANTHROPIC_API_KEY` | Render, 로컬 | 절대 커밋·로그 금지 |
+| `JWT_SECRET` | Render, 로컬 | 로그인 토큰 서명 키(HS256, ADR-0008). 32바이트 이상 무작위 값. 절대 커밋·로그 금지 |
+| `DB_URL`, `DB_USER`, `DB_PASSWORD` | Render | `jdbc:postgresql://HOST:PORT/DB` 형식. 로컬은 기본값(docker compose)을 쓰므로 넣지 않는다(ADR-0010) |
 | `KAKAO_REST_API_KEY` | Render, 로컬 | 카카오 디벨로퍼스 REST API 키. 통근 조회(ADR-0007). 절대 커밋·로그 금지 |
 | `VITE_API_BASE_URL` | Vercel, 프론트 `.env.local` | 브라우저에 노출됨. 주소만 |
 | `VOYAGE_API_KEY`, `NTS_SERVICE_KEY`, `NCS_SERVICE_KEY`, `JUSO_COORD_API_KEY` | 로컬(`pipeline/`) | 공공데이터포털은 Decoding 키. `JUSO_COORD_API_KEY`는 도로명주소 좌표제공 API 승인키. `ODSAY_API_KEY`는 더 쓰지 않는다(ADR-0002 개정) |

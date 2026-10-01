@@ -5,6 +5,14 @@ server:
 spring:
   application:
     name: coop-radar
+  datasource:
+    # 기본값은 로컬 docker compose(Postgres 18, 로컬 전용 계정). Render는 DB_URL·DB_USER·DB_PASSWORD를 넣는다(README 'DB')
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/coopradar}
+    username: ${DB_USER:coopradar}
+    password: ${DB_PASSWORD:coopradar}
+  flyway:
+    # 앱이 뜰 때 V*.sql을 순서대로 적용한다(ADR-0010). 이미 적용한 파일은 고치지 않고 다음 번호를 새로 만든다
+    locations: classpath:db/migration
 
 management:
   endpoints:

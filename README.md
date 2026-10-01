@@ -24,8 +24,9 @@ git config user.email "<숫자>+<아이디>@users.noreply.github.com"   # GitHub
 ## 로컬 실행
 
 ```
+docker compose up -d   # 로컬 Postgres 18. 앱이 뜰 때 Flyway가 스키마를 만든다
 ./gradlew bootRun      # Windows: gradlew.bat bootRun   → http://localhost:8080/api/ping
-./gradlew test
+./gradlew test         # Docker가 떠 있어야 한다(테스트용 Postgres 컨테이너를 따로 띄움)
 ```
 
 | 환경변수 | 기본값 | 설명 |
@@ -33,11 +34,14 @@ git config user.email "<숫자>+<아이디>@users.noreply.github.com"   # GitHub
 | `PORT` | 8080 | Render가 10000을 넣어 줍니다 |
 | `CORS_ORIGINS` | `http://localhost:5173` | 쉼표로 구분하고 패턴을 쓸 수 있습니다 |
 | `ANTHROPIC_API_KEY` | — | 추천 설명, E3 실험 |
+| `JWT_SECRET` | — | 로그인 토큰 서명 키(32바이트 이상 무작위 값) |
+| `KAKAO_REST_API_KEY` | — | 통근 조회(카카오 대중교통) |
+| `DB_URL` · `DB_USER` · `DB_PASSWORD` | 로컬 docker compose 값 | Render에서만 넣습니다(아래 'DB') |
 
 ## 배포 (Render)
-1. `develop`의 내용을 `main`에 올립니다: `git push origin origin/develop:refs/heads/main`
+1. `develop`의 내용을 `main`에 올립니다: `git push origin origin/develop:refs/heads/main`. **DB 연결이 들어간 뒤로는(ADR-0010) Render DB를 만들고 아래 'DB'의 환경변수를 넣은 다음에 올립니다.** DB가 없으면 앱이 뜨지 않아 배포가 실패합니다.
 2. Render → New → **Blueprint** → 이 저장소를 고르면 `render.yaml`을 읽습니다.
-3. `CORS_ORIGINS`와 `ANTHROPIC_API_KEY`를 입력합니다. 프론트 주소가 나오기 전에는 `CORS_ORIGINS`에 `http://localhost:5173`을 넣어 둡니다.
+3. `CORS_ORIGINS`·`ANTHROPIC_API_KEY`·`JWT_SECRET`·`KAKAO_REST_API_KEY`를 입력합니다. 프론트 주소가 나오기 전에는 `CORS_ORIGINS`에 `http://localhost:5173`을 넣어 둡니다.
 4. 첫 빌드가 끝나면 세 가지를 확인합니다.
     - 빌드 소요 시간(월 500분 예산 계산용)
     - `/actuator/health` 응답
@@ -69,8 +73,8 @@ ANTHROPIC_API_KEY=... java -jar build/libs/coop-radar-backend-0.0.1.jar --spring
 
 실행 방법은 [pipeline/README.md](pipeline/README.md)에 있습니다.
 
-## DB (10/15 이후)
-- **로컬:** `docker compose up -d`로 Postgres 18을 띄웁니다.
+## DB
+- **로컬:** `docker compose up -d`로 Postgres 18을 띄웁니다. 스키마는 Flyway(`src/main/resources/db/migration/`), 접근은 `JdbcClient`입니다(ADR-0010).
 - **Render:** 무료 Postgres는 10/15 이후 대시보드에서 만듭니다. Internal Database URL(`postgresql://USER:PASSWORD@HOST:PORT/DB`)을 JDBC 형식으로 바꿔 환경변수 3개를 넣습니다.
     - `DB_URL=jdbc:postgresql://HOST:PORT/DB`
     - `DB_USER`
