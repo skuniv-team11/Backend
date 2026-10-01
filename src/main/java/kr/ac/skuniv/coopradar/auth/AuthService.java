@@ -2,6 +2,7 @@ package kr.ac.skuniv.coopradar.auth;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
 import kr.ac.skuniv.coopradar.auth.AuthDtos.GuestTokenResponse;
@@ -9,6 +10,7 @@ import kr.ac.skuniv.coopradar.auth.AuthDtos.TokenResponse;
 import kr.ac.skuniv.coopradar.auth.AuthDtos.UserView;
 import kr.ac.skuniv.coopradar.common.ApiException;
 import kr.ac.skuniv.coopradar.common.ErrorCode;
+import kr.ac.skuniv.coopradar.common.RateLimitedException;
 import kr.ac.skuniv.coopradar.common.Times;
 import kr.ac.skuniv.coopradar.me.ExampleProfileProperties;
 import kr.ac.skuniv.coopradar.me.ProfileRepository;
@@ -18,7 +20,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** 가입·로그인·체험 계정(ADR-0008·0012). 필수로 받는 건 이메일과 비밀번호 해시뿐이다. */
+/** 가입·로그인·체험 계정(ADR-0008·0013). 필수로 받는 건 이메일과 비밀번호 해시뿐이다. */
 @Service
 public class AuthService {
 
@@ -74,20 +76,23 @@ public class AuthService {
 
     @Transactional
     public GuestTokenResponse guest(Role role, String clientIp) {
-        if (!limiter.tryAcquire(clientIp)) {
-            throw new ApiException(ErrorCode.RATE_LIMITED, "잠시 뒤 다시 시도해 주세요");
+        Duration wait = limiter.acquire(clientIp);
+        if (!wait.isZero()) {
+            throw new RateLimitedException(wait);
         }
         Instant now = clock.instant();
         Instant expiresAt = now.plus(props.guestTtl());
         long id = users.insertGuest(role, expiresAt);
         ProfileView profile = null;
         if (role == Role.STUDENT) {
-            int departmentId = profiles.findDepartmentId(example.departmentName()).orElseThrow(() -> new IllegalStateException(
-                    "예시 프로필 학과 '" + example.departmentName() + "'가 department 시드에 없습니다"));
-            String area = example.homeAreaCode() != null && profiles.areaExists(example.homeAreaCode())
-                    ? example.homeAreaCode() : null;
-            profiles.insertExample(id, departmentId, example, area, now);
-            profile = profiles.findView(id, true).orElseThrow();
+            // 학과 시드 전이면 계정만 만든다(프로필 없음). 기동 때 ExampleProfileCheck가 경고를 남긴다
+            var departmentId = profiles.findDepartmentId(example.departmentName());
+            if (departmentId.isPresent()) {
+                String area = example.homeAreaCode() != null && profiles.areaExists(example.homeAreaCode())
+                        ? example.homeAreaCode() : null;
+                profiles.insertExample(id, departmentId.get(), example, area, now);
+                profile = profiles.findView(id, true).orElseThrow();
+            }
         }
         UserView user = UserView.of(users.findAccount(id).orElseThrow());
         return new GuestTokenResponse(jwt.issue(id, role, true, expiresAt), TOKEN_TYPE, Times.kst(expiresAt), user, profile);

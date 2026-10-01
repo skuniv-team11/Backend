@@ -51,7 +51,8 @@ app:
     jwt-secret: ${JWT_SECRET:}
     member-ttl: 7d
     guest-ttl: 24h
-    guest-per-ip-per-hour: 20
+    # 체험 계정 만들기 IP당 1시간 한도. 시연장·학교 와이파이는 여러 명이 한 IP라 넉넉히. 0이면 제한 없음(ADR-0013)
+    guest-per-ip-per-hour: ${GUEST_PER_IP_PER_HOUR:300}
     # Render(*.onrender.com)는 Cloudflare를 거친다. 다른 곳에 배포하면 바꾸거나 비운다(비우면 연결 주소)
     client-ip-header: ${CLIENT_IP_HEADER:CF-Connecting-IP}
   example-profile:

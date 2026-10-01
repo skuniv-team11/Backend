@@ -203,17 +203,34 @@ class AuthApiTest {
     }
 
     @Test
-    void 체험_계정은_IP당_1시간_20회_넘으면_429() throws Exception {
+    void 체험_계정은_IP당_1시간_300회_넘으면_429와_Retry_After() throws Exception {
+        // 기본값 300: 시연장·학교 와이파이처럼 한 공인 IP를 여럿이 써도 막히지 않게(ADR-0013)
         String ip = "203.0.113." + (200 + IP.getAndIncrement());
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 300; i++) {
             mvc.perform(json(post("/api/auth/guest").header("CF-Connecting-IP", ip), "{\"role\":\"CENTER\"}"))
                     .andExpect(status().isCreated());
         }
-        mvc.perform(json(post("/api/auth/guest").header("CF-Connecting-IP", ip), "{\"role\":\"CENTER\"}"))
+        String retryAfter = mvc.perform(json(post("/api/auth/guest").header("CF-Connecting-IP", ip), "{\"role\":\"CENTER\"}"))
                 .andExpect(status().isTooManyRequests())
-                .andExpect(jsonPath("$.code").value("RATE_LIMITED"));
+                .andExpect(jsonPath("$.code").value("RATE_LIMITED"))
+                .andReturn().getResponse().getHeader("Retry-After");
+        assertThat(Long.parseLong(retryAfter)).isBetween(1L, 3600L);
         // 다른 IP는 영향 없음
         guest("CENTER").andExpect(status().isCreated());
+    }
+
+    @Test
+    void 학과_시드가_없으면_체험_STUDENT는_프로필_없이_201() throws Exception {
+        db.sql("DELETE FROM student_profile WHERE department_id = 31").update();
+        db.sql("DELETE FROM department WHERE id = 31").update();
+        String body = guest("STUDENT")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.user.role").value("STUDENT"))
+                .andExpect(jsonPath("$.user.hasProfile").value(false))
+                .andExpect(jsonPath("$.profile").isEmpty())
+                .andReturn().getResponse().getContentAsString();
+        // 토큰은 정상으로 쓴다
+        mvc.perform(get("/api/me").header("Authorization", "Bearer " + token(body))).andExpect(status().isOk());
     }
 
     @Test

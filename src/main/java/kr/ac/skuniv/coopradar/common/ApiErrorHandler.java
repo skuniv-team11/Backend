@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -32,6 +33,11 @@ public class ApiErrorHandler {
 
     @ExceptionHandler(ApiException.class)
     ResponseEntity<ErrorBody> api(ApiException e) {
+        if (e instanceof RateLimitedException r) {
+            return ResponseEntity.status(e.code().status())
+                    .header(HttpHeaders.RETRY_AFTER, Long.toString(r.retryAfter().toSeconds()))
+                    .body(new ErrorBody(e.code(), e.getMessage(), null));
+        }
         return body(e.code(), e.getMessage(), e.fields());
     }
 

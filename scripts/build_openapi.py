@@ -158,7 +158,7 @@ S.update({
         "tokenType": {"type": "string", "enum": ["Bearer"]},
         "expiresAt": d(DATETIME, "체험 계정 24시간"),
         "user": R("User"),
-        "profile": d(nul(R("ProfileView")), "STUDENT면 저장된 예시 프로필(isExample: true), CENTER면 null"),
+        "profile": d(nul(R("ProfileView")), "STUDENT면 저장된 예시 프로필(isExample: true). CENTER, 또는 학과 시드 전의 STUDENT면 null"),
     }, optional=("profile",)),
     "Profile": obj(PROFILE_PROPS, optional=PROFILE_OPTIONAL,
                    desc="학생 프로필. 요청 본문으로만 보낸다(URL·쿼리에 넣지 않는다)"),

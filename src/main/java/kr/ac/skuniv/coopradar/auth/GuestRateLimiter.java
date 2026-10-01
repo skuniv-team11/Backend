@@ -10,8 +10,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 
 /**
- * 체험 계정 만들기 IP당 1시간 한도(docs/api '호출 제한'). 서버 메모리에만 두고 1시간이 지나면 버린다.
- * 서버가 다시 뜨면 비워진다 — 심사 기간 남용을 늦추는 용도이고, 비용 상한은 Console 사용 한도가 맡는다.
+ * 체험 계정 만들기 IP당 1시간 한도(docs/api '호출 제한', ADR-0013). 서버 메모리에만 두고 1시간이 지나면 버린다.
+ * 시연장·학교 와이파이처럼 여러 사람이 한 공인 IP를 쓰는 곳을 막지 않도록 넉넉하게 두고(기본 300),
+ * 비용이 드는 호출(이유 문장·통근)은 각자의 한도가 지킨다. 0이면 제한하지 않는다.
  */
 @Component
 public class GuestRateLimiter {
@@ -27,17 +28,21 @@ public class GuestRateLimiter {
         this.clock = clock;
     }
 
-    /** 한도 안이면 한 번 세고 true. */
-    public boolean tryAcquire(String ip) {
+    /** 한도 안이면 한 번 세고 {@link Duration#ZERO}, 넘었으면 다시 될 때까지 남은 시간(초 단위 올림). */
+    public Duration acquire(String ip) {
+        if (limit <= 0) {
+            return Duration.ZERO;
+        }
         Instant now = clock.instant();
         Deque<Instant> q = hits.computeIfAbsent(ip, k -> new ArrayDeque<>());
         synchronized (q) {
             evict(q, now);
             if (q.size() >= limit) {
-                return false;
+                Duration wait = Duration.between(now, q.peekFirst().plus(WINDOW));
+                return Duration.ofSeconds(Math.max(1, (wait.toMillis() + 999) / 1000));
             }
             q.addLast(now);
-            return true;
+            return Duration.ZERO;
         }
     }
 

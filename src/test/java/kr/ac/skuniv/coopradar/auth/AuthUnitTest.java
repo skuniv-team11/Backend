@@ -64,22 +64,32 @@ class AuthUnitTest {
     // ───────── 호출 제한 ─────────
 
     @Test
-    void 한도는_IP별로_1시간_창을_민다() {
-        GuestRateLimiter limiter = new GuestRateLimiter(props, clock);
-        assertThat(limiter.tryAcquire("a")).isTrue();
-        assertThat(limiter.tryAcquire("a")).isTrue();
-        assertThat(limiter.tryAcquire("a")).isTrue();
-        assertThat(limiter.tryAcquire("a")).isFalse();
-        assertThat(limiter.tryAcquire("b")).isTrue();
+    void 한도는_IP별로_1시간_창을_밀고_남은_시간을_알려준다() {
+        GuestRateLimiter limiter = new GuestRateLimiter(props, clock); // 테스트 한도 3
+        assertThat(limiter.acquire("a")).isZero();
+        clock.advance(Duration.ofMinutes(10));
+        assertThat(limiter.acquire("a")).isZero();
+        assertThat(limiter.acquire("a")).isZero();
+        assertThat(limiter.acquire("a")).isEqualTo(Duration.ofMinutes(50)); // 첫 요청이 빠질 때까지
+        assertThat(limiter.acquire("b")).isZero();
 
-        clock.advance(Duration.ofMinutes(59));
-        assertThat(limiter.tryAcquire("a")).isFalse();
+        clock.advance(Duration.ofMinutes(49));
+        assertThat(limiter.acquire("a")).isEqualTo(Duration.ofMinutes(1));
         clock.advance(Duration.ofMinutes(2));
-        assertThat(limiter.tryAcquire("a")).isTrue();
+        assertThat(limiter.acquire("a")).isZero();
 
         clock.advance(Duration.ofHours(2));
         limiter.purge();
-        assertThat(limiter.tryAcquire("a")).isTrue();
+        assertThat(limiter.acquire("a")).isZero();
+    }
+
+    @Test
+    void 한도_0이면_제한하지_않는다() {
+        GuestRateLimiter off = new GuestRateLimiter(
+                new AuthProperties(SECRET, Duration.ofDays(7), Duration.ofHours(24), 0, null), clock);
+        for (int i = 0; i < 1000; i++) {
+            assertThat(off.acquire("a")).isZero();
+        }
     }
 
     // ───────── 서명 키 ─────────
