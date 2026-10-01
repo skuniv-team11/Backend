@@ -27,6 +27,8 @@ touched '^(src/|build\.gradle|settings\.gradle|gradle/|scripts/verify)' && \
   run "backend 테스트" "build/reports/tests/test/index.html 에서 실패한 테스트를 보세요" ./gradlew test -q
 touched '^(pipeline/|scripts/|src/main/resources/prompts/)' && \
   run "pipeline 검사" "출력된 → 안내를 따르세요(스키마는 build_schema.py 를 고쳐 다시 생성)" python3 scripts/check_pipeline.py
+touched '^(docs/api/|scripts/build_openapi\.py|src/main/resources/static/openapi/|src/main/resources/db/migration/|build\.gradle)' && \
+  run "API 계약 스펙(Swagger)" "python3 scripts/build_openapi.py 로 다시 만들어 같이 커밋하세요(예시가 스키마에 안 맞으면 출력된 필드를 고치세요)" python3 scripts/build_openapi.py --check
 touched '^(scripts/|\.githooks/)' && \
   run "하네스 자체 테스트" "규칙이 막아야 할 것을 못 막거나, 통과해야 할 것을 막고 있습니다" scripts/test-harness.sh
 
