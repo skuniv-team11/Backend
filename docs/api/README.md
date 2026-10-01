@@ -130,8 +130,9 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - 화면에는 '노원구에서 약 43분 · 환승 1회'처럼 출발지를 꼭 붙이고, 출처 '카카오맵 대중교통 기준'을 적는다. 로그에 `homeAreaCode`·좌표를 남기지 않는다.
 
 **지망**
-- 담기(`POST items`): 새로 담으면 201, 이미 담겨 있으면 200(그대로). 취소는 204, 없으면 404 `PLAN_ITEM_NOT_FOUND`.
-- `PUT ranks`는 **순위 전체**를 보낸다. 여기 없는 담은 직무는 순위가 지워진다(`rank: null`). 순위는 1~3, 중복 불가, 담은 직무만 → 어기면 400 `RANK_INVALID`.
+- 담기(`POST items`): 새로 담으면 201, 이미 담겨 있으면 200(그대로). 본문 없음. 현재 회차에 없는 직무는 400 `INVALID_INPUT`(`jobId`). 취소는 204, 없으면 404 `PLAN_ITEM_NOT_FOUND`.
+- `GET /api/me/plan`·`PUT ranks` 응답의 `items` 순서: 순위 있는 것(1 → 3) 먼저, 그다음 담은 순.
+- `PUT ranks`는 **순위 전체**를 보낸다. 여기 없는 담은 직무는 순위가 지워진다(`rank: null`). 순위는 1~3, 중복 불가, 한 직무에 하나, 3개까지, 담은 직무만 → 어기면 400 `RANK_INVALID`(아무것도 바꾸지 않음). `ranks`가 없거나 원소의 `jobId`·`rank`가 빠지면 400 `INVALID_INPUT`. `[]`이면 순위를 모두 지운다.
 - `check`: 순위가 있는 직무의 신호와 대안을 준다(경고 문장 없음, ADR-0015). 대안은 요건이 맞는 빈 자리 — `INELIGIBLE`·`CLOSED`·남은 자리 0을 빼고, `fit` → 남은 자리 순으로 최대 5개.
 - `asOf`는 회차 기간 안이어야 한다(아니면 400 `AS_OF_OUT_OF_RANGE`). 생략하면 `rounds/current`의 `replay.defaultAsOf`.
 
