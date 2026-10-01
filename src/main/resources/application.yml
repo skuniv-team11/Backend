@@ -49,6 +49,14 @@ app:
   replay:
     # 시연 기본 기준일(GET /api/rounds/current의 replay.defaultAsOf). 현재 회차 모집기간 밖이면 가까운 끝 날짜로 맞춘다
     default-as-of: ${REPLAY_DEFAULT_AS_OF:2026-07-18}
+  reason:
+    # 추천 이유 문장(docs/api #16). 키가 비면 LLM을 부르지 않고 기본 문장(TEMPLATE)으로 답한다
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${REASON_MODEL:claude-haiku-4-5-20251001}
+    timeout: 5s
+    per-user-per-hour: 30
+    per-ip-per-hour: 60
+    cache-size: 2000
   center:
     # 현황판 위험 요인 NARROW_POOL: 선호 전공 재학생 수가 이 값보다 적으면 표시(2026-2 시드 분포로 정함, ADR-0016)
     narrow-pool-below: ${CENTER_NARROW_POOL_BELOW:200}

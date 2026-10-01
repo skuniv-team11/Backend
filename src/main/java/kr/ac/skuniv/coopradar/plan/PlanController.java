@@ -6,6 +6,8 @@ import kr.ac.skuniv.coopradar.auth.RequireRole;
 import kr.ac.skuniv.coopradar.auth.Role;
 import kr.ac.skuniv.coopradar.plan.PlanDtos.Plan;
 import kr.ac.skuniv.coopradar.plan.PlanDtos.PlanAddRequest;
+import kr.ac.skuniv.coopradar.plan.PlanDtos.PlanCheck;
+import kr.ac.skuniv.coopradar.plan.PlanDtos.PlanCheckRequest;
 import kr.ac.skuniv.coopradar.plan.PlanDtos.PlanRanksRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +22,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * docs/api #19 담은 직무 · #20 담기 · #21 담기 취소 · #22 1~3지망 순위. 학생만(체험 계정 포함).
+ * docs/api #19 담은 직무 · #20 담기 · #21 담기 취소 · #22 1~3지망 순위 · #23 지망 점검. 학생만(체험 계정 포함).
  * 담은 목록은 계정에 저장되고 탈퇴하면 같이 지워진다(DB cascade).
  */
 @RestController
@@ -29,9 +31,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class PlanController {
 
     private final PlanService plans;
+    private final PlanCheckService checks;
 
-    public PlanController(PlanService plans) {
+    public PlanController(PlanService plans, PlanCheckService checks) {
         this.plans = plans;
+        this.checks = checks;
     }
 
     @GetMapping
@@ -55,5 +59,11 @@ public class PlanController {
     @PutMapping("/ranks")
     public Plan setRanks(AuthUser user, @Valid @RequestBody PlanRanksRequest body) {
         return plans.setRanks(user, body.ranks());
+    }
+
+    /** #23 지망 점검. 프로필은 본문으로만(저장·로그 안 함). asOf가 모집기간 밖이면 400 AS_OF_OUT_OF_RANGE. */
+    @PostMapping("/check")
+    public PlanCheck check(AuthUser user, @Valid @RequestBody PlanCheckRequest body) {
+        return checks.check(user, body.profile(), body.asOf());
     }
 }
