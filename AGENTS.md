@@ -44,14 +44,14 @@ scripts/verify.sh          # 바뀐 부분만. 전체는 scripts/verify.sh --all
 - 외부 조건(요금·한도·버전)은 추측하지 말고 공식 문서를 확인해 출처를 남긴다.
 
 ## 알아두면 막히지 않는 것
-- 명령: `./gradlew test`(필수, **Docker 필요** — 테스트가 Postgres 18 컨테이너를 띄운다) · `docker compose up -d` 뒤 `./gradlew bootRun`(:8080, `/api/ping`, `/actuator/health`, `/swagger-ui.html`) · `./gradlew bootJar`
+- 명령: `./gradlew test`(필수, **Docker 필요** — 테스트가 Postgres 18 컨테이너를 띄운다. PR의 CI에서도 돈다) · `./gradlew bootJar`. 로컬에서 서버를 띄우지 않는다(10/2) — 확인은 배포 서버 `https://coop-radar-api.onrender.com`(`/api/ping`, `/actuator/health`, `/swagger-ui.html`)
 - Render 512MB: JVM 옵션은 `Dockerfile`의 `JAVA_TOOL_OPTIONS`. 요청마다 큰 PDF를 메모리에 올리지 않는다.
 - Render 빌드 월 500분 → `main` 브랜치만 배포(개발은 `develop`). `pipeline/`·`docs/` 변경은 빌드하지 않는다(`render.yaml` buildFilter).
 - 구조화 출력용 Java enum은 **한글 상수명**, `@JsonProperty` 금지 → `StructuredOutputRulesTest`(ADR-0003).
 - Boot 4는 Jackson 3(`tools.jackson`), Anthropic SDK는 Jackson 2. SDK 모델 직렬화는 `com.anthropic.core.ObjectMappers.jsonMapper()`.
 - DB 접근은 `JdbcClient`로 SQL을 직접 쓴다(JPA 없음). 스키마 변경은 새 `V2__*.sql`로만, 적용한 파일은 고치지 않는다(ADR-0010). 시드는 `R__seed.sql`(반복 마이그레이션)이고 `pipeline/seed/`에서 생성한다 — 손으로 고치지 않는다(ADR-0014). 새 `@SpringBootTest`에는 `@Import(TestcontainersConfiguration.class)`.
 - 배포 DB는 Render 무료 Postgres(10/2 생성, 10/15~10/31에 한 번 다시 만든다 — ADR-0005). Internal URL `postgresql://USER:PASSWORD@HOST/DB`를 `DB_URL=jdbc:postgresql://HOST/DB`·`DB_USER`·`DB_PASSWORD`로 나눠 넣는다. 웹 서비스는 Starter(`0.5c-512mb`). **DB 없이는 앱이 뜨지 않는다.**
-- 로컬에서 `JWT_SECRET`을 비우면 서버가 뜰 때마다 임시 키를 만든다(다시 뜨면 로그인이 풀림). 배포에는 반드시 넣는다.
+- `JWT_SECRET`이 비면 서버가 뜰 때마다 임시 키를 만든다(다시 뜨면 로그인이 풀림). Render는 Blueprint가 무작위 값을 만든다(`generateValue`).
 - 응답 테스트는 `Contract.assertSameShape(응답, Contract.responseExample(operationId, 상태, null))`로 계약 예시와 모양을 맞춘다.
 - 한글 경로 `InvalidPathException` → `-Dsun.jnu.encoding=UTF-8`.
 - 모집기간 지원 신호는 **가상 데이터**다. 응답에 가상 여부 필드를 빼지 않는다.

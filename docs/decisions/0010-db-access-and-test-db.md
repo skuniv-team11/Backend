@@ -11,8 +11,8 @@
   - `JdbcClient`는 V1 SQL을 그대로 쓰고 배열 컬럼도 SQL로 다룬다. 시드 테이블은 읽기가 대부분이라 엔티티 매핑으로 얻는 게 적다.
   - CI(GitHub Actions `ubuntu-latest`)에는 Docker가 있어 설정 없이 같은 테스트가 돈다.
 - 결과
-  - 로컬 `./gradlew test`에 Docker가 필요하다(Windows는 Docker Desktop). 첫 실행은 `postgres:18` 이미지를 받느라 느리다.
-  - `bootRun` 전에 `docker compose up -d`. DB가 없으면 앱이 뜨지 않는다.
+  - `./gradlew test`에 Docker가 필요하다(CI에는 있다). 첫 실행은 `postgres:18` 이미지를 받느라 느리다.
+  - DB가 없으면 앱이 뜨지 않는다. 10/2부터 로컬에서 서버를 띄우지 않고 Render DB만 쓴다(ADR-0005 개정).
   - **Render DB 없이 `main`을 배포하면 실패한다.** DB를 만들고 `DB_URL`·`DB_USER`·`DB_PASSWORD`를 넣은 뒤에 배포한다(ADR-0005, 10/2 개정으로 DB를 지금 만든다).
   - 검증(10/1): 테스트 13개 통과(Flyway가 Postgres 18.6에 V1 적용, 테이블 21개), `docker compose` + `bootRun`에서 `/actuator/health` UP.
 - 다시 볼 때: 같은 매핑 코드가 반복돼 부담이 될 때(Spring Data JDBC 검토), 또는 CI 테스트 시간이 문제가 될 때.

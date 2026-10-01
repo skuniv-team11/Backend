@@ -14,5 +14,5 @@
 - 결과
   - `render.yaml`에 `DB_URL`·`DB_USER`·`DB_PASSWORD`(`sync: false`)를 두어 Blueprint를 만들 때 함께 넣는다. 다시 만들 때는 대시보드 Environment에서 세 값을 바꾸고 다시 배포한다(README 'DB').
   - 비용(초 단위 일할): Starter 10/2~11/12 약 $9.6. DB 0원.
-  - 로컬 docker compose는 백엔드 개발자가 원할 때만 쓴다. 테스트는 Testcontainers(ADR-0010)라 CI는 그대로다.
+  - 로컬에서는 서버를 띄우지 않는다(10/2). 테스트는 CI의 Testcontainers(ADR-0010)로 돈다.
 - 다시 볼 때: 발표 이후 운영을 이어갈 때(유료 DB 전환).
