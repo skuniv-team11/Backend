@@ -43,6 +43,7 @@
         ],
         "operationId": "ping",
         "summary": "배포 연결 확인",
+        "x-auth": "공개",
         "description": "권한: **공개** · 화면: — · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "responses": {
           "200": {
@@ -75,6 +76,7 @@
         ],
         "operationId": "getCodes",
         "summary": "코드값 → 화면 표기",
+        "x-auth": "공개",
         "description": "권한: **공개** · 화면: 전체 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "responses": {
           "200": {
@@ -241,6 +243,7 @@
         ],
         "operationId": "signup",
         "summary": "이메일 가입",
+        "x-auth": "공개",
         "description": "권한: **공개** · 화면: 가입 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "requestBody": {
           "required": true,
@@ -342,6 +345,7 @@
         ],
         "operationId": "login",
         "summary": "이메일 로그인",
+        "x-auth": "공개",
         "description": "권한: **공개** · 화면: 로그인 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "requestBody": {
           "required": true,
@@ -443,6 +447,7 @@
         ],
         "operationId": "createGuest",
         "summary": "체험 계정 만들기([예시 프로필로 시작]·[센터 담당자로 보기])",
+        "x-auth": "공개",
         "description": "권한: **공개** · 화면: 시작 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "requestBody": {
           "required": true,
@@ -562,6 +567,7 @@
         ],
         "operationId": "getMe",
         "summary": "내 계정",
+        "x-auth": "로그인",
         "description": "권한: **로그인** · 화면: M1·공통 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "security": [
           {
@@ -624,6 +630,7 @@
         ],
         "operationId": "deleteMe",
         "summary": "탈퇴(계정·프로필·담은 지망 즉시 삭제)",
+        "x-auth": "로그인",
         "description": "권한: **로그인** · 화면: M1 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "security": [
           {
@@ -668,6 +675,7 @@
         ],
         "operationId": "getMyProfile",
         "summary": "저장한 프로필",
+        "x-auth": "STUDENT",
         "description": "권한: **STUDENT** · 화면: S1 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "security": [
           {
@@ -779,6 +787,7 @@
         ],
         "operationId": "saveMyProfile",
         "summary": "프로필 저장(동의 필수)",
+        "x-auth": "STUDENT",
         "description": "권한: **STUDENT** · 화면: S1 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "requestBody": {
           "required": true,
@@ -927,6 +936,7 @@
         ],
         "operationId": "deleteMyProfile",
         "summary": "저장한 프로필만 삭제",
+        "x-auth": "STUDENT",
         "description": "권한: **STUDENT** · 화면: M1 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "security": [
           {
@@ -989,6 +999,7 @@
         ],
         "operationId": "getDepartments",
         "summary": "학과 72개",
+        "x-auth": "공개",
         "description": "권한: **공개** · 화면: S1 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "responses": {
           "200": {
@@ -1035,6 +1046,7 @@
         ],
         "operationId": "getAreas",
         "summary": "사는 곳 선택지(서울·인천·경기 시·군·구)",
+        "x-auth": "공개",
         "description": "권한: **공개** · 화면: S1 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "responses": {
           "200": {
@@ -1091,6 +1103,7 @@
         ],
         "operationId": "getCurrentRound",
         "summary": "현재 모집 회차와 리플레이 날짜 범위",
+        "x-auth": "공개",
         "description": "권한: **공개** · 화면: S5·C4 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "responses": {
           "200": {
@@ -1132,6 +1145,7 @@
         ],
         "operationId": "checkEligibility",
         "summary": "회차 직무 전부의 3층 판정",
+        "x-auth": "STUDENT",
         "description": "권한: **STUDENT** · 화면: S2·S4 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "requestBody": {
           "required": true,
@@ -1401,6 +1415,7 @@
         ],
         "operationId": "getRecommendations",
         "summary": "적합도 추천 상위 5개",
+        "x-auth": "STUDENT",
         "description": "권한: **STUDENT** · 화면: S3 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "requestBody": {
           "required": true,
@@ -1614,6 +1629,7 @@
         ],
         "operationId": "getRecommendationReason",
         "summary": "추천 이유 문장(LLM, 실패 시 기본 문장)",
+        "x-auth": "STUDENT",
         "description": "권한: **STUDENT** · 화면: S3 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "parameters": [
           {
@@ -1786,6 +1802,7 @@
         ],
         "operationId": "getJob",
         "summary": "직무 상세 + AI 추출 근거",
+        "x-auth": "로그인",
         "description": "권한: **로그인** · 화면: S4 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "parameters": [
           {
@@ -1983,6 +2000,7 @@
         ],
         "operationId": "getCommute",
         "summary": "통근 시간(카카오 대중교통 실시간, 저장 안 함)",
+        "x-auth": "로그인",
         "description": "권한: **로그인** · 화면: S4 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "parameters": [
           {
@@ -2149,6 +2167,7 @@
         ],
         "operationId": "getMyPlan",
         "summary": "담은 직무와 순위",
+        "x-auth": "STUDENT",
         "description": "권한: **STUDENT** · 화면: S3·S5 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "security": [
           {
@@ -2257,6 +2276,7 @@
         ],
         "operationId": "addPlanItem",
         "summary": "담기",
+        "x-auth": "STUDENT",
         "description": "권한: **STUDENT** · 화면: S3 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "requestBody": {
           "required": true,
@@ -2364,6 +2384,7 @@
         ],
         "operationId": "removePlanItem",
         "summary": "담기 취소",
+        "x-auth": "STUDENT",
         "description": "권한: **STUDENT** · 화면: S3·S5 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "parameters": [
           {
@@ -2455,6 +2476,7 @@
         ],
         "operationId": "setPlanRanks",
         "summary": "1~3지망 순위 정하기",
+        "x-auth": "STUDENT",
         "description": "권한: **STUDENT** · 화면: S5 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "requestBody": {
           "required": true,
@@ -2620,6 +2642,7 @@
         ],
         "operationId": "checkPlan",
         "summary": "지망별 몰림 점검 + 빈 자리 제안",
+        "x-auth": "STUDENT",
         "description": "권한: **STUDENT** · 화면: S5 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "requestBody": {
           "required": true,
@@ -2825,6 +2848,7 @@
         ],
         "operationId": "getCenterBoard",
         "summary": "모집 현황판",
+        "x-auth": "CENTER",
         "description": "권한: **CENTER** · 화면: C4 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "parameters": [
           {
@@ -3580,7 +3604,8 @@
           },
           "password": {
             "type": "string",
-            "minLength": 8
+            "minLength": 8,
+            "description": "8자 이상, UTF-8 72바이트 이하(BCrypt 한도)"
           }
         },
         "required": [
@@ -3840,7 +3865,23 @@
           "RATE_LIMITED",
           "INTERNAL"
         ],
-        "description": "`INVALID_INPUT` 400 · `CONSENT_REQUIRED` 400 · `RANK_INVALID` 400 · `AS_OF_OUT_OF_RANGE` 400 · `AUTH_REQUIRED` 401 · `TOKEN_EXPIRED` 401 · `LOGIN_FAILED` 401 · `FORBIDDEN_ROLE` 403 · `PROFILE_NOT_FOUND` 404 · `JOB_NOT_FOUND` 404 · `PLAN_ITEM_NOT_FOUND` 404 · `EMAIL_TAKEN` 409 · `RATE_LIMITED` 429 · `INTERNAL` 500"
+        "description": "`INVALID_INPUT` 400 · `CONSENT_REQUIRED` 400 · `RANK_INVALID` 400 · `AS_OF_OUT_OF_RANGE` 400 · `AUTH_REQUIRED` 401 · `TOKEN_EXPIRED` 401 · `LOGIN_FAILED` 401 · `FORBIDDEN_ROLE` 403 · `PROFILE_NOT_FOUND` 404 · `JOB_NOT_FOUND` 404 · `PLAN_ITEM_NOT_FOUND` 404 · `EMAIL_TAKEN` 409 · `RATE_LIMITED` 429 · `INTERNAL` 500",
+        "x-status": {
+          "INVALID_INPUT": 400,
+          "CONSENT_REQUIRED": 400,
+          "RANK_INVALID": 400,
+          "AS_OF_OUT_OF_RANGE": 400,
+          "AUTH_REQUIRED": 401,
+          "TOKEN_EXPIRED": 401,
+          "LOGIN_FAILED": 401,
+          "FORBIDDEN_ROLE": 403,
+          "PROFILE_NOT_FOUND": 404,
+          "JOB_NOT_FOUND": 404,
+          "PLAN_ITEM_NOT_FOUND": 404,
+          "EMAIL_TAKEN": 409,
+          "RATE_LIMITED": 429,
+          "INTERNAL": 500
+        }
       },
       "EvidenceFieldKey": {
         "type": "string",
@@ -3924,7 +3965,7 @@
                 "type": "null"
               }
             ],
-            "description": "role이 STUDENT일 때 저장된 예시 프로필(isExample: true)"
+            "description": "STUDENT면 저장된 예시 프로필(isExample: true), CENTER면 null"
           }
         },
         "required": [

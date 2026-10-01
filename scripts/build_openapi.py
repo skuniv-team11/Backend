@@ -136,7 +136,7 @@ S.update({
               "additionalProperties": {"type": "object", "additionalProperties": STR}},
     "Credentials": obj({
         "email": {"type": "string", "format": "email", "description": "소문자로 맞춰 저장"},
-        "password": {"type": "string", "minLength": 8},
+        "password": {"type": "string", "minLength": 8, "description": "8자 이상, UTF-8 72바이트 이하(BCrypt 한도)"},
     }),
     "GuestRequest": obj({"role": R("Role")}),
     "User": obj({
@@ -158,7 +158,7 @@ S.update({
         "tokenType": {"type": "string", "enum": ["Bearer"]},
         "expiresAt": d(DATETIME, "체험 계정 24시간"),
         "user": R("User"),
-        "profile": d(nul(R("ProfileView")), "role이 STUDENT일 때 저장된 예시 프로필(isExample: true)"),
+        "profile": d(nul(R("ProfileView")), "STUDENT면 저장된 예시 프로필(isExample: true), CENTER면 null"),
     }, optional=("profile",)),
     "Profile": obj(PROFILE_PROPS, optional=PROFILE_OPTIONAL,
                    desc="학생 프로필. 요청 본문으로만 보낸다(URL·쿼리에 넣지 않는다)"),
@@ -390,7 +390,8 @@ ERR = {}
 for code, http, when in re.findall(r"^\| `([A-Z_]+)` \| (\d{3}) \| (.+?) \|$", README.split("## 오류 코드", 1)[1], re.M):
     ERR[code] = (int(http), when.strip())
 S["ErrorCode"] = {"type": "string", "enum": list(ERR),
-                  "description": " · ".join(f"`{c}` {h}" for c, (h, _) in ERR.items())}
+                  "description": " · ".join(f"`{c}` {h}" for c, (h, _) in ERR.items()),
+                  "x-status": {c: h for c, (h, _) in ERR.items()}}  # 서버 ErrorCode enum과 대조(ContractTest)
 
 # ───────────────────────── 엔드포인트 ─────────────────────────
 # req: (스키마, [예시 파일]) / ok: {상태: (스키마 또는 None, [예시 파일])} / errors: 공통 규칙 밖에서 더 나는 오류 코드
@@ -581,6 +582,7 @@ for r in rows:
             fails.append(f"{key}: README 예시 칸의 {st}이 ok 상태에 없음")
 
     op = {"tags": [r["tag"]], "operationId": e["op"], "summary": r["summary"],
+          "x-auth": r["auth"],  # 공개·로그인·STUDENT·CENTER — 컨트롤러 @PublicApi·@RequireRole과 대조(ContractTest)
           "description": f"권한: **{r['auth']}** · 화면: {r['screen']} · 규칙은 [docs/api/README.md]({REPO_DOC}) '엔드포인트별 규칙'"}
     params = []
     for name in re.findall(r"\{(\w+)\}", path):
