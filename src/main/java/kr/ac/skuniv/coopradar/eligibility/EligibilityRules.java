@@ -12,13 +12,14 @@ import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.ReasonLine;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Result;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Verdict;
 import kr.ac.skuniv.coopradar.eligibility.JobRequirement.AlertRef;
-import kr.ac.skuniv.coopradar.job.EvidenceLabels;
 
 /**
  * 자격 판정 3층 규칙(docs/api/README.md '판정', ADR-0012). AI를 쓰지 않는 규칙 엔진이고 DB를 모른다.
  * <ol>
  *   <li>학교 규정(SCHOOL_RULE): 이수 학기 4학기 이상 · 졸업예정자는 방학 과정(VACATION) 불가. MET·NOT_MET만</li>
- *   <li>기관 조건(INSTITUTION): 학년(3·4학년 / 4학년 / 졸업예정자) · 학점 하한 · 포트폴리오 · 자격증 · 판정 항목에 걸린 검토 알림</li>
+ *   <li>기관 조건(INSTITUTION): 학년(3·4학년 / 4학년 / 졸업예정자) · 학점 하한 · 포트폴리오 · 자격증.
+ *       검토 알림의 fieldKey가 이 넷 중 하나면 그 항목 행이 CHECK가 되고 alertId가 붙는다(ADR-0016).
+ *       그 밖의 알림(선호 전공·기간·지원비 등)은 판정을 바꾸지 않는다 — 목록의 alertCount로만 보인다</li>
  *   <li>선호 전공(MAJOR): 참고 표시(INFO)만. 판정에 넣지 않는다</li>
  * </ol>
  * 판정: SCHOOL_RULE에 NOT_MET → INELIGIBLE, 아니면 INSTITUTION에 NOT_MET·CHECK → NEEDS_CHECK, 아니면 ELIGIBLE.
@@ -27,12 +28,12 @@ public final class EligibilityRules {
 
     static final int MIN_COMPLETED_SEMESTERS = 4;
 
-    /**
-     * 판정 항목 필드 → 검토 알림 줄의 항목 이름. 이 필드에 걸린 알림만 '확인 필요'로 만든다
-     * (기간·지원비 같은 알림은 직무 상세에만 보인다).
-     */
-    static final List<String> JUDGED_FIELDS = List.of(
-            "course", "gradeRequirement", "gpaRequirement", "majorRequirement", "portfolio", "certificate");
+    /** 판정 항목 필드 → 이유 줄의 항목 이름(ADR-0016). 이 필드에 걸린 알림만 판정을 바꾼다. */
+    static final Map<String, String> JUDGED_FIELDS = Map.of(
+            "gradeRequirement", "학년",
+            "gpaRequirement", "학점",
+            "portfolio", "포트폴리오",
+            "certificate", "자격증");
 
     private static final Map<String, String> ALERT_REQUIREMENT = Map.of(
             "DOC_INCONSISTENCY", "문서 안에서 서로 다르게 적혀 있음",
@@ -50,7 +51,7 @@ public final class EligibilityRules {
         reasons.add(ReasonLine.of(Layer.MAJOR, "선호 전공",
                 job.majorOpen() ? "전공 무관" : orDash(job.majorText()), departmentName, Result.INFO));
         return new EligibilityJob(job.jobId(), job.title(), job.team(), job.institution(), verdict(reasons), match,
-                List.copyOf(reasons));
+                job.closing(), job.alertCount(), List.copyOf(reasons));
     }
 
     static Verdict verdict(List<ReasonLine> reasons) {
@@ -102,12 +103,32 @@ public final class EligibilityRules {
         document(out, "포트폴리오", job.portfolio(), null);
         document(out, "자격증", job.certificate(), job.certificateText());
         for (AlertRef alert : job.alerts()) {
-            if (!JUDGED_FIELDS.contains(alert.fieldKey())) {
+            String item = JUDGED_FIELDS.get(alert.fieldKey());
+            if (item == null) {
                 continue;
             }
-            out.add(new ReasonLine(Layer.INSTITUTION, EvidenceLabels.label(alert.fieldKey()) + " 표기",
-                    ALERT_REQUIREMENT.getOrDefault(alert.kind(), "검토가 필요함"), "—", Result.CHECK, alert.id()));
+            int at = indexOf(out, item);
+            if (at >= 0) {
+                // 그 항목 행을 '확인 필요'로 바꾼다(요건·내 값은 그대로)
+                ReasonLine line = out.get(at);
+                out.set(at, new ReasonLine(line.layer(), line.item(), line.requirement(), line.mine(), Result.CHECK,
+                        alert.id()));
+            } else {
+                // 행이 없던 항목(예: 학점 하한이 없는데 학점 요건이 엇갈림)은 새로 만든다
+                out.add(new ReasonLine(Layer.INSTITUTION, item,
+                        ALERT_REQUIREMENT.getOrDefault(alert.kind(), "검토가 필요함"), "—", Result.CHECK, alert.id()));
+            }
         }
+    }
+
+    private static int indexOf(List<ReasonLine> lines, String item) {
+        for (int i = 0; i < lines.size(); i++) {
+            if (lines.get(i).layer() == Layer.INSTITUTION && lines.get(i).item().equals(item)
+                    && lines.get(i).alertId() == null) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /** 필수면 학생이 직접 확인할 항목(CHECK), 우대면 참고(INFO), 없으면 줄을 만들지 않는다. */

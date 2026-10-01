@@ -43,7 +43,7 @@ def ddl_array(col):
     return set(re.findall(r"'([A-Z_]+)'", m.group(1)))
 
 codes = docs["codes.json"]
-pairs = {"size": "size", "listing": "listing", "course": "course", "jobType": "job_type",
+pairs = {"size": "size", "listing": "listing", "ntsStatus": "nts_status", "course": "course", "jobType": "job_type",
          "overtime": "overtime", "stipendBasis": "stipend_basis", "gradeRule": "grade_rule",
          "requirement": "portfolio", "alertKind": "kind", "closeReason": "close_reason", "role": "role"}
 for k, col in pairs.items():
@@ -57,7 +57,7 @@ check(set(codes["sourceType"]) == src_kind, "sourceType ≠ source_document.kind
 # 예시 안의 모든 코드값이 코드표에 있는지
 FIELD_CODE = {"verdict": "verdict", "layer": "reasonLayer", "result": "reasonResult", "majorMatch": "majorMatch",
               "fit": "fit", "status": "signalStatus", "signalSource": "signalSource", "closeReason": "closeReason",
-              "code": "risk", "kind": "alertKind", "size": "size", "listing": "listing", "course": "course",
+              "code": "risk", "kind": "alertKind", "size": "size", "listing": "listing", "ntsStatus": "ntsStatus", "course": "course",
               "jobType": "jobType", "overtime": "overtime", "basis": "stipendBasis", "gradeRule": "gradeRule",
               "portfolio": "requirement", "certificate": "requirement", "sourceType": "sourceType",
               "source": "reasonSource", "role": "role",
@@ -106,15 +106,34 @@ for name in ("me-plan-check.json", "center-board.json"):
         closed = d["asOf"] > RECRUIT_END or (s["closesOn"] is not None and s["closesOn"] <= d["asOf"])
         want = "CLOSED" if closed else "OPEN"  # 몰림 표시는 하지 않는다(ADR-0015)
         check(s["status"] == want, f"{name} job {r['jobId']} status {s['status']} ≠ {want}")
+    # 대안: ELIGIBLE · CLOSED 아님 · 남은 자리 > 0 · 담지 않은 직무, why는 규칙 문장(ADR-0016)
+    planned = {i["jobId"] for i in docs["me-plan.json"]["items"]}
+    first = next((i for i in d.get("items", []) if i["rank"] == 1), None)
     for a in d.get("alternatives", []):
         check(a["remaining"] == a["signal"]["headcount"] - a["signal"]["intent"] and a["remaining"] > 0, f"대안 {a['jobId']} 남은 자리")
-        check(a["verdict"] != "INELIGIBLE" and a["signal"]["status"] != "CLOSED", f"대안 {a['jobId']} 조건")
+        check(a["verdict"] == "ELIGIBLE" and a["signal"]["status"] != "CLOSED", f"대안 {a['jobId']} 조건")
+        check(a["jobId"] not in planned, f"대안 {a['jobId']} 이미 담은 직무")
+        same = first is not None and first["institution"]["id"] == a["institution"]["id"]
+        head = "1지망과 같은 기관의 직무이고" if same else "관심 분야와 가깝고"
+        tail = "지금 지원 의사가 0명이에요." if a["signal"]["intent"] == 0 else f"남은 자리가 {a['remaining']}개예요."
+        check(a["why"] == f"{head}, {tail}", f"대안 {a['jobId']} why 규칙 문장 아님: {a['why']}")
     r0 = docs["rounds-current.json"]["replay"]
     check(r0["minDate"] <= d["asOf"] <= r0["maxDate"], f"{name} asOf 범위")
+
+# 현황판 위험: NARROW_POOL = 적격 풀 200명 미만, DOC_ALERT = 그 직무 또는 그 기관에 검토 알림(ADR-0016)
+board = docs["center-board.json"]
+for r in board["rows"]:
+    codes_in_row = {x["code"] for x in r["risks"]}
+    check(("NARROW_POOL" in codes_in_row) == (r["eligiblePool"] < 200), f"현황판 {r['jobId']} NARROW_POOL ↔ eligiblePool {r['eligiblePool']}")
+    has_alert = any(a["jobId"] == r["jobId"] or (a["jobId"] is None and a["institution"]["id"] == r["institution"]["id"])
+                    for a in board["alerts"])
+    check(("DOC_ALERT" in codes_in_row) == has_alert, f"현황판 {r['jobId']} DOC_ALERT ↔ 검토 알림")
 
 # 판정 규칙
 for j in docs["eligibility.json"]["jobs"]:
     rs = j["reasons"]
+    check(all(r["layer"] == "INSTITUTION" and r["result"] == "CHECK" for r in rs if "alertId" in r),
+          f"판정 {j['jobId']} alertId는 판정 항목의 CHECK 행에만")
     if any(r["layer"] == "SCHOOL_RULE" and r["result"] == "NOT_MET" for r in rs):
         want = "INELIGIBLE"
     elif any(r["layer"] == "INSTITUTION" and r["result"] in ("NOT_MET", "CHECK") for r in rs):

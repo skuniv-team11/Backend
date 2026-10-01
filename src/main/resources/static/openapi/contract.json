@@ -153,6 +153,11 @@
                         "UNLISTED": "비상장",
                         "UNSPECIFIED": "미기재"
                       },
+                      "ntsStatus": {
+                        "ACTIVE": "계속사업자",
+                        "SUSPENDED": "휴업자",
+                        "CLOSED": "폐업자"
+                      },
                       "course": {
                         "VACATION": "방학과정",
                         "SEMESTER": "학기과정",
@@ -1210,6 +1215,12 @@
                           },
                           "verdict": "ELIGIBLE",
                           "majorMatch": "MATCH",
+                          "closing": {
+                            "closesOn": null,
+                            "closeReason": null,
+                            "closesOnIsVirtual": false
+                          },
+                          "alertCount": 0,
                           "reasons": [
                             {
                               "layer": "SCHOOL_RULE",
@@ -1251,6 +1262,12 @@
                           },
                           "verdict": "NEEDS_CHECK",
                           "majorMatch": "NOT_LISTED",
+                          "closing": {
+                            "closesOn": null,
+                            "closeReason": null,
+                            "closesOnIsVirtual": false
+                          },
+                          "alertCount": 0,
                           "reasons": [
                             {
                               "layer": "SCHOOL_RULE",
@@ -1299,6 +1316,12 @@
                           },
                           "verdict": "NEEDS_CHECK",
                           "majorMatch": "NOT_LISTED",
+                          "closing": {
+                            "closesOn": null,
+                            "closeReason": null,
+                            "closesOnIsVirtual": false
+                          },
+                          "alertCount": 1,
                           "reasons": [
                             {
                               "layer": "SCHOOL_RULE",
@@ -1313,14 +1336,6 @@
                               "requirement": "4학년",
                               "mine": "3학년",
                               "result": "NOT_MET"
-                            },
-                            {
-                              "layer": "INSTITUTION",
-                              "item": "선호 전공 표기",
-                              "requirement": "문서 안에서 서로 다르게 적혀 있음",
-                              "mine": "—",
-                              "result": "CHECK",
-                              "alertId": 7
                             },
                             {
                               "layer": "MAJOR",
@@ -1899,7 +1914,27 @@
                         "certificate": "NONE",
                         "certificateText": null,
                         "majorText": "미용예술대학, 경영학과",
-                        "majorOpen": false
+                        "majorOpen": false,
+                        "majorAliases": [
+                          {
+                            "label": "미용예술대학",
+                            "departments": [
+                              {
+                                "id": 31,
+                                "name": "메이크업디자인학과"
+                              }
+                            ]
+                          },
+                          {
+                            "label": "경영학과",
+                            "departments": [
+                              {
+                                "id": 57,
+                                "name": "경영학과"
+                              }
+                            ]
+                          }
+                        ]
                       },
                       "workplace": {
                         "address": "서울 성동구 (가상)",
@@ -2754,7 +2789,7 @@
                             "closesOnIsVirtual": false,
                             "expectedFullOn": null
                           },
-                          "why": "같은 기관의 비슷한 직무이고, 지금 지원 의사가 0명이에요."
+                          "why": "1지망과 같은 기관의 직무이고, 지금 지원 의사가 0명이에요."
                         }
                       ]
                     }
@@ -3327,7 +3362,7 @@
                 "eligiblePool": {
                   "type": "integer",
                   "minimum": 0,
-                  "description": "선호 전공 재학생 수"
+                  "description": "적격 학생 풀(선호 전공 재학생 수). 200명 미만이면 NARROW_POOL"
                 },
                 "risks": {
                   "type": "array",
@@ -3787,6 +3822,43 @@
           "majorMatch": {
             "$ref": "#/components/schemas/MajorMatch"
           },
+          "closing": {
+            "type": "object",
+            "properties": {
+              "closesOn": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date",
+                "description": "이 날부터 지원 불가. 화면은 하루 전 날짜를 마감일로 보여 준다"
+              },
+              "closeReason": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/CloseReason"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "closesOnIsVirtual": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "closesOn",
+              "closeReason",
+              "closesOnIsVirtual"
+            ],
+            "description": "직무 상세의 closing과 같은 값. 목록은 closesOn ≤ 기준일이면 '마감' 꼬리표를 단다"
+          },
+          "alertCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "그 직무에 걸린 검토 알림 수(jobId가 그 직무인 것만, 기관 단위 알림은 세지 않는다). '문서 검토' 꼬리표"
+          },
           "reasons": {
             "type": "array",
             "items": {
@@ -3801,6 +3873,8 @@
           "institution",
           "verdict",
           "majorMatch",
+          "closing",
+          "alertCount",
           "reasons"
         ]
       },
@@ -4239,6 +4313,30 @@
               "majorOpen": {
                 "type": "boolean",
                 "description": "전공 무관이면 true"
+              },
+              "majorAliases": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "label": {
+                      "type": "string",
+                      "description": "선호 전공 표기(job_major_alias)"
+                    },
+                    "departments": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DepartmentRef"
+                      },
+                      "description": "확정된 학과 대응(major_alias_department, EXACT·CONFIRMED만)"
+                    }
+                  },
+                  "required": [
+                    "label",
+                    "departments"
+                  ]
+                },
+                "description": "선호 전공 표기 → 학과. majorOpen이면 []. '선호 전공 안내'와 판정 이유의 '표기 해석'에 쓴다"
               }
             },
             "required": [
@@ -4248,7 +4346,8 @@
               "certificate",
               "certificateText",
               "majorText",
-              "majorOpen"
+              "majorOpen",
+              "majorAliases"
             ]
           },
           "workplace": {
@@ -4279,7 +4378,8 @@
                   "string",
                   "null"
                 ],
-                "format": "date"
+                "format": "date",
+                "description": "이 날부터 지원 불가. 화면은 하루 전 날짜를 마감일로 보여 준다"
               },
               "closeReason": {
                 "anyOf": [
@@ -4299,7 +4399,8 @@
               "closesOn",
               "closeReason",
               "closesOnIsVirtual"
-            ]
+            ],
+            "description": "직무의 모집마감(기준일과 상관없이 고정). 마감이 없으면 closesOn·closeReason이 null"
           },
           "evidence": {
             "type": "array",
@@ -4441,7 +4542,7 @@
           "SUSPENDED",
           "CLOSED"
         ],
-        "description": "국세청 사업자 상태(오프라인 조회 결과). `ACTIVE` 계속 · `SUSPENDED` 휴업 · `CLOSED` 폐업"
+        "description": "국세청 사업자 상태(오프라인 조회 결과). `ACTIVE` 계속사업자 · `SUSPENDED` 휴업자 · `CLOSED` 폐업자"
       },
       "Overtime": {
         "type": "string",
@@ -4574,7 +4675,8 @@
                   "$ref": "#/components/schemas/Signal"
                 },
                 "why": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "규칙 문장. 1지망과 같은 기관이면 '1지망과 같은 기관의 직무이고', 아니면 '관심 분야와 가깝고' + 지원 의사 0이면 '지금 지원 의사가 0명이에요.', 아니면 '남은 자리가 N개예요.'"
                 }
               },
               "required": [
@@ -4589,7 +4691,7 @@
               ]
             },
             "maxItems": 5,
-            "description": "요건이 맞는 빈 자리. INELIGIBLE·CLOSED·남은 자리 0 제외, fit → 남은 자리 순 최대 5개"
+            "description": "verdict ELIGIBLE · CLOSED 아님 · 남은 자리(headcount − intent) > 0 · 이미 담은 직무 아님. 적합도 점수 → 남은 자리 순 최대 5개"
           }
         },
         "required": [
@@ -4908,7 +5010,7 @@
           "alertId": {
             "type": "integer",
             "minimum": 1,
-            "description": "문서 안에서 요건이 서로 다르게 적힌 항목(M2 검토 알림)이면 붙는다"
+            "description": "검토 알림(M2)의 fieldKey가 판정 항목(gradeRequirement·gpaRequirement·portfolio·certificate)이면 그 항목 행(CHECK)에 붙는다"
           }
         },
         "required": [
@@ -5037,7 +5139,7 @@
               "$ref": "#/components/schemas/Recommendation"
             },
             "maxItems": 5,
-            "description": "INELIGIBLE을 뺀 상위 5개. 점수는 주지 않는다"
+            "description": "INELIGIBLE과 기준일에 마감된 직무를 뺀 적합도 점수 상위 5개. 점수는 주지 않는다"
           },
           "blockedBy": {
             "type": "array",

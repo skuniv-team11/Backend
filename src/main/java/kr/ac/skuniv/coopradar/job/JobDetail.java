@@ -42,9 +42,26 @@ public record JobDetail(
                              List<String> benefits, int headcount) {
     }
 
-    /** majorText는 표시용 원문이다. 판정은 job_major_alias로 한다. */
+    /**
+     * majorText는 표시용 원문이다. 판정은 job_major_alias로 한다.
+     *
+     * @param majorAliases 선호 전공 표기마다 사람이 확정한 학과 대응(표기 id 순, 학과 id 순). 전공 무관이면 []
+     */
     public record Requirements(String gradeRule, BigDecimal gpaMin, String portfolio, String certificate,
-                               String certificateText, String majorText, boolean majorOpen) {
+                               String certificateText, String majorText, boolean majorOpen,
+                               List<MajorAlias> majorAliases) {
+
+        Requirements withMajorAliases(List<MajorAlias> aliases) {
+            return new Requirements(gradeRule, gpaMin, portfolio, certificate, certificateText, majorText, majorOpen,
+                    majorOpen ? List.of() : aliases);
+        }
+    }
+
+    /** 선호 전공 표기 하나와 확정된 학과들. 확정 전 표기(중어전공)는 departments가 비어 있다. */
+    public record MajorAlias(String label, List<DepartmentRef> departments) {
+    }
+
+    public record DepartmentRef(int id, String name) {
     }
 
     /** hasCoordinates가 true면 프론트가 통근 조회(#18)를 부른다. */
