@@ -8,7 +8,7 @@
 ## 저장소 지도
 | 경로 | 내용 |
 |---|---|
-| `src/` | Spring Boot 4.1 · Java 21. 패키지 루트 `kr.ac.skuniv.coopradar` (`web/` 컨트롤러, `config/` 설정, `spike/` 추출 실험) |
+| `src/` | Spring Boot 4.1 · Java 21. 패키지 루트 `kr.ac.skuniv.coopradar` (`auth/` 로그인·체험 계정, `me/` 내 정보, `common/` 오류 코드·시간, `web/` 공통 컨트롤러, `config/` 설정, `spike/` 추출 실험) |
 | `src/main/resources/prompts/` | LLM 시스템 프롬프트(코드와 같이 버전 관리) |
 | `pipeline/` | 오프라인 작업(문서 추출·외부 데이터 적재·실험), Python → `pipeline/AGENTS.md` |
 | `docs/` | 아키텍처, 결정 기록(ADR), **API 계약(`docs/api/`, 프론트와 공유)**, 협업 규칙, 하네스 설명 |
@@ -39,6 +39,7 @@ scripts/verify.sh          # 바뀐 부분만. 전체는 scripts/verify.sh --all
 ## 항상 할 것 (Always)
 - 커밋·PR·주석은 한국어. 커밋은 `feat|fix|docs|refactor|test|chore(범위): 요약` (`docs/conventions.md`).
 - 새 엔드포인트는 `/api/**` 아래에 두고 MockMvc 테스트(정상 1 + 오류 또는 CORS 1)와 `docs/api/` 예시 JSON을 같은 PR에 넣는다. `docs/api/`를 고치면 `python scripts/build_openapi.py`로 Swagger 계약 스펙을 다시 만들어 같이 넣는다(ADR-0011).
+- `/api/**`는 기본이 로그인 필요다. 로그인 없이 부르는 API에만 `@PublicApi`, 역할 제한은 `@RequireRole`을 붙이고 사용자는 `AuthUser` 인자로 받는다. 권한은 `docs/api` 목록의 권한과 같아야 한다(`ContractTest`가 대조, ADR-0013). 오류는 `ApiException(ErrorCode, 메시지)`로 던진다.
 - 결정이 생기면 `docs/decisions/`에 ADR 한 장(무엇을, 왜, 언제 다시 볼지).
 - 외부 조건(요금·한도·버전)은 추측하지 말고 공식 문서를 확인해 출처를 남긴다.
 
@@ -50,5 +51,7 @@ scripts/verify.sh          # 바뀐 부분만. 전체는 scripts/verify.sh --all
 - Boot 4는 Jackson 3(`tools.jackson`), Anthropic SDK는 Jackson 2. SDK 모델 직렬화는 `com.anthropic.core.ObjectMappers.jsonMapper()`.
 - DB 접근은 `JdbcClient`로 SQL을 직접 쓴다(JPA 없음). 스키마 변경은 새 `V2__*.sql`로만, 적용한 파일은 고치지 않는다(ADR-0010). 새 `@SpringBootTest`에는 `@Import(TestcontainersConfiguration.class)`.
 - 배포 DB는 10/15 이후 Render 무료 Postgres(ADR-0005). `postgresql://` URL을 `jdbc:postgresql://host:port/db`로 바꿔 `DB_URL`에. **DB 없이는 앱이 뜨지 않으므로 그 전에 `develop`을 `main`에 올리지 않는다.**
+- 로컬에서 `JWT_SECRET`을 비우면 서버가 뜰 때마다 임시 키를 만든다(다시 뜨면 로그인이 풀림). 배포에는 반드시 넣는다.
+- 응답 테스트는 `Contract.assertSameShape(응답, Contract.responseExample(operationId, 상태, null))`로 계약 예시와 모양을 맞춘다.
 - 한글 경로 `InvalidPathException` → `-Dsun.jnu.encoding=UTF-8`.
 - 모집기간 지원 신호는 **가상 데이터**다. 응답에 가상 여부 필드를 빼지 않는다.

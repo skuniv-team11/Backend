@@ -1,0 +1,29 @@
+# ADR-0013 로그인은 Spring Security 없이 BCrypt 모듈 + nimbus JWT + MVC 인터셉터로
+
+- 상태: 확정 (2026-10-01)
+- 결정
+  - 의존성: `spring-security-crypto`(BCrypt만, 버전은 Boot 관리), `com.nimbusds:nimbus-jose-jwt` 10.9.1(Spring Security 7.1.1의 oauth2-jose가 쓰는 버전), `spring-boot-starter-validation`(요청 검증). `spring-boot-starter-security`는 넣지 않는다.
+  - **기본은 막힘.** `/api/**`는 로그인이 필요하고, 공개 API에만 `@PublicApi`를 붙인다. 역할 제한은 `@RequireRole(STUDENT|CENTER)`(메서드가 클래스보다 먼저). 확인은 `AuthInterceptor` 하나가 한다.
+  - 토큰은 HS256, 서명 키 `JWT_SECRET`(32바이트 이상, 짧으면 기동 실패). 비어 있으면 기동 때 임시 키를 만들고 경고한다(로컬 전용 — 다시 뜨면 로그인이 풀린다).
+  - 토큰에서는 계정 id와 만료만 믿는다. 역할·체험 여부는 매 요청 DB에서 읽는다 → 탈퇴·정리된 계정의 토큰은 바로 무효(`AUTH_REQUIRED`), 만료는 `TOKEN_EXPIRED`.
+  - 오류는 인터셉터에서 던져도 컨트롤러와 같은 `ApiErrorHandler`가 계약 형식(`{code, message, fields?}`)으로 바꾼다. 입력값은 응답·로그에 넣지 않는다.
+  - 로그인 실패는 이메일이 없어도 BCrypt 비교를 한 번 해서(더미 해시) 응답 시간과 본문으로 계정 존재를 흘리지 않는다. 비밀번호는 UTF-8 72바이트 이하(BCrypt가 뒤를 자르지 않게 막는다).
+  - 체험 계정: 24시간 뒤 계정째 삭제(10분 주기, cascade).
+  - 체험 계정 만들기 한도는 **IP당 1시간 300회**(10/1 20회에서 올림, 사용자 지적). 환경변수 `GUEST_PER_IP_PER_HOUR`로 바꾸고 0이면 끈다. 넘으면 429 + `Retry-After`(초). 서버 메모리에만 두고 1시간 뒤 버린다.
+    - 왜 넉넉히: 시연장·학교 와이파이는 여러 사람이 한 공인 IP를 쓴다(예: 100명 × 3번 = 300). 입장 버튼이 429로 막히는 게 시연에서 가장 위험하다.
+    - 왜 그래도 괜찮나: 체험 계정 하나는 DB 행 2~3개(24시간 뒤 삭제)뿐이다. 돈이 드는 호출은 각자 한도가 지킨다 — 이유 문장(LLM) 계정·IP 한도, 통근(카카오) 계정 한도·서버 하루 900회. 둘 다 넘어도 200으로 화면이 유지된다.
+    - 전체(서버 단위) 한도는 두지 않는다. 한 사람이 다 써 버리면 시연이 막히기 때문이다.
+  - IP는 `CF-Connecting-IP` 헤더다. Render(`*.onrender.com`) 요청은 Cloudflare를 거치며 `CF-Connecting-IP`·`True-Client-IP`가 실제 클라이언트이고, `X-Forwarded-For`는 "클라이언트, Cloudflare, Render 내부" 순이다(공개된 실제 헤더 사례 2건). 헤더 이름은 `CLIENT_IP_HEADER`로 바꾼다. 헤더가 없으면 연결 주소로 세고 경고 로그를 한 번 남긴다(프록시 뒤라면 모두가 한 IP로 묶이므로).
+  - 예시 프로필은 `app.example-profile` 설정. 학과는 이름으로 `department` 시드에서 찾고, 사는 곳은 `area` 시드에 없으면 비운다. **학과 시드 전에는 STUDENT 체험도 계정만 만들고 profile은 null**(10/1 수정 — 전에는 500). 기동 때 경고를 남기고, 시드가 들어오면 다음 요청부터 예시 프로필이 붙는다.
+  - **계약 대조 테스트**(`ContractTest`): 구현한 `/api/**`가 모두 계약에 있고 권한 표시가 계약의 권한(`x-auth`)과 같은지, 서버 `ErrorCode`가 계약 오류 코드·HTTP 상태와 같은지 본다. 응답 테스트는 실제 JSON이 계약 예시와 같은 모양인지 본다(`Contract.assertSameShape`).
+- 이유
+  - 필요한 건 무상태 토큰 검증, 역할 2개, 오류 3종(`AUTH_REQUIRED`·`TOKEN_EXPIRED`·`FORBIDDEN_ROLE`)뿐이다. 세션·CSRF(쿠키를 안 씀)·폼 로그인·OAuth는 쓰지 않는다.
+  - Spring Security를 넣으면 모든 경로·Swagger·actuator가 기본으로 막혀 다시 열어야 하고, CORS 사전 요청과 오류 응답을 필터 체인에서 따로 처리해야 한다. 지금의 `CorsConfig`와 계약 오류 형식을 두 군데서 맞춰야 하고, 토큰 만료와 위조를 나누려면 예외 메시지를 해석해야 한다.
+  - 인터셉터는 DispatcherServlet 안에서 돌아 오류 처리가 한 곳이다. 백엔드 1인이 31일 안에 끝까지 이해하고 고칠 수 있는 크기다.
+  - 암호 부분(해시·서명)은 직접 만들지 않고 검증된 라이브러리를 쓴다.
+- 대가
+  - 인터셉터·호출 제한 코드는 우리가 책임진다 → `AuthApiTest`(12)·`AuthUnitTest`(5)·`ContractTest`(2)로 막는다. 일부러 `@PublicApi`를 빼거나 응답 필드 이름을 바꾸면 테스트가 실패하는 것을 확인했다(10/1).
+  - 메서드 보안, 세션 고정 방지 같은 Spring Security 기능은 없다(쓰지 않는 기능).
+- 결과(10/1, 로컬 512MB·Render와 같은 JVM 옵션): 체험 계정·가입·내 계정 호출 뒤 241.6MiB(47%). 테스트 35개 통과.
+- 배포 뒤 확인할 것: 기동·첫 요청 로그에 'CF-Connecting-IP 헤더가 없어' 경고가 없는지. 있으면 모든 사용자가 한 IP로 세어지니 `CLIENT_IP_HEADER`를 바꾼다. 시연 당일 불안하면 `GUEST_PER_IP_PER_HOUR=0`. `JWT_SECRET`을 Render에 넣었는지(기동 로그에 임시 키 경고가 없어야 한다).
+- 다시 볼 때: 학교 SSO·소셜 로그인, 관리자 화면 등 권한 규칙이 늘 때(그때는 Spring Security로 옮긴다).

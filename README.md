@@ -36,7 +36,9 @@ API 문서(Swagger)는 http://localhost:8080/swagger-ui.html 입니다. 드롭�
 | `PORT` | 8080 | Render가 10000을 넣어 줍니다 |
 | `CORS_ORIGINS` | `http://localhost:5173` | 쉼표로 구분하고 패턴을 쓸 수 있습니다 |
 | `ANTHROPIC_API_KEY` | — | 추천 설명, E3 실험 |
-| `JWT_SECRET` | — | 로그인 토큰 서명 키(32바이트 이상 무작위 값) |
+| `JWT_SECRET` | — | 로그인 토큰 서명 키(32바이트 이상 무작위 값). 로컬에서 비우면 임시 키(다시 뜨면 로그인이 풀림) |
+| `CLIENT_IP_HEADER` | `CF-Connecting-IP` | 체험 계정 호출 제한에 쓰는 IP 헤더(Render 앞단 Cloudflare, ADR-0013) |
+| `GUEST_PER_IP_PER_HOUR` | `300` | 체험 계정 만들기 IP당 1시간 한도. 0이면 제한 없음. Render 대시보드에서 바꾸면 다시 배포하지 않아도 된다 |
 | `KAKAO_REST_API_KEY` | — | 통근 조회(카카오 대중교통) |
 | `DB_URL` · `DB_USER` · `DB_PASSWORD` | 로컬 docker compose 값 | Render에서만 넣습니다(아래 'DB') |
 

@@ -3,9 +3,13 @@ package kr.ac.skuniv.coopradar.config;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import kr.ac.skuniv.coopradar.auth.PublicApi;
+import org.springdoc.core.customizers.OperationCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 
 /**
  * Swagger UI의 '구현' 스펙(/v3/api-docs) 머리말과 로그인 토큰 입력칸.
@@ -28,7 +32,18 @@ public class OpenApiConfig {
                         .type(SecurityScheme.Type.HTTP)
                         .scheme("bearer")
                         .bearerFormat("JWT")));
-        // 공개 API(/api/ping 등)가 있어 전체에 걸지 않는다. 로그인이 필요한 컨트롤러에
-        // @SecurityRequirement(name = OpenApiConfig.BEARER)를 붙인다.
+    }
+
+    /** 인증 인터셉터와 같은 규칙: @PublicApi가 없으면 로그인 필요(자물쇠 표시). */
+    @Bean
+    OperationCustomizer bearerUnlessPublic() {
+        return (operation, handler) -> {
+            boolean isPublic = AnnotatedElementUtils.hasAnnotation(handler.getMethod(), PublicApi.class)
+                    || AnnotatedElementUtils.hasAnnotation(handler.getBeanType(), PublicApi.class);
+            if (!isPublic) {
+                operation.addSecurityItem(new SecurityRequirement().addList(BEARER));
+            }
+            return operation;
+        };
     }
 }
