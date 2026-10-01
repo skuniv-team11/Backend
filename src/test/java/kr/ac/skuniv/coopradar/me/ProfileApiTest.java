@@ -50,8 +50,6 @@ class ProfileApiTest {
     void 시드() {
         department(DEPT_A, "(가상)프로필학과9011");
         department(DEPT_B, "(가상)프로필학과9012");
-        // 체험 STUDENT의 예시 프로필 학과(AuthApiTest와 같은 행)
-        department(31, "메이크업디자인학과");
         db.sql("INSERT INTO area (code, sido, name, lat, lng, sort_order) "
                 + "VALUES ('" + AREA + "', '인천', '(가상)구9111', 37.5, 126.7, 9111) ON CONFLICT DO NOTHING").update();
     }
