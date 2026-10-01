@@ -40,6 +40,7 @@ API 문서(Swagger)는 http://localhost:8080/swagger-ui.html 입니다. 드롭�
 | `CLIENT_IP_HEADER` | `CF-Connecting-IP` | 체험 계정 호출 제한에 쓰는 IP 헤더(Render 앞단 Cloudflare, ADR-0013) |
 | `GUEST_PER_IP_PER_HOUR` | `300` | 체험 계정 만들기 IP당 1시간 한도. 0이면 제한 없음. Render 대시보드에서 바꾸면 다시 배포하지 않아도 된다 |
 | `KAKAO_REST_API_KEY` | — | 통근 조회(카카오 대중교통) |
+| `REPLAY_DEFAULT_AS_OF` | `2026-07-18` | 시연 기준일(`/api/rounds/current`의 `replay.defaultAsOf`). 모집기간 밖이면 가까운 끝 날짜로 맞춘다 |
 | `DB_URL` · `DB_USER` · `DB_PASSWORD` | 로컬 docker compose 값 | Render에서만 넣습니다(아래 'DB') |
 
 ## 배포 (Render)
@@ -68,7 +69,7 @@ ANTHROPIC_API_KEY=... java -jar build/libs/coop-radar-backend-0.0.1.jar --spring
 
 | 실험 | 결과 | 남은 것 |
 |---|---|---|
-| E1 운영계획서 추출 | **합격**(9/30, #3). 5건 144/145 = 99.3%(기준 90%), 근거 쪽 번호 193/193(텍스트 쪽) | 18건 본 추출 때 호출 2번 구조로(E3와 같게) |
+| E1 운영계획서 추출 | **합격**(9/30, #3). 5건 144/145 = 99.3%(기준 90%), 근거 쪽 번호 193/193(텍스트 쪽). **18건 본 추출 완료**(10/1, #20 호출 2번 — 직무 40개, 약 $2.42) → 시드(#21, ADR-0014) | — |
 | E2 수기 추출 | **합격**(10/1, #6). 39건, 사람 판정 117/117, 2026-2 참여기관에 연결되는 수기 17건 | — |
 | E3 Java SDK | **합격**(10/1, #7). 호출 2번으로 full 필드 추출 성공, 파이썬 E1과 겹치는 15항목 중 14개 값·쪽 일치 | — |
 | E4 배포 | **로컬 검증 완료**(10/1). Docker 빌드 1분 24초 · 이미지 571MB · 메모리 201MB/512MB · CORS 4가지 확인 | Render·Vercel 연결(위 '배포 (Render)'와 프론트 README) |

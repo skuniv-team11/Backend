@@ -998,7 +998,7 @@
           "기준 정보"
         ],
         "operationId": "getDepartments",
-        "summary": "학과 72개",
+        "summary": "학과(교육통계 재학생이 있는 60개, ADR-0014)",
         "x-auth": "공개",
         "description": "권한: **공개** · 화면: S1 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "responses": {
