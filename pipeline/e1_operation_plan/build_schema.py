@@ -1,4 +1,10 @@
-"""schema.json 생성기. 스키마를 고칠 때는 이 파일을 고치고 다시 실행한다.
+"""추출 스키마 생성기. 스키마를 고칠 때는 이 파일을 고치고 다시 실행한다.
+
+만드는 파일
+- schema_part_institution.json — 1/2 호출: 기관 현황 + 문서 내부 불일치(전체 필드)
+- schema_part_jobs.json        — 2/2 호출: 직무(전체 필드)
+- schema_lite.json             — E1 채점용 핵심 필드(호출 1번)
+전체 필드를 한 스키마에 담으면 문법 한도를 넘어서(아래) PDF 1건을 호출 2번으로 나눈다(ADR-0003, Java E3와 같은 구조).
 
 Claude structured outputs 제약(2026-09 문서 기준):
 - 모든 object는 additionalProperties: false
@@ -179,8 +185,24 @@ def refify(sc):
     return out
 
 
+# 본 추출(호출 2번). Java의 OperationPlanInstitutionPart / OperationPlanJobsPart 와 같은 나눔
+schema_part_institution = {
+    "type": "object",
+    "properties": {"institution": institution, "inconsistencies": schema["properties"]["inconsistencies"]},
+    "required": ["institution", "inconsistencies"],
+    "additionalProperties": False,
+}
+schema_part_jobs = {
+    "type": "object",
+    "properties": {"jobs": schema["properties"]["jobs"]},
+    "required": ["jobs"],
+    "additionalProperties": False,
+}
+
 here = pathlib.Path(__file__).parent
-for name, sc in [("schema.json", schema), ("schema_lite.json", schema_lite)]:
+for name, sc in [("schema_part_institution.json", schema_part_institution),
+                 ("schema_part_jobs.json", schema_part_jobs),
+                 ("schema_lite.json", schema_lite)]:
     sc = refify(sc)
     (here / name).write_text(json.dumps(sc, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"wrote {here / name}  ($defs {len(sc['$defs'])}개)")
