@@ -8,7 +8,6 @@ pipeline/           오프라인 데이터 작업과 선행 실험(E1·E2·E5·E
 docs/               아키텍처, 결정 기록(ADR), API 계약(프론트와 공유), 협업 규칙, 하네스
 scripts/            verify.sh(전체 검증), check-secrets.sh, check_pipeline.py, test-harness.sh
 render.yaml         Render Blueprint (DB는 대시보드에서 따로, ADR-0005)
-docker-compose.yml  로컬 Postgres 18
 ```
 
 ## 처음 받은 뒤 한 번
@@ -21,27 +20,24 @@ git config user.email "<숫자>+<아이디>@users.noreply.github.com"   # GitHub
 
 작업 규칙은 [AGENTS.md](AGENTS.md), 브랜치·커밋 규칙은 [docs/conventions.md](docs/conventions.md), API 계약은 [docs/api/](docs/api/)에 있습니다. 작업을 마치면 `scripts/verify.sh`를 돌립니다(CI와 같은 검사).
 
-## 로컬 실행
+## 서버 주소
 
-```
-docker compose up -d   # 로컬 Postgres 18. 앱이 뜰 때 Flyway가 스키마를 만든다
-./gradlew bootRun      # Windows: gradlew.bat bootRun   → http://localhost:8080/api/ping
-./gradlew test         # Docker가 떠 있어야 한다(테스트용 Postgres 컨테이너를 따로 띄움)
-```
-
-API 문서(Swagger)는 http://localhost:8080/swagger-ui.html 입니다. 드롭다운 '계약'은 `docs/api` 24개 전부, '구현'은 지금 코드에 있는 것만 보입니다(ADR-0011).
+로컬에서 서버를 띄우지 않습니다(10/2). 배포 서버 하나만 씁니다.
+- API: https://coop-radar-api.onrender.com (`/api/ping`, `/actuator/health`)
+- API 문서(Swagger): https://coop-radar-api.onrender.com/swagger-ui.html — 드롭다운 '계약'은 `docs/api` 24개 전부, '구현'은 지금 서버에 있는 것만 보입니다(ADR-0011).
+- 테스트는 PR을 올리면 CI가 돌립니다(`./gradlew test`가 Testcontainers로 Postgres 18을 띄움).
 
 | 환경변수 | 기본값 | 설명 |
 |---|---|---|
 | `PORT` | 8080 | Render가 10000을 넣어 줍니다 |
 | `CORS_ORIGINS` | `http://localhost:5173` | 쉼표로 구분하고 패턴을 쓸 수 있습니다 |
 | `ANTHROPIC_API_KEY` | — | 추천 설명, E3 실험 |
-| `JWT_SECRET` | — | 로그인 토큰 서명 키(32바이트 이상 무작위 값). Render는 Blueprint가 만들 때 무작위로 넣는다. 로컬에서 비우면 임시 키(다시 뜨면 로그인이 풀림) |
+| `JWT_SECRET` | — | 로그인 토큰 서명 키(32바이트 이상 무작위 값). Render는 Blueprint가 만들 때 무작위로 넣는다. 비어 있으면 서버가 뜰 때마다 임시 키(다시 뜨면 로그인이 풀림) |
 | `CLIENT_IP_HEADER` | `CF-Connecting-IP` | 체험 계정 호출 제한에 쓰는 IP 헤더(Render 앞단 Cloudflare, ADR-0013) |
 | `GUEST_PER_IP_PER_HOUR` | `300` | 체험 계정 만들기 IP당 1시간 한도. 0이면 제한 없음. Render 대시보드에서 바꾸면 다시 배포하지 않아도 된다 |
 | `KAKAO_REST_API_KEY` | — | 통근 조회(카카오 대중교통) |
 | `REPLAY_DEFAULT_AS_OF` | `2026-07-18` | 시연 기준일(`/api/rounds/current`의 `replay.defaultAsOf`). 모집기간 밖이면 가까운 끝 날짜로 맞춘다 |
-| `DB_URL` · `DB_USER` · `DB_PASSWORD` | 로컬 docker compose 값 | Render에서만 넣습니다(아래 'DB') |
+| `DB_URL` · `DB_USER` · `DB_PASSWORD` | — | Render에 넣습니다(아래 'DB'). 없으면 앱이 뜨지 않습니다 |
 
 ## 배포 (Render)
 웹 서비스는 Starter(`0.5c-512mb`), DB는 무료 Postgres입니다(ADR-0005). 순서가 중요합니다 — DB 없이는 앱이 뜨지 않습니다.
@@ -75,14 +71,14 @@ ANTHROPIC_API_KEY=... java -jar build/libs/coop-radar-backend-0.0.1.jar --spring
 | E1 운영계획서 추출 | **합격**(9/30, #3). 5건 144/145 = 99.3%(기준 90%), 근거 쪽 번호 193/193(텍스트 쪽). **18건 본 추출 완료**(10/1, #20 호출 2번 — 직무 40개, 약 $2.42) → 시드(#21, ADR-0014) | — |
 | E2 수기 추출 | **합격**(10/1, #6). 39건, 사람 판정 117/117, 2026-2 참여기관에 연결되는 수기 17건 | — |
 | E3 Java SDK | **합격**(10/1, #7). 호출 2번으로 full 필드 추출 성공, 파이썬 E1과 겹치는 15항목 중 14개 값·쪽 일치 | — |
-| E4 배포 | **로컬 검증 완료**(10/1). Docker 빌드 1분 24초 · 이미지 571MB · 메모리 201MB/512MB · CORS 4가지 확인 | Render·Vercel 연결(위 '배포 (Render)'와 프론트 README) |
+| E4 배포 | **백엔드 배포 완료**(10/2). Render Starter·싱가포르 — 빌드 약 2분 30초 · 기동 27.8초 · 메모리 276MB/512MB · CORS(운영·미리보기 허용, 다른 출처 403) | 프론트 Vercel 연결(프론트 담당, 프론트 README) |
 | E5 임베딩 | **불합격 → 임베딩 쓰지 않음**(10/1). 학과명 질의 Hit@5: 무작위 29.4% · 키워드 35.3% · Voyage 47.1% · 선호 전공 규칙 52.0%(근사). 추천은 규칙 + 키워드(ADR-0018) | — |
 | E6 외부 데이터 | **합격**(10/1). 국세청·NCS 적재. ODsay는 호출만 확인하고 시드에는 쓰지 않음(ADR-0002 개정) | 통근은 카카오 실시간(ADR-0007) — 키 발급 후 첫 호출 |
 
 실행 방법은 [pipeline/README.md](pipeline/README.md)에 있습니다.
 
 ## DB
-- **로컬:** `docker compose up -d`로 Postgres 18을 띄웁니다. 스키마는 Flyway(`src/main/resources/db/migration/`), 접근은 `JdbcClient`입니다(ADR-0010).
+- **스키마·접근:** 스키마는 Flyway(`src/main/resources/db/migration/`), 접근은 `JdbcClient`입니다(ADR-0010). 테스트는 CI가 Testcontainers로 Postgres 18을 띄워 돌립니다.
 - **시드:** 앱이 뜰 때 Flyway가 `R__seed.sql`(2026-2 실제 자료: 18기관·40직무·학과 60·근거·수기 17·리플레이 신호)을 넣습니다. 바꾸면 다음 기동 때 다시 적용됩니다. 만드는 법은 [pipeline/seed/README.md](pipeline/seed/README.md)(ADR-0014).
 - **Render:** 무료 Postgres(singapore, 18). DB 페이지 Connections의 **Internal Database URL** `postgresql://USER:PASSWORD@HOST/DB`를 나눠 환경변수 3개에 넣습니다.
     - `DB_URL=jdbc:postgresql://HOST/DB` (`@` 뒤 부분 앞에 `jdbc:postgresql://`. 포트가 없으면 5432)
