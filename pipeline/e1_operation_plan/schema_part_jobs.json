@@ -1,114 +1,6 @@
 {
   "type": "object",
   "properties": {
-    "institution": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "$ref": "#/$defs/Sourced0",
-          "description": "기관(법인)명"
-        },
-        "business_no": {
-          "$ref": "#/$defs/Sourced0",
-          "description": "사업자등록번호"
-        },
-        "opened_on": {
-          "$ref": "#/$defs/Sourced0",
-          "description": "개업년월일(적힌 그대로)"
-        },
-        "ksic_code": {
-          "$ref": "#/$defs/Sourced0",
-          "description": "한국표준산업분류코드. 쪽마다 다르면 첫 쪽 값을 넣고 inconsistencies에 기록"
-        },
-        "employees": {
-          "$ref": "#/$defs/Sourced0",
-          "description": "종업원 수(적힌 그대로)"
-        },
-        "revenue": {
-          "$ref": "#/$defs/Sourced0",
-          "description": "매출액(적힌 그대로)"
-        },
-        "address": {
-          "$ref": "#/$defs/Sourced0",
-          "description": "사업장 소재지"
-        },
-        "homepage": {
-          "$ref": "#/$defs/Sourced0",
-          "description": "홈페이지"
-        },
-        "size": {
-          "$ref": "#/$defs/Sourced1",
-          "description": "기관현황 규모 체크"
-        },
-        "listing": {
-          "$ref": "#/$defs/Sourced2",
-          "description": "상장여부 체크"
-        },
-        "business_type": {
-          "$ref": "#/$defs/Sourced0",
-          "description": "사업의 종류(업태)"
-        },
-        "business_item": {
-          "$ref": "#/$defs/Sourced0",
-          "description": "사업의 종류(종목)"
-        },
-        "daily_hours": {
-          "$ref": "#/$defs/Sourced0",
-          "description": "정규 근로시간 1일 기준 시간"
-        },
-        "weekly_hours": {
-          "$ref": "#/$defs/Sourced0",
-          "description": "정규 근로시간 1주 기준 시간"
-        },
-        "weekly_days": {
-          "$ref": "#/$defs/Sourced0",
-          "description": "정규 근로일수(주 N일)"
-        },
-        "work_days_text": {
-          "$ref": "#/$defs/Sourced0",
-          "description": "근로요일(예: 월~금)"
-        },
-        "selection_method": {
-          "$ref": "#/$defs/Sourced0",
-          "description": "전형방법"
-        },
-        "application_deadline": {
-          "$ref": "#/$defs/Sourced0",
-          "description": "접수마감일자(일정별도협의 표시 포함, 적힌 그대로)"
-        },
-        "interview_date": {
-          "$ref": "#/$defs/Sourced0",
-          "description": "면접일자(적힌 그대로)"
-        },
-        "final_selection_date": {
-          "$ref": "#/$defs/Sourced0",
-          "description": "최종선발일자(적힌 그대로)"
-        }
-      },
-      "required": [
-        "name",
-        "business_no",
-        "opened_on",
-        "ksic_code",
-        "employees",
-        "revenue",
-        "address",
-        "homepage",
-        "size",
-        "listing",
-        "business_type",
-        "business_item",
-        "daily_hours",
-        "weekly_hours",
-        "weekly_days",
-        "work_days_text",
-        "selection_method",
-        "application_deadline",
-        "interview_date",
-        "final_selection_date"
-      ],
-      "additionalProperties": false
-    },
     "jobs": {
       "type": "array",
       "items": {
@@ -127,11 +19,11 @@
             "description": "직무기술서의 주소(근무지)"
           },
           "course": {
-            "$ref": "#/$defs/Sourced3",
+            "$ref": "#/$defs/Sourced1",
             "description": "운영과정 체크"
           },
           "job_type": {
-            "$ref": "#/$defs/Sourced4",
+            "$ref": "#/$defs/Sourced2",
             "description": "운영유형 체크"
           },
           "period": {
@@ -143,19 +35,19 @@
             "description": "정규실습 시간(적힌 그대로)"
           },
           "weekdays": {
-            "$ref": "#/$defs/Sourced5",
+            "$ref": "#/$defs/Sourced3",
             "description": "실습요일 중 체크된 요일"
           },
           "overtime": {
-            "$ref": "#/$defs/Sourced6",
+            "$ref": "#/$defs/Sourced4",
             "description": "연장실습 여부 체크"
           },
           "labor_contract": {
-            "$ref": "#/$defs/Sourced7",
+            "$ref": "#/$defs/Sourced5",
             "description": "별도 근로계약 체결 여부 체크"
           },
           "stipend_basis": {
-            "$ref": "#/$defs/Sourced8",
+            "$ref": "#/$defs/Sourced6",
             "description": "정규실습시간 실습지원비 지급기준"
           },
           "stipend_amount": {
@@ -171,7 +63,7 @@
             "description": "지급예정일(당월/익월 N일, 적힌 그대로)"
           },
           "benefits": {
-            "$ref": "#/$defs/Sourced9",
+            "$ref": "#/$defs/Sourced7",
             "description": "기타 지원 사항 중 체크된 항목"
           },
           "education_goal": {
@@ -229,11 +121,11 @@
             "description": "기타사항 원문"
           },
           "portfolio": {
-            "$ref": "#/$defs/Sourced10",
+            "$ref": "#/$defs/Sourced8",
             "description": "포트폴리오: '필수/제출'이면 필수, '우대'면 우대, 언급 없으면 언급 없음"
           },
           "certificate": {
-            "$ref": "#/$defs/Sourced10",
+            "$ref": "#/$defs/Sourced8",
             "description": "자격증: '필수'면 필수, '우대'면 우대, 언급 없으면 언급 없음"
           }
         },
@@ -268,45 +160,10 @@
         "additionalProperties": false
       },
       "description": "직무 1개 = 팀 1개. 직무기술서 블록의 부서명 칸에 팀이 여러 개 적혀 있으면 팀마다 1개(시스템 프롬프트 '직무(jobs) 나누기' 참고)"
-    },
-    "inconsistencies": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "description": {
-            "type": "string",
-            "description": "무엇과 무엇이 어떻게 다른지 한 문장"
-          },
-          "page_a": {
-            "type": "integer"
-          },
-          "quote_a": {
-            "type": "string"
-          },
-          "page_b": {
-            "type": "integer"
-          },
-          "quote_b": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "description",
-          "page_a",
-          "quote_a",
-          "page_b",
-          "quote_b"
-        ],
-        "additionalProperties": false
-      },
-      "description": "같은 문서 안에서 같은 항목이 서로 다르게 적힌 경우만. 없으면 빈 배열"
     }
   },
   "required": [
-    "institution",
-    "jobs",
-    "inconsistencies"
+    "jobs"
   ],
   "additionalProperties": false,
   "$defs": {
@@ -339,66 +196,6 @@
         "value": {
           "type": "string",
           "enum": [
-            "대기업",
-            "중견기업",
-            "중소기업",
-            "공공기관",
-            "협회/기타",
-            "미기재",
-            "판독불가"
-          ]
-        },
-        "page": {
-          "type": "integer",
-          "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
-        },
-        "quote": {
-          "type": "string",
-          "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
-        }
-      },
-      "required": [
-        "value",
-        "page",
-        "quote"
-      ],
-      "additionalProperties": false
-    },
-    "Sourced2": {
-      "type": "object",
-      "properties": {
-        "value": {
-          "type": "string",
-          "enum": [
-            "코스피",
-            "코스닥",
-            "비상장",
-            "미기재",
-            "판독불가"
-          ]
-        },
-        "page": {
-          "type": "integer",
-          "description": "근거가 있는 PDF 쪽 번호(1부터). 없으면 0"
-        },
-        "quote": {
-          "type": "string",
-          "description": "근거 원문 그대로(최대 80자). 없으면 빈 문자열"
-        }
-      },
-      "required": [
-        "value",
-        "page",
-        "quote"
-      ],
-      "additionalProperties": false
-    },
-    "Sourced3": {
-      "type": "object",
-      "properties": {
-        "value": {
-          "type": "string",
-          "enum": [
             "방학과정",
             "학기과정",
             "방학/학기 연계과정",
@@ -422,7 +219,7 @@
       ],
       "additionalProperties": false
     },
-    "Sourced4": {
+    "Sourced2": {
       "type": "object",
       "properties": {
         "value": {
@@ -450,7 +247,7 @@
       ],
       "additionalProperties": false
     },
-    "Sourced5": {
+    "Sourced3": {
       "type": "object",
       "properties": {
         "value": {
@@ -484,7 +281,7 @@
       ],
       "additionalProperties": false
     },
-    "Sourced6": {
+    "Sourced4": {
       "type": "object",
       "properties": {
         "value": {
@@ -513,7 +310,7 @@
       ],
       "additionalProperties": false
     },
-    "Sourced7": {
+    "Sourced5": {
       "type": "object",
       "properties": {
         "value": {
@@ -541,7 +338,7 @@
       ],
       "additionalProperties": false
     },
-    "Sourced8": {
+    "Sourced6": {
       "type": "object",
       "properties": {
         "value": {
@@ -569,7 +366,7 @@
       ],
       "additionalProperties": false
     },
-    "Sourced9": {
+    "Sourced7": {
       "type": "object",
       "properties": {
         "value": {
@@ -600,7 +397,7 @@
       ],
       "additionalProperties": false
     },
-    "Sourced10": {
+    "Sourced8": {
       "type": "object",
       "properties": {
         "value": {
