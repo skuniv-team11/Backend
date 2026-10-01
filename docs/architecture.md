@@ -32,4 +32,4 @@ P1(여유가 되면 순서대로): 지원 준비 `/plan/apply`(제출물·마감
 ## 저장소·배포
 - `skuniv-team11/Backend`(이 저장소): Spring Boot + pipeline + docs. Render Docker, Singapore, `main` 브랜치만 자동 배포, `/actuator/health`
 - `skuniv-team11/Frontend`: React. Vercel, `VITE_API_BASE_URL`로 이 백엔드를 부름. API 계약은 이 저장소 `docs/api/`
-- DB: Render 무료 Postgres(10/15 이후 생성, 11/14 만료) / 로컬 `docker-compose.yml`
+- DB: Render 무료 Postgres(10/2 생성 → 10/15~10/31에 다시 만들어 만료를 발표 뒤로, ADR-0005) / 로컬 `docker-compose.yml`(선택). 프론트는 배포 주소로 테스트한다

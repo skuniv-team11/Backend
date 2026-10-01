@@ -1,10 +1,11 @@
-# Render Blueprint. DB는 여기 넣지 않는다: 무료 Postgres는 만든 날부터 30일 뒤 만료되므로 10/15 이후 대시보드에서 따로 만든다(ADR-0005).
+# Render Blueprint. DB는 여기 넣지 않는다: 무료 Postgres는 30일 뒤 만료돼 한 번 다시 만들어야 하므로(ADR-0005)
+# 대시보드에서 따로 만들고 연결값(DB_URL·DB_USER·DB_PASSWORD)만 넣는다. DB도 singapore에 만든다(Internal URL은 같은 지역끼리만 된다).
 services:
   - type: web
     name: coop-radar-api
     runtime: docker
     region: singapore
-    plan: free                  # 제출 전(10/25 무렵) 대시보드에서 Starter로 올리고 11/12 뒤 내린다
+    plan: 0.5c-512mb            # 옛 이름 Starter($7/월, 0.5 CPU·512MB). 10/2부터 잠들지 않게 둔다(ADR-0005). 11/12 발표 뒤 free로 내린다
     branch: main                # main에 push할 때만 배포(빌드 시간 월 500분 절약). 개발은 develop
     autoDeployTrigger: commit
     healthCheckPath: /actuator/health
@@ -17,12 +18,18 @@ services:
         - README.md
         - AGENTS.md           # src/main/resources/prompts/*.md 는 서비스 코드라 빌드 대상으로 남긴다
     envVars:
-      - key: CORS_ORIGINS       # 예: https://coop-radar.vercel.app,https://coop-radar-*.vercel.app (Vercel 프로젝트 이름 coop-radar 기준)
+      # sync: false 값은 Blueprint를 처음 만들 때만 묻는다. 그 뒤로는 대시보드 Environment에서 고친다
+      - key: CORS_ORIGINS       # https://coop-radar.vercel.app,https://coop-radar-*.vercel.app (운영 + 미리보기, Vercel 프로젝트 이름 coop-radar 기준)
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
-      - key: JWT_SECRET         # 로그인 토큰 서명 키(HS256, ADR-0008). 32바이트 이상 무작위 값
-        sync: false
+      - key: JWT_SECRET         # 로그인 토큰 서명 키(HS256, ADR-0008). Render가 처음 만들 때 무작위 256비트(base64 44자)를 넣는다
+        generateValue: true
       - key: KAKAO_REST_API_KEY # 통근 조회(카카오 대중교통, ADR-0007)
         sync: false
-      # DB_URL·DB_USER·DB_PASSWORD는 10/15 이후 DB를 만들고 대시보드에서 넣는다(ADR-0005, README 'DB')
+      - key: DB_URL             # jdbc:postgresql://<Internal Database URL의 @ 뒤>  예: jdbc:postgresql://dpg-xxxx-a/coopradar_xxxx (README 'DB')
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false

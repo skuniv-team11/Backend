@@ -7,7 +7,7 @@ src/                Spring Boot 4.1.1 · Java 21 → Render (Docker, Singapore)
 pipeline/           오프라인 데이터 작업과 선행 실험(E1·E2·E5·E6, Python)
 docs/               아키텍처, 결정 기록(ADR), API 계약(프론트와 공유), 협업 규칙, 하네스
 scripts/            verify.sh(전체 검증), check-secrets.sh, check_pipeline.py, test-harness.sh
-render.yaml         Render Blueprint (DB는 10/15 이후 따로)
+render.yaml         Render Blueprint (DB는 대시보드에서 따로, ADR-0005)
 docker-compose.yml  로컬 Postgres 18
 ```
 
@@ -36,7 +36,7 @@ API 문서(Swagger)는 http://localhost:8080/swagger-ui.html 입니다. 드롭�
 | `PORT` | 8080 | Render가 10000을 넣어 줍니다 |
 | `CORS_ORIGINS` | `http://localhost:5173` | 쉼표로 구분하고 패턴을 쓸 수 있습니다 |
 | `ANTHROPIC_API_KEY` | — | 추천 설명, E3 실험 |
-| `JWT_SECRET` | — | 로그인 토큰 서명 키(32바이트 이상 무작위 값). 로컬에서 비우면 임시 키(다시 뜨면 로그인이 풀림) |
+| `JWT_SECRET` | — | 로그인 토큰 서명 키(32바이트 이상 무작위 값). Render는 Blueprint가 만들 때 무작위로 넣는다. 로컬에서 비우면 임시 키(다시 뜨면 로그인이 풀림) |
 | `CLIENT_IP_HEADER` | `CF-Connecting-IP` | 체험 계정 호출 제한에 쓰는 IP 헤더(Render 앞단 Cloudflare, ADR-0013) |
 | `GUEST_PER_IP_PER_HOUR` | `300` | 체험 계정 만들기 IP당 1시간 한도. 0이면 제한 없음. Render 대시보드에서 바꾸면 다시 배포하지 않아도 된다 |
 | `KAKAO_REST_API_KEY` | — | 통근 조회(카카오 대중교통) |
@@ -44,16 +44,19 @@ API 문서(Swagger)는 http://localhost:8080/swagger-ui.html 입니다. 드롭�
 | `DB_URL` · `DB_USER` · `DB_PASSWORD` | 로컬 docker compose 값 | Render에서만 넣습니다(아래 'DB') |
 
 ## 배포 (Render)
-1. `develop`의 내용을 `main`에 올립니다: `git push origin origin/develop:refs/heads/main`. **DB 연결이 들어간 뒤로는(ADR-0010) Render DB를 만들고 아래 'DB'의 환경변수를 넣은 다음에 올립니다.** DB가 없으면 앱이 뜨지 않아 배포가 실패합니다.
-2. Render → New → **Blueprint** → 이 저장소를 고르면 `render.yaml`을 읽습니다.
-3. `CORS_ORIGINS`·`ANTHROPIC_API_KEY`·`JWT_SECRET`·`KAKAO_REST_API_KEY`를 입력합니다. 프론트 주소가 나오기 전에는 `CORS_ORIGINS`에 `http://localhost:5173`을 넣어 둡니다.
-4. 첫 빌드가 끝나면 세 가지를 확인합니다.
-    - 빌드 소요 시간(월 500분 예산 계산용)
-    - `/actuator/health` 응답
-    - Metrics의 메모리
-5. `pipeline/`, `docs/` 변경은 빌드하지 않습니다(`buildFilter`).
+웹 서비스는 Starter(`0.5c-512mb`), DB는 무료 Postgres입니다(ADR-0005). 순서가 중요합니다 — DB 없이는 앱이 뜨지 않습니다.
 
-Render Free는 15분 동안 요청이 없으면 잠들어서, 첫 요청이 1분쯤 걸릴 수 있습니다. 1차 평가가 시작되기 전에 Starter로 올립니다.
+1. **DB:** Render → New → Postgres. 이름 `coop-radar-db`, Region **Singapore**(웹 서비스와 같아야 Internal URL이 됨), Version 18, Plan Free. 아래 'DB'처럼 연결값 3개를 만들어 둡니다.
+2. **main 올리기:** `git push origin origin/develop:refs/heads/main`(fast-forward).
+3. **Blueprint:** Render → New → **Blueprint** → 이 저장소, **Branch `main`**을 고르면 `render.yaml`을 읽습니다. 묻는 값을 넣습니다.
+    - `CORS_ORIGINS`: `https://coop-radar.vercel.app,https://coop-radar-*.vercel.app`(Vercel 운영 + 미리보기)
+    - `ANTHROPIC_API_KEY`, `KAKAO_REST_API_KEY`
+    - `DB_URL`·`DB_USER`·`DB_PASSWORD`(1번에서 만든 값)
+    - `JWT_SECRET`은 묻지 않습니다. Render가 무작위 값을 만듭니다.
+4. 첫 배포가 끝나면 확인합니다.
+    - `https://<서비스>.onrender.com/actuator/health` → `UP`, `/api/ping`
+    - 빌드 소요 시간(월 500분 예산 계산용), Metrics의 메모리(512MB 안)
+5. `pipeline/`, `docs/` 변경은 빌드하지 않습니다(`buildFilter`). `sync: false` 값은 Blueprint를 처음 만들 때만 묻습니다. 그 뒤로는 대시보드 Environment에서 고칩니다.
 
 ## E3: 운영계획서 추출 (Java SDK)
 ```
@@ -81,10 +84,14 @@ ANTHROPIC_API_KEY=... java -jar build/libs/coop-radar-backend-0.0.1.jar --spring
 ## DB
 - **로컬:** `docker compose up -d`로 Postgres 18을 띄웁니다. 스키마는 Flyway(`src/main/resources/db/migration/`), 접근은 `JdbcClient`입니다(ADR-0010).
 - **시드:** 앱이 뜰 때 Flyway가 `R__seed.sql`(2026-2 실제 자료: 18기관·40직무·학과 60·근거·수기 17·리플레이 신호)을 넣습니다. 바꾸면 다음 기동 때 다시 적용됩니다. 만드는 법은 [pipeline/seed/README.md](pipeline/seed/README.md)(ADR-0014).
-- **Render:** 무료 Postgres는 10/15 이후 대시보드에서 만듭니다. Internal Database URL(`postgresql://USER:PASSWORD@HOST:PORT/DB`)을 JDBC 형식으로 바꿔 환경변수 3개를 넣습니다.
-    - `DB_URL=jdbc:postgresql://HOST:PORT/DB`
-    - `DB_USER`
-    - `DB_PASSWORD`
+- **Render:** 무료 Postgres(singapore, 18). DB 페이지 Connections의 **Internal Database URL** `postgresql://USER:PASSWORD@HOST/DB`를 나눠 환경변수 3개에 넣습니다.
+    - `DB_URL=jdbc:postgresql://HOST/DB` (`@` 뒤 부분 앞에 `jdbc:postgresql://`. 포트가 없으면 5432)
+    - `DB_USER=USER`
+    - `DB_PASSWORD=PASSWORD`
+- **무료 DB 만료:** 만든 날 + 30일에 만료됩니다. 10/2에 만든 DB는 11/1(제출일)에 만료되므로 **10/15~10/31 사이에 지우고 새로 만듭니다**(10/15에 만들면 11/14 만료, ADR-0005). 무료 DB는 워크스페이스당 1개라 먼저 지웁니다.
+    1. 기존 DB 삭제 → 같은 설정으로 새로 만들기
+    2. 웹 서비스 Environment에서 `DB_URL`·`DB_USER`·`DB_PASSWORD`를 새 값으로 바꾸고 Save(다시 배포됨)
+    3. 앱이 뜰 때 Flyway가 스키마와 시드(`R__seed.sql`)를 다시 넣습니다. 예시 프로필은 `application.yml`이라 그대로입니다. 사라지는 건 가입 계정·저장한 프로필·담은 지망뿐입니다.
 
 ## 저장소 규칙
 - **올리지 않는 것**: 원본 PDF·엑셀, API 키, 실험 결과. 모두 `.gitignore`에 들어 있습니다.
