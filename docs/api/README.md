@@ -39,7 +39,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | 8 | 내 정보 | GET | `/api/me/profile` | STUDENT | S1 | 저장한 프로필 | [응답](me-profile.json) |
 | 9 | 내 정보 | PUT | `/api/me/profile` | STUDENT | S1 | 프로필 저장(동의 필수) | [요청](me-profile.request.json) · [응답](me-profile.json) |
 | 10 | 내 정보 | DELETE | `/api/me/profile` | STUDENT | M1 | 저장한 프로필만 삭제 | 204 |
-| 11 | 기준 정보 | GET | `/api/departments` | 공개 | S1 | 학과 72개 | [응답](departments.json) |
+| 11 | 기준 정보 | GET | `/api/departments` | 공개 | S1 | 학과(교육통계 재학생이 있는 60개, ADR-0014) | [응답](departments.json) |
 | 12 | 기준 정보 | GET | `/api/areas` | 공개 | S1 | 사는 곳 선택지(서울·인천·경기 시·군·구) | [응답](areas.json) |
 | 13 | 기준 정보 | GET | `/api/rounds/current` | 공개 | S5·C4 | 현재 모집 회차와 리플레이 날짜 범위 | [응답](rounds-current.json) |
 | 14 | 판정·추천 | POST | `/api/eligibility` | STUDENT | S2·S4 | 회차 직무 전부의 3층 판정 | [요청](profile-body.request.json) · [응답](eligibility.json) |
