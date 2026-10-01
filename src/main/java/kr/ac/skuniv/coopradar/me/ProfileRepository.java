@@ -1,6 +1,7 @@
 package kr.ac.skuniv.coopradar.me;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import kr.ac.skuniv.coopradar.common.Times;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -44,9 +45,15 @@ public class ProfileRepository {
     }
 
     public Optional<ProfileView> findView(long userId, boolean isExample) {
+        return findSaved(userId, isExample).map(SavedProfile::toView);
+    }
+
+    /** 저장한 프로필(#8·#9 응답). 시각은 한국 시간으로 돌려준다. */
+    public Optional<SavedProfile> findSaved(long userId, boolean isExample) {
         return db.sql("""
                         SELECT p.department_id, p.grade, p.completed_semesters, p.gpa, p.graduation_expected, p.interest_text,
-                               p.home_area_code, d.name AS department_name, a.sido AS area_sido, a.name AS area_name
+                               p.home_area_code, p.consented_at, p.updated_at,
+                               d.name AS department_name, a.sido AS area_sido, a.name AS area_name
                         FROM student_profile p
                         JOIN department d ON d.id = p.department_id
                         LEFT JOIN area a ON a.code = p.home_area_code
@@ -54,7 +61,7 @@ public class ProfileRepository {
                 .param("userId", userId)
                 .query((rs, i) -> {
                     String areaCode = rs.getString("home_area_code");
-                    return new ProfileView(
+                    return new SavedProfile(
                             rs.getInt("department_id"),
                             rs.getInt("grade"),
                             rs.getInt("completed_semesters"),
@@ -65,8 +72,48 @@ public class ProfileRepository {
                             new ProfileView.DepartmentRef(rs.getInt("department_id"), rs.getString("department_name")),
                             areaCode == null ? null
                                     : new ProfileView.AreaView(areaCode, rs.getString("area_sido"), rs.getString("area_name")),
-                            isExample);
+                            isExample,
+                            Times.kst(rs.getObject("consented_at", OffsetDateTime.class)),
+                            Times.kst(rs.getObject("updated_at", OffsetDateTime.class)));
                 })
                 .optional();
+    }
+
+    public boolean departmentExists(int id) {
+        return db.sql("SELECT EXISTS (SELECT 1 FROM department WHERE id = :id)").param("id", id)
+                .query(Boolean.class).single();
+    }
+
+    /** [저장]+동의(#9). 있으면 덮어쓰고 동의 시각도 이번 저장 시각으로 바꾼다. */
+    public void upsert(long userId, ProfileSaveRequest p, Instant now) {
+        db.sql("""
+                        INSERT INTO student_profile (user_id, department_id, grade, completed_semesters, gpa,
+                                                     graduation_expected, interest_text, home_area_code, consented_at, updated_at)
+                        VALUES (:userId, :departmentId, :grade, :semesters, :gpa, :graduationExpected, :interest, :area, :now, :now)
+                        ON CONFLICT (user_id) DO UPDATE SET
+                            department_id       = EXCLUDED.department_id,
+                            grade               = EXCLUDED.grade,
+                            completed_semesters = EXCLUDED.completed_semesters,
+                            gpa                 = EXCLUDED.gpa,
+                            graduation_expected = EXCLUDED.graduation_expected,
+                            interest_text       = EXCLUDED.interest_text,
+                            home_area_code      = EXCLUDED.home_area_code,
+                            consented_at        = EXCLUDED.consented_at,
+                            updated_at          = EXCLUDED.updated_at""")
+                .param("userId", userId)
+                .param("departmentId", p.departmentId())
+                .param("grade", p.grade())
+                .param("semesters", p.completedSemesters())
+                .param("gpa", p.gpa())
+                .param("graduationExpected", p.graduationExpected())
+                .param("interest", p.interestText())
+                .param("area", p.homeAreaCode())
+                .param("now", Times.utc(now))
+                .update();
+    }
+
+    /** 프로필만 지운다(계정·담은 지망은 남는다, #10). 없어도 그대로 끝난다. */
+    public void delete(long userId) {
+        db.sql("DELETE FROM student_profile WHERE user_id = :userId").param("userId", userId).update();
     }
 }
