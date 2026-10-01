@@ -89,6 +89,8 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - `status`: asOf가 회차 종료일보다 뒤이거나 `closesOn` ≤ asOf면 `CLOSED` → 아니면 `OPEN`. 지원 의사가 정원을 넘어도 몰림 상태·경고는 주지 않는다(ADR-0015, 10/1 회의). 숫자(`intent`·`headcount`·`ratio`)는 그대로 준다.
 - `closeReason`: `APPLICATION_DEADLINE`(운영계획서 접수마감일자) · `CENTER_CLOSED`(센터 리스트 모집마감). `closesOnIsVirtual`이 true면 날짜가 생성기가 정한 가상 값이다.
 - `expectedFullOn`: 정원 도달 예상일. 최근 3일 지원 의사 평균 증가량으로 외삽하고, 모집기간 안에 닿지 않거나 이미 닿았으면 null.
+  - 최근 3일 = asOf와 그 앞 이틀(모집 시작 전 날은 빼고 남은 날 수로 나눈다). 남은 자리 ÷ 하루 평균을 올림한 날 수만큼 asOf에서 더한다.
+  - null: 이미 정원 이상 · `CLOSED` · 최근 3일 지원 의사 0 · 지원할 수 있는 마지막 날(회차 종료일, `closesOn`이 있으면 그 전날)을 넘김.
 
 **Citation** — `{sourceType, documentTitle, page, quote}`. `sourceType`은 `OPERATION_PLAN` · `TESTIMONIAL`. 원문 PDF 링크는 주지 않는다.
 
@@ -136,9 +138,13 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - `check`: 순위가 있는 직무의 신호와 대안을 준다(경고 문장 없음, ADR-0015). 대안은 요건이 맞는 빈 자리 — `INELIGIBLE`·`CLOSED`·남은 자리 0을 빼고, `fit` → 남은 자리 순으로 최대 5개.
 - `asOf`는 회차 기간 안이어야 한다(아니면 400 `AS_OF_OUT_OF_RANGE`). 생략하면 `rounds/current`의 `replay.defaultAsOf`.
 
-**센터** — CENTER만(아니면 403 `FORBIDDEN_ROLE`). 회차 직무 전부를 행으로 준다.
-- `risks[].code`: `NARROW_POOL`(선호 전공 재학생 수가 적음 — 기준값은 시드 적재 뒤 분포를 보고 정한다) · `PORTFOLIO_REQUIRED` · `CERTIFICATE_REQUIRED` · `WEEKEND`(토·일 실습) · `DOC_ALERT`(검토 알림 있음).
-- `historyAvailable`이 false면 `pastZeroRounds` 열을 숨긴다. 지난 회차 결과는 센터 동의 뒤에만 적재한다.
+**센터** — CENTER만(아니면 403 `FORBIDDEN_ROLE`). 회차 직무 전부를 리스트 순번대로 행으로 준다. `asOf` 규칙은 지망 점검과 같다(생략하면 `replay.defaultAsOf`, 모집기간 밖이면 400 `AS_OF_OUT_OF_RANGE`, 날짜 형식이 아니면 400 `INVALID_INPUT`).
+- `summary`: `jobs` 직무 수 · `seats` 정원 합 · `intentTotal` asOf까지 지원 의사 합 · `zeroSignalJobs` 지원 의사가 0인 직무 수 · `closedJobs` `CLOSED` 직무 수.
+- `eligiblePool`: 직무의 선호 전공 표기에서 사람이 확정한 학과(중복 없이)의 재학생 수 합. 전공 무관이면 전체 재학생. 확정 전 표기(중어전공)는 0으로 센다.
+- `risks[].code`(이 순서): `NARROW_POOL`(`eligiblePool`이 기준값 미만, `detail` '선호 전공 재학생 N명') · `PORTFOLIO_REQUIRED` · `CERTIFICATE_REQUIRED`(`detail`은 자격증 원문) · `WEEKEND`(토·일 실습, `detail` '토'·'토·일') · `DOC_ALERT`(검토 알림 있음, `detail` '검토 알림 N건'). `label`은 `codes`의 `risk` 표기.
+  - **`NARROW_POOL` 기준값: 200명 미만(ADR-0016)**. 설정 `app.center.narrow-pool-below`(환경변수 `CENTER_NARROW_POOL_BELOW`). 2026-2 시드에서는 8직무.
+- `alertCount`·`alerts`: 그 직무에 걸린 알림 + 기관 전체(`jobId` null)에 걸린 알림. `alerts`는 회차 기관들의 알림 전부, id 순.
+- `historyAvailable`이 false면 `pastZeroRounds` 열을 숨긴다. 지난 회차 결과는 센터 동의 뒤에만 적재하고 원소 모양도 그때 정한다 — 그 전까지는 항상 false · `[]`.
 
 ## 오류 코드
 | code | HTTP | 언제 |

@@ -138,7 +138,8 @@ public class JobRepository {
                 .list();
     }
 
-    static Alert alert(ResultSet rs) throws SQLException {
+    /** review_alert 행(+ i_name 열) → Alert. 현황판도 쓴다. */
+    public static Alert alert(ResultSet rs) throws SQLException {
         return new Alert(
                 rs.getInt("id"),
                 new InstitutionRef(rs.getInt("institution_id"), rs.getString("i_name")),
