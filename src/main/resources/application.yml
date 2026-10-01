@@ -55,6 +55,20 @@ app:
     guest-per-ip-per-hour: ${GUEST_PER_IP_PER_HOUR:300}
     # Render(*.onrender.com)는 Cloudflare를 거친다. 다른 곳에 배포하면 바꾸거나 비운다(비우면 연결 주소)
     client-ip-header: ${CLIENT_IP_HEADER:CF-Connecting-IP}
+  commute:
+    # 통근 조회(docs/api #18, ADR-0007). 카카오 대중교통을 그때 부르고 결과는 저장하지 않는다
+    kakao-url: https://dapi.kakao.com
+    # 카카오 디벨로퍼스 REST API 키. 비면 카카오를 부르지 않고 available false(PROVIDER_ERROR)로 답한다
+    kakao-key: ${KAKAO_REST_API_KEY:}
+    timeout: 3s
+    per-user-per-hour: 30
+    # 카카오 무료 하루 1,000건 안에서 서버가 먼저 멈춘다(한국 시간 자정에 새로 셈)
+    per-day: 900
+    # 사는 곳이 없을 때 출발점: 서경대(서울 성북구 서경로 124). 위키백과 Seokyeong University 문서 좌표 37°36′54″N 127°00′47″E.
+    # 도로명주소 좌표 키를 받으면 시·군·구청 좌표와 같은 방법으로 구한 값으로 바꾼다
+    school:
+      lat: 37.615
+      lng: 127.0131
   example-profile:
     # [예시 프로필로 시작]이 저장하는 시연용 가상 학생. 학과는 department 시드에서 이름으로 찾는다.
     # 사는 곳은 area 시드에 없으면 비운다(좌표 대기 중이라 시드 전, ADR-0007)
