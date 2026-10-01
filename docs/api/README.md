@@ -24,7 +24,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - **실행 중 외부 호출**은 Claude(이유 문장)·임베딩·카카오 대중교통(통근 조회) 셋뿐이다(ADR-0002, ADR-0007). 셋 다 실패해도 200으로 화면을 유지한다.
 - **코드값**은 영문 대문자이고 DB CHECK와 같은 집합이다(`V1__init.sql`). 화면 표기는 `GET /api/codes`에서 가져간다.
 - **예시 값**: 기관·직무·인용문은 전부 가상이다(`(가상)` 표시). 실제 값은 시드에서 나온다. 목록 응답의 예시는 일부 행만 보여 준다.
-- 구현할 때: `CorsConfig`의 허용 메서드에 `PUT`·`DELETE`를 더한다(지금은 GET·POST·OPTIONS). `Authorization` 헤더는 이미 허용돼 있다(`*`). 통근 조회에는 환경변수 `KAKAO_REST_API_KEY`(카카오 디벨로퍼스 REST API 키)가 필요하다.
+- CORS: `CorsConfig`가 `GET`·`POST`·`PUT`·`DELETE`·`OPTIONS`와 모든 헤더(`Authorization` 포함)를 허용한다(Backend#16). 통근 조회에는 환경변수 `KAKAO_REST_API_KEY`(카카오 디벨로퍼스 REST API 키)가 필요하다.
 
 ## 목록
 | # | 구분 | 메서드 | 경로 | 권한 | 화면 | 설명 | 예시 |
