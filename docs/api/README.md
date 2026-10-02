@@ -139,7 +139,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - 본문은 `{homeAreaCode}` 하나. 저장한 프로필이 있어도 프론트가 본문에 넣는다(프로필 값은 본문으로만). null이거나 빠지면 서경대에서 출발한다. `areas`에 없는 코드면 400 `INVALID_INPUT`.
 - 서버가 카카오만 부른다(헤더 `Authorization: KakaoAK ${KAKAO_REST_API_KEY}`).
   1. 카카오 주소 검색(`GET https://dapi.kakao.com/v2/local/search/address.json`)으로 좌표를 구한다 — 출발 = 사는 곳 '시도 시·군·구'(예: '서울 노원구') 또는 서경대(설정값, 검색 안 함), 도착 = 근로지 주소(없으면 기관 주소)를 도로명 + 건물번호까지만 남긴 검색어. 못 찾으면 첫 쉼표 앞 원문으로 한 번 더. 출발·도착은 동시에 부른다.
-  2. 카카오 대중교통 길찾기(`GET https://dapi.kakao.com/v2/routing/publictraffic`)를 1번 부른다. 응답의 첫 경로에서 `minutes` = totalTime(초) ÷ 60 반올림, `transfers`, `fareWon` = fare.value.
+  2. 카카오 대중교통 길찾기(`GET https://dapi.kakao.com/v2/routing/publictraffic`)를 1번 부른다. 응답 경로 중 totalTime이 가장 짧은 경로(같으면 환승이 적은 쪽, 그다음 먼저 온 쪽)에서 `minutes` = totalTime(초) ÷ 60 반올림, `transfers`, `fareWon` = fare.value. 카카오 문서에 경로 정렬 기준이 없어 첫 경로를 쓰지 않는다(10/2).
   - `destination.address`는 정리하기 전 원문 주소다.
 - **저장하지 않는다.** 좌표·시간·경로와 결과로 만든 값을 DB·캐시에 두지 않는다(카카오 운영정책: 결과 저장·가공 데이터 저장·미리 조회해 보관 금지). 같은 직무를 다시 열면 다시 부른다. 프론트는 그 화면에 있는 동안만 상태로 들고 있는다.
 - 실패해도 **200 + `available: false`**, `minutes`·`transfers`·`fareWon`은 null. `unavailableReason`: `NO_WORKPLACE`(근무지 주소가 없음 — 카카오를 부르지 않는다 — 또는 카카오 주소 검색이 근무지를 못 찾음) · `NO_ROUTE`(카카오 `NO_RESULTS`·`EQUAL_POINTS`·`STARTNODES_NULL`·`ENDNODES_NULL`) · `LIMITED`(호출 제한·하루 한도·카카오 한도 초과) · `PROVIDER_ERROR`(사는 곳을 못 찾음, 그 밖의 카카오 오류, 호출 하나가 3초 초과).

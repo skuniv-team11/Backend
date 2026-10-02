@@ -20,12 +20,28 @@ class CommuteUnitTest {
     // ───────── 카카오 응답 해석 ─────────
 
     @Test
-    void 상태_OK면_첫_경로의_시간_환승_요금() {
+    void 상태_OK면_가장_빠른_경로의_시간_환승_요금() {
+        // 카카오는 routes 정렬 기준을 정하지 않는다 — 첫 경로가 아니라 totalTime이 가장 짧은 경로
         Result r = parse(200, """
                 {"status":"OK","routes":[
                   {"properties":{"totalTime":2580,"transfers":1,"fare":{"value":1550}}},
-                  {"properties":{"totalTime":1200,"transfers":0,"fare":{"value":1400}}}]}""");
-        assertThat(r).isEqualTo(new Result(Outcome.OK, 2580, 1, 1550));
+                  {"properties":{"totalTime":1200,"transfers":0,"fare":{"value":1400}}},
+                  {"properties":{"totalTime":1800,"transfers":2,"fare":{"value":1600}}}]}""");
+        assertThat(r).isEqualTo(new Result(Outcome.OK, 1200, 0, 1400));
+    }
+
+    @Test
+    void 시간이_같으면_환승이_적은_경로_그것도_같으면_먼저_온_경로() {
+        assertThat(parse(200, """
+                {"status":"OK","routes":[
+                  {"properties":{"totalTime":1200,"transfers":2,"fare":{"value":1500}}},
+                  {"properties":{"totalTime":1200,"transfers":1,"fare":{"value":1600}}},
+                  {"properties":{"totalTime":1200,"transfers":1,"fare":{"value":1700}}}]}"""))
+                .isEqualTo(new Result(Outcome.OK, 1200, 1, 1600));
+        // 시간 값이 없는 경로는 건너뛴다
+        assertThat(parse(200, """
+                {"status":"OK","routes":[{"properties":{}},{"properties":{"totalTime":900,"transfers":0}}]}"""))
+                .isEqualTo(new Result(Outcome.OK, 900, 0, null));
     }
 
     @Test
