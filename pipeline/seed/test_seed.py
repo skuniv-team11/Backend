@@ -82,8 +82,28 @@ class ToSqlTest(unittest.TestCase):
         self.assertIn("ON CONFLICT (id) DO UPDATE SET code = EXCLUDED.code, name = EXCLUDED.name;", sql)
         self.assertIn("DELETE FROM major_alias;", sql)
         self.assertIn("DELETE FROM job WHERE id NOT IN (NULL);", sql)       # job이 비면 전부 지운다
-        self.assertNotIn("area", sql)                                      # 좌표 대기 — 건드리지 않는다
+        self.assertIn("DELETE FROM area a WHERE a.code NOT IN (NULL)", sql)  # area가 비면 프로필이 안 쓰는 행은 지운다
         self.assertLess(sql.index("DELETE FROM major_alias;"), sql.index("INSERT INTO program"))
+
+    def test_사는_곳은_code로_upsert하고_프로필이_쓰는_행은_남긴다(self):
+        seed = {"area": [{"code": "11350", "sido": "서울", "name": "노원구", "sort_order": 1}]}
+        sql = to_sql.render(seed)
+        self.assertIn("ON CONFLICT (code) DO UPDATE SET sido = EXCLUDED.sido, name = EXCLUDED.name, "
+                      "sort_order = EXCLUDED.sort_order;", sql)
+        self.assertIn("DELETE FROM area a WHERE a.code NOT IN ('11350')\n"
+                      "  AND NOT EXISTS (SELECT 1 FROM student_profile sp WHERE sp.home_area_code = a.code);", sql)
+        # 이름·순서 유니크가 upsert 중에 부딪히지 않게 비켜 두고, 남은 행은 목록 맨 뒤로
+        self.assertLess(sql.index("UPDATE area SET sort_order = -sort_order;"), sql.index("INSERT INTO area"))
+        self.assertLess(sql.index("INSERT INTO area"), sql.index("UPDATE area a SET sort_order = 30000 + s.n"))
+
+    def test_사는_곳_목록은_서울_인천_경기_시군구_코드만(self):
+        import build_seed
+        rows = build_seed.area_rows([{"code": "41111", "sido": "경기", "name": "수원시 장안구"},
+                                     {"code": "11110", "sido": "서울", "name": "종로구"}])
+        self.assertEqual([r["code"] for r in rows], ["11110", "41111"])   # 코드 순
+        self.assertEqual([r["sort_order"] for r in rows], [1, 2])
+        with self.assertRaises(SystemExit):
+            build_seed.area_rows([{"code": "26110", "sido": "부산", "name": "중구"}])
 
     def test_해더의_해시는_seed와_본문을_따른다(self):
         text = json.dumps({"program": [{"id": 1, "code": "X", "name": "n"}]})

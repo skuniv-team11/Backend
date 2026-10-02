@@ -28,5 +28,5 @@
   - 예시 `eligibility.json`의 103(웹 서비스 개발)에서 '선호 전공 표기' `CHECK` 행을 뺐다. `majorRequirement` 알림은 판정을 바꾸지 않는다. 103은 학년이 `NOT_MET`이라 그대로 `NEEDS_CHECK`다.
   - V1 `review_alert.field_key` 주석의 예시(`majorRequirement`)는 이 결정과 다르다. 적용한 마이그레이션은 고치지 않으므로(ADR-0010) 이 ADR과 `docs/api/README.md`를 따른다.
   - 프론트: 판정 행의 `closing`·`alertCount`, 직무 상세의 `requirements.majorAliases`, 코드 `ntsStatus`가 새로 생긴다.
-  - 아직 없는 것: `area` 좌표와 `workplace` 좌표 시드가 없어 통근은 지금 '근무지 위치 없음'(`NO_WORKPLACE`)으로 끝난다. 시연 전에 좌표 시드가 필요하다(ADR-0007).
+  - 사는 곳 목록(`area`)은 10/2 행정표준코드로 시드했다(83곳). 예시 프로필의 사는 곳은 노원구(11350)로 들어가고, 통근은 카카오 주소 검색으로 그때 계산한다(ADR-0007 개정).
 - 다시 볼 때: 시드가 바뀌거나(새 회차) E5 임베딩 결과로 추천 순서가 크게 달라질 때.

@@ -171,8 +171,8 @@ class ReferenceApiTest {
     }
 
     private void area(String code, String sido, String name, int sortOrder) {
-        db.sql("INSERT INTO area (code, sido, name, lat, lng, sort_order) "
-                        + "VALUES (:code, :sido, :name, 37.5, 127.0, :sortOrder) ON CONFLICT DO NOTHING")
+        db.sql("INSERT INTO area (code, sido, name, sort_order) "
+                        + "VALUES (:code, :sido, :name, :sortOrder) ON CONFLICT DO NOTHING")
                 .param("code", code).param("sido", sido).param("name", name).param("sortOrder", sortOrder).update();
     }
 

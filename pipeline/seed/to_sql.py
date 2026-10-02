@@ -4,11 +4,11 @@
     python to_sql.py --check    # 파일이 seed.json과 맞는지만 본다(check_pipeline.py가 부른다)
 
 다시 시드해도 사용자 데이터가 같은 행을 가리키게(ADR-0009):
-- 부모 테이블(program·recruit_round·department·institution·workplace·job)은 id로 upsert 하고,
+- 부모 테이블(program·recruit_round·department·area·institution·workplace·job)은 id(area는 code)로 upsert 하고,
   seed에 없는 행만 지운다. job을 지우면 담아 둔 지망(plan_item)도 함께 지워진다(직무가 없어졌으므로).
-  학생 프로필이 쓰는 학과는 seed에서 빠져도 지우지 않는다.
+  학생 프로필이 쓰는 학과·사는 곳은 seed에서 빠져도 지우지 않는다.
 - 자식 테이블(근거·알림·수기·신호·전공 표기)은 통째로 지우고 다시 넣는다. 사용자 데이터가 가리키지 않는다.
-- area(좌표 대기, ADR-0007)·job_embedding(E5)·round_result(센터 동의 뒤 로컬 적재)는 건드리지 않는다.
+- job_embedding(E5)·round_result(센터 동의 뒤 로컬 적재)는 건드리지 않는다.
 Flyway는 이 파일의 checksum이 바뀔 때마다 V* 다음에 한 트랜잭션으로 다시 적용한다.
 """
 import argparse, datetime as dt, hashlib, json, pathlib, sys
@@ -23,9 +23,10 @@ PARENTS = {
     "program": ["id", "code", "name"],
     "recruit_round": ["id", "program_id", "term_code", "round_no", "recruit_start", "recruit_end"],
     "department": ["id", "name", "college", "enrolled_count", "enrolled_as_of"],
+    "area": ["code", "sido", "name", "sort_order"],
     "institution": ["id", "name", "size", "listing", "business_type", "business_item", "address",
                     "nts_status", "nts_checked_on"],
-    "workplace": ["id", "institution_id", "address", "lat", "lng", "coord_source"],
+    "workplace": ["id", "institution_id", "address"],
     "job": ["id", "round_id", "institution_id", "workplace_id", "list_seq", "team", "title", "overview",
             "education_goal", "competencies", "course", "job_type", "period_start", "period_end",
             "work_hours_text", "weekly_hours", "weekdays", "overtime", "labor_contract", "stipend_basis",
@@ -46,6 +47,8 @@ CHILDREN = {
     "testimonial": ["id", "source_document_id", "institution_id", "team_text", "activities", "page"],
     "replay_signal": ["job_id", "signal_date", "interest_count", "intent_count"],
 }
+# upsert 키(기본은 id)
+KEYS = {"area": "code"}
 ARRAYS = {("job", "weekdays"): "varchar(3)[]", ("job", "benefits"): "varchar(20)[]",
           ("testimonial", "activities"): "text[]"}
 DATES = {("recruit_round", "recruit_start"), ("recruit_round", "recruit_end"),
@@ -84,20 +87,25 @@ def lit(table, col, v):
 
 
 def inserts(table, cols, rows, upsert):
+    key = KEYS.get(table, "id")
     out = []
     for i in range(0, len(rows), CHUNK):
         part = rows[i:i + CHUNK]
         values = ",\n".join("  (" + ", ".join(lit(table, c, r[c]) for c in cols) + ")" for r in part)
         sql = f"INSERT INTO {table} ({', '.join(cols)}) VALUES\n{values}"
         if upsert:
-            sets = ", ".join(f"{c} = EXCLUDED.{c}" for c in cols if c != "id")
-            sql += f"\nON CONFLICT (id) DO UPDATE SET {sets}"
+            sets = ", ".join(f"{c} = EXCLUDED.{c}" for c in cols if c != key)
+            sql += f"\nON CONFLICT ({key}) DO UPDATE SET {sets}"
         out.append(sql + ";")
     return out
 
 
 def ids(rows):
     return ", ".join(str(r["id"]) for r in rows) or "NULL"
+
+
+def codes(rows):
+    return ", ".join("'" + r["code"] + "'" for r in rows) or "NULL"
 
 
 def render(seed):
@@ -115,16 +123,24 @@ def render(seed):
     s.append(f"DELETE FROM institution WHERE id NOT IN ({ids(p['institution'])});")
     s.append(f"DELETE FROM department d WHERE d.id NOT IN ({ids(p['department'])})\n"
              f"  AND NOT EXISTS (SELECT 1 FROM student_profile sp WHERE sp.department_id = d.id);")
+    s.append(f"DELETE FROM area a WHERE a.code NOT IN ({codes(p['area'])})\n"
+             f"  AND NOT EXISTS (SELECT 1 FROM student_profile sp WHERE sp.home_area_code = a.code);")
     s.append("\n-- 3. 유니크 열을 잠시 비켜 둔다(이름·순번이 행끼리 바뀌어도 upsert가 부딪히지 않게)")
     s.append("UPDATE institution SET name = '#' || id;")
     s.append("UPDATE workplace SET address = '#' || id;")
     s.append("UPDATE job SET list_seq = list_seq + 10000;")
     s.append(f"UPDATE department SET name = '#' || id WHERE id IN ({ids(p['department'])});")
+    s.append("UPDATE area SET sort_order = -sort_order;")
+    s.append(f"UPDATE area SET name = '#' || code WHERE code IN ({codes(p['area'])});")
     s.append("\n-- 4. 부모 테이블 upsert(id 고정)")
     for t, cols in PARENTS.items():
         if p[t]:
             s.append(f"\n-- {t} {len(p[t])}행")
             s += inserts(t, cols, p[t], upsert=True)
+    s.append("\n-- 사는 곳: seed에서 빠졌지만 프로필이 쓰고 있어 남은 행은 목록 맨 뒤로")
+    s.append("UPDATE area a SET sort_order = 30000 + s.n\n"
+             "  FROM (SELECT code, row_number() OVER (ORDER BY code) AS n FROM area WHERE sort_order < 0) s\n"
+             "  WHERE a.code = s.code;")
     s.append("\n-- 5. 자식 테이블")
     for t, cols in CHILDREN.items():
         rows = seed.get(t, [])

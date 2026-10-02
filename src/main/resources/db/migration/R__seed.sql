@@ -1,7 +1,7 @@
 -- R__seed.sql — 시드 데이터(Flyway 반복 마이그레이션, ADR-0014). 손으로 고치지 않는다.
 -- 만드는 법: python pipeline/seed/build_seed.py ... → python pipeline/seed/to_sql.py (pipeline/seed/README.md)
--- seed.json sha256: bc5b39679a7c9ff06bd01cb58668d1a15e1aeb7ef017d695899c313e5c796c7e
--- body sha256: 76e6901faea78f5d8a210a08551f7f40bf88eea1f323e11925db9dc782e19662
+-- seed.json sha256: 6deffc8cf77596078942a98c3c8994edceb89bd21ba8baf6665c9c8810bddc96
+-- body sha256: e54ff15ba785939b64bd3295200f5cb9210687bf9a5d1198c5d02f2c53658297
 
 -- 1. 자식 테이블은 통째로 지운다(다시 넣는다)
 DELETE FROM replay_signal;
@@ -20,12 +20,16 @@ DELETE FROM workplace WHERE id NOT IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13
 DELETE FROM institution WHERE id NOT IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18);
 DELETE FROM department d WHERE d.id NOT IN (1, 2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 47, 48, 49, 50, 51, 53, 54, 56, 57, 58, 59, 60, 62, 64, 65, 66, 67, 68, 69, 70, 71)
   AND NOT EXISTS (SELECT 1 FROM student_profile sp WHERE sp.department_id = d.id);
+DELETE FROM area a WHERE a.code NOT IN ('11110', '11140', '11170', '11200', '11215', '11230', '11260', '11290', '11305', '11320', '11350', '11380', '11410', '11440', '11470', '11500', '11530', '11545', '11560', '11590', '11620', '11650', '11680', '11710', '11740', '28125', '28155', '28177', '28185', '28200', '28237', '28245', '28275', '28290', '28710', '28720', '41111', '41113', '41115', '41117', '41131', '41133', '41135', '41150', '41171', '41173', '41192', '41194', '41196', '41210', '41220', '41250', '41271', '41273', '41281', '41285', '41287', '41290', '41310', '41360', '41370', '41390', '41410', '41430', '41450', '41461', '41463', '41465', '41480', '41500', '41550', '41570', '41591', '41593', '41595', '41597', '41610', '41630', '41650', '41670', '41800', '41820', '41830')
+  AND NOT EXISTS (SELECT 1 FROM student_profile sp WHERE sp.home_area_code = a.code);
 
 -- 3. 유니크 열을 잠시 비켜 둔다(이름·순번이 행끼리 바뀌어도 upsert가 부딪히지 않게)
 UPDATE institution SET name = '#' || id;
 UPDATE workplace SET address = '#' || id;
 UPDATE job SET list_seq = list_seq + 10000;
 UPDATE department SET name = '#' || id WHERE id IN (1, 2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 47, 48, 49, 50, 51, 53, 54, 56, 57, 58, 59, 60, 62, 64, 65, 66, 67, 68, 69, 70, 71);
+UPDATE area SET sort_order = -sort_order;
+UPDATE area SET name = '#' || code WHERE code IN ('11110', '11140', '11170', '11200', '11215', '11230', '11260', '11290', '11305', '11320', '11350', '11380', '11410', '11440', '11470', '11500', '11530', '11545', '11560', '11590', '11620', '11650', '11680', '11710', '11740', '28125', '28155', '28177', '28185', '28200', '28237', '28245', '28275', '28290', '28710', '28720', '41111', '41113', '41115', '41117', '41131', '41133', '41135', '41150', '41171', '41173', '41192', '41194', '41196', '41210', '41220', '41250', '41271', '41273', '41281', '41285', '41287', '41290', '41310', '41360', '41370', '41390', '41410', '41430', '41450', '41461', '41463', '41465', '41480', '41500', '41550', '41570', '41591', '41593', '41595', '41597', '41610', '41630', '41650', '41670', '41800', '41820', '41830');
 
 -- 4. 부모 테이블 upsert(id 고정)
 
@@ -103,6 +107,93 @@ INSERT INTO department (id, name, college, enrolled_count, enrolled_as_of) VALUE
   (71, '미래융합학부2', NULL, 283, DATE '2025-10-01')
 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, college = EXCLUDED.college, enrolled_count = EXCLUDED.enrolled_count, enrolled_as_of = EXCLUDED.enrolled_as_of;
 
+-- area 83행
+INSERT INTO area (code, sido, name, sort_order) VALUES
+  ('11110', '서울', '종로구', 1),
+  ('11140', '서울', '중구', 2),
+  ('11170', '서울', '용산구', 3),
+  ('11200', '서울', '성동구', 4),
+  ('11215', '서울', '광진구', 5),
+  ('11230', '서울', '동대문구', 6),
+  ('11260', '서울', '중랑구', 7),
+  ('11290', '서울', '성북구', 8),
+  ('11305', '서울', '강북구', 9),
+  ('11320', '서울', '도봉구', 10),
+  ('11350', '서울', '노원구', 11),
+  ('11380', '서울', '은평구', 12),
+  ('11410', '서울', '서대문구', 13),
+  ('11440', '서울', '마포구', 14),
+  ('11470', '서울', '양천구', 15),
+  ('11500', '서울', '강서구', 16),
+  ('11530', '서울', '구로구', 17),
+  ('11545', '서울', '금천구', 18),
+  ('11560', '서울', '영등포구', 19),
+  ('11590', '서울', '동작구', 20),
+  ('11620', '서울', '관악구', 21),
+  ('11650', '서울', '서초구', 22),
+  ('11680', '서울', '강남구', 23),
+  ('11710', '서울', '송파구', 24),
+  ('11740', '서울', '강동구', 25),
+  ('28125', '인천', '제물포구', 26),
+  ('28155', '인천', '영종구', 27),
+  ('28177', '인천', '미추홀구', 28),
+  ('28185', '인천', '연수구', 29),
+  ('28200', '인천', '남동구', 30),
+  ('28237', '인천', '부평구', 31),
+  ('28245', '인천', '계양구', 32),
+  ('28275', '인천', '서해구', 33),
+  ('28290', '인천', '검단구', 34),
+  ('28710', '인천', '강화군', 35),
+  ('28720', '인천', '옹진군', 36),
+  ('41111', '경기', '수원시 장안구', 37),
+  ('41113', '경기', '수원시 권선구', 38),
+  ('41115', '경기', '수원시 팔달구', 39),
+  ('41117', '경기', '수원시 영통구', 40),
+  ('41131', '경기', '성남시 수정구', 41),
+  ('41133', '경기', '성남시 중원구', 42),
+  ('41135', '경기', '성남시 분당구', 43),
+  ('41150', '경기', '의정부시', 44),
+  ('41171', '경기', '안양시 만안구', 45),
+  ('41173', '경기', '안양시 동안구', 46),
+  ('41192', '경기', '부천시 원미구', 47),
+  ('41194', '경기', '부천시 소사구', 48),
+  ('41196', '경기', '부천시 오정구', 49),
+  ('41210', '경기', '광명시', 50),
+  ('41220', '경기', '평택시', 51),
+  ('41250', '경기', '동두천시', 52),
+  ('41271', '경기', '안산시 상록구', 53),
+  ('41273', '경기', '안산시 단원구', 54),
+  ('41281', '경기', '고양시 덕양구', 55),
+  ('41285', '경기', '고양시 일산동구', 56),
+  ('41287', '경기', '고양시 일산서구', 57),
+  ('41290', '경기', '과천시', 58),
+  ('41310', '경기', '구리시', 59),
+  ('41360', '경기', '남양주시', 60),
+  ('41370', '경기', '오산시', 61),
+  ('41390', '경기', '시흥시', 62),
+  ('41410', '경기', '군포시', 63),
+  ('41430', '경기', '의왕시', 64),
+  ('41450', '경기', '하남시', 65),
+  ('41461', '경기', '용인시 처인구', 66),
+  ('41463', '경기', '용인시 기흥구', 67),
+  ('41465', '경기', '용인시 수지구', 68),
+  ('41480', '경기', '파주시', 69),
+  ('41500', '경기', '이천시', 70),
+  ('41550', '경기', '안성시', 71),
+  ('41570', '경기', '김포시', 72),
+  ('41591', '경기', '화성시 만세구', 73),
+  ('41593', '경기', '화성시 효행구', 74),
+  ('41595', '경기', '화성시 병점구', 75),
+  ('41597', '경기', '화성시 동탄구', 76),
+  ('41610', '경기', '광주시', 77),
+  ('41630', '경기', '양주시', 78),
+  ('41650', '경기', '포천시', 79),
+  ('41670', '경기', '여주시', 80),
+  ('41800', '경기', '연천군', 81),
+  ('41820', '경기', '가평군', 82),
+  ('41830', '경기', '양평군', 83)
+ON CONFLICT (code) DO UPDATE SET sido = EXCLUDED.sido, name = EXCLUDED.name, sort_order = EXCLUDED.sort_order;
+
 -- institution 18행
 INSERT INTO institution (id, name, size, listing, business_type, business_item, address, nts_status, nts_checked_on) VALUES
   (1, '더에스엠씨', 'SME', 'UNLISTED', '서비스, 도매 및 소매업, 서비스, 전문 디자인업, 서비스', '온라인광고대행, 자동판매기 운영업, 마케팅 컨설팅, 종합디자인업, 광고대행업', '서울특별시 봉은사로 49길 22, 더에스엠씨빌딩 2층', 'ACTIVE', DATE '2026-10-01'),
@@ -126,26 +217,26 @@ INSERT INTO institution (id, name, size, listing, business_type, business_item, 
 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, size = EXCLUDED.size, listing = EXCLUDED.listing, business_type = EXCLUDED.business_type, business_item = EXCLUDED.business_item, address = EXCLUDED.address, nts_status = EXCLUDED.nts_status, nts_checked_on = EXCLUDED.nts_checked_on;
 
 -- workplace 18행
-INSERT INTO workplace (id, institution_id, address, lat, lng, coord_source) VALUES
-  (1, 1, '서울시 강남구 봉은사로49길 22, 더에스엠씨빌딩(1사옥)', NULL, NULL, NULL),
-  (2, 2, '서울시 강남구 삼성로 342', NULL, NULL, NULL),
-  (3, 3, '서울시 강남구 삼성로 342', NULL, NULL, NULL),
-  (4, 4, '서울시 서초구 강남대로61길 23, 203호 (서초동, 현대성우빌딩)', NULL, NULL, NULL),
-  (5, 5, '경기도 성남시 수정구 창업로 57번길 7, 5층', NULL, NULL, NULL),
-  (6, 6, '서울시 금천구 가산디지털2로 143, 15층', NULL, NULL, NULL),
-  (7, 7, '서울시 성동구 뚝섬로1길 25, 706-707호', NULL, NULL, NULL),
-  (8, 8, '경기도 의정부시 태평로214번길 36, 제이숲', NULL, NULL, NULL),
-  (9, 9, '서울시 강동구 양재대로113길 51, 4층 카페24 40호', NULL, NULL, NULL),
-  (10, 10, '서울시 용산구 원효로 146, 5층', NULL, NULL, NULL),
-  (11, 11, '서울시 영등포구 당산로 41길 11 당산 SK V1 Center W동 1008호', NULL, NULL, NULL),
-  (12, 12, '서울시 강남구 논현로 651 법무사회관 1, 5, 6층', NULL, NULL, NULL),
-  (13, 13, '서울시 강남구 언주로 537, ABT타워', NULL, NULL, NULL),
-  (14, 14, '서울시 송파구 송파대로 201, A동 1201호 (문정동, 송파테라타워2)', NULL, NULL, NULL),
-  (15, 15, '서울시 성동구 아차산로7나길 18 1101/1102호', NULL, NULL, NULL),
-  (16, 16, '서울시 서초구 서초중앙로41 대성빌딩 7층', NULL, NULL, NULL),
-  (17, 17, '서울시 광진구 능동로 256, 3층', NULL, NULL, NULL),
-  (18, 18, '서울시 영등포구 여의대로 108, 더현대서울 3층 애브뉴준오', NULL, NULL, NULL)
-ON CONFLICT (id) DO UPDATE SET institution_id = EXCLUDED.institution_id, address = EXCLUDED.address, lat = EXCLUDED.lat, lng = EXCLUDED.lng, coord_source = EXCLUDED.coord_source;
+INSERT INTO workplace (id, institution_id, address) VALUES
+  (1, 1, '서울시 강남구 봉은사로49길 22, 더에스엠씨빌딩(1사옥)'),
+  (2, 2, '서울시 강남구 삼성로 342'),
+  (3, 3, '서울시 강남구 삼성로 342'),
+  (4, 4, '서울시 서초구 강남대로61길 23, 203호 (서초동, 현대성우빌딩)'),
+  (5, 5, '경기도 성남시 수정구 창업로 57번길 7, 5층'),
+  (6, 6, '서울시 금천구 가산디지털2로 143, 15층'),
+  (7, 7, '서울시 성동구 뚝섬로1길 25, 706-707호'),
+  (8, 8, '경기도 의정부시 태평로214번길 36, 제이숲'),
+  (9, 9, '서울시 강동구 양재대로113길 51, 4층 카페24 40호'),
+  (10, 10, '서울시 용산구 원효로 146, 5층'),
+  (11, 11, '서울시 영등포구 당산로 41길 11 당산 SK V1 Center W동 1008호'),
+  (12, 12, '서울시 강남구 논현로 651 법무사회관 1, 5, 6층'),
+  (13, 13, '서울시 강남구 언주로 537, ABT타워'),
+  (14, 14, '서울시 송파구 송파대로 201, A동 1201호 (문정동, 송파테라타워2)'),
+  (15, 15, '서울시 성동구 아차산로7나길 18 1101/1102호'),
+  (16, 16, '서울시 서초구 서초중앙로41 대성빌딩 7층'),
+  (17, 17, '서울시 광진구 능동로 256, 3층'),
+  (18, 18, '서울시 영등포구 여의대로 108, 더현대서울 3층 애브뉴준오')
+ON CONFLICT (id) DO UPDATE SET institution_id = EXCLUDED.institution_id, address = EXCLUDED.address;
 
 -- job 40행
 INSERT INTO job (id, round_id, institution_id, workplace_id, list_seq, team, title, overview, education_goal, competencies, course, job_type, period_start, period_end, work_hours_text, weekly_hours, weekdays, overtime, labor_contract, stipend_basis, stipend_amount, benefits, headcount, grade_rule, gpa_min, portfolio, certificate, certificate_text, major_text, major_open, closes_on, close_reason, closes_on_is_virtual, final_assigned) VALUES
@@ -251,6 +342,11 @@ OA 능력(MS Office, 엑셀, 파워포인트 등) 중급수준 이상의 자', '
 건축공학 기본 전공과목 이수', 'SEMESTER', 'HIRING', DATE '2026-09-01', DATE '2026-12-12', '09:00 ~ 18:00 (금 09:00 ~ 17:30)', 40.0, ARRAY['MON', 'TUE', 'WED', 'THU', 'FRI']::varchar(3)[], 'NONE', FALSE, 'MONTHLY', 1650000, ARRAY['MEAL']::varchar(20)[], 1, 'Y4', 3.0, 'NONE', 'NONE', NULL, '토목건축공학과', FALSE, NULL, NULL, FALSE, 0),
   (140, 1, 18, 18, 40, '애브뉴준오 더현대서울점', '미용 시술 보조', '가장 기초적인 고객 샴푸를 선배 인턴들에게 돌아가며 교육 진행 후 실제 고객님 샴푸에 투입 고객 응대를 매장 내 CS담당자에게 시뮬레이션 진행하여 원활한 커뮤니케이션 가능 고객 시술에 필요한 준비과정(펌,염색,케어)를 선배 인턴들과 교육 진행 후 현장 투입 매장 내 환경 관리를 관리자급과 교육 후 환경 시야 넓히기', '미래의 디자이너 양성', '미용 자격증 or 미용 면허증 소지자', 'SEMESTER', 'HIRING', DATE '2026-09-01', DATE '2026-12-12', '11:00 ~ 20:00', 40.0, ARRAY['TUE', 'WED', 'THU', 'FRI', 'SAT']::varchar(3)[], 'NONE', FALSE, 'MONTHLY', 1617660, '{}'::varchar(20)[], 2, 'Y3_4', NULL, 'NONE', 'NONE', NULL, '헤어디자인학과', FALSE, NULL, NULL, FALSE, 0)
 ON CONFLICT (id) DO UPDATE SET round_id = EXCLUDED.round_id, institution_id = EXCLUDED.institution_id, workplace_id = EXCLUDED.workplace_id, list_seq = EXCLUDED.list_seq, team = EXCLUDED.team, title = EXCLUDED.title, overview = EXCLUDED.overview, education_goal = EXCLUDED.education_goal, competencies = EXCLUDED.competencies, course = EXCLUDED.course, job_type = EXCLUDED.job_type, period_start = EXCLUDED.period_start, period_end = EXCLUDED.period_end, work_hours_text = EXCLUDED.work_hours_text, weekly_hours = EXCLUDED.weekly_hours, weekdays = EXCLUDED.weekdays, overtime = EXCLUDED.overtime, labor_contract = EXCLUDED.labor_contract, stipend_basis = EXCLUDED.stipend_basis, stipend_amount = EXCLUDED.stipend_amount, benefits = EXCLUDED.benefits, headcount = EXCLUDED.headcount, grade_rule = EXCLUDED.grade_rule, gpa_min = EXCLUDED.gpa_min, portfolio = EXCLUDED.portfolio, certificate = EXCLUDED.certificate, certificate_text = EXCLUDED.certificate_text, major_text = EXCLUDED.major_text, major_open = EXCLUDED.major_open, closes_on = EXCLUDED.closes_on, close_reason = EXCLUDED.close_reason, closes_on_is_virtual = EXCLUDED.closes_on_is_virtual, final_assigned = EXCLUDED.final_assigned;
+
+-- 사는 곳: seed에서 빠졌지만 프로필이 쓰고 있어 남은 행은 목록 맨 뒤로
+UPDATE area a SET sort_order = 30000 + s.n
+  FROM (SELECT code, row_number() OVER (ORDER BY code) AS n FROM area WHERE sort_order < 0) s
+  WHERE a.code = s.code;
 
 -- 5. 자식 테이블
 

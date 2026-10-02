@@ -14,7 +14,7 @@ import kr.ac.skuniv.coopradar.commute.KakaoTransitClient.Outcome;
 import kr.ac.skuniv.coopradar.commute.KakaoTransitClient.Result;
 import org.junit.jupiter.api.Test;
 
-/** DB 없이 도는 단위 테스트: 카카오 응답 해석, 분 반올림, 호출 제한. */
+/** DB 없이 도는 단위 테스트: 카카오 응답 해석(대중교통·주소 검색), 주소 검색어, 분 반올림, 호출 제한. */
 class CommuteUnitTest {
 
     // ───────── 카카오 응답 해석 ─────────
@@ -60,6 +60,73 @@ class CommuteUnitTest {
         assertThat(CommuteService.minutes(10)).isEqualTo(1);
     }
 
+    // ───────── 카카오 주소 검색 해석 ─────────
+
+    @Test
+    void 주소_검색은_첫_결과의_x를_경도_y를_위도로() {
+        KakaoLocalClient.Result r = geo(200, """
+                {"meta":{"total_count":2},"documents":[
+                  {"address_name":"서울 노원구","address_type":"REGION","x":"127.056232","y":"37.654358"},
+                  {"address_name":"다른 곳","x":"126.9","y":"37.4"}]}""");
+        assertThat(r.outcome()).isEqualTo(KakaoLocalClient.Outcome.OK);
+        assertThat(r.point()).isEqualTo(new Point(new BigDecimal("37.654358"), new BigDecimal("127.056232")));
+    }
+
+    @Test
+    void 결과가_없거나_국내_범위_밖이면_NOT_FOUND() {
+        assertThat(geo(200, "{\"meta\":{\"total_count\":0},\"documents\":[]}").outcome())
+                .isEqualTo(KakaoLocalClient.Outcome.NOT_FOUND);
+        assertThat(geo(200, "{\"documents\":[{\"x\":\"0\",\"y\":\"0\"}]}").outcome())
+                .isEqualTo(KakaoLocalClient.Outcome.NOT_FOUND);
+    }
+
+    @Test
+    void 주소_검색_한도_초과는_LIMITED_나머지는_ERROR() {
+        assertThat(geo(400, "{\"code\":-10,\"msg\":\"API limit has been exceeded.\"}").outcome())
+                .isEqualTo(KakaoLocalClient.Outcome.LIMITED);
+        assertThat(geo(429, "").outcome()).isEqualTo(KakaoLocalClient.Outcome.LIMITED);
+        assertThat(geo(401, "{\"code\":-401,\"msg\":\"wrong appKey\"}").outcome()).isEqualTo(KakaoLocalClient.Outcome.ERROR);
+        assertThat(geo(200, "{\"meta\":{}}").outcome()).isEqualTo(KakaoLocalClient.Outcome.ERROR);
+        assertThat(geo(200, "{\"documents\":[{\"x\":\"\",\"y\":\"37.5\"}]}").outcome()).isEqualTo(KakaoLocalClient.Outcome.ERROR);
+        assertThat(geo(200, "<html>").outcome()).isEqualTo(KakaoLocalClient.Outcome.ERROR);
+    }
+
+    @Test
+    void 주소_검색_실패는_한도_초과를_먼저_보고_나머지는_PROVIDER_ERROR() {
+        var ok = KakaoLocalClient.Outcome.OK;
+        assertThat(CommuteService.failure(ok, ok)).isNull();
+        assertThat(CommuteService.failure(KakaoLocalClient.Outcome.LIMITED, KakaoLocalClient.Outcome.ERROR))
+                .isEqualTo(CommuteDtos.UnavailableReason.LIMITED);
+        assertThat(CommuteService.failure(KakaoLocalClient.Outcome.NOT_FOUND, ok))
+                .isEqualTo(CommuteDtos.UnavailableReason.PROVIDER_ERROR); // 사는 곳을 못 찾는 건 카카오 쪽 문제로 본다
+        assertThat(CommuteService.failure(ok, KakaoLocalClient.Outcome.ERROR))
+                .isEqualTo(CommuteDtos.UnavailableReason.PROVIDER_ERROR);
+    }
+
+    // ───────── 근로지 주소 → 검색어 ─────────
+
+    @Test
+    void 근로지_주소는_도로명과_건물번호까지만_남긴다() {
+        // 2026-2 시드의 실제 근로지 주소 형태(건물명·층·호수가 섞여 있음)
+        assertThat(AddressQuery.of("서울시 성동구 뚝섬로1길 25, 706-707호")).isEqualTo("서울 성동구 뚝섬로1길 25");
+        assertThat(AddressQuery.of("서울시 서초구 강남대로61길 23, 203호 (서초동, 현대성우빌딩)")).isEqualTo("서울 서초구 강남대로61길 23");
+        assertThat(AddressQuery.of("경기도 성남시 수정구 창업로 57번길 7, 5층")).isEqualTo("경기도 성남시 수정구 창업로57번길 7");
+        assertThat(AddressQuery.of("서울시 영등포구 당산로 41길 11 당산 SK V1 Center W동 1008호")).isEqualTo("서울 영등포구 당산로41길 11");
+        assertThat(AddressQuery.of("서울시 성동구 아차산로7나길 18 1101/1102호")).isEqualTo("서울 성동구 아차산로7나길 18");
+        assertThat(AddressQuery.of("서울시 서초구 서초중앙로41 대성빌딩 7층")).isEqualTo("서울 서초구 서초중앙로 41");
+        assertThat(AddressQuery.of("서울시 강남구 논현로 651 법무사회관 1, 5, 6층")).isEqualTo("서울 강남구 논현로 651");
+        assertThat(AddressQuery.of("서울시 금천구 가산디지털2로 143, 15층")).isEqualTo("서울 금천구 가산디지털2로 143");
+        assertThat(AddressQuery.of("서울시 강남구 삼성로 342")).isEqualTo("서울 강남구 삼성로 342");
+        assertThat(AddressQuery.of("서울 종로구 종로 1")).isEqualTo("서울 종로구 종로 1"); // 구 이름 안의 '로'에 걸리지 않는다
+        assertThat(AddressQuery.of("서울 중구 세종대로 110-1, 3층")).isEqualTo("서울 중구 세종대로 110-1");
+    }
+
+    @Test
+    void 도로명을_못_찾으면_첫_쉼표_앞까지() {
+        assertThat(AddressQuery.of("서울 성동구 (가상), 3층")).isEqualTo("서울 성동구 (가상)");
+        assertThat(AddressQuery.beforeComma("서울시 강남구 언주로 537, ABT타워")).isEqualTo("서울시 강남구 언주로 537");
+    }
+
     // ───────── 호출 제한 ─────────
 
     @Test
@@ -100,6 +167,10 @@ class CommuteUnitTest {
 
     private static Result parse(int status, String body) {
         return KakaoTransitClient.parse(status, body.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static KakaoLocalClient.Result geo(int status, String body) {
+        return KakaoLocalClient.parse(status, body.getBytes(StandardCharsets.UTF_8));
     }
 
     private static CommuteProperties props(int perUserPerHour, int perDay) {
