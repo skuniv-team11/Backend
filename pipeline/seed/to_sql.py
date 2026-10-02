@@ -8,7 +8,7 @@
   seed에 없는 행만 지운다. job을 지우면 담아 둔 지망(plan_item)도 함께 지워진다(직무가 없어졌으므로).
   학생 프로필이 쓰는 학과는 seed에서 빠져도 지우지 않는다.
 - 자식 테이블(근거·알림·수기·신호·전공 표기)은 통째로 지우고 다시 넣는다. 사용자 데이터가 가리키지 않는다.
-- area(좌표 대기, ADR-0007)·job_embedding(E5)·round_result(센터 동의 뒤 로컬 적재)는 건드리지 않는다.
+- area(사는 곳 — 행정표준코드 최신본 대기)·job_embedding(E5)·round_result(센터 동의 뒤 로컬 적재)는 건드리지 않는다.
 Flyway는 이 파일의 checksum이 바뀔 때마다 V* 다음에 한 트랜잭션으로 다시 적용한다.
 """
 import argparse, datetime as dt, hashlib, json, pathlib, sys
@@ -25,7 +25,7 @@ PARENTS = {
     "department": ["id", "name", "college", "enrolled_count", "enrolled_as_of"],
     "institution": ["id", "name", "size", "listing", "business_type", "business_item", "address",
                     "nts_status", "nts_checked_on"],
-    "workplace": ["id", "institution_id", "address", "lat", "lng", "coord_source"],
+    "workplace": ["id", "institution_id", "address"],
     "job": ["id", "round_id", "institution_id", "workplace_id", "list_seq", "team", "title", "overview",
             "education_goal", "competencies", "course", "job_type", "period_start", "period_end",
             "work_hours_text", "weekly_hours", "weekdays", "overtime", "labor_contract", "stipend_basis",

@@ -642,146 +642,92 @@
   {
    "id": 1,
    "institution_id": 1,
-   "address": "서울시 강남구 봉은사로49길 22, 더에스엠씨빌딩(1사옥)",
-   "lat": null,
-   "lng": null,
-   "coord_source": null
+   "address": "서울시 강남구 봉은사로49길 22, 더에스엠씨빌딩(1사옥)"
   },
   {
    "id": 2,
    "institution_id": 2,
-   "address": "서울시 강남구 삼성로 342",
-   "lat": null,
-   "lng": null,
-   "coord_source": null
+   "address": "서울시 강남구 삼성로 342"
   },
   {
    "id": 3,
    "institution_id": 3,
-   "address": "서울시 강남구 삼성로 342",
-   "lat": null,
-   "lng": null,
-   "coord_source": null
+   "address": "서울시 강남구 삼성로 342"
   },
   {
    "id": 4,
    "institution_id": 4,
-   "address": "서울시 서초구 강남대로61길 23, 203호 (서초동, 현대성우빌딩)",
-   "lat": null,
-   "lng": null,
-   "coord_source": null
+   "address": "서울시 서초구 강남대로61길 23, 203호 (서초동, 현대성우빌딩)"
   },
   {
    "id": 5,
    "institution_id": 5,
-   "address": "경기도 성남시 수정구 창업로 57번길 7, 5층",
-   "lat": null,
-   "lng": null,
-   "coord_source": null
+   "address": "경기도 성남시 수정구 창업로 57번길 7, 5층"
   },
   {
    "id": 6,
    "institution_id": 6,
-   "address": "서울시 금천구 가산디지털2로 143, 15층",
-   "lat": null,
-   "lng": null,
-   "coord_source": null
+   "address": "서울시 금천구 가산디지털2로 143, 15층"
   },
   {
    "id": 7,
    "institution_id": 7,
-   "address": "서울시 성동구 뚝섬로1길 25, 706-707호",
-   "lat": null,
-   "lng": null,
-   "coord_source": null
+   "address": "서울시 성동구 뚝섬로1길 25, 706-707호"
   },
   {
    "id": 8,
    "institution_id": 8,
-   "address": "경기도 의정부시 태평로214번길 36, 제이숲",
-   "lat": null,
-   "lng": null,
-   "coord_source": null
+   "address": "경기도 의정부시 태평로214번길 36, 제이숲"
   },
   {
    "id": 9,
    "institution_id": 9,
-   "address": "서울시 강동구 양재대로113길 51, 4층 카페24 40호",
-   "lat": null,
-   "lng": null,
-   "coord_source": null
+   "address": "서울시 강동구 양재대로113길 51, 4층 카페24 40호"
   },
   {
    "id": 10,
    "institution_id": 10,
-   "address": "서울시 용산구 원효로 146, 5층",
-   "lat": null,
-   "lng": null,
-   "coord_source": null
+   "address": "서울시 용산구 원효로 146, 5층"
   },
   {
    "id": 11,
    "institution_id": 11,
-   "address": "서울시 영등포구 당산로 41길 11 당산 SK V1 Center W동 1008호",
-   "lat": null,
-   "lng": null,
-   "coord_source": null
+   "address": "서울시 영등포구 당산로 41길 11 당산 SK V1 Center W동 1008호"
   },
   {
    "id": 12,
    "institution_id": 12,
-   "address": "서울시 강남구 논현로 651 법무사회관 1, 5, 6층",
-   "lat": null,
-   "lng": null,
-   "coord_source": null
+   "address": "서울시 강남구 논현로 651 법무사회관 1, 5, 6층"
   },
   {
    "id": 13,
    "institution_id": 13,
-   "address": "서울시 강남구 언주로 537, ABT타워",
-   "lat": null,
-   "lng": null,
-   "coord_source": null
+   "address": "서울시 강남구 언주로 537, ABT타워"
   },
   {
    "id": 14,
    "institution_id": 14,
-   "address": "서울시 송파구 송파대로 201, A동 1201호 (문정동, 송파테라타워2)",
-   "lat": null,
-   "lng": null,
-   "coord_source": null
+   "address": "서울시 송파구 송파대로 201, A동 1201호 (문정동, 송파테라타워2)"
   },
   {
    "id": 15,
    "institution_id": 15,
-   "address": "서울시 성동구 아차산로7나길 18 1101/1102호",
-   "lat": null,
-   "lng": null,
-   "coord_source": null
+   "address": "서울시 성동구 아차산로7나길 18 1101/1102호"
   },
   {
    "id": 16,
    "institution_id": 16,
-   "address": "서울시 서초구 서초중앙로41 대성빌딩 7층",
-   "lat": null,
-   "lng": null,
-   "coord_source": null
+   "address": "서울시 서초구 서초중앙로41 대성빌딩 7층"
   },
   {
    "id": 17,
    "institution_id": 17,
-   "address": "서울시 광진구 능동로 256, 3층",
-   "lat": null,
-   "lng": null,
-   "coord_source": null
+   "address": "서울시 광진구 능동로 256, 3층"
   },
   {
    "id": 18,
    "institution_id": 18,
-   "address": "서울시 영등포구 여의대로 108, 더현대서울 3층 애브뉴준오",
-   "lat": null,
-   "lng": null,
-   "coord_source": null
+   "address": "서울시 영등포구 여의대로 108, 더현대서울 3층 애브뉴준오"
   }
  ],
  "job": [

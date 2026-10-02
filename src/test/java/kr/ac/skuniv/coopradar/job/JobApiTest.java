@@ -55,7 +55,7 @@ class JobApiTest {
                 .andExpect(jsonPath("$.requirements.gradeRule").value("Y4"))
                 .andExpect(jsonPath("$.requirements.portfolio").value("REQUIRED"))
                 .andExpect(jsonPath("$.requirements.majorOpen").value(false))
-                .andExpect(jsonPath("$.workplace.hasCoordinates").value(false)) // 좌표 대기 중(ADR-0007)
+                .andExpect(jsonPath("$.workplace.hasCoordinates").value(true)) // 근로지 주소가 있으면 통근 조회를 부른다(ADR-0007)
                 .andExpect(jsonPath("$.closing.closesOn").value("2026-07-18"))
                 .andExpect(jsonPath("$.closing.closeReason").value("CENTER_CLOSED"))
                 .andExpect(jsonPath("$.closing.closesOnIsVirtual").value(false))

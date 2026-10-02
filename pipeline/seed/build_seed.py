@@ -380,8 +380,8 @@ def build(a):
             if address:
                 wp_id = ids.get("workplace", f"{inst_key}|{address}")
                 if all(w["id"] != wp_id for w in seed["workplace"]):
-                    seed["workplace"].append({"id": wp_id, "institution_id": inst_id, "address": address,
-                                              "lat": None, "lng": None, "coord_source": None})
+                    # 좌표는 넣지 않는다 — 통근 조회 때 카카오 주소 검색으로 구하고 버린다(ADR-0007)
+                    seed["workplace"].append({"id": wp_id, "institution_id": inst_id, "address": address})
             # 리스트 값
             l_start, l_end = list_period(r["기간요일시간"], year)
             l_days = [DAYS[d] for d in re.findall(r"[월화수목금토일]", list_field(r["기간요일시간"], "근로요일") or "")]

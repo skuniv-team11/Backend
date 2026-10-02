@@ -164,7 +164,7 @@ class AuthApiTest {
                 Instant.now().plus(24, ChronoUnit.HOURS).plusSeconds(60));
         assertThat((String) JsonPath.read(noArea, "$.user.expiresAt")).isEqualTo(JsonPath.read(noArea, "$.expiresAt"));
 
-        db.sql("INSERT INTO area (code, sido, name, lat, lng, sort_order) VALUES ('11350', '서울', '노원구', 37.654, 127.056, 9001)")
+        db.sql("INSERT INTO area (code, sido, name, sort_order) VALUES ('11350', '서울', '노원구', 9001)")
                 .update();
         String withArea = guest("STUDENT")
                 .andExpect(status().isCreated())
