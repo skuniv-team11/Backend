@@ -155,23 +155,14 @@ class AuthApiTest {
                 .andExpect(jsonPath("$.profile.isExample").value(true))
                 .andExpect(jsonPath("$.profile.department.name").value("메이크업디자인학과"))
                 .andExpect(jsonPath("$.profile.gpa").value(3.4))
-                .andExpect(jsonPath("$.profile.homeAreaCode").isEmpty())
-                .andExpect(jsonPath("$.profile.homeArea").isEmpty())
+                .andExpect(jsonPath("$.profile.homeAreaCode").value("11350")) // 시드의 사는 곳(행정표준코드, ADR-0007)
+                .andExpect(jsonPath("$.profile.homeArea.name").value("노원구"))
                 .andReturn().getResponse().getContentAsString();
         Contract.assertSameShape(noArea, Contract.responseExample("createGuest", 201, null));
         OffsetDateTime exp = OffsetDateTime.parse(JsonPath.read(noArea, "$.expiresAt"));
         assertThat(exp.toInstant()).isBetween(Instant.now().plus(24, ChronoUnit.HOURS).minusSeconds(60),
                 Instant.now().plus(24, ChronoUnit.HOURS).plusSeconds(60));
         assertThat((String) JsonPath.read(noArea, "$.user.expiresAt")).isEqualTo(JsonPath.read(noArea, "$.expiresAt"));
-
-        db.sql("INSERT INTO area (code, sido, name, sort_order) VALUES ('11350', '서울', '노원구', 9001)")
-                .update();
-        String withArea = guest("STUDENT")
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.profile.homeAreaCode").value("11350"))
-                .andExpect(jsonPath("$.profile.homeArea.name").value("노원구"))
-                .andReturn().getResponse().getContentAsString();
-        Contract.assertSameShape(withArea, Contract.responseExample("createGuest", 201, null));
     }
 
     @Test

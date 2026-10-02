@@ -1049,7 +1049,7 @@
           "기준 정보"
         ],
         "operationId": "getAreas",
-        "summary": "사는 곳 선택지(서울·인천·경기 시·군·구)",
+        "summary": "사는 곳 선택지(서울·인천·경기 시·군·구 83곳, 행정표준코드)",
         "x-auth": "공개",
         "description": "권한: **공개** · 화면: S1 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "responses": {

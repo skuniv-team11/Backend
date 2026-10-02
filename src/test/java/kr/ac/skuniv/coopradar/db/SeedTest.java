@@ -96,6 +96,18 @@ class SeedTest {
     }
 
     @Test
+    void 사는_곳은_서울_인천_경기_시군구_83곳이고_좌표는_없다() {
+        // 행정표준코드 법정동코드 전체자료(2026-10-01) → pipeline/seed/areas.py. 2026-07-01 인천 개편이 반영돼 있다
+        assertThat(count("SELECT count(*) FROM area")).isEqualTo(83);
+        assertThat(count("SELECT count(*) FROM area WHERE sido = '서울'")).isEqualTo(25);
+        assertThat(count("SELECT count(*) FROM area WHERE sido = '인천'")).isEqualTo(11);
+        assertThat(count("SELECT count(*) FROM area WHERE code IN ('28125', '28155', '28275', '28290')")).isEqualTo(4);
+        assertThat(count("SELECT count(*) FROM area WHERE code IN ('28110', '28140', '28260')")).isZero(); // 폐지된 중구·동구·서구
+        assertThat(count("SELECT count(*) FROM area WHERE code = '41110'")).isZero(); // 일반구가 있는 시는 구만
+        assertThat(count("SELECT count(*) FROM area WHERE code = '11350' AND name = '노원구'")).isEqualTo(1); // 예시 프로필
+    }
+
+    @Test
     void 리스트의_선호_전공_표기_25종이_직무에_연결된다() {
         // 표기 → 학과 연결은 사람이 확정한 것만 들어간다(pipeline/seed/curated/major_aliases.csv의 EXACT·CONFIRMED)
         assertThat(count("SELECT count(*) FROM major_alias")).isEqualTo(25);

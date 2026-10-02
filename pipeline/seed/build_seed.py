@@ -52,7 +52,8 @@ LIMITS = {("institution", "name"): 100, ("institution", "business_type"): 100, (
           ("job", "title"): 200, ("job", "work_hours_text"): 100, ("job", "certificate_text"): 200,
           ("job", "major_text"): 300, ("job_weekly_plan", "weeks_label"): 30, ("field_evidence", "quote"): 200,
           ("review_alert", "quote_a"): 200, ("review_alert", "quote_b"): 200, ("testimonial", "team_text"): 100,
-          ("source_document", "title"): 200, ("department", "name"): 50, ("major_alias", "label"): 100}
+          ("source_document", "title"): 200, ("department", "name"): 50, ("major_alias", "label"): 100,
+          ("area", "sido"): 10, ("area", "name"): 20}
 SENSITIVE = re.compile(r"\d{3}-?\d{2}-?\d{5}|대표자|대표이사")   # 사업자번호·대표자명이 근거 문구에 섞이면 멈춘다
 
 
@@ -187,10 +188,23 @@ def load_curated():
     rnd = json.loads((CURATED / "round.json").read_text(encoding="utf-8"))
     deps = list(csv.DictReader((CURATED / "departments.csv").open(encoding="utf-8")))
     aliases = list(csv.DictReader((CURATED / "major_aliases.csv").open(encoding="utf-8")))
+    areas = list(csv.DictReader((CURATED / "areas.csv").open(encoding="utf-8")))
     overrides = json.loads((CURATED / "overrides.json").read_text(encoding="utf-8"))
     ids_path = CURATED / "ids.json"
     ids = json.loads(ids_path.read_text(encoding="utf-8")) if ids_path.exists() else {}
-    return rnd, deps, aliases, overrides, ids, ids_path
+    return rnd, deps, aliases, areas, overrides, ids, ids_path
+
+
+def area_rows(areas):
+    """사는 곳(curated/areas.csv, areas.py가 행정표준코드에서 만듦) → area 행. 순서는 코드 순, 좌표는 없다(ADR-0007)."""
+    rows = []
+    for i, a in enumerate(sorted(areas, key=lambda r: r["code"]), start=1):
+        if not re.fullmatch(r"(11|28|41)\d{3}", a["code"]):
+            fail(f"areas.csv {a['code']}: 서울·인천·경기 시·군·구 코드(5자리)가 아님")
+        rows.append({"code": a["code"], "sido": a["sido"], "name": a["name"], "sort_order": i})
+    if len({(r["sido"], r["name"]) for r in rows}) != len(rows):
+        fail("areas.csv: 시·도 + 이름이 겹침")
+    return rows
 
 
 class Ids:
@@ -250,7 +264,7 @@ def match_jobs(rows, jobs):
 
 def build(a):
     check_allowed_keys()
-    rnd, deps, aliases, overrides, ids_data, ids_path = load_curated()
+    rnd, deps, aliases, areas, overrides, ids_data, ids_path = load_curated()
     ids = Ids(ids_data)
     round_ = rnd["round"]
     start, end = dt.date.fromisoformat(round_["recruit_start"]), dt.date.fromisoformat(round_["recruit_end"])
@@ -260,11 +274,12 @@ def build(a):
         pages = {r["file"]: int(r["pages"]) for r in csv.DictReader(open(a.pages, encoding="utf-8"))}
     plans = load_plans(a.plans, pages)
 
-    seed = {t: [] for t in ["program", "recruit_round", "department", "institution", "workplace", "job",
+    seed = {t: [] for t in ["program", "recruit_round", "department", "area", "institution", "workplace", "job",
                             "major_alias", "major_alias_department", "job_major_alias", "job_weekly_plan",
                             "source_document", "field_evidence", "review_alert", "testimonial", "replay_signal"]}
     seed["program"].append(rnd["program"])
     seed["recruit_round"].append(round_)
+    seed["area"] = area_rows(areas)
 
     # 학과: 재학생이 있는 학과만(교육통계 72행 중 폐지·통합 단위는 재학생 0)
     dep_id = {}

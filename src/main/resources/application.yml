@@ -87,7 +87,7 @@ app:
       lng: 127.0131
   example-profile:
     # [예시 프로필로 시작]이 저장하는 시연용 가상 학생. 학과는 department 시드에서 이름으로 찾는다.
-    # 사는 곳은 area 시드에 없으면 비운다(사는 곳 목록은 행정표준코드 최신본을 받아 시드한다)
+    # 사는 곳은 area 시드(행정표준코드, pipeline/seed/areas.py)에 없으면 비운다
     department-name: 메이크업디자인학과
     grade: 3
     completed-semesters: 5

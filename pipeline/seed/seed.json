@@ -438,6 +438,506 @@
    "enrolled_as_of": "2025-10-01"
   }
  ],
+ "area": [
+  {
+   "code": "11110",
+   "sido": "서울",
+   "name": "종로구",
+   "sort_order": 1
+  },
+  {
+   "code": "11140",
+   "sido": "서울",
+   "name": "중구",
+   "sort_order": 2
+  },
+  {
+   "code": "11170",
+   "sido": "서울",
+   "name": "용산구",
+   "sort_order": 3
+  },
+  {
+   "code": "11200",
+   "sido": "서울",
+   "name": "성동구",
+   "sort_order": 4
+  },
+  {
+   "code": "11215",
+   "sido": "서울",
+   "name": "광진구",
+   "sort_order": 5
+  },
+  {
+   "code": "11230",
+   "sido": "서울",
+   "name": "동대문구",
+   "sort_order": 6
+  },
+  {
+   "code": "11260",
+   "sido": "서울",
+   "name": "중랑구",
+   "sort_order": 7
+  },
+  {
+   "code": "11290",
+   "sido": "서울",
+   "name": "성북구",
+   "sort_order": 8
+  },
+  {
+   "code": "11305",
+   "sido": "서울",
+   "name": "강북구",
+   "sort_order": 9
+  },
+  {
+   "code": "11320",
+   "sido": "서울",
+   "name": "도봉구",
+   "sort_order": 10
+  },
+  {
+   "code": "11350",
+   "sido": "서울",
+   "name": "노원구",
+   "sort_order": 11
+  },
+  {
+   "code": "11380",
+   "sido": "서울",
+   "name": "은평구",
+   "sort_order": 12
+  },
+  {
+   "code": "11410",
+   "sido": "서울",
+   "name": "서대문구",
+   "sort_order": 13
+  },
+  {
+   "code": "11440",
+   "sido": "서울",
+   "name": "마포구",
+   "sort_order": 14
+  },
+  {
+   "code": "11470",
+   "sido": "서울",
+   "name": "양천구",
+   "sort_order": 15
+  },
+  {
+   "code": "11500",
+   "sido": "서울",
+   "name": "강서구",
+   "sort_order": 16
+  },
+  {
+   "code": "11530",
+   "sido": "서울",
+   "name": "구로구",
+   "sort_order": 17
+  },
+  {
+   "code": "11545",
+   "sido": "서울",
+   "name": "금천구",
+   "sort_order": 18
+  },
+  {
+   "code": "11560",
+   "sido": "서울",
+   "name": "영등포구",
+   "sort_order": 19
+  },
+  {
+   "code": "11590",
+   "sido": "서울",
+   "name": "동작구",
+   "sort_order": 20
+  },
+  {
+   "code": "11620",
+   "sido": "서울",
+   "name": "관악구",
+   "sort_order": 21
+  },
+  {
+   "code": "11650",
+   "sido": "서울",
+   "name": "서초구",
+   "sort_order": 22
+  },
+  {
+   "code": "11680",
+   "sido": "서울",
+   "name": "강남구",
+   "sort_order": 23
+  },
+  {
+   "code": "11710",
+   "sido": "서울",
+   "name": "송파구",
+   "sort_order": 24
+  },
+  {
+   "code": "11740",
+   "sido": "서울",
+   "name": "강동구",
+   "sort_order": 25
+  },
+  {
+   "code": "28125",
+   "sido": "인천",
+   "name": "제물포구",
+   "sort_order": 26
+  },
+  {
+   "code": "28155",
+   "sido": "인천",
+   "name": "영종구",
+   "sort_order": 27
+  },
+  {
+   "code": "28177",
+   "sido": "인천",
+   "name": "미추홀구",
+   "sort_order": 28
+  },
+  {
+   "code": "28185",
+   "sido": "인천",
+   "name": "연수구",
+   "sort_order": 29
+  },
+  {
+   "code": "28200",
+   "sido": "인천",
+   "name": "남동구",
+   "sort_order": 30
+  },
+  {
+   "code": "28237",
+   "sido": "인천",
+   "name": "부평구",
+   "sort_order": 31
+  },
+  {
+   "code": "28245",
+   "sido": "인천",
+   "name": "계양구",
+   "sort_order": 32
+  },
+  {
+   "code": "28275",
+   "sido": "인천",
+   "name": "서해구",
+   "sort_order": 33
+  },
+  {
+   "code": "28290",
+   "sido": "인천",
+   "name": "검단구",
+   "sort_order": 34
+  },
+  {
+   "code": "28710",
+   "sido": "인천",
+   "name": "강화군",
+   "sort_order": 35
+  },
+  {
+   "code": "28720",
+   "sido": "인천",
+   "name": "옹진군",
+   "sort_order": 36
+  },
+  {
+   "code": "41111",
+   "sido": "경기",
+   "name": "수원시 장안구",
+   "sort_order": 37
+  },
+  {
+   "code": "41113",
+   "sido": "경기",
+   "name": "수원시 권선구",
+   "sort_order": 38
+  },
+  {
+   "code": "41115",
+   "sido": "경기",
+   "name": "수원시 팔달구",
+   "sort_order": 39
+  },
+  {
+   "code": "41117",
+   "sido": "경기",
+   "name": "수원시 영통구",
+   "sort_order": 40
+  },
+  {
+   "code": "41131",
+   "sido": "경기",
+   "name": "성남시 수정구",
+   "sort_order": 41
+  },
+  {
+   "code": "41133",
+   "sido": "경기",
+   "name": "성남시 중원구",
+   "sort_order": 42
+  },
+  {
+   "code": "41135",
+   "sido": "경기",
+   "name": "성남시 분당구",
+   "sort_order": 43
+  },
+  {
+   "code": "41150",
+   "sido": "경기",
+   "name": "의정부시",
+   "sort_order": 44
+  },
+  {
+   "code": "41171",
+   "sido": "경기",
+   "name": "안양시 만안구",
+   "sort_order": 45
+  },
+  {
+   "code": "41173",
+   "sido": "경기",
+   "name": "안양시 동안구",
+   "sort_order": 46
+  },
+  {
+   "code": "41192",
+   "sido": "경기",
+   "name": "부천시 원미구",
+   "sort_order": 47
+  },
+  {
+   "code": "41194",
+   "sido": "경기",
+   "name": "부천시 소사구",
+   "sort_order": 48
+  },
+  {
+   "code": "41196",
+   "sido": "경기",
+   "name": "부천시 오정구",
+   "sort_order": 49
+  },
+  {
+   "code": "41210",
+   "sido": "경기",
+   "name": "광명시",
+   "sort_order": 50
+  },
+  {
+   "code": "41220",
+   "sido": "경기",
+   "name": "평택시",
+   "sort_order": 51
+  },
+  {
+   "code": "41250",
+   "sido": "경기",
+   "name": "동두천시",
+   "sort_order": 52
+  },
+  {
+   "code": "41271",
+   "sido": "경기",
+   "name": "안산시 상록구",
+   "sort_order": 53
+  },
+  {
+   "code": "41273",
+   "sido": "경기",
+   "name": "안산시 단원구",
+   "sort_order": 54
+  },
+  {
+   "code": "41281",
+   "sido": "경기",
+   "name": "고양시 덕양구",
+   "sort_order": 55
+  },
+  {
+   "code": "41285",
+   "sido": "경기",
+   "name": "고양시 일산동구",
+   "sort_order": 56
+  },
+  {
+   "code": "41287",
+   "sido": "경기",
+   "name": "고양시 일산서구",
+   "sort_order": 57
+  },
+  {
+   "code": "41290",
+   "sido": "경기",
+   "name": "과천시",
+   "sort_order": 58
+  },
+  {
+   "code": "41310",
+   "sido": "경기",
+   "name": "구리시",
+   "sort_order": 59
+  },
+  {
+   "code": "41360",
+   "sido": "경기",
+   "name": "남양주시",
+   "sort_order": 60
+  },
+  {
+   "code": "41370",
+   "sido": "경기",
+   "name": "오산시",
+   "sort_order": 61
+  },
+  {
+   "code": "41390",
+   "sido": "경기",
+   "name": "시흥시",
+   "sort_order": 62
+  },
+  {
+   "code": "41410",
+   "sido": "경기",
+   "name": "군포시",
+   "sort_order": 63
+  },
+  {
+   "code": "41430",
+   "sido": "경기",
+   "name": "의왕시",
+   "sort_order": 64
+  },
+  {
+   "code": "41450",
+   "sido": "경기",
+   "name": "하남시",
+   "sort_order": 65
+  },
+  {
+   "code": "41461",
+   "sido": "경기",
+   "name": "용인시 처인구",
+   "sort_order": 66
+  },
+  {
+   "code": "41463",
+   "sido": "경기",
+   "name": "용인시 기흥구",
+   "sort_order": 67
+  },
+  {
+   "code": "41465",
+   "sido": "경기",
+   "name": "용인시 수지구",
+   "sort_order": 68
+  },
+  {
+   "code": "41480",
+   "sido": "경기",
+   "name": "파주시",
+   "sort_order": 69
+  },
+  {
+   "code": "41500",
+   "sido": "경기",
+   "name": "이천시",
+   "sort_order": 70
+  },
+  {
+   "code": "41550",
+   "sido": "경기",
+   "name": "안성시",
+   "sort_order": 71
+  },
+  {
+   "code": "41570",
+   "sido": "경기",
+   "name": "김포시",
+   "sort_order": 72
+  },
+  {
+   "code": "41591",
+   "sido": "경기",
+   "name": "화성시 만세구",
+   "sort_order": 73
+  },
+  {
+   "code": "41593",
+   "sido": "경기",
+   "name": "화성시 효행구",
+   "sort_order": 74
+  },
+  {
+   "code": "41595",
+   "sido": "경기",
+   "name": "화성시 병점구",
+   "sort_order": 75
+  },
+  {
+   "code": "41597",
+   "sido": "경기",
+   "name": "화성시 동탄구",
+   "sort_order": 76
+  },
+  {
+   "code": "41610",
+   "sido": "경기",
+   "name": "광주시",
+   "sort_order": 77
+  },
+  {
+   "code": "41630",
+   "sido": "경기",
+   "name": "양주시",
+   "sort_order": 78
+  },
+  {
+   "code": "41650",
+   "sido": "경기",
+   "name": "포천시",
+   "sort_order": 79
+  },
+  {
+   "code": "41670",
+   "sido": "경기",
+   "name": "여주시",
+   "sort_order": 80
+  },
+  {
+   "code": "41800",
+   "sido": "경기",
+   "name": "연천군",
+   "sort_order": 81
+  },
+  {
+   "code": "41820",
+   "sido": "경기",
+   "name": "가평군",
+   "sort_order": 82
+  },
+  {
+   "code": "41830",
+   "sido": "경기",
+   "name": "양평군",
+   "sort_order": 83
+  }
+ ],
  "institution": [
   {
    "id": 1,
