@@ -110,7 +110,7 @@ class JobApiTest {
     }
 
     @Test
-    void 선호_전공_표기마다_확정된_학과를_주고_확정_전_표기는_빈_목록() throws Exception {
+    void 선호_전공_표기마다_확정된_학과를_준다() throws Exception {
         String token = guestToken("STUDENT");
         String body = detail(token, "120").andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(JsonPath.<List<String>>read(body, "$.requirements.majorAliases[*].label"))
@@ -123,7 +123,9 @@ class JobApiTest {
         String jungeo = detail(token, "128").andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(JsonPath.<List<String>>read(jungeo, "$.requirements.majorAliases[*].label"))
                 .containsExactly("경영학부", "중어전공");
-        assertThat(JsonPath.<List<Object>>read(jungeo, "$.requirements.majorAliases[1].departments")).isEmpty();
+        // 중어전공: 계획서마다 가리키는 학부가 달라 둘 다 연결(직진 글로벌비즈니스어학부 · 제이숲 미래융합학부1)
+        assertThat(JsonPath.<List<String>>read(jungeo, "$.requirements.majorAliases[1].departments[*].name"))
+                .containsExactly("글로벌비즈니스어학부", "미래융합학부1");
     }
 
     @Test
