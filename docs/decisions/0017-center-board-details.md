@@ -4,7 +4,7 @@
 - 관계: `NARROW_POOL` 기준(200명 미만)과 `DOC_ALERT` 범위(직무 또는 기관)는 [ADR-0016](0016-demo-profile-and-screen-rules.md)이 정했다. 이 문서는 그 밖의 계산을 적는다. 둘의 200명 기준은 같은 값이다.
 - 결정
   - 위험 요인은 규칙으로만 낸다(AI 없음). 순서는 `NARROW_POOL` → `PORTFOLIO_REQUIRED` → `CERTIFICATE_REQUIRED` → `WEEKEND` → `DOC_ALERT`.
-  - **적격 학생 풀(`eligiblePool`)** = 직무의 선호 전공 표기에서 사람이 확정한 학과(중복 없이)의 재학생 수 합(교육통계 2025-10-01). 전공 무관이면 전체 재학생. 확정 전 표기(중어전공)는 0으로 센다.
+  - **적격 학생 풀(`eligiblePool`)** = 직무의 선호 전공 표기에서 사람이 확정한 학과(중복 없이)의 재학생 수 합(교육통계 2025-10-01). 전공 무관이면 전체 재학생. 확정 전 표기(`DRAFT`)는 0으로 센다(2026-2는 10/2 '중어전공' 확정으로 없음).
   - `NARROW_POOL` 기준값은 설정 `app.center.narrow-pool-below`(환경변수 `CENTER_NARROW_POOL_BELOW`, 기본 200)로 바꿀 수 있다.
   - **`zeroSignalJobs` = asOf까지 지원 의사(`intent`)가 0인 직무 수**. 관심(`interest`)은 세지 않는다.
   - 현황판의 `alertCount`는 직무에 걸린 알림과 기관 전체에 걸린 알림을 함께 센다(`DOC_ALERT`와 같은 범위). 학생 판정 행의 `alertCount`는 직무 알림만 센다(ADR-0016).

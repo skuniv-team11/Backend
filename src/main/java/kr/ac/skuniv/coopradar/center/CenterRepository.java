@@ -20,7 +20,7 @@ public class CenterRepository {
 
     /**
      * 직무 1행. eligiblePool은 선호 전공 표기에서 사람이 확정한 학과(중복 없이)의 재학생 수 합,
-     * 전공 무관이면 전체 재학생 수다. 확정 안 된 표기(예: 중어전공)는 0으로 센다.
+     * 전공 무관이면 전체 재학생 수다. 확정 안 된 표기(DRAFT)는 0으로 센다.
      */
     record JobRow(int id, InstitutionRef institution, String title, int headcount, int eligiblePool, String portfolio,
                   String certificate, String certificateText, List<String> weekdays) {

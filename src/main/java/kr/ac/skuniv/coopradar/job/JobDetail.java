@@ -57,7 +57,7 @@ public record JobDetail(
         }
     }
 
-    /** 선호 전공 표기 하나와 확정된 학과들. 확정 전 표기(중어전공)는 departments가 비어 있다. */
+    /** 선호 전공 표기 하나와 확정된 학과들. 확정 전 표기(DRAFT)는 departments가 비어 있다. */
     public record MajorAlias(String label, List<DepartmentRef> departments) {
     }
 

@@ -1,7 +1,7 @@
 -- R__seed.sql — 시드 데이터(Flyway 반복 마이그레이션, ADR-0014). 손으로 고치지 않는다.
 -- 만드는 법: python pipeline/seed/build_seed.py ... → python pipeline/seed/to_sql.py (pipeline/seed/README.md)
--- seed.json sha256: 821684ec3bc71712526ebd68ff16b1b4c39620afa1ca50a9976604ec1e291564
--- body sha256: 6ef6e0366a18907babff5303575ceceb4d1c85cc2f2689d6e00583bb49c8ee4b
+-- seed.json sha256: bc5b39679a7c9ff06bd01cb58668d1a15e1aeb7ef017d695899c313e5c796c7e
+-- body sha256: 76e6901faea78f5d8a210a08551f7f40bf88eea1f323e11925db9dc782e19662
 
 -- 1. 자식 테이블은 통째로 지운다(다시 넣는다)
 DELETE FROM replay_signal;
@@ -282,7 +282,7 @@ INSERT INTO major_alias (id, label) VALUES
   (24, '토목건축공학과'),
   (25, '헤어디자인학과');
 
--- major_alias_department 96행
+-- major_alias_department 98행
 INSERT INTO major_alias_department (alias_id, department_id) VALUES
   (1, 10),
   (2, 37),
@@ -346,6 +346,8 @@ INSERT INTO major_alias_department (alias_id, department_id) VALUES
   (16, 18),
   (16, 19),
   (17, 1),
+  (18, 1),
+  (18, 70),
   (19, 1),
   (20, 35),
   (20, 36),
