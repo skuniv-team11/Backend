@@ -48,12 +48,10 @@ class MigrationTest {
         // 카카오 결과(좌표)는 저장할 수 없어 칸 자체를 뺐다(ADR-0007)
         List<String> columns = jdbc.sql("""
                         SELECT table_name || '.' || column_name FROM information_schema.columns
-                        WHERE table_schema = 'public' AND table_name IN ('area', 'workplace')
-                        ORDER BY 1 COLLATE "C"
-                        """)
+                        WHERE table_schema = 'public' AND table_name IN ('area', 'workplace')""")
                 .query(String.class)
                 .list();
-        assertThat(columns).containsExactly("area.code", "area.name", "area.sido", "area.sort_order",
+        assertThat(columns).containsExactlyInAnyOrder("area.code", "area.name", "area.sido", "area.sort_order",
                 "workplace.address", "workplace.id", "workplace.institution_id");
     }
 }
