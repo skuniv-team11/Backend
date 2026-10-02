@@ -51,7 +51,7 @@ public class KakaoTransitClient {
 
     public enum Outcome { OK, NO_ROUTE, LIMITED, ERROR }
 
-    /** OK면 첫 경로의 값. 아니면 값은 null. */
+    /** OK면 가장 빠른 경로의 값. 아니면 값은 null. */
     public record Result(Outcome outcome, Integer totalSeconds, Integer transfers, Integer fareWon) {
 
         static Result of(Outcome outcome) {
@@ -97,7 +97,10 @@ public class KakaoTransitClient {
         }
     }
 
-    /** 응답 해석. 상태 OK면 routes[0](docs/api 규칙: 첫 경로)의 값을 쓴다. */
+    /**
+     * 응답 해석. 상태 OK면 routes 중 totalTime이 가장 짧은 경로의 값을 쓴다(같으면 환승이 적은 쪽, 그다음 먼저 온 쪽).
+     * 카카오 문서에 routes 정렬 기준이 없고 정렬을 고르는 값도 없어서 첫 경로가 가장 빠르다는 보장이 없다(10/2 확인).
+     */
     static Result parse(int status, byte[] body) {
         JsonNode json = null;
         try {
@@ -117,15 +120,35 @@ public class KakaoTransitClient {
         if (NO_ROUTE.contains(kakaoStatus)) {
             return Result.of(Outcome.NO_ROUTE);
         }
-        JsonNode first = json.path("routes").path(0).path("properties");
-        if (!"OK".equals(kakaoStatus) || !first.path("totalTime").isIntegralNumber()) {
+        JsonNode best = null;
+        for (JsonNode route : json.path("routes")) {
+            JsonNode p = route.path("properties");
+            if (p.path("totalTime").isIntegralNumber() && (best == null || faster(p, best))) {
+                best = p;
+            }
+        }
+        if (!"OK".equals(kakaoStatus) || best == null) {
             log.warn("카카오 대중교통 응답을 쓸 수 없습니다: status {}", kakaoStatus);
             return Result.of(Outcome.ERROR);
         }
         return new Result(Outcome.OK,
-                first.path("totalTime").asInt(),
-                intOrNull(first.path("transfers")),
-                intOrNull(first.path("fare").path("value")));
+                best.path("totalTime").asInt(),
+                intOrNull(best.path("transfers")),
+                intOrNull(best.path("fare").path("value")));
+    }
+
+    /** a가 b보다 빠르면 true. 시간이 같으면 환승이 적은 쪽(환승 값이 없으면 가장 많은 것으로 본다). */
+    private static boolean faster(JsonNode a, JsonNode b) {
+        int ta = a.path("totalTime").asInt();
+        int tb = b.path("totalTime").asInt();
+        if (ta != tb) {
+            return ta < tb;
+        }
+        return transfers(a) < transfers(b);
+    }
+
+    private static int transfers(JsonNode p) {
+        return p.path("transfers").isIntegralNumber() ? p.path("transfers").asInt() : Integer.MAX_VALUE;
     }
 
     private static Integer intOrNull(JsonNode node) {
