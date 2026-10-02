@@ -35,7 +35,7 @@ git config user.email "<숫자>+<아이디>@users.noreply.github.com"   # GitHub
 | `JWT_SECRET` | — | 로그인 토큰 서명 키(32바이트 이상 무작위 값). Render는 Blueprint가 만들 때 무작위로 넣는다. 비어 있으면 서버가 뜰 때마다 임시 키(다시 뜨면 로그인이 풀림) |
 | `CLIENT_IP_HEADER` | `CF-Connecting-IP` | 체험 계정 호출 제한에 쓰는 IP 헤더(Render 앞단 Cloudflare, ADR-0013) |
 | `GUEST_PER_IP_PER_HOUR` | `300` | 체험 계정 만들기 IP당 1시간 한도. 0이면 제한 없음. Render 대시보드에서 바꾸면 다시 배포하지 않아도 된다 |
-| `KAKAO_REST_API_KEY` | — | 통근 조회(카카오 대중교통) |
+| `KAKAO_REST_API_KEY` | — | 통근 조회(카카오 주소 검색 + 대중교통) |
 | `REPLAY_DEFAULT_AS_OF` | `2026-07-18` | 시연 기준일(`/api/rounds/current`의 `replay.defaultAsOf`). 모집기간 밖이면 가까운 끝 날짜로 맞춘다 |
 | `DB_URL` · `DB_USER` · `DB_PASSWORD` | — | Render에 넣습니다(아래 'DB'). 없으면 앱이 뜨지 않습니다 |
 
