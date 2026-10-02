@@ -30,7 +30,7 @@ class ExampleProfileCheck {
                     example.departmentName());
         }
         if (example.homeAreaCode() != null && !profiles.areaExists(example.homeAreaCode())) {
-            log.info("area 시드에 사는 곳 {}가 없어 예시 프로필의 사는 곳은 비웁니다(좌표 대기, ADR-0007)", example.homeAreaCode());
+            log.info("area 시드에 사는 곳 {}가 없어 예시 프로필의 사는 곳은 비웁니다(사는 곳 목록 시드 전, ADR-0007)", example.homeAreaCode());
         }
     }
 }

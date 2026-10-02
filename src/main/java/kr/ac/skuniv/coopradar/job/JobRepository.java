@@ -46,7 +46,7 @@ public class JobRepository {
                                i.name AS i_name, i.size AS i_size, i.listing AS i_listing,
                                i.business_type AS i_business_type, i.business_item AS i_business_item,
                                i.address AS i_address, i.nts_status AS i_nts_status, i.nts_checked_on AS i_nts_checked_on,
-                               w.address AS w_address, (w.lat IS NOT NULL) AS w_has_coordinates
+                               w.address AS w_address, (w.address IS NOT NULL) AS w_has_coordinates
                         FROM job j
                         JOIN recruit_round r ON r.id = j.round_id
                         JOIN institution i ON i.id = j.institution_id

@@ -64,7 +64,10 @@ public record JobDetail(
     public record DepartmentRef(int id, String name) {
     }
 
-    /** hasCoordinates가 true면 프론트가 통근 조회(#18)를 부른다. */
+    /**
+     * hasCoordinates가 true면 프론트가 통근 조회(#18)를 부른다. 근로지 주소가 있으면 true다 — 좌표는 DB에 없고
+     * 통근 조회 때 카카오 주소 검색으로 구한다(ADR-0007). 이름은 계약을 바꾸지 않으려고 그대로 둔다.
+     */
     public record Workplace(String address, boolean hasCoordinates) {
     }
 

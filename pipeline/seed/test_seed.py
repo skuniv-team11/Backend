@@ -82,7 +82,7 @@ class ToSqlTest(unittest.TestCase):
         self.assertIn("ON CONFLICT (id) DO UPDATE SET code = EXCLUDED.code, name = EXCLUDED.name;", sql)
         self.assertIn("DELETE FROM major_alias;", sql)
         self.assertIn("DELETE FROM job WHERE id NOT IN (NULL);", sql)       # job이 비면 전부 지운다
-        self.assertNotIn("area", sql)                                      # 좌표 대기 — 건드리지 않는다
+        self.assertNotIn("area", sql)                                      # 사는 곳 목록 대기 — 건드리지 않는다
         self.assertLess(sql.index("DELETE FROM major_alias;"), sql.index("INSERT INTO program"))
 
     def test_해더의_해시는_seed와_본문을_따른다(self):

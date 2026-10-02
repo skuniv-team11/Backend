@@ -21,7 +21,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - 요청·응답 본문을 로그에 남기지 않는다.
 - **가상 데이터**: 모집 신호는 모집기간 리플레이용 가상 데이터다. 신호를 주는 응답에는 `isVirtual`과 `signalSource`를 반드시 넣는다.
 - **호출 제한**(초기값, 설정으로 조정): 체험 계정 만들기 IP당 1시간 300회(환경변수 `GUEST_PER_IP_PER_HOUR`, 0이면 끔 — 시연장·학교 와이파이는 여럿이 한 IP) → 넘으면 429 + `Retry-After`(초). 이유 문장(LLM) 계정당 1시간 30회·IP당 60회 → 넘으면 **200 + 기본 문장**(화면이 깨지지 않게). 통근 조회 계정당 1시간 30회·서버 전체 하루 900회(카카오 무료 하루 1,000건 안에서 멈춤) → 넘으면 **200 + `available: false`**.
-- **실행 중 외부 호출**은 Claude(이유 문장)·카카오 대중교통(통근 조회) 둘뿐이다(ADR-0002, ADR-0007). 임베딩은 쓰지 않는다(E5 결과, ADR-0018). 둘 다 실패해도 200으로 화면을 유지한다.
+- **실행 중 외부 호출**은 Claude(이유 문장)·카카오(통근 조회 — 주소 검색과 대중교통) 둘뿐이다(ADR-0002, ADR-0007). 임베딩은 쓰지 않는다(E5 결과, ADR-0018). 둘 다 실패해도 200으로 화면을 유지한다.
 - **코드값**은 영문 대문자이고 DB CHECK와 같은 집합이다(`V1__init.sql`). 화면 표기는 `GET /api/codes`에서 가져간다.
 - **예시 값**: 기관·직무·인용문은 전부 가상이다(`(가상)` 표시). 실제 값은 시드에서 나온다. 목록 응답의 예시는 일부 행만 보여 준다.
 - CORS: `CorsConfig`가 `GET`·`POST`·`PUT`·`DELETE`·`OPTIONS`와 모든 헤더(`Authorization` 포함)를 허용한다(Backend#16). 통근 조회에는 환경변수 `KAKAO_REST_API_KEY`(카카오 디벨로퍼스 REST API 키)가 필요하다.
@@ -46,7 +46,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | 15 | 판정·추천 | POST | `/api/recommendations` | STUDENT | S3 | 적합도 추천 상위 5개 | [요청](profile-body.request.json) · [응답](recommendations.json) |
 | 16 | 판정·추천 | POST | `/api/recommendations/{jobId}/reason` | STUDENT | S3 | 추천 이유 문장(LLM, 실패 시 기본 문장) | [요청](profile-body.request.json) · [응답](recommendation-reason.json) |
 | 17 | 직무 | GET | `/api/jobs/{jobId}` | 로그인 | S4 | 직무 상세 + AI 추출 근거 | [응답](job-detail.json) |
-| 18 | 직무 | POST | `/api/jobs/{jobId}/commute` | 로그인 | S4 | 통근 시간(카카오 대중교통 실시간, 저장 안 함) | [요청](commute.request.json) · [응답](commute.json) · [실패](commute-unavailable.json) |
+| 18 | 직무 | POST | `/api/jobs/{jobId}/commute` | 로그인 | S4 | 통근 시간(카카오 주소 검색 + 대중교통 실시간, 저장 안 함) | [요청](commute.request.json) · [응답](commute.json) · [실패](commute-unavailable.json) |
 | 19 | 지망 | GET | `/api/me/plan` | STUDENT | S3·S5 | 담은 직무와 순위 | [응답](me-plan.json) |
 | 20 | 지망 | POST | `/api/me/plan/items` | STUDENT | S3 | 담기 | [요청](me-plan-items.request.json) · 201/200 |
 | 21 | 지망 | DELETE | `/api/me/plan/items/{jobId}` | STUDENT | S3·S5 | 담기 취소 | 204 |
@@ -105,7 +105,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - `signup`: 이메일은 소문자로 맞춰 저장, 비밀번호 8자 이상·UTF-8 72바이트 이하(BCrypt 한도 — 영문 72자, 한글 24자). 이메일 인증은 없다(MVP). 201 + 토큰. 이미 있으면 409 `EMAIL_TAKEN`(대소문자만 달라도 같은 이메일).
 - `login`: 틀리면 401 `LOGIN_FAILED`. 이메일과 비밀번호 중 무엇이 틀렸는지 말하지 않는다(응답 본문도 같다).
 - `guest`: `role`은 `STUDENT` 또는 `CENTER`. `STUDENT`는 예시 프로필(메이크업디자인학과 3학년)이 저장된 체험 계정을 만들고 응답에 그 프로필을 준다(`isExample: true`). 값과 고른 이유는 [ADR-0016](../decisions/0016-demo-profile-and-screen-rules.md). `CENTER`는 현황판용이고 `profile`은 null. 201 + 토큰. CENTER 역할은 이 경로와 시드로만 생기고 가입으로는 못 만든다.
-  - 예시 프로필의 사는 곳(`homeAreaCode`)은 `area` 시드가 들어오기 전까지 null이다(좌표 대기, ADR-0007).
+  - 예시 프로필의 사는 곳(`homeAreaCode`)은 `area` 시드(행정표준코드 최신본)가 들어오기 전까지 null이다(ADR-0007).
   - 24시간이 지난 체험 계정은 서버가 10분마다 계정째 지운다. 지우기 전이라도 그 토큰은 401 `TOKEN_EXPIRED`.
   - 호출 제한의 IP는 `CF-Connecting-IP` 헤더(Render 앞단 Cloudflare가 넣음)로 센다. 없으면 연결 주소(ADR-0013).
   - `department` 시드에 예시 학과가 없으면 STUDENT 체험도 계정만 만들고 `profile`은 null, `hasProfile`은 false다(서버가 기동 때 경고). 시드가 들어오면 다음 요청부터 예시 프로필이 붙는다.
@@ -128,7 +128,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - LLM 문장은 검증을 통과해야 `LLM`이다: 10~200자 · 해요체로 끝남('습니다'·'당신' 없음) · 근거 번호가 준 범위 안 · 따옴표 인용이 근거·직무 원문에 그대로 있음(공백 무시). 별표는 지운다. `citations`는 카드와 같은 근거다.
   - 키(`ANTHROPIC_API_KEY`)가 없으면 부르지 않고 `TEMPLATE`.
 
-**직무** — 없으면 404 `JOB_NOT_FOUND`. `evidence`는 AI가 운영계획서에서 뽑은 값과 근거(허용 필드만), `seniorNotes`는 같은 기관의 선배 수기(이름·학과·학년 없음). 통근 시간은 이 응답에 없다 — `workplace.hasCoordinates`가 true면 프론트가 통근 조회를 따로 부른다.
+**직무** — 없으면 404 `JOB_NOT_FOUND`. `evidence`는 AI가 운영계획서에서 뽑은 값과 근거(허용 필드만), `seniorNotes`는 같은 기관의 선배 수기(이름·학과·학년 없음). 통근 시간은 이 응답에 없다 — `workplace.hasCoordinates`가 true면 프론트가 통근 조회를 따로 부른다. 근로지 주소가 있으면 true다(좌표는 DB에 없고 통근 조회 때 카카오 주소 검색으로 구한다. 이름은 그대로 둔다).
 - `requirements.majorAliases`: `[{label, departments: [{id, name}]}]` — 직무의 선호 전공 표기(`job_major_alias`)마다 확정된 학과 대응(`major_alias_department`, EXACT·CONFIRMED만 적재됨). `majorOpen`이면 `[]`. 화면의 '선호 전공 안내'(표기 → 학과)와 판정 이유의 '표기 해석'에 쓴다. 표기 순서는 표기 id 순, 학과는 id 순. 확정 전 표기(`DRAFT`, 2026-2는 없음)는 `departments: []`.
 - `evidence`: 이 직무의 근거 + 그 기관의 근거(기관명·규모·소재지·접수 마감 등). 순서는 직무 필드(V1 허용 목록 순서: 부서 → 직무명 → … → 자격증) 다음 기관 필드. `label`은 서버가 붙이는 한글 표기(예: `stipendAmount` → '실습지원비').
 - `alerts`: 이 직무에 걸린 알림 + 기관 전체에 걸린 알림(`jobId` null), id 순. 판정 항목이 아닌 알림(선호 전공·기간·지원비 불일치 등)도 여기에는 보인다.
@@ -137,11 +137,14 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 
 **통근**(`POST /api/jobs/{jobId}/commute`, ADR-0007)
 - 본문은 `{homeAreaCode}` 하나. 저장한 프로필이 있어도 프론트가 본문에 넣는다(프로필 값은 본문으로만). null이거나 빠지면 서경대에서 출발한다. `areas`에 없는 코드면 400 `INVALID_INPUT`.
-- 서버가 카카오 대중교통 API(`GET https://dapi.kakao.com/v2/routing/publictraffic`, 헤더 `Authorization: KakaoAK ${KAKAO_REST_API_KEY}`)를 1번 부른다. 출발 = `area` 대표점(시·군·구청) 또는 서경대, 도착 = `workplace` 좌표(WGS84). 응답의 첫 경로에서 `minutes` = totalTime(초) ÷ 60 반올림, `transfers`, `fareWon` = fare.value.
-- **저장하지 않는다.** 결과와 결과로 만든 값을 DB·캐시에 두지 않는다(카카오 운영정책: 결과 저장·가공 데이터 저장·미리 조회해 보관 금지). 같은 직무를 다시 열면 다시 부른다. 프론트는 그 화면에 있는 동안만 상태로 들고 있는다.
-- 실패해도 **200 + `available: false`**, `minutes`·`transfers`·`fareWon`은 null. `unavailableReason`: `NO_WORKPLACE`(근무지 좌표 없음 — 카카오를 부르지 않는다) · `NO_ROUTE`(카카오 `NO_RESULTS`·`EQUAL_POINTS`·`STARTNODES_NULL`·`ENDNODES_NULL`) · `LIMITED`(호출 제한·하루 한도) · `PROVIDER_ERROR`(그 밖의 카카오 오류·3초 초과).
-- 출발 시각은 정할 수 없다(카카오 API에 시각 값이 없다). 조회 시각에 따라 결과가 바뀌는지는 키를 받은 뒤 낮·밤에 한 번씩 불러 확인한다.
-- 화면에는 '노원구에서 약 43분 · 환승 1회'처럼 출발지를 꼭 붙이고, 출처 '카카오맵 대중교통 기준'을 적는다. 로그에 `homeAreaCode`·좌표를 남기지 않는다.
+- 서버가 카카오만 부른다(헤더 `Authorization: KakaoAK ${KAKAO_REST_API_KEY}`).
+  1. 카카오 주소 검색(`GET https://dapi.kakao.com/v2/local/search/address.json`)으로 좌표를 구한다 — 출발 = 사는 곳 '시도 시·군·구'(예: '서울 노원구') 또는 서경대(설정값, 검색 안 함), 도착 = 근로지 주소(없으면 기관 주소)를 도로명 + 건물번호까지만 남긴 검색어. 못 찾으면 첫 쉼표 앞 원문으로 한 번 더. 출발·도착은 동시에 부른다.
+  2. 카카오 대중교통 길찾기(`GET https://dapi.kakao.com/v2/routing/publictraffic`)를 1번 부른다. 응답의 첫 경로에서 `minutes` = totalTime(초) ÷ 60 반올림, `transfers`, `fareWon` = fare.value.
+  - `destination.address`는 정리하기 전 원문 주소다.
+- **저장하지 않는다.** 좌표·시간·경로와 결과로 만든 값을 DB·캐시에 두지 않는다(카카오 운영정책: 결과 저장·가공 데이터 저장·미리 조회해 보관 금지). 같은 직무를 다시 열면 다시 부른다. 프론트는 그 화면에 있는 동안만 상태로 들고 있는다.
+- 실패해도 **200 + `available: false`**, `minutes`·`transfers`·`fareWon`은 null. `unavailableReason`: `NO_WORKPLACE`(근무지 주소가 없음 — 카카오를 부르지 않는다 — 또는 카카오 주소 검색이 근무지를 못 찾음) · `NO_ROUTE`(카카오 `NO_RESULTS`·`EQUAL_POINTS`·`STARTNODES_NULL`·`ENDNODES_NULL`) · `LIMITED`(호출 제한·하루 한도·카카오 한도 초과) · `PROVIDER_ERROR`(사는 곳을 못 찾음, 그 밖의 카카오 오류, 호출 하나가 3초 초과).
+- 출발 시각은 정할 수 없다(카카오 API에 시각 값이 없다). 조회 시각에 따라 결과가 바뀌는지는 낮·밤에 한 번씩 `KakaoLiveCheck`로 확인한다.
+- 화면에는 '노원구에서 약 43분 · 환승 1회'처럼 출발지를 꼭 붙이고, 출처 '카카오맵 대중교통 기준'을 적는다. 로그에 `homeAreaCode`·검색어·좌표를 남기지 않는다.
 
 **지망**
 - 담기(`POST items`): 새로 담으면 201, 이미 담겨 있으면 200(그대로). 본문 없음. 현재 회차에 없는 직무는 400 `INVALID_INPUT`(`jobId`). 취소는 204, 없으면 404 `PLAN_ITEM_NOT_FOUND`.

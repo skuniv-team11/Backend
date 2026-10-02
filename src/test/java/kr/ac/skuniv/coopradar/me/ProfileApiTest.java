@@ -50,8 +50,8 @@ class ProfileApiTest {
     void 시드() {
         department(DEPT_A, "(가상)프로필학과9011");
         department(DEPT_B, "(가상)프로필학과9012");
-        db.sql("INSERT INTO area (code, sido, name, lat, lng, sort_order) "
-                + "VALUES ('" + AREA + "', '인천', '(가상)구9111', 37.5, 126.7, 9111) ON CONFLICT DO NOTHING").update();
+        db.sql("INSERT INTO area (code, sido, name, sort_order) "
+                + "VALUES ('" + AREA + "', '인천', '(가상)구9111', 9111) ON CONFLICT DO NOTHING").update();
     }
 
     // ───────── #9 저장 → #8 조회 ─────────

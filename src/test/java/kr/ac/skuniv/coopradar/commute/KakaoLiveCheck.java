@@ -22,11 +22,13 @@ import tools.jackson.databind.json.JsonMapper;
 
 /**
  * 카카오 실제 호출 확인(키를 받은 뒤 수동으로 돌린다. CI·평소 테스트에서는 건너뛴다).
- * 서경대 → 서울시청을 2번 부른다(카카오 무료 하루 1,000건 중 2건). 결과는 콘솔에만 찍고 어디에도 저장하지 않는다(ADR-0007).
+ * 서경대 → 서울시청을 2번 부르고(카카오 대중교통 무료 하루 1,000건 중 2건), 주소 검색을 3번 부른다.
+ * 결과는 콘솔에만 찍고 어디에도 저장하지 않는다(ADR-0007).
  * 확인하는 것
  * 1) 서버 코드(KakaoTransitClient)가 실제 키·응답으로 OK를 받는지
  * 2) routes[0]이 가장 빠른 경로인지(공식 문서에 정렬 기준이 없음. docs/api는 첫 경로를 쓴다)
  * 3) 낮·밤에 한 번씩 돌려 소요 시간이 조회 시각에 따라 바뀌는지(카카오 API에 출발 시각 값이 없음)
+ * 4) 주소 검색(KakaoLocalClient)이 사는 곳 시·군·구와 정리한 근로지 주소에서 좌표를 찾는지
  *
  * <pre>
  * PowerShell:  $env:KAKAO_LIVE_CHECK="1"; .\gradlew.bat test --tests "*KakaoLiveCheck*" -i
@@ -68,5 +70,19 @@ class KakaoLiveCheck {
         }
         boolean firstIsFastest = minutes.stream().allMatch(m -> m >= minutes.get(0));
         System.out.printf("[카카오 확인] 경로 %d개 소요(분) %s · 첫 경로가 가장 빠름: %s%n", minutes.size(), minutes, firstIsFastest);
+    }
+
+    @Test
+    void 사는_곳과_근로지_주소를_실제로_찾는다() {
+        String key = System.getenv("KAKAO_REST_API_KEY");
+        KakaoLocalClient client = new KakaoLocalClient(new CommuteProperties(
+                "https://dapi.kakao.com", key, Duration.ofSeconds(3), 0, 0, SCHOOL));
+        // 사는 곳(시·군·구)과 2026-2 근로지 주소 형태 하나(건물명·층이 붙은 원문 → 정리한 검색어)
+        for (String query : List.of("서울 노원구", "경기 수원시 장안구",
+                AddressQuery.of("서울시 성동구 뚝섬로1길 25, 706-707호"))) {
+            KakaoLocalClient.Result r = client.geocode(query).join();
+            System.out.printf("[카카오 확인] 주소 검색 '%s' → %s %s%n", query, r.outcome(), r.point());
+            assertThat(r.outcome()).as(query).isEqualTo(KakaoLocalClient.Outcome.OK);
+        }
     }
 }

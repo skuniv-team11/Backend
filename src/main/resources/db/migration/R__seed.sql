@@ -1,7 +1,7 @@
 -- R__seed.sql — 시드 데이터(Flyway 반복 마이그레이션, ADR-0014). 손으로 고치지 않는다.
 -- 만드는 법: python pipeline/seed/build_seed.py ... → python pipeline/seed/to_sql.py (pipeline/seed/README.md)
--- seed.json sha256: bc5b39679a7c9ff06bd01cb58668d1a15e1aeb7ef017d695899c313e5c796c7e
--- body sha256: 76e6901faea78f5d8a210a08551f7f40bf88eea1f323e11925db9dc782e19662
+-- seed.json sha256: bed7cfac80924830ff35de35fc3bc7b4108df84c3ee97664b19253b53aef18bb
+-- body sha256: 884e0325efbabdb65b703f45707330b56c79ad361f08cb87ddf4ed6fd44b6637
 
 -- 1. 자식 테이블은 통째로 지운다(다시 넣는다)
 DELETE FROM replay_signal;
@@ -126,26 +126,26 @@ INSERT INTO institution (id, name, size, listing, business_type, business_item, 
 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, size = EXCLUDED.size, listing = EXCLUDED.listing, business_type = EXCLUDED.business_type, business_item = EXCLUDED.business_item, address = EXCLUDED.address, nts_status = EXCLUDED.nts_status, nts_checked_on = EXCLUDED.nts_checked_on;
 
 -- workplace 18행
-INSERT INTO workplace (id, institution_id, address, lat, lng, coord_source) VALUES
-  (1, 1, '서울시 강남구 봉은사로49길 22, 더에스엠씨빌딩(1사옥)', NULL, NULL, NULL),
-  (2, 2, '서울시 강남구 삼성로 342', NULL, NULL, NULL),
-  (3, 3, '서울시 강남구 삼성로 342', NULL, NULL, NULL),
-  (4, 4, '서울시 서초구 강남대로61길 23, 203호 (서초동, 현대성우빌딩)', NULL, NULL, NULL),
-  (5, 5, '경기도 성남시 수정구 창업로 57번길 7, 5층', NULL, NULL, NULL),
-  (6, 6, '서울시 금천구 가산디지털2로 143, 15층', NULL, NULL, NULL),
-  (7, 7, '서울시 성동구 뚝섬로1길 25, 706-707호', NULL, NULL, NULL),
-  (8, 8, '경기도 의정부시 태평로214번길 36, 제이숲', NULL, NULL, NULL),
-  (9, 9, '서울시 강동구 양재대로113길 51, 4층 카페24 40호', NULL, NULL, NULL),
-  (10, 10, '서울시 용산구 원효로 146, 5층', NULL, NULL, NULL),
-  (11, 11, '서울시 영등포구 당산로 41길 11 당산 SK V1 Center W동 1008호', NULL, NULL, NULL),
-  (12, 12, '서울시 강남구 논현로 651 법무사회관 1, 5, 6층', NULL, NULL, NULL),
-  (13, 13, '서울시 강남구 언주로 537, ABT타워', NULL, NULL, NULL),
-  (14, 14, '서울시 송파구 송파대로 201, A동 1201호 (문정동, 송파테라타워2)', NULL, NULL, NULL),
-  (15, 15, '서울시 성동구 아차산로7나길 18 1101/1102호', NULL, NULL, NULL),
-  (16, 16, '서울시 서초구 서초중앙로41 대성빌딩 7층', NULL, NULL, NULL),
-  (17, 17, '서울시 광진구 능동로 256, 3층', NULL, NULL, NULL),
-  (18, 18, '서울시 영등포구 여의대로 108, 더현대서울 3층 애브뉴준오', NULL, NULL, NULL)
-ON CONFLICT (id) DO UPDATE SET institution_id = EXCLUDED.institution_id, address = EXCLUDED.address, lat = EXCLUDED.lat, lng = EXCLUDED.lng, coord_source = EXCLUDED.coord_source;
+INSERT INTO workplace (id, institution_id, address) VALUES
+  (1, 1, '서울시 강남구 봉은사로49길 22, 더에스엠씨빌딩(1사옥)'),
+  (2, 2, '서울시 강남구 삼성로 342'),
+  (3, 3, '서울시 강남구 삼성로 342'),
+  (4, 4, '서울시 서초구 강남대로61길 23, 203호 (서초동, 현대성우빌딩)'),
+  (5, 5, '경기도 성남시 수정구 창업로 57번길 7, 5층'),
+  (6, 6, '서울시 금천구 가산디지털2로 143, 15층'),
+  (7, 7, '서울시 성동구 뚝섬로1길 25, 706-707호'),
+  (8, 8, '경기도 의정부시 태평로214번길 36, 제이숲'),
+  (9, 9, '서울시 강동구 양재대로113길 51, 4층 카페24 40호'),
+  (10, 10, '서울시 용산구 원효로 146, 5층'),
+  (11, 11, '서울시 영등포구 당산로 41길 11 당산 SK V1 Center W동 1008호'),
+  (12, 12, '서울시 강남구 논현로 651 법무사회관 1, 5, 6층'),
+  (13, 13, '서울시 강남구 언주로 537, ABT타워'),
+  (14, 14, '서울시 송파구 송파대로 201, A동 1201호 (문정동, 송파테라타워2)'),
+  (15, 15, '서울시 성동구 아차산로7나길 18 1101/1102호'),
+  (16, 16, '서울시 서초구 서초중앙로41 대성빌딩 7층'),
+  (17, 17, '서울시 광진구 능동로 256, 3층'),
+  (18, 18, '서울시 영등포구 여의대로 108, 더현대서울 3층 애브뉴준오')
+ON CONFLICT (id) DO UPDATE SET institution_id = EXCLUDED.institution_id, address = EXCLUDED.address;
 
 -- job 40행
 INSERT INTO job (id, round_id, institution_id, workplace_id, list_seq, team, title, overview, education_goal, competencies, course, job_type, period_start, period_end, work_hours_text, weekly_hours, weekdays, overtime, labor_contract, stipend_basis, stipend_amount, benefits, headcount, grade_rule, gpa_min, portfolio, certificate, certificate_text, major_text, major_open, closes_on, close_reason, closes_on_is_virtual, final_assigned) VALUES
