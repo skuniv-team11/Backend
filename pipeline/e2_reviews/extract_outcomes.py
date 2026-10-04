@@ -10,6 +10,7 @@
 - 결과는 build_seed.py --outcomes 로 시드의 testimonial.outcomes가 된다. out/은 커밋하지 않는다.
 """
 import argparse, glob, hashlib, json, pathlib, re, sys
+from concurrent.futures import ThreadPoolExecutor
 
 HERE = pathlib.Path(__file__).parent
 PRICE_IN, PRICE_OUT = 2.0, 10.0   # Sonnet 5.5, 백만 토큰당 USD (run_extract.py와 같음)
@@ -89,28 +90,37 @@ def main():
     ap.add_argument("--reviews", default=str(HERE / "out"), help="run_extract.py 결과 폴더")
     ap.add_argument("--model", default="claude-sonnet-5-5")
     ap.add_argument("--out", default=str(HERE / "out" / "outcomes.json"))
+    ap.add_argument("--workers", type=int, default=6, help="동시에 보내는 요청 수")
     a = ap.parse_args()
 
     import anthropic  # 단위 테스트(check)는 키·패키지 없이 돌게 여기서 부른다
 
     system = (HERE / "prompt_outcomes.md").read_text(encoding="utf-8")
     client = anthropic.Anthropic(timeout=120)
-    records, total = [], 0.0
     files = sorted(f for f in glob.glob(str(pathlib.Path(a.reviews) / "*.json")) if "수기" in pathlib.Path(f).name)
     if not files:
         sys.exit(f"{a.reviews}에 수기 추출 결과(*수기*.json)가 없습니다 — run_extract.py를 먼저 돌리세요")
+    items = []
     for f in files:
         rec = json.loads(pathlib.Path(f).read_text(encoding="utf-8"))
-        for t in rec["result"]["records"]:
-            results = t.get("results") or ""
-            outcomes, cost = ask(client, a.model, system, results) if results.strip() else ([], 0.0)
-            total += cost
-            kept, dropped = check(outcomes, results) if outcomes is not None else ([], [{"text": "", "reason": "응답 해석 실패"}])
-            records.append({"source": source_name(rec["source_file"]), "text_page": t["text_page"],
-                            "semester": t["semester"], "institution": t["institution"], "department": t["department"],
-                            "outcomes": kept, "dropped": dropped})
-            print(f"{t['semester']} {t['institution']} / {t['department']} p{t['text_page']}: "
-                  f"사실 {len(kept)} · 버림 {len(dropped)}", flush=True)
+        items += [(source_name(rec["source_file"]), t) for t in rec["result"]["records"]]
+
+    def one(item):
+        src, t = item
+        results = t.get("results") or ""
+        outcomes, cost = ask(client, a.model, system, results) if results.strip() else ([], 0.0)
+        kept, dropped = check(outcomes, results) if outcomes is not None else ([], [{"text": "", "reason": "응답 해석 실패"}])
+        return cost, {"source": src, "text_page": t["text_page"], "semester": t["semester"],
+                      "institution": t["institution"], "department": t["department"],
+                      "outcomes": kept, "dropped": dropped}
+
+    with ThreadPoolExecutor(max_workers=a.workers) as pool:
+        done = list(pool.map(one, items))   # 입력 순서를 지킨다
+    total = sum(c for c, _ in done)
+    records = [r for _, r in done]
+    for r in records:
+        print(f"{r['semester']} {r['institution']} / {r['department']} p{r['text_page']}: "
+              f"사실 {len(r['outcomes'])} · 버림 {len(r['dropped'])}")
     out = pathlib.Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps({"model": a.model, "prompt_sha256": hashlib.sha256(system.encode()).hexdigest()[:12],
