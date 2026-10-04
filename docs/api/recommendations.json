@@ -89,7 +89,7 @@
         "amount": 1620000,
         "minWageRatio": 75.1
       },
-      "reasonTemplate": "채용연계형이에요. 선호 전공에 소속 학과는 없어요(선호 전공은 참고 사항이에요).",
+      "reasonTemplate": "채용연계형이에요. 선호 전공에 소속 학과는 없어요(선호 전공은 참고 사항이에요). 확인해야 할 조건이 있어요(학년 '4학년').",
       "reasonStatus": "PENDING",
       "citations": []
     }

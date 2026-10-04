@@ -56,9 +56,11 @@ public class RecommendService {
      *
      * @param matched  관심 문장과 겹쳐 고른 계획서 조각(없으면 null). 이유 문장 프롬프트에도 알려 준다
      * @param contrast 추천 안의 같은 팀 다른 직무와 요건이 다른 점(없으면 null). 기본 문장 끝에 이미 들어 있다
+     * @param majorSentence 선호 전공에 소속 학과가 있는지 한 문장. 이유 문장(#16) LLM 문장 뒤에 붙는다
+     * @param checkSentence '확인 필요'로 만든 기관 조건 한 문장(없으면 null). 기본 문장 끝에 이미 들어 있고, LLM 문장 뒤에도 붙는다
      */
     record Explained(Scored scored, List<Citation> citations, String template, EvidenceText.Segment matched,
-                     String contrast) {
+                     String contrast, String majorSentence, String checkSentence) {
     }
 
     @Transactional(readOnly = true)
@@ -145,11 +147,16 @@ public class RecommendService {
                 : ctx.picker().pick(text, ctx.testimonials().getOrDefault(r.institution().id(), List.of()));
         String contrast = contrast(ctx, s, top);
         boolean hiring = "HIRING".equals(s.features().jobType());
-        String template = ReasonTemplates.build(r.majorMatch(),
-                r.majorMatch() == MajorMatch.MATCH ? ctx.majorLabels().get(r.jobId()) : null,
+        String majorLabel = r.majorMatch() == MajorMatch.MATCH ? ctx.majorLabels().get(r.jobId()) : null;
+        String template = ReasonTemplates.build(r.majorMatch(), majorLabel,
                 FitScorer.interestClose(s.interest()), picked.matched(), hiring, r.verdict() == Verdict.ELIGIBLE,
                 contrast);
-        return new Explained(s, picked.citations(), template, picked.matched(), contrast);
+        String check = ReasonTemplates.checkSentence(r.reasons());
+        if (check != null) {
+            template += " " + check;
+        }
+        return new Explained(s, picked.citations(), template, picked.matched(), contrast,
+                ReasonTemplates.majorSentence(r.majorMatch(), majorLabel), check);
     }
 
     /** 추천 안에서 같은 기관·같은 팀인 다른 직무(순위가 앞선 것 먼저)와 요건이 다른 점. */
