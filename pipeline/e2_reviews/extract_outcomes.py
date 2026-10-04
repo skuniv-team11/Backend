@@ -58,8 +58,8 @@ def check(outcomes, results):
             reason = f"{MAX_LEN}자 초과"
         elif any(w in text for w in BANNED):
             reason = "감상·평가·진로·1인칭 낱말"
-        elif text.endswith(CUT_ENDINGS):
-            reason = "문장 중간에서 끊김"
+        elif text.endswith(CUT_ENDINGS) or len(text.split()[-1]) < 2 or not text[-1].isalnum():
+            reason = "문장 중간에서 끊김"   # 'ㅇㅇ을 맡'처럼 마지막 낱말이 한 글자거나 문장부호로 끝남
         elif squash(text) in seen:
             reason = "중복"
         elif len(kept) >= MAX_ITEMS:
