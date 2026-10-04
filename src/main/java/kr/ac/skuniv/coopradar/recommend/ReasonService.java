@@ -5,6 +5,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.HashSet;
@@ -20,6 +21,7 @@ import kr.ac.skuniv.coopradar.common.ApiException;
 import kr.ac.skuniv.coopradar.common.ErrorCode;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.EligibilityJob;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Layer;
+import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.MajorMatch;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.ReasonLine;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Result;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Verdict;
@@ -27,6 +29,7 @@ import kr.ac.skuniv.coopradar.eligibility.EligibilityService;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityService.Judged;
 import kr.ac.skuniv.coopradar.eligibility.ProfileInput;
 import kr.ac.skuniv.coopradar.recommend.FitScorer.Scored;
+import kr.ac.skuniv.coopradar.recommend.RecommendService.Explained;
 import kr.ac.skuniv.coopradar.recommend.RecommendDtos.Citation;
 import kr.ac.skuniv.coopradar.recommend.RecommendDtos.ReasonSource;
 import kr.ac.skuniv.coopradar.recommend.RecommendDtos.RecommendationReason;
@@ -44,6 +47,8 @@ import org.springframework.stereotype.Service;
  *       근거·직무 원문에 실제로 있음. 하나라도 어기면 TEMPLATE. 마크다운 별표는 지운다</li>
  *   <li>키 없음·실패·제한 시간·호출 제한·지원 불가 직무 → 200 + TEMPLATE(화면 유지)</li>
  *   <li>캐시는 메모리(프롬프트 버전 + 모델 + 직무 + 학과·학년·관심 분야 + 판정·적합도의 해시). 서버가 다시 뜨면 비워진다</li>
+ *   <li>근거 인용·기본 문장은 추천(#15)과 같다(ADR-0020). LLM 문장 뒤에는 선호 전공 미포함 안내·같은 팀 직무와의 차이를
+ *       규칙 문장으로 붙인다({@link #finish})</li>
  * </ul>
  */
 @Service
@@ -54,6 +59,9 @@ public class ReasonService {
     static final String INELIGIBLE_TEXT = "학교 규정에 맞지 않아 지금은 지원할 수 없는 자리예요.";
     private static final Pattern QUOTED = Pattern.compile("[\"“'‘「『]([^\"”'’」』]{4,})[\"”'’」』]");
     private static final int FACT_LIMIT = 600;
+    private static final Pattern DEPARTMENT_SUFFIX = Pattern.compile("(학과|학부|전공)$");
+    private static final Pattern TRAILING_PARTICLE = Pattern.compile("(에서|으로|에|을|를|이|가|의|와|과|은|는|도|로)$");
+    private static final String INDUSTRY_NOUNS = "(브랜드|기업|회사|업계|업종|시장|산업)";
 
     private final EligibilityService eligibility;
     private final RecommendService recommend;
@@ -88,17 +96,19 @@ public class ReasonService {
 
     public RecommendationReason reason(AuthUser user, String ip, long jobId, ProfileInput profile) {
         var round = rounds.current();
+        LocalDate asOf = round.replay().defaultAsOf();
         List<Judged> judged = eligibility.judgeAll(round.id(), profile);
         Judged target = judged.stream().filter(j -> j.requirement().jobId() == jobId).findFirst()
                 .orElseThrow(() -> new ApiException(ErrorCode.JOB_NOT_FOUND, "없는 직무예요"));
         EligibilityJob job = target.result();
-        List<Citation> citations = recommend.citations(job.jobId(), job.institution().id());
         if (job.verdict() == Verdict.INELIGIBLE) {
-            return new RecommendationReason(job.jobId(), ReasonSource.TEMPLATE, INELIGIBLE_TEXT, citations);
+            return new RecommendationReason(job.jobId(), ReasonSource.TEMPLATE, INELIGIBLE_TEXT,
+                    recommend.citations(round.id(), profile, job.jobId(), job.institution().id()));
         }
-        Scored scored = recommend.score(round.id(), judged, profile).stream()
-                .filter(s -> s.jobId() == jobId).findFirst().orElseThrow();
-        String template = scored.reasonTemplate();
+        Explained explained = recommend.explain(round.id(), judged, profile, asOf, job.jobId()).orElseThrow();
+        Scored scored = explained.scored();
+        List<Citation> citations = explained.citations();
+        String template = explained.template();
 
         String key = sha256(String.join("\u0001", promptVersion, props.model(), Long.toString(jobId),
                 Integer.toString(profile.departmentId()), Integer.toString(profile.grade()),
@@ -106,7 +116,7 @@ public class ReasonService {
         synchronized (cache) {
             String hit = cache.get(key);
             if (hit != null) {
-                return new RecommendationReason(job.jobId(), ReasonSource.CACHE, hit, citations);
+                return new RecommendationReason(job.jobId(), ReasonSource.CACHE, finish(hit, job, explained), citations);
             }
         }
         JobFacts facts = repository.facts(job.jobId()).orElseThrow();
@@ -116,18 +126,46 @@ public class ReasonService {
         String department = target.result().reasons().stream()
                 .filter(r -> r.layer() == Layer.MAJOR).map(ReasonLine::mine).findFirst().orElse("");
         Optional<String> text = writer.write(systemPrompt, userMessage(profile, department, job, facts, citations))
-                .flatMap(d -> validate(d, citations, facts));
+                .flatMap(d -> validate(d, citations, facts, job.majorMatch(), department, profile.interestText()));
         if (text.isEmpty()) {
             return new RecommendationReason(job.jobId(), ReasonSource.TEMPLATE, template, citations);
         }
         synchronized (cache) {
             cache.put(key, text.get());
         }
-        return new RecommendationReason(job.jobId(), ReasonSource.LLM, text.get(), citations);
+        return new RecommendationReason(job.jobId(), ReasonSource.LLM, finish(text.get(), job, explained), citations);
     }
 
-    /** LLM 초안 검증. 통과하면 화면에 낼 문장(공백 정리), 아니면 빈 값. */
+    /**
+     * 검증을 통과한 LLM 문장 뒤에 규칙 문장을 붙인다(ADR-0020): 선호 전공에 소속 학과가 없는데 문장이 그걸 말하지 않았으면
+     * 그 사실, 추천 안 같은 팀 직무와 요건이 다르면 그 차이. 둘 다 기본 문장과 같은 글이다.
+     */
+    static String finish(String text, EligibilityJob job, Explained explained) {
+        StringBuilder b = new StringBuilder(text);
+        if (job.majorMatch() == MajorMatch.NOT_LISTED && !text.contains("선호 전공")) {
+            b.append(' ').append(ReasonTemplates.MAJOR_NOT_LISTED);
+        }
+        if (explained.contrast() != null) {
+            b.append(' ').append(explained.contrast());
+        }
+        return b.toString();
+    }
+
+    /** 앞의 두 검증 없이 원문 대조까지만(단위 테스트용). */
     static Optional<String> validate(ReasonDraft draft, List<Citation> citations, JobFacts facts) {
+        return validate(draft, citations, facts, MajorMatch.MATCH, "", null);
+    }
+
+    /**
+     * LLM 초안 검증. 통과하면 화면에 낼 문장(공백 정리), 아니면 빈 값. 원문 대조에 더해(ADR-0020)
+     * <ul>
+     *   <li>선호 전공에 소속 학과가 없으면 학과 이름(예: 메이크업디자인)을 직무와 잇지 않는다 — 문장에 나오면 탈락</li>
+     *   <li>관심 분야 낱말을 기관·업종에 붙이지 않는다: 직무·기관 원문에 없는 관심 낱말 바로 뒤에
+     *       '브랜드·기업·회사·업계·업종·시장·산업'이 오면 탈락(의류 회사를 '뷰티 브랜드'라고 부르는 경우)</li>
+     * </ul>
+     */
+    static Optional<String> validate(ReasonDraft draft, List<Citation> citations, JobFacts facts, MajorMatch major,
+                                     String department, String interestText) {
         if (draft == null || draft.text() == null) {
             return Optional.empty();
         }
@@ -153,6 +191,7 @@ public class ReasonService {
         sources.add(facts.title());
         sources.add(facts.team());
         sources.add(facts.institution());
+        sources.add(facts.weeklyPlan());
         Matcher m = QUOTED.matcher(text);
         while (m.find()) {
             String quote = squash(m.group(1));
@@ -161,7 +200,37 @@ public class ReasonService {
                 return Optional.empty();
             }
         }
+        if (major == MajorMatch.NOT_LISTED) {
+            String stem = DEPARTMENT_SUFFIX.matcher(department == null ? "" : department.strip()).replaceFirst("");
+            if (stem.length() >= 2 && squash(text).contains(squash(stem))) {
+                return Optional.empty();
+            }
+        }
+        sources.add(facts.businessType());
+        sources.add(facts.businessItem());
+        String known = sources.stream().filter(x -> x != null).map(ReasonService::squash).reduce("", String::concat);
+        for (String word : interestWords(interestText)) {
+            if (!known.contains(word)
+                    && Pattern.compile(Pattern.quote(word) + "\\s*" + INDUSTRY_NOUNS).matcher(text).find()) {
+                return Optional.empty();
+            }
+        }
         return Optional.of(text);
+    }
+
+    /** 관심 문장의 낱말(2글자 이상, 끝 조사 하나는 뗀다). */
+    static List<String> interestWords(String interestText) {
+        if (interestText == null || interestText.isBlank()) {
+            return List.of();
+        }
+        List<String> out = new ArrayList<>();
+        for (String w : interestText.strip().split("[\\s,·/]+")) {
+            String t = w.length() > 2 ? TRAILING_PARTICLE.matcher(w).replaceFirst("") : w;
+            if (t.length() >= 2) {
+                out.add(t);
+            }
+        }
+        return out;
     }
 
     static String userMessage(ProfileInput profile, String department, EligibilityJob job, JobFacts facts,
@@ -175,16 +244,19 @@ public class ReasonService {
 
         b.append("[직무]\n");
         b.append("기관: ").append(facts.institution()).append('\n');
+        b.append("기관 업종: ").append(orDash(facts.businessType())).append(" / ").append(orDash(facts.businessItem()))
+                .append('\n');
         b.append("직무: ").append(facts.title()).append(" (부서: ").append(facts.team()).append(")\n");
         b.append("유형: ").append(CodeLabels.label("jobType", facts.jobType())).append('\n');
         b.append("직무 개요: ").append(cut(facts.overview())).append('\n');
         b.append("교육 목표: ").append(cut(facts.educationGoal())).append('\n');
         b.append("요구 역량: ").append(cut(facts.competencies())).append('\n');
+        b.append("주차 계획: ").append(cut(facts.weeklyPlan())).append('\n');
         b.append("선호 전공: ").append(facts.majorText() == null ? "—" : facts.majorText())
                 .append(" (내 학과 ").append(switch (job.majorMatch()) {
                     case MATCH -> "포함";
                     case OPEN -> "— 전공 무관";
-                    case NOT_LISTED -> "미포함";
+                    case NOT_LISTED -> "미포함 — 선호 전공은 참고 사항이라 지원은 할 수 있음";
                 }).append(")\n");
         b.append("판정: ").append(CodeLabels.label("verdict", job.verdict().name()));
         List<String> checks = job.reasons().stream()
@@ -203,6 +275,10 @@ public class ReasonService {
                     .append("쪽: \"").append(c.quote()).append("\"\n");
         }
         return b.toString();
+    }
+
+    private static String orDash(String s) {
+        return s == null || s.isBlank() ? "—" : s.strip();
     }
 
     private static String cut(String s) {

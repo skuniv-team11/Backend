@@ -1499,7 +1499,7 @@
                             "amount": 2156880,
                             "minWageRatio": 100.0
                           },
-                          "reasonTemplate": "관심 분야와 직무 개요가 가깝고, 선호 전공에 소속 학과가 들어 있어요.",
+                          "reasonTemplate": "관심 분야가 직무 개요 '(가상) 온라인 채널 마케팅 운영 보조'와 겹치고, 선호 전공 '(가상)미용예술대학'에 소속 학과가 들어 있어요. 같은 팀의 해외 마케팅과 달리 '(가상) 영어 가능자' 요건은 없어요.",
                           "reasonStatus": "PENDING",
                           "citations": [
                             {
@@ -1533,9 +1533,15 @@
                             "amount": 2156880,
                             "minWageRatio": 100.0
                           },
-                          "reasonTemplate": "관심 분야와 직무 개요가 가깝고, 선호 전공에 소속 학과가 들어 있어요.",
+                          "reasonTemplate": "관심 분야가 직무 개요 '(가상) 온라인 채널 마케팅 운영 보조'와 겹치고, 선호 전공 '(가상)미용예술대학'에 소속 학과가 들어 있어요. 같은 팀의 국내 마케팅과 달리 '(가상) 영어 가능자' 요건이 있어요.",
                           "reasonStatus": "PENDING",
                           "citations": [
+                            {
+                              "sourceType": "TESTIMONIAL",
+                              "documentTitle": "2025-1 우수 참여수기",
+                              "page": 7,
+                              "quote": "(가상) 브랜드 SNS 콘텐츠를 기획하고 반응을 주마다 정리"
+                            },
                             {
                               "sourceType": "OPERATION_PLAN",
                               "documentTitle": "누리뷰티(가상) 운영계획서",
@@ -1561,7 +1567,7 @@
                             "amount": 1620000,
                             "minWageRatio": 75.1
                           },
-                          "reasonTemplate": "관심 분야와 일부 업무가 겹치고, 채용연계형이에요.",
+                          "reasonTemplate": "채용연계형이에요. 선호 전공에 소속 학과는 없어요(선호 전공은 참고 사항이에요).",
                           "reasonStatus": "PENDING",
                           "citations": []
                         }
@@ -1707,7 +1713,7 @@
                     "value": {
                       "jobId": 101,
                       "source": "LLM",
-                      "text": "뷰티 브랜드 SNS 마케팅에 관심이 있다면, 이 자리의 온라인 채널 운영 보조 업무와 바로 이어집니다. 2025-1 선배도 같은 기관에서 SNS 콘텐츠 기획을 맡았습니다.",
+                      "text": "뷰티 브랜드 SNS 마케팅에 관심이 있다면, 선배가 맡았던 '(가상) 브랜드 SNS 콘텐츠를 기획하고 반응을 주마다 정리'와 이어지는 '(가상) 온라인 채널 마케팅 운영 보조'를 맡아요. 같은 팀의 해외 마케팅과 달리 '(가상) 영어 가능자' 요건은 없어요.",
                       "citations": [
                         {
                           "sourceType": "TESTIMONIAL",
@@ -1980,6 +1986,10 @@
                           "activities": [
                             "(가상) SNS 콘텐츠 기획",
                             "(가상) 주간 성과 정리"
+                          ],
+                          "outcomes": [
+                            "(가상) 신제품 SNS 캠페인 기획안 작성",
+                            "(가상) 팝업 이벤트 기획에 참여"
                           ]
                         }
                       ]
@@ -4610,6 +4620,14 @@
                     "type": "string"
                   },
                   "minItems": 1
+                },
+                "outcomes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 3,
+                  "description": "실습 결과 중 원문 그대로 자른 사실 구절 0~3개(감상·평가·개인 진로 제외, ADR-0020)"
                 }
               },
               "required": [
@@ -4617,10 +4635,11 @@
                 "teamText",
                 "documentTitle",
                 "page",
-                "activities"
+                "activities",
+                "outcomes"
               ]
             },
-            "description": "같은 기관의 선배 수기(이름·학과·학년 없음)"
+            "description": "같은 기관의 선배 수기(이름·학과·학년·소감 없음)"
           }
         },
         "required": [

@@ -83,10 +83,12 @@ class JobApiTest {
         List<Integer> weeks = JsonPath.read(body, "$.weeklyPlan[*].seq");
         assertThat(weeks).hasSize(count("SELECT count(*) FROM job_weekly_plan WHERE job_id = 101")).isSorted();
 
-        // 수기에는 이름·학과·학년이 없다
+        // 수기에는 이름·학과·학년·소감이 없다. 실습 결과는 원문에서 자른 사실 구절만(ADR-0020)
         Map<String, Object> note = JsonPath.read(body, "$.seniorNotes[0]");
-        assertThat(note).containsOnlyKeys("termCode", "teamText", "documentTitle", "page", "activities");
+        assertThat(note).containsOnlyKeys("termCode", "teamText", "documentTitle", "page", "activities", "outcomes");
         assertThat((String) note.get("documentTitle")).contains("참여수기");
+        assertThat(JsonPath.<List<String>>read(body, "$.seniorNotes[0].outcomes"))
+                .contains("엘리베이터 광고와 홍대입구역 OOH 광고 소재를 직접 기획");
     }
 
     @Test

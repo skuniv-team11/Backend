@@ -92,6 +92,17 @@ class SeedTest {
     }
 
     @Test
+    void 수기_실습_결과는_사실_구절만_원문_60자_이내로_들어_있다() {
+        // ADR-0020: 2026-2 시드는 17건 중 13건에 구절이 있고 합 24개. 감상·진로 낱말·1인칭은 없다
+        assertThat(count("SELECT count(*) FROM testimonial WHERE cardinality(outcomes) > 0")).isEqualTo(13);
+        assertThat(count("SELECT coalesce(sum(cardinality(outcomes)), 0) FROM testimonial")).isEqualTo(24);
+        assertThat(count("""
+                SELECT count(*) FROM testimonial t, unnest(t.outcomes) o
+                WHERE char_length(o) > 60 OR o ~ '(뿌듯|보람|느꼈|배울 수|입사|채용|정직원|정규직|합격|저의|제가)'
+                """)).isZero();
+    }
+
+    @Test
     void 사는_곳은_서울_인천_경기_시군구_83곳이고_좌표는_없다() {
         // 행정표준코드 법정동코드 전체자료(2026-10-01) → pipeline/seed/areas.py. 2026-07-01 인천 개편이 반영돼 있다
         assertThat(count("SELECT count(*) FROM area")).isEqualTo(83);

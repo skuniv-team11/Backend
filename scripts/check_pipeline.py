@@ -70,10 +70,13 @@ for s in schemas:
 # 시드(ADR-0014): 단위 테스트 + R__seed.sql이 seed.json에서 만든 그대로인지(손으로 고치지 않았는지)
 env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
 seed_dir = PIPE / "seed"
-r = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", str(seed_dir), "-p", "test_*.py"],
-                   capture_output=True, text=True, encoding="utf-8", env=env)
-if r.returncode:
-    err("pipeline/seed", "단위 테스트 실패\n" + r.stderr.strip(), "python -m unittest discover -s pipeline/seed -v 로 실패한 테스트를 보세요")
+# 수기 실습 결과 거르기 규칙(ADR-0020)도 같은 방식으로 단위 테스트한다
+for test_dir in (seed_dir, PIPE / "e2_reviews"):
+    r = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", str(test_dir), "-p", "test_*.py"],
+                       capture_output=True, text=True, encoding="utf-8", env=env)
+    if r.returncode:
+        rel = test_dir.relative_to(ROOT).as_posix()
+        err(rel, "단위 테스트 실패\n" + r.stderr.strip(), f"python -m unittest discover -s {rel} -v 로 실패한 테스트를 보세요")
 r = subprocess.run([sys.executable, str(seed_dir / "to_sql.py"), "--check"],
                    capture_output=True, text=True, encoding="utf-8", env=env)
 if r.returncode:
