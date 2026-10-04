@@ -18,7 +18,7 @@ public final class CodeLabels {
             group("majorMatch", "MATCH", "선호 전공", "NOT_LISTED", "선호 전공 밖", "OPEN", "전공 무관"),
             group("fit", "HIGH", "높음", "MEDIUM", "보통"),
             group("signalStatus", "OPEN", "모집 중", "CLOSED", "마감"),
-            group("signalSource", "REPLAY", "모집기간 리플레이(가상)", "LIVE", "실제 신호"),
+            group("signalSource", "REPLAY", "모집기간 리플레이(가상) + 실제 담은 수", "LIVE", "실제 신호"),
             group("closeReason", "APPLICATION_DEADLINE", "기관 접수마감", "CENTER_CLOSED", "센터 모집마감"),
             group("risk", "NARROW_POOL", "대상 학과가 좁음", "PORTFOLIO_REQUIRED", "포트폴리오 필수",
                     "CERTIFICATE_REQUIRED", "자격증 필수", "WEEKEND", "주말 실습", "DOC_ALERT", "문서 검토 필요"),

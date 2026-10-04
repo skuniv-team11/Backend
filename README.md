@@ -24,7 +24,7 @@ git config user.email "<숫자>+<아이디>@users.noreply.github.com"   # GitHub
 
 로컬에서 서버를 띄우지 않습니다(10/2). 배포 서버 하나만 씁니다.
 - API: https://coop-radar-api.onrender.com (`/api/ping`, `/actuator/health`)
-- API 문서(Swagger): https://coop-radar-api.onrender.com/swagger-ui.html — 드롭다운 '계약'은 `docs/api` 24개 전부, '구현'은 지금 서버에 있는 것만 보입니다(ADR-0011).
+- API 문서(Swagger): https://coop-radar-api.onrender.com/swagger-ui.html — 드롭다운 '계약'은 `docs/api` 25개 전부, '구현'은 지금 서버에 있는 것만 보입니다(ADR-0011).
 - 테스트는 PR을 올리면 CI가 돌립니다(`./gradlew test`가 Testcontainers로 Postgres 18을 띄움).
 
 | 환경변수 | 기본값 | 설명 |
@@ -36,7 +36,7 @@ git config user.email "<숫자>+<아이디>@users.noreply.github.com"   # GitHub
 | `CLIENT_IP_HEADER` | `CF-Connecting-IP` | 체험 계정 호출 제한에 쓰는 IP 헤더(Render 앞단 Cloudflare, ADR-0013) |
 | `GUEST_PER_IP_PER_HOUR` | `300` | 체험 계정 만들기 IP당 1시간 한도. 0이면 제한 없음. Render 대시보드에서 바꾸면 다시 배포하지 않아도 된다 |
 | `KAKAO_REST_API_KEY` | — | 통근 조회(카카오 주소 검색 + 대중교통) |
-| `REPLAY_DEFAULT_AS_OF` | `2026-07-18` | 시연 기준일(`/api/rounds/current`의 `replay.defaultAsOf`). 모집기간 밖이면 가까운 끝 날짜로 맞춘다 |
+| `REPLAY_DEFAULT_AS_OF` | `2026-07-23` | 시연 기준일(`/api/rounds/current`의 `replay.defaultAsOf`). 모집기간 밖이면 가까운 끝 날짜로 맞춘다 |
 | `DB_URL` · `DB_USER` · `DB_PASSWORD` | — | Render에 넣습니다(아래 'DB'). 없으면 앱이 뜨지 않습니다 |
 
 ## 배포 (Render)

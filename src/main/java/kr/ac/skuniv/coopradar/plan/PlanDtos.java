@@ -45,12 +45,12 @@ public final class PlanDtos {
     public record CheckedItem(int rank, int jobId, String title, InstitutionRef institution, Signal signal) {
     }
 
-    /** 요건이 맞는 빈 자리. remaining = 정원 − asOf까지 지원 의사(1 이상). why는 규칙 문장이다. */
+    /** 요건이 맞는 빈 자리. remaining = 정원 − asOf까지 관심(1 이상). why는 규칙 문장이다. */
     public record Alternative(int jobId, String title, InstitutionRef institution, Verdict verdict, Fit fit,
                               int remaining, Signal signal, String why) {
     }
 
-    /** 모집 신호는 리플레이 가상 데이터라 isVirtual·signalSource를 함께 준다. 경고 문장은 없다(ADR-0015). */
+    /** 관심 신호는 리플레이 가상 값 + 실제 담은 수라 isVirtual·signalSource를 함께 준다. 경고 문장은 없다(ADR-0015). */
     public record PlanCheck(LocalDate asOf, boolean isVirtual, Signal.Source signalSource, List<CheckedItem> items,
                             List<Alternative> alternatives) {
     }

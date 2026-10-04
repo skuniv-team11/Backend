@@ -19,7 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 센터 모집 현황판(#24). 지망 점검(#23)과 같은 신호 계산을 직무 전체 표로 보여 준다. 위험 요인은 규칙이다(AI 없음).
+ * 센터 모집 현황판(#24). 지망 점검(#23)과 같은 관심 신호 계산(실제 담은 수는 모든 계정)을 직무 전체 표로 보여 준다.
+ * 위험 요인은 규칙이다(AI 없음).
  * 지난 회차 결과(round_result)는 센터 동의 뒤에만 적재하고 원소 모양도 그때 정하므로 지금은 historyAvailable false.
  */
 @Service
@@ -47,7 +48,8 @@ public class CenterService {
 
         List<Row> rows = new ArrayList<>();
         int seats = 0;
-        int intentTotal = 0;
+        int interestTotal = 0;
+        int liveTotal = 0;
         int zeroSignal = 0;
         int closed = 0;
         for (var job : repository.jobs(round.id())) {
@@ -59,12 +61,13 @@ public class CenterService {
             rows.add(new Row(job.id(), job.institution(), job.title(), job.headcount(), signal, job.eligiblePool(),
                     risks(job, alertCount, properties.narrowPoolBelow()), alertCount, List.of()));
             seats += job.headcount();
-            intentTotal += signal.intent();
-            zeroSignal += signal.intent() == 0 ? 1 : 0;
+            interestTotal += signal.interest();
+            liveTotal += signal.liveInterest();
+            zeroSignal += signal.interest() == 0 ? 1 : 0;
             closed += signal.status() == Signal.Status.CLOSED ? 1 : 0;
         }
         return new CenterBoard(asOf, true, Signal.Source.REPLAY, new RoundRef(round.id(), round.termCode()),
-                new Summary(rows.size(), seats, intentTotal, zeroSignal, closed), false, rows, alerts);
+                new Summary(rows.size(), seats, interestTotal, liveTotal, zeroSignal, closed), false, rows, alerts);
     }
 
     /** 위험 요인(규칙). 순서: 대상 학과 → 포트폴리오 → 자격증 → 주말 → 문서 검토. */

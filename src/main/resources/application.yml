@@ -47,8 +47,9 @@ app:
     model: ${SPIKE_MODEL:claude-sonnet-5-5}
     max-tokens: ${SPIKE_MAX_TOKENS:16000}
   replay:
-    # 시연 기본 기준일(GET /api/rounds/current의 replay.defaultAsOf). 현재 회차 모집기간 밖이면 가까운 끝 날짜로 맞춘다
-    default-as-of: ${REPLAY_DEFAULT_AS_OF:2026-07-18}
+    # 시연 기본 기준일(GET /api/rounds/current의 replay.defaultAsOf, 10/5 7/18 → 7/23 — ADR-0019).
+    # 실제 사용자가 담은 수는 이 날 생긴 관심으로 더한다. 현재 회차 모집기간 밖이면 가까운 끝 날짜로 맞춘다
+    default-as-of: ${REPLAY_DEFAULT_AS_OF:2026-07-23}
   reason:
     # 추천 이유 문장(docs/api #16). 키가 비면 LLM을 부르지 않고 기본 문장(TEMPLATE)으로 답한다
     api-key: ${ANTHROPIC_API_KEY:}

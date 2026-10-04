@@ -60,7 +60,7 @@ class RecommendApiTest {
 
     @Test
     void 기준일에_마감된_직무는_추천에서_빠진다() throws Exception {
-        // 광고홍보콘텐츠학과(10) 4학년: 선호 전공이 맞는 101 AE는 7/18(기준일) 센터 모집마감이라 빠진다(ADR-0016)
+        // 광고홍보콘텐츠학과(10) 4학년: 선호 전공이 맞는 101 AE는 7/18 센터 모집마감이라 기준일(7/23)에 빠진다(ADR-0016)
         String body = recommend(guestToken("STUDENT"), """
                 {"profile": {"departmentId": 10, "grade": 4, "completedSemesters": 7, "gpa": 4.0,
                  "graduationExpected": false, "interestText": "광고 캠페인 기획", "homeAreaCode": null}}""")

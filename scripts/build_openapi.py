@@ -109,16 +109,19 @@ PROFILE_VIEW_PROPS = {
 }
 
 SIGNAL = obj({
-    "intent": d({"type": "integer", "minimum": 0}, "asOf까지 누적한 지원 의사 수"),
-    "interest": d({"type": "integer", "minimum": 0}, "asOf까지 누적한 관심 수"),
+    "interest": d({"type": "integer", "minimum": 0},
+                  "관심 = asOf까지 누적한 내 지망에 담은 사람 수(리플레이 가상 값 + 실제 담은 수, ADR-0019)"),
+    "liveInterest": d({"type": "integer", "minimum": 0},
+                      "interest 중 실제 사용자가 담은 수(순위 무관, 1인 1표, 체험 계정 포함). 지망 점검은 본인 제외. "
+                      "replay.defaultAsOf에 생긴 관심으로 더하므로 asOf가 그보다 앞이거나 그날 마감된 직무면 0"),
     "headcount": {"type": "integer", "minimum": 1},
-    "ratio": d({"type": "number", "minimum": 0}, "intent ÷ headcount, 소수 둘째 자리"),
+    "ratio": d({"type": "number", "minimum": 0}, "interest ÷ headcount, 소수 둘째 자리"),
     "status": R("SignalStatus"),
     "closesOn": nul(DATE),
     "closeReason": nul(R("CloseReason")),
     "closesOnIsVirtual": d(BOOL, "true면 closesOn이 생성기가 정한 가상 날짜"),
     "expectedFullOn": d(nul(DATE), "정원 도달 예상일. 모집기간 안에 닿지 않거나 이미 닿았으면 null"),
-}, desc="모집 신호. status: asOf가 회차 종료일보다 뒤이거나 closesOn ≤ asOf면 CLOSED → 아니면 OPEN. 지원 의사가 정원을 넘어도 몰림 표시·경고는 하지 않는다(ADR-0015)")
+}, desc="모집 신호(관심 = 내 지망에 담은 사람 수). status: asOf가 회차 종료일보다 뒤이거나 closesOn ≤ asOf면 CLOSED → 아니면 OPEN. 관심이 정원을 넘어도 몰림 표시·경고는 하지 않는다(ADR-0015)")
 
 CLOSING = obj({"closesOn": d(nul(DATE), "이 날부터 지원 불가. 화면은 하루 전 날짜를 마감일로 보여 준다"),
                "closeReason": nul(R("CloseReason")), "closesOnIsVirtual": BOOL},
@@ -363,16 +366,18 @@ S.update({
             "fit": R("Fit"),
             "remaining": {"type": "integer", "minimum": 1},
             "signal": R("Signal"),
-            "why": d(STR, "규칙 문장. 1지망과 같은 기관이면 '1지망과 같은 기관의 직무이고', 아니면 '관심 분야와 가깝고' + 지원 의사 0이면 '지금 지원 의사가 0명이에요.', 아니면 '남은 자리가 N개예요.'"),
-        }), maxItems=5), "verdict ELIGIBLE · CLOSED 아님 · 남은 자리(headcount − intent) > 0 · 이미 담은 직무 아님. 적합도 점수 → 남은 자리 순 최대 5개"),
+            "why": d(STR, "규칙 문장. 1지망과 같은 기관이면 '1지망과 같은 기관의 직무이고', 아니면 '관심 분야와 가깝고' + 관심 0이면 '지금 담은 사람이 0명이에요.', 아니면 '남은 자리가 N개예요.'"),
+        }), maxItems=5), "verdict ELIGIBLE · CLOSED 아님 · 남은 자리(headcount − interest) > 0 · 이미 담은 직무 아님. 적합도 점수 → 남은 자리 순 최대 5개"),
     }),
     "CenterBoard": obj({
         "asOf": DATE,
         "isVirtual": BOOL,
         "signalSource": R("SignalSource"),
         "round": R("RoundRef"),
-        "summary": obj({"jobs": INT, "seats": INT, "intentTotal": INT,
-                        "zeroSignalJobs": INT, "closedJobs": INT}),
+        "summary": obj({"jobs": INT, "seats": INT,
+                        "interestTotal": d(INT, "asOf까지 관심 합(가상 + 실제)"),
+                        "liveInterestTotal": d(INT, "interestTotal 중 실제 사용자가 담은 수"),
+                        "zeroSignalJobs": d(INT, "관심이 0인 직무 수"), "closedJobs": INT}),
         "historyAvailable": d(BOOL, "false면 pastZeroRounds 열을 숨긴다"),
         "rows": d(arr(obj({
             "jobId": ID,
@@ -387,6 +392,11 @@ S.update({
         })), "회차 직무 전부"),
         "alerts": arr(R("Alert")),
     }),
+    "JobViews": obj({
+        "jobId": ID,
+        "views": d({"type": "integer", "minimum": 0}, "지금까지 조회 수. 학생 계정마다 직무별로 하루(한국 시간) 한 번 센다"),
+        "todayViews": d({"type": "integer", "minimum": 0}, "오늘(한국 시간) 조회 수"),
+    }, desc="직무 조회수(ADR-0019). 실제 값만(가상 값 없음). 조회는 직무 상세(GET /api/jobs/{jobId})를 학생이 열 때만 센다"),
 })
 
 # 오류 코드 표(README) → ErrorCode enum과 HTTP 상태
@@ -440,6 +450,8 @@ ENDPOINTS = {
                                     ok={200: ("PlanCheck", ["me-plan-check.json"])}, errors=["AS_OF_OUT_OF_RANGE"]),
     "GET /api/center/board": dict(op="getCenterBoard", ok={200: ("CenterBoard", ["center-board.json"])},
                                   errors=["AS_OF_OUT_OF_RANGE"]),
+    "GET /api/jobs/{jobId}/views": dict(op="getJobViews", ok={200: ("JobViews", ["job-views.json"])},
+                                        errors=["JOB_NOT_FOUND"]),
 }
 OK_TEXT = {200: "성공", 201: "만들었음", 204: "본문 없음"}
 STATUS_TEXT = {200: "이미 담겨 있음(그대로)", 201: "새로 담음"}  # POST /api/me/plan/items

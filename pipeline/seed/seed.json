@@ -15475,543 +15475,108 @@
  "replay_signal": [
   {
    "job_id": 101,
-   "signal_date": "2026-07-13",
-   "interest_count": 2,
-   "intent_count": 0
-  },
-  {
-   "job_id": 101,
-   "signal_date": "2026-07-14",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 101,
    "signal_date": "2026-07-15",
-   "interest_count": 1,
-   "intent_count": 1
-  },
-  {
-   "job_id": 101,
-   "signal_date": "2026-07-16",
-   "interest_count": 1,
-   "intent_count": 0
+   "interest_count": 1
   },
   {
    "job_id": 101,
    "signal_date": "2026-07-17",
-   "interest_count": 0,
-   "intent_count": 1
-  },
-  {
-   "job_id": 102,
-   "signal_date": "2026-07-18",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 102,
-   "signal_date": "2026-07-19",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 103,
-   "signal_date": "2026-07-18",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 103,
-   "signal_date": "2026-07-23",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 104,
-   "signal_date": "2026-07-17",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 105,
-   "signal_date": "2026-07-24",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 106,
-   "signal_date": "2026-07-16",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 107,
-   "signal_date": "2026-07-22",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 108,
-   "signal_date": "2026-07-21",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 109,
-   "signal_date": "2026-07-16",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 110,
-   "signal_date": "2026-07-16",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 110,
-   "signal_date": "2026-07-18",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 110,
-   "signal_date": "2026-07-23",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 111,
-   "signal_date": "2026-07-13",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 112,
-   "signal_date": "2026-07-23",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 114,
-   "signal_date": "2026-07-14",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 115,
-   "signal_date": "2026-07-13",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 115,
-   "signal_date": "2026-07-20",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 116,
-   "signal_date": "2026-07-13",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 116,
-   "signal_date": "2026-07-18",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 116,
-   "signal_date": "2026-07-22",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 117,
-   "signal_date": "2026-07-14",
-   "interest_count": 1,
-   "intent_count": 0
+   "interest_count": 1
   },
   {
    "job_id": 117,
    "signal_date": "2026-07-24",
-   "interest_count": 1,
-   "intent_count": 1
-  },
-  {
-   "job_id": 118,
-   "signal_date": "2026-07-17",
-   "interest_count": 2,
-   "intent_count": 0
+   "interest_count": 1
   },
   {
    "job_id": 118,
    "signal_date": "2026-07-19",
-   "interest_count": 0,
-   "intent_count": 1
-  },
-  {
-   "job_id": 118,
-   "signal_date": "2026-07-20",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 119,
-   "signal_date": "2026-07-13",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 119,
-   "signal_date": "2026-07-23",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 120,
-   "signal_date": "2026-07-15",
-   "interest_count": 1,
-   "intent_count": 0
+   "interest_count": 1
   },
   {
    "job_id": 120,
    "signal_date": "2026-07-17",
-   "interest_count": 0,
-   "intent_count": 1
-  },
-  {
-   "job_id": 120,
-   "signal_date": "2026-07-18",
-   "interest_count": 1,
-   "intent_count": 0
+   "interest_count": 1
   },
   {
    "job_id": 120,
    "signal_date": "2026-07-20",
-   "interest_count": 0,
-   "intent_count": 1
-  },
-  {
-   "job_id": 120,
-   "signal_date": "2026-07-24",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 121,
-   "signal_date": "2026-07-15",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 122,
-   "signal_date": "2026-07-13",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 122,
-   "signal_date": "2026-07-15",
-   "interest_count": 1,
-   "intent_count": 0
+   "interest_count": 1
   },
   {
    "job_id": 122,
    "signal_date": "2026-07-16",
-   "interest_count": 1,
-   "intent_count": 1
+   "interest_count": 1
   },
   {
    "job_id": 122,
    "signal_date": "2026-07-17",
-   "interest_count": 1,
-   "intent_count": 1
-  },
-  {
-   "job_id": 122,
-   "signal_date": "2026-07-20",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 122,
-   "signal_date": "2026-07-23",
-   "interest_count": 2,
-   "intent_count": 0
+   "interest_count": 1
   },
   {
    "job_id": 122,
    "signal_date": "2026-07-24",
-   "interest_count": 0,
-   "intent_count": 1
-  },
-  {
-   "job_id": 123,
-   "signal_date": "2026-07-19",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 124,
-   "signal_date": "2026-07-14",
-   "interest_count": 2,
-   "intent_count": 0
+   "interest_count": 1
   },
   {
    "job_id": 124,
    "signal_date": "2026-07-15",
-   "interest_count": 1,
-   "intent_count": 1
+   "interest_count": 1
   },
   {
    "job_id": 124,
    "signal_date": "2026-07-17",
-   "interest_count": 0,
-   "intent_count": 1
+   "interest_count": 1
   },
   {
    "job_id": 124,
    "signal_date": "2026-07-20",
-   "interest_count": 2,
-   "intent_count": 1
-  },
-  {
-   "job_id": 124,
-   "signal_date": "2026-07-23",
-   "interest_count": 1,
-   "intent_count": 0
+   "interest_count": 1
   },
   {
    "job_id": 124,
    "signal_date": "2026-07-24",
-   "interest_count": 0,
-   "intent_count": 1
-  },
-  {
-   "job_id": 125,
-   "signal_date": "2026-07-16",
-   "interest_count": 1,
-   "intent_count": 0
+   "interest_count": 1
   },
   {
    "job_id": 125,
    "signal_date": "2026-07-20",
-   "interest_count": 2,
-   "intent_count": 1
-  },
-  {
-   "job_id": 126,
-   "signal_date": "2026-07-13",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 126,
-   "signal_date": "2026-07-19",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 127,
-   "signal_date": "2026-07-14",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 127,
-   "signal_date": "2026-07-18",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 127,
-   "signal_date": "2026-07-23",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 129,
-   "signal_date": "2026-07-15",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 129,
-   "signal_date": "2026-07-17",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 129,
-   "signal_date": "2026-07-23",
-   "interest_count": 1,
-   "intent_count": 0
+   "interest_count": 1
   },
   {
    "job_id": 131,
    "signal_date": "2026-07-14",
-   "interest_count": 2,
-   "intent_count": 1
-  },
-  {
-   "job_id": 131,
-   "signal_date": "2026-07-22",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 132,
-   "signal_date": "2026-07-14",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 132,
-   "signal_date": "2026-07-17",
-   "interest_count": 1,
-   "intent_count": 0
+   "interest_count": 1
   },
   {
    "job_id": 132,
    "signal_date": "2026-07-18",
-   "interest_count": 1,
-   "intent_count": 1
-  },
-  {
-   "job_id": 132,
-   "signal_date": "2026-07-19",
-   "interest_count": 1,
-   "intent_count": 0
+   "interest_count": 1
   },
   {
    "job_id": 132,
    "signal_date": "2026-07-20",
-   "interest_count": 1,
-   "intent_count": 1
-  },
-  {
-   "job_id": 132,
-   "signal_date": "2026-07-24",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 133,
-   "signal_date": "2026-07-16",
-   "interest_count": 2,
-   "intent_count": 0
+   "interest_count": 1
   },
   {
    "job_id": 133,
    "signal_date": "2026-07-17",
-   "interest_count": 0,
-   "intent_count": 1
-  },
-  {
-   "job_id": 133,
-   "signal_date": "2026-07-19",
-   "interest_count": 1,
-   "intent_count": 0
+   "interest_count": 1
   },
   {
    "job_id": 133,
    "signal_date": "2026-07-23",
-   "interest_count": 1,
-   "intent_count": 1
-  },
-  {
-   "job_id": 134,
-   "signal_date": "2026-07-16",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 134,
-   "signal_date": "2026-07-19",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 135,
-   "signal_date": "2026-07-16",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 136,
-   "signal_date": "2026-07-13",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 136,
-   "signal_date": "2026-07-14",
-   "interest_count": 1,
-   "intent_count": 0
+   "interest_count": 1
   },
   {
    "job_id": 136,
    "signal_date": "2026-07-15",
-   "interest_count": 0,
-   "intent_count": 1
-  },
-  {
-   "job_id": 136,
-   "signal_date": "2026-07-20",
-   "interest_count": 2,
-   "intent_count": 0
+   "interest_count": 1
   },
   {
    "job_id": 136,
    "signal_date": "2026-07-22",
-   "interest_count": 0,
-   "intent_count": 1
-  },
-  {
-   "job_id": 136,
-   "signal_date": "2026-07-24",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 138,
-   "signal_date": "2026-07-24",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 139,
-   "signal_date": "2026-07-14",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 139,
-   "signal_date": "2026-07-22",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 140,
-   "signal_date": "2026-07-13",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 140,
-   "signal_date": "2026-07-18",
-   "interest_count": 1,
-   "intent_count": 0
-  },
-  {
-   "job_id": 140,
-   "signal_date": "2026-07-23",
-   "interest_count": 1,
-   "intent_count": 0
+   "interest_count": 1
   }
  ]
 }
