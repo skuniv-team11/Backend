@@ -44,13 +44,13 @@ CHILDREN = {
                        "page", "quote"],
     "review_alert": ["id", "institution_id", "job_id", "kind", "field_key", "description",
                      "source_document_id", "page_a", "quote_a", "page_b", "quote_b"],
-    "testimonial": ["id", "source_document_id", "institution_id", "team_text", "activities", "page"],
+    "testimonial": ["id", "source_document_id", "institution_id", "team_text", "activities", "outcomes", "page"],
     "replay_signal": ["job_id", "signal_date", "interest_count"],
 }
 # upsert 키(기본은 id)
 KEYS = {"area": "code"}
 ARRAYS = {("job", "weekdays"): "varchar(3)[]", ("job", "benefits"): "varchar(20)[]",
-          ("testimonial", "activities"): "text[]"}
+          ("testimonial", "activities"): "text[]", ("testimonial", "outcomes"): "text[]"}
 DATES = {("recruit_round", "recruit_start"), ("recruit_round", "recruit_end"),
          ("department", "enrolled_as_of"), ("institution", "nts_checked_on"), ("job", "period_start"),
          ("job", "period_end"), ("job", "closes_on"), ("replay_signal", "signal_date")}

@@ -22,6 +22,7 @@ import kr.ac.skuniv.coopradar.recommend.RecommendDtos.Fit;
  * </pre>
  * 선호 전공 가중치(5)가 나머지 합(4)보다 커서 전공이 맞는 직무가 늘 먼저다. 같은 점수면 리스트 순번.
  * 등급: 선호 전공이 맞고, 관심 문장을 안 적었거나 관심 유사도가 0.5 이상이면 HIGH, 아니면 MEDIUM.
+ * 기본 이유 문장과 근거 인용은 {@link ReasonTemplates}·{@link EvidencePicker}가 만든다(ADR-0020).
  */
 public final class FitScorer {
 
@@ -42,8 +43,7 @@ public final class FitScorer {
     /**
      * @param interest 관심 키워드 유사도(0~1, 후보 중 최댓값 기준). 관심 문장이 없으면 0
      */
-    public record Scored(Judged judged, Features features, double score, double interest, boolean majorFit, Fit fit,
-                         String reasonTemplate) {
+    public record Scored(Judged judged, Features features, double score, double interest, boolean majorFit, Fit fit) {
 
         public int jobId() {
             return judged.requirement().jobId();
@@ -81,10 +81,8 @@ public final class FitScorer {
             boolean hiring = "HIRING".equals(f.jobType());
             double score = (majorFit ? W_MAJOR : 0) + W_INTEREST * sims[i] + (eligible ? W_ELIGIBLE : 0)
                     + W_STIPEND * stipendScore(f.stipend()) + (hiring ? W_HIRING : 0);
-            boolean interestClose = hasInterest && sims[i] >= HIGH_INTEREST;
-            Fit fit = majorFit && (!hasInterest || interestClose) ? Fit.HIGH : Fit.MEDIUM;
-            out.add(new Scored(j, f, score, sims[i], majorFit, fit,
-                    template(major, interestClose, hiring, eligible)));
+            Fit fit = majorFit && (!hasInterest || interestClose(sims[i])) ? Fit.HIGH : Fit.MEDIUM;
+            out.add(new Scored(j, f, score, sims[i], majorFit, fit));
         }
         out.sort(Comparator.comparingDouble(Scored::score).reversed()
                 .thenComparingInt(s -> s.judged().requirement().listSeq()));
@@ -101,29 +99,8 @@ public final class FitScorer {
         return Math.max(0, Math.min(1, r));
     }
 
-    /**
-     * 바로 보여 줄 기본 이유 문장(규칙). 해당하는 이유를 앞에서 두 개까지 이어 붙인다.
-     * #16 이유 문장이 실패해도 이 문장이 남는다.
-     */
-    static String template(MajorMatch major, boolean interestClose, boolean hiring, boolean eligible) {
-        List<String[]> clauses = new ArrayList<>(); // {이어지는 꼴, 끝맺는 꼴}
-        if (interestClose) {
-            clauses.add(new String[] {"관심 분야와 직무 내용이 가깝고", "관심 분야와 직무 내용이 가까워요"});
-        }
-        if (major == MajorMatch.MATCH) {
-            clauses.add(new String[] {"선호 전공에 소속 학과가 들어 있고", "선호 전공에 소속 학과가 들어 있어요"});
-        } else if (major == MajorMatch.OPEN) {
-            clauses.add(new String[] {"전공 무관 자리이고", "전공 무관 자리예요"});
-        }
-        if (hiring) {
-            clauses.add(new String[] {"채용연계형이고", "채용연계형이에요"});
-        }
-        if (clauses.isEmpty()) {
-            return eligible ? "지원 조건을 모두 통과한 자리예요." : "확인할 조건만 챙기면 지원할 수 있는 자리예요.";
-        }
-        if (clauses.size() == 1) {
-            return clauses.getFirst()[1] + ".";
-        }
-        return clauses.get(0)[0] + ", " + clauses.get(1)[1] + ".";
+    /** 관심 유사도가 높은가(적합도 HIGH와 기본 이유 문장의 '관심 분야' 기준). 관심 문장이 없으면 0이라 false. */
+    static boolean interestClose(double interest) {
+        return interest > 0 && interest >= HIGH_INTEREST;
     }
 }

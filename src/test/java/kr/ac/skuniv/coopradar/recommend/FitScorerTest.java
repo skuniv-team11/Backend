@@ -18,7 +18,7 @@ import kr.ac.skuniv.coopradar.recommend.FitScorer.Scored;
 import kr.ac.skuniv.coopradar.recommend.RecommendDtos.Fit;
 import org.junit.jupiter.api.Test;
 
-/** 적합도 점수·등급·기본 이유 문장(ADR-0018). DB 없이 본다. 학생 학과는 43. */
+/** 적합도 점수·등급(ADR-0018). DB 없이 본다. 학생 학과는 43. 기본 이유 문장은 ReasonTemplatesTest. */
 class FitScorerTest {
 
     private static final int DEPT = 43;
@@ -36,7 +36,8 @@ class FitScorerTest {
         assertThat(s.get(0).fit()).isEqualTo(Fit.MEDIUM); // 전공은 맞지만 관심과 멀다
         assertThat(s.get(1).fit()).isEqualTo(Fit.MEDIUM); // 관심은 가깝지만 전공 밖
         assertThat(s.get(1).interest()).isEqualTo(1.0);
-        assertThat(s.get(1).reasonTemplate()).isEqualTo("관심 분야와 직무 내용이 가깝고, 채용연계형이에요.");
+        assertThat(FitScorer.interestClose(s.get(1).interest())).isTrue();
+        assertThat(FitScorer.interestClose(s.get(0).interest())).isFalse();
     }
 
     @Test
@@ -48,8 +49,6 @@ class FitScorerTest {
         List<Scored> withInterest = FitScorer.score(judge(jobs), f, "뷰티 SNS 마케팅");
         assertThat(withInterest).extracting(Scored::jobId).containsExactly(1, 2);
         assertThat(withInterest).extracting(Scored::fit).containsExactly(Fit.HIGH, Fit.MEDIUM);
-        assertThat(withInterest.get(0).reasonTemplate())
-                .isEqualTo("관심 분야와 직무 내용이 가깝고, 선호 전공에 소속 학과가 들어 있어요.");
 
         List<Scored> noInterest = FitScorer.score(judge(jobs), f, "  ");
         assertThat(noInterest).extracting(Scored::fit).containsOnly(Fit.HIGH);
@@ -68,7 +67,6 @@ class FitScorerTest {
                 2, features("가", "EXPERIENCE", 1_617_660),
                 3, features("가", "EXPERIENCE", 2_156_880));
         assertThat(FitScorer.score(judge(jobs), f, null)).extracting(Scored::jobId).containsExactly(3, 1, 2);
-        assertThat(FitScorer.score(judge(jobs), f, null).get(2).reasonTemplate()).isEqualTo("지원 조건을 모두 통과한 자리예요.");
     }
 
     @Test

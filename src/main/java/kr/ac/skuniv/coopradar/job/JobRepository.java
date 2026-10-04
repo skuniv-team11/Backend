@@ -161,14 +161,14 @@ public class JobRepository {
     /** 같은 기관의 선배 수기. 최근 학기 먼저, 같은 학기는 쪽 순. */
     List<SeniorNote> seniorNotes(int institutionId) {
         return db.sql("""
-                        SELECT d.term_code, t.team_text, d.title, t.page, t.activities
+                        SELECT d.term_code, t.team_text, d.title, t.page, t.activities, t.outcomes
                         FROM testimonial t
                         JOIN source_document d ON d.id = t.source_document_id
                         WHERE t.institution_id = :institution
                         ORDER BY d.term_code DESC, t.page, t.id""")
                 .param("institution", institutionId)
                 .query((rs, n) -> new SeniorNote(rs.getString("term_code"), rs.getString("team_text"),
-                        rs.getString("title"), rs.getInt("page"), strings(rs, "activities")))
+                        rs.getString("title"), rs.getInt("page"), strings(rs, "activities"), strings(rs, "outcomes")))
                 .list();
     }
 

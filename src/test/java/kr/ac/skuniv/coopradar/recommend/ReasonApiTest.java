@@ -65,7 +65,7 @@ class ReasonApiTest {
     void LLM_문장이_검증을_통과하면_LLM_같은_요청은_CACHE이고_계약_모양과_같다() throws Exception {
         String token = guestToken("STUDENT");
         NEXT.set(Optional.of(new ReasonDraft(
-                "뷰티 브랜드 SNS 마케팅에 관심이 있다면, 선배가 맡았던 '신제품 기획과 마케팅 업무 전반 보조'와 바로 이어지는 자리예요.",
+                "뷰티 브랜드 SNS 마케팅에 관심이 있다면, 선배가 맡았던 'SNS 계정 관리 및 업로드'와 바로 이어지는 자리예요.",
                 List.of(1L))));
         String body = reason(token, 122, "\"뷰티 브랜드 SNS 마케팅\"")
                 .andExpect(status().isOk())
@@ -74,7 +74,13 @@ class ReasonApiTest {
                 .andExpect(jsonPath("$.citations[0].sourceType").value("TESTIMONIAL"))
                 .andReturn().getResponse().getContentAsString();
         Contract.assertSameShape(body, Contract.responseExample("getRecommendationReason", 200, null));
-        assertThat(JsonPath.<String>read(body, "$.text")).startsWith("뷰티 브랜드 SNS 마케팅에 관심이 있다면");
+        assertThat(JsonPath.<String>read(body, "$.text")).startsWith("뷰티 브랜드 SNS 마케팅에 관심이 있다면")
+                // 추천 안 같은 팀 직무(123 해외 마케팅)와의 차이는 규칙 문장으로 덧붙인다(ADR-0020)
+                .endsWith("같은 팀의 해외 마케팅과 달리 '영어 가능자' 요건은 없어요.");
+        // 근거 인용은 추천(#15)과 같다
+        assertThat(JsonPath.<String>read(body, "$.citations[0].quote")).isEqualTo("SNS 계정 관리 및 업로드");
+        // LLM에는 기관 업종과 주차 계획도 사실로 준다
+        assertThat(LAST_MESSAGE.get()).contains("기관 업종: 도소매 제조업 / 화장품").contains("주차 계획: ");
 
         // LLM에는 평점을 보내지 않는다
         assertThat(LAST_MESSAGE.get()).contains("메이크업디자인학과").contains("3학년").doesNotContain("3.4");
@@ -97,6 +103,21 @@ class ReasonApiTest {
 
         NEXT.set(Optional.of(new ReasonDraft("근거 번호가 맞지 않는 문장이에요.", List.of(9L))));
         reason(token, 122, "\"상품 기획\"").andExpect(jsonPath("$.source").value("TEMPLATE"));
+        assertThat(CALLS.get()).isEqualTo(3);
+    }
+
+    @Test
+    void 선호_전공_밖이면_안내를_붙이고_관심_낱말을_원문에_없는_업종에_붙이면_TEMPLATE() throws Exception {
+        String token = guestToken("STUDENT");
+        // 세정 SNS·영상(102): 의류 회사, 예시 학생 학과는 선호 전공 밖
+        NEXT.set(Optional.of(new ReasonDraft("'SNS 매거진 채널' 콘텐츠 기획을 거들어요.", List.of(1L))));
+        reason(token, 102, "\"뷰티 브랜드 SNS 마케팅\"")
+                .andExpect(jsonPath("$.source").value("LLM"))
+                .andExpect(jsonPath("$.text").value("'SNS 매거진 채널' 콘텐츠 기획을 거들어요. " + ReasonTemplates.MAJOR_NOT_LISTED));
+        NEXT.set(Optional.of(new ReasonDraft("SNS 매거진 채널에서 뷰티 브랜드의 마케팅 전략을 배워요.", List.of())));
+        reason(token, 102, "\"뷰티 브랜드 SNS 콘텐츠\"").andExpect(jsonPath("$.source").value("TEMPLATE"));
+        NEXT.set(Optional.of(new ReasonDraft("메이크업 디자인 지식을 바탕으로 콘텐츠 제작을 익혀요.", List.of())));
+        reason(token, 102, "\"뷰티 SNS 콘텐츠\"").andExpect(jsonPath("$.source").value("TEMPLATE"));
         assertThat(CALLS.get()).isEqualTo(3);
     }
 

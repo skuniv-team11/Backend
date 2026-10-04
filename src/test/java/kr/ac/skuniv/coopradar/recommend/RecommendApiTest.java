@@ -39,11 +39,28 @@ class RecommendApiTest {
                 .andExpect(jsonPath("$.items[0].jobId").value(122))
                 .andExpect(jsonPath("$.items[0].fit").value("HIGH"))
                 .andExpect(jsonPath("$.items[0].reasonStatus").value("PENDING"))
-                .andExpect(jsonPath("$.items[0].reasonTemplate")
-                        .value("관심 분야와 직무 내용이 가깝고, 선호 전공에 소속 학과가 들어 있어요."))
+                // 기본 문장은 관심과 겹친 원문·선호 전공 표기를 그대로 짚고, 같은 팀 해외 마케팅과의 차이를 붙인다(ADR-0020)
+                .andExpect(jsonPath("$.items[0].reasonTemplate").value(
+                        "관심 분야가 직무 개요 '자사 SNS 채널 콘텐츠 운영 및 홍보 마케팅 업무 지원'과 겹치고, "
+                                + "선호 전공 '미용예술대학'에 소속 학과가 들어 있어요. "
+                                + "같은 팀의 해외 마케팅과 달리 '영어 가능자' 요건은 없어요."))
+                // 인용은 관심과 겹치는 같은 팀 수기 한 줄 → 문장이 짚은 계획서 조각(글머리표 없이)
                 .andExpect(jsonPath("$.items[0].citations[0].sourceType").value("TESTIMONIAL"))
+                .andExpect(jsonPath("$.items[0].citations[0].quote").value("SNS 계정 관리 및 업로드"))
+                .andExpect(jsonPath("$.items[0].citations[0].page").value(15))
                 .andExpect(jsonPath("$.items[0].citations[1].sourceType").value("OPERATION_PLAN"))
+                .andExpect(jsonPath("$.items[0].citations[1].quote").value("자사 SNS 채널 콘텐츠 운영 및 홍보 마케팅 업무 지원"))
                 .andExpect(jsonPath("$.items[1].jobId").value(123))
+                .andExpect(jsonPath("$.items[1].reasonTemplate").value(org.hamcrest.Matchers.endsWith(
+                        "같은 팀의 국내 마케팅과 달리 '영어 가능자' 요건이 있어요.")))
+                // AMD(세일즈팀)에는 마케팅팀 수기를 붙이지 않는다
+                .andExpect(jsonPath("$.items[2].jobId").value(120))
+                .andExpect(jsonPath("$.items[2].citations.length()").value(1))
+                .andExpect(jsonPath("$.items[2].citations[0].sourceType").value("OPERATION_PLAN"))
+                // 선호 전공 밖인 세정 SNS·영상은 그 사실을 문장에 붙인다
+                .andExpect(jsonPath("$.items[4].jobId").value(102))
+                .andExpect(jsonPath("$.items[4].reasonTemplate").value(org.hamcrest.Matchers.endsWith(
+                        ReasonTemplates.MAJOR_NOT_LISTED)))
                 .andExpect(jsonPath("$.blockedBy").isEmpty())
                 .andReturn().getResponse().getContentAsString();
         Contract.assertSameShape(body, Contract.responseExample("getRecommendations", 200, null));
@@ -56,6 +73,8 @@ class RecommendApiTest {
         List<Integer> top4 = JsonPath.read(body, "$.items[0:4].jobId");
         assertThat(top4).containsExactlyInAnyOrder(120, 122, 123, 134);
         assertThat(body).doesNotContain("score");
+        List<String> quotes = JsonPath.read(body, "$.items[*].citations[*].quote");
+        assertThat(quotes).noneMatch(q -> q.startsWith("*"));
     }
 
     @Test

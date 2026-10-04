@@ -78,7 +78,12 @@ public record JobDetail(
     public record Evidence(String fieldKey, String label, String rawValue, String documentTitle, int page, String quote) {
     }
 
-    /** 같은 기관의 선배 수기. 이름·학과·학년은 없다(시드에도 없다). */
-    public record SeniorNote(String termCode, String teamText, String documentTitle, int page, List<String> activities) {
+    /**
+     * 같은 기관의 선배 수기. 이름·학과·학년·소감은 없다(시드에도 없다).
+     *
+     * @param outcomes 실습 결과 중 원문 그대로 자른 사실 구절(만든 결과물·맡은 일 등, 0~3개). '우수' 수기라 감상·평가는 뺐다(ADR-0020)
+     */
+    public record SeniorNote(String termCode, String teamText, String documentTitle, int page, List<String> activities,
+                             List<String> outcomes) {
     }
 }

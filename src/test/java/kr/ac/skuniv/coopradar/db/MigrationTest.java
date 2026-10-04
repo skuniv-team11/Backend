@@ -71,4 +71,20 @@ class MigrationTest {
                 "replay_signal.interest_count", "job_view.id", "job_view.job_id", "job_view.user_id",
                 "job_view.viewed_on");
     }
+
+    @Test
+    void V4가_적용되고_수기에_실습_결과_칸이_있다() {
+        Boolean success = jdbc.sql("SELECT success FROM flyway_schema_history WHERE version = '4'")
+                .query(Boolean.class)
+                .single();
+        assertThat(success).isTrue();
+        // ADR-0020: 실습 결과 중 사실 구절만. 소감 칸은 두지 않는다
+        List<String> columns = jdbc.sql("""
+                        SELECT column_name FROM information_schema.columns
+                        WHERE table_schema = 'public' AND table_name = 'testimonial'""")
+                .query(String.class)
+                .list();
+        assertThat(columns).containsExactlyInAnyOrder("id", "source_document_id", "institution_id", "team_text",
+                "activities", "outcomes", "page");
+    }
 }

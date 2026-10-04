@@ -1,17 +1,22 @@
 package kr.ac.skuniv.coopradar.recommend;
 
+import java.sql.Array;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import kr.ac.skuniv.coopradar.job.Stipend;
+import kr.ac.skuniv.coopradar.recommend.EvidencePicker.Testimonial;
+import kr.ac.skuniv.coopradar.recommend.EvidenceText.JobText;
 import kr.ac.skuniv.coopradar.recommend.FitScorer.Features;
-import kr.ac.skuniv.coopradar.recommend.RecommendDtos.Citation;
-import kr.ac.skuniv.coopradar.recommend.RecommendDtos.SourceType;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-/** 추천에 쓰는 시드 읽기(직무 텍스트·유형·지원비, 근거 인용). 시드 테이블은 읽기만 한다(V1 원칙). */
+/** 추천에 쓰는 시드 읽기(직무 텍스트·유형·지원비, 인용 재료·수기·선호 전공 표기). 시드 테이블은 읽기만 한다(V1 원칙). */
 @Repository
 public class RecommendRepository {
 
@@ -44,51 +49,99 @@ public class RecommendRepository {
         return out;
     }
 
-    /** 같은 기관의 가장 최근 선배 수기 1건 — 첫 번째 실습 내용을 인용한다. */
-    Optional<Citation> testimonialCitation(int institutionId) {
+    /**
+     * 회차 직무 원문과 칸별 근거 쪽(인용 조각을 만드는 재료, ADR-0020). 주차 계획은 seq 순. 계획서 문서명은 그 직무 근거의 문서.
+     */
+    List<JobText> jobTexts(int roundId) {
         return db.sql("""
-                        SELECT d.title, t.page, t.activities[1] AS quote
-                        FROM testimonial t
-                        JOIN source_document d ON d.id = t.source_document_id
-                        WHERE t.institution_id = :institution
-                        ORDER BY d.term_code DESC, t.page, t.id
-                        LIMIT 1""")
-                .param("institution", institutionId)
-                .query((rs, n) -> new Citation(SourceType.TESTIMONIAL, rs.getString("title"), rs.getInt("page"),
-                        rs.getString("quote")))
-                .optional();
+                        SELECT j.id, j.institution_id, j.team, j.title, j.overview, j.competencies, j.education_goal,
+                               (SELECT array_agg(p.content ORDER BY p.seq) FROM job_weekly_plan p WHERE p.job_id = j.id) AS weekly,
+                               (SELECT e.page FROM field_evidence e WHERE e.job_id = j.id AND e.field_key = 'jobOverview') AS p_overview,
+                               (SELECT e.page FROM field_evidence e WHERE e.job_id = j.id AND e.field_key = 'competencies') AS p_comp,
+                               (SELECT e.page FROM field_evidence e WHERE e.job_id = j.id AND e.field_key = 'educationGoal') AS p_goal,
+                               (SELECT e.page FROM field_evidence e WHERE e.job_id = j.id AND e.field_key = 'majorRequirement') AS p_major,
+                               (SELECT d.title FROM field_evidence e JOIN source_document d ON d.id = e.source_document_id
+                                WHERE e.job_id = j.id ORDER BY e.id LIMIT 1) AS plan_title
+                        FROM job j
+                        WHERE j.round_id = :round
+                        ORDER BY j.list_seq""")
+                .param("round", roundId)
+                .query((rs, n) -> new JobText(rs.getInt("id"), rs.getInt("institution_id"), rs.getString("team"),
+                        rs.getString("title"), rs.getString("overview"), rs.getString("competencies"),
+                        rs.getString("education_goal"), strings(rs.getArray("weekly")), page(rs, "p_overview"),
+                        page(rs, "p_comp"), page(rs, "p_goal"), page(rs, "p_major"), rs.getString("plan_title")))
+                .list();
     }
 
-    /** 운영계획서의 직무 개요 근거(없으면 교육 목표). */
-    Optional<Citation> planCitation(int jobId) {
-        List<Citation> rows = db.sql("""
-                        SELECT d.title, e.page, e.quote
-                        FROM field_evidence e
-                        JOIN source_document d ON d.id = e.source_document_id
-                        WHERE e.job_id = :job AND e.field_key IN ('jobOverview', 'educationGoal')
-                        ORDER BY CASE e.field_key WHEN 'jobOverview' THEN 0 ELSE 1 END""")
-                .param("job", jobId)
-                .query((rs, n) -> new Citation(SourceType.OPERATION_PLAN, rs.getString("title"), rs.getInt("page"),
-                        rs.getString("quote")))
-                .list();
-        return rows.stream().findFirst();
+    /** 회차 기관의 선배 수기(기관별로 최근 학기 먼저). 실습 내용만 — 실습 결과·소감은 인용에 쓰지 않는다. */
+    Map<Integer, List<Testimonial>> testimonials(int roundId) {
+        Map<Integer, List<Testimonial>> out = new HashMap<>();
+        db.sql("""
+                        SELECT t.institution_id, d.title, d.term_code, t.team_text, t.page, t.activities
+                        FROM testimonial t
+                        JOIN source_document d ON d.id = t.source_document_id
+                        WHERE t.institution_id IN (SELECT institution_id FROM job WHERE round_id = :round)
+                        ORDER BY t.institution_id, d.term_code DESC, t.page, t.id""")
+                .param("round", roundId)
+                .query(rs -> {
+                    Testimonial t = new Testimonial(rs.getInt("institution_id"), rs.getString("title"),
+                            rs.getString("term_code"), rs.getString("team_text"), rs.getInt("page"),
+                            strings(rs.getArray("activities")));
+                    out.computeIfAbsent(t.institutionId(), k -> new ArrayList<>()).add(t);
+                });
+        return out;
+    }
+
+    /** 직무별로, 이 학과가 들어 있는 선호 전공 표기(예: 메이크업디자인학과 → '미용예술대학'). 여러 개면 표기 id가 작은 것. */
+    Map<Integer, String> majorLabels(int roundId, int departmentId) {
+        Map<Integer, String> out = new HashMap<>();
+        db.sql("""
+                        SELECT jma.job_id, ma.label
+                        FROM job_major_alias jma
+                        JOIN job j ON j.id = jma.job_id
+                        JOIN major_alias ma ON ma.id = jma.alias_id
+                        JOIN major_alias_department mad ON mad.alias_id = jma.alias_id
+                        WHERE j.round_id = :round AND mad.department_id = :department
+                        ORDER BY jma.job_id, ma.id""")
+                .param("round", roundId)
+                .param("department", departmentId)
+                .query(rs -> {
+                    out.putIfAbsent(rs.getInt("job_id"), rs.getString("label"));
+                });
+        return out;
     }
 
     /** 이유 문장 프롬프트에 넣는 직무 사실. 원문 그대로(검증에서 인용 대조에도 쓴다). */
-    record JobFacts(String institution, String title, String team, String jobType, String overview,
-                    String competencies, String educationGoal, String majorText) {
+    record JobFacts(String institution, String businessType, String businessItem, String title, String team,
+                    String jobType, String overview, String competencies, String educationGoal, String weeklyPlan,
+                    String majorText) {
     }
 
     Optional<JobFacts> facts(int jobId) {
         return db.sql("""
-                        SELECT i.name AS institution, j.title, j.team, j.job_type, j.overview, j.competencies,
-                               j.education_goal, j.major_text
+                        SELECT i.name AS institution, i.business_type, i.business_item, j.title, j.team, j.job_type,
+                               j.overview, j.competencies, j.education_goal, j.major_text,
+                               (SELECT string_agg(p.content, ' / ' ORDER BY p.seq) FROM job_weekly_plan p
+                                WHERE p.job_id = j.id) AS weekly
                         FROM job j JOIN institution i ON i.id = j.institution_id
                         WHERE j.id = :job""")
                 .param("job", jobId)
-                .query((rs, n) -> new JobFacts(rs.getString("institution"), rs.getString("title"), rs.getString("team"),
+                .query((rs, n) -> new JobFacts(rs.getString("institution"), rs.getString("business_type"),
+                        rs.getString("business_item"), rs.getString("title"), rs.getString("team"),
                         rs.getString("job_type"), rs.getString("overview"), rs.getString("competencies"),
-                        rs.getString("education_goal"), rs.getString("major_text")))
+                        rs.getString("education_goal"), rs.getString("weekly"), rs.getString("major_text")))
                 .optional();
+    }
+
+    private static Integer page(ResultSet rs, String column) throws SQLException {
+        int v = rs.getInt(column);
+        return rs.wasNull() ? null : v;
+    }
+
+    private static List<String> strings(Array array) throws SQLException {
+        if (array == null) {
+            return List.of();
+        }
+        return Arrays.stream((Object[]) array.getArray()).map(String::valueOf).toList();
     }
 }

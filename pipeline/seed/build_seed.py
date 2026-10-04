@@ -1,7 +1,8 @@
 """시드 만들기: 참여기관 리스트 + 운영계획서 추출(E1) + 수기 추출(E2) + 국세청 상태(E6) + 배정 수 → seed.json (ADR-0014)
 
     python build_seed.py --list "<참여기관 리스트.xlsx>" --plans <e1 out/full 폴더> --reviews <e2 out 폴더> \\
-        --nts <nts_status.csv> --nts-checked-on 2026-10-01 --assigned out/final_assigned.csv [--pages out/pages.csv]
+        --nts <nts_status.csv> --nts-checked-on 2026-10-01 --assigned out/final_assigned.csv \\
+        --outcomes ../e2_reviews/out/outcomes.json [--pages out/pages.csv]
     python to_sql.py        # seed.json → R__seed.sql
 
 값을 어디서 가져오나(같은 항목이 두 문서에 있으면 아래 '기준'을 쓰고, 다르면 LIST_MISMATCH 알림을 만든다)
@@ -47,6 +48,7 @@ JOB_KEYS = {"department": "department", "job_title": "jobTitle", "work_address":
             "job_overview": "jobOverview", "major_requirement": "majorRequirement", "headcount": "headcount",
             "grade_requirement": "gradeRequirement", "gpa_requirement": "gpaRequirement",
             "competencies": "competencies", "portfolio": "portfolio", "certificate": "certificate"}
+OUTCOME_MAX = 60   # 수기 실습 결과 구절 하나의 최대 글자 수(extract_outcomes.py와 같음)
 LIMITS = {("institution", "name"): 100, ("institution", "business_type"): 100, ("institution", "business_item"): 200,
           ("institution", "address"): 200, ("workplace", "address"): 200, ("job", "team"): 100,
           ("job", "title"): 200, ("job", "work_hours_text"): 100, ("job", "certificate_text"): 200,
@@ -258,6 +260,19 @@ def match_jobs(rows, jobs):
     best = max(itertools.permutations(range(len(jobs))),
                key=lambda p: sum(score(rows[i], jobs[k]) for i, k in enumerate(p)) - 1e-3 * sum(abs(i - k) for i, k in enumerate(p)))
     return [jobs[k] for k in best]
+
+
+def load_outcomes(path):
+    """extract_outcomes.py 결과 → {(원본 수기 파일, 쪽): [사실 구절]}. 구절은 원문 그대로이고 60자 이내다."""
+    data = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+    out = {}
+    for r in data["records"]:
+        items = [text(x) for x in r["outcomes"] if text(x)]
+        for x in items:
+            if len(x) > OUTCOME_MAX:
+                fail(f"{r['source']} p{r['text_page']}: 실습 결과 구절 {len(x)}자 > {OUTCOME_MAX}자 — {x[:30]}…")
+        out[(r["source"], r["text_page"])] = items
+    return out
 
 
 # ───────────── 만들기 ─────────────
@@ -532,7 +547,9 @@ def build(a):
     if set(job_overrides) - used_overrides:
         fail(f"overrides.json에 쓰이지 않은 키: {sorted(set(job_overrides) - used_overrides)}")
 
-    # 수기(E2): 2026-2 참여기관에 연결되는 것만. 이름·학과·학년·사진·소감은 넣지 않는다
+    # 수기(E2): 2026-2 참여기관에 연결되는 것만. 이름·학과·학년·사진·소감은 넣지 않는다.
+    # 실습 결과는 extract_outcomes.py가 원문에서 고른 사실 구절만 넣는다(감상·배운 점·개인 진로는 버림, ADR-0020)
+    outcomes = load_outcomes(a.outcomes)
     inst_ids = ids.data["institution"]
     by_term = {}
     for f in sorted(glob.glob(str(pathlib.Path(a.reviews) / "*.json"))):
@@ -556,9 +573,13 @@ def build(a):
             acts = [x for x in (text(v) for v in t["activities"]) if x]
             if not acts or not 0 < t["text_page"] <= pages[src]:
                 fail(f"{term} {t['institution']}: 실습 내용이 비었거나 쪽 번호가 문서 밖")
+            if (src, t["text_page"]) not in outcomes:
+                fail(f"{term} {t['institution']} p{t['text_page']}: 실습 결과 구절이 없습니다 — "
+                     f"e2_reviews/extract_outcomes.py를 다시 돌리세요")
             seed["testimonial"].append({"id": next(t_seq), "source_document_id": doc_id,
                                         "institution_id": inst_ids[canon(t["institution"], t["department"])],
-                                        "team_text": text(t["department"]), "activities": acts, "page": t["text_page"]})
+                                        "team_text": text(t["department"]), "activities": acts,
+                                        "outcomes": outcomes[(src, t["text_page"])], "page": t["text_page"]})
 
     # 리플레이(가상 신호)
     signals, virtual = replay.generate(jobs_for_replay, start, end, rnd["replay_seed"])
@@ -595,6 +616,7 @@ def main():
     ap.add_argument("--plans", required=True, help="운영계획서 본 추출 결과 폴더(e1 out/full)")
     ap.add_argument("--reviews", required=True, help="수기 추출 결과 폴더(e2 out)")
     ap.add_argument("--assigned", required=True, help="matching_counts.py 결과 CSV")
+    ap.add_argument("--outcomes", required=True, help="수기 실습 결과 사실 구절(e2 extract_outcomes.py 결과 JSON)")
     ap.add_argument("--nts", help="e6 nts_status.csv")
     ap.add_argument("--nts-checked-on", help="국세청 조회한 날(YYYY-MM-DD)")
     ap.add_argument("--pages", help="원본 PDF 쪽수 CSV(file,pages). 추출 JSON에 source_pages가 없을 때")
@@ -618,7 +640,8 @@ def main():
     print(f"기관 {c['institution']} · 직무 {c['job']} · 정원 {sum(j['headcount'] for j in seed['job'])} · "
           f"배정 {sum(j['final_assigned'] for j in seed['job'])} · 학과 {c['department']} · 전공 표기 {c['major_alias']}"
           f"(학과 연결 {len({m['alias_id'] for m in seed['major_alias_department']})}, 확정 대기 {draft}) · 근거 {c['field_evidence']} · "
-          f"알림 {c['review_alert']} · 수기 {c['testimonial']} · 신호 {c['replay_signal']}행")
+          f"알림 {c['review_alert']} · 수기 {c['testimonial']}(실습 결과 구절 {sum(len(t['outcomes']) for t in seed['testimonial'])}) · "
+          f"신호 {c['replay_signal']}행")
     print(f"→ {a.out}\n→ {rp} (사람 검토용, 커밋하지 않음)\n다음: python to_sql.py")
 
 

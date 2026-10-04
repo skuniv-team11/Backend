@@ -62,6 +62,7 @@ class ToSqlTest(unittest.TestCase):
         self.assertEqual(to_sql.lit("job", "weekdays", ["MON", "TUE"]), "ARRAY['MON', 'TUE']::varchar(3)[]")
         self.assertEqual(to_sql.lit("job", "benefits", []), "'{}'::varchar(20)[]")
         self.assertEqual(to_sql.lit("testimonial", "activities", ["a'b"]), "ARRAY['a''b']::text[]")
+        self.assertEqual(to_sql.lit("testimonial", "outcomes", []), "'{}'::text[]")
 
     def test_위험한_값은_막는다(self):
         for bad in ("${x}", "a\r\nb"):
