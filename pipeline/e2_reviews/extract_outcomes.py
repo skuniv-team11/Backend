@@ -20,6 +20,7 @@ MAX_ITEMS = 3
 BANNED = ["뿌듯", "보람", "뜻깊", "기뻤", "기쁜", "즐거", "느꼈", "느낄", "깨달", "배울 수", "배웠", "성장",
           "좋은 기회", "기회였", "입사", "채용", "정직원", "정규직", "합격", "취업연계", "노력하",
           "저의", "제가", "저는"]
+PAIRS = {'""', "''", "“”", "‘’"}
 # 문장 중간에서 끊긴 꼴(무엇을 했는지로 끝나지 않음)
 CUT_ENDINGS = ("때", "날", "기도", "하고", "었고", "였고", "는데", "으며", "하며")
 SCHEMA = {
@@ -45,7 +46,9 @@ def check(outcomes, results):
     kept, dropped, seen = [], [], set()
     body = squash(results)
     for raw in outcomes:
-        text = re.sub(r"\s+", " ", raw or "").strip().strip("\"'“”‘’").strip()
+        text = re.sub(r"\s+", " ", raw or "").strip()
+        if len(text) >= 2 and text[0] + text[-1] in PAIRS:   # 구절 전체를 감싼 따옴표만 뗀다(안쪽 따옴표는 원문)
+            text = text[1:-1].strip()
         reason = None
         if not text:
             reason = "빈 구절"
