@@ -19,7 +19,7 @@ services:
         - AGENTS.md           # src/main/resources/prompts/*.md 는 서비스 코드라 빌드 대상으로 남긴다
     envVars:
       # sync: false 값은 Blueprint를 처음 만들 때만 묻는다. 그 뒤로는 대시보드 Environment에서 고친다
-      - key: CORS_ORIGINS       # https://coop-radar.vercel.app,https://coop-radar-*.vercel.app (운영 + 미리보기, Vercel 프로젝트 이름 coop-radar 기준)
+      - key: CORS_ORIGINS       # https://fieldrun.pages.dev,https://*.fieldrun.pages.dev (프론트 Cloudflare Pages 운영 + 미리보기)
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false

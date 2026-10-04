@@ -45,7 +45,7 @@ git config user.email "<숫자>+<아이디>@users.noreply.github.com"   # GitHub
 1. **DB:** Render → New → Postgres. 이름 `coop-radar-db`, Region **Singapore**(웹 서비스와 같아야 Internal URL이 됨), Version 18, Plan Free. 아래 'DB'처럼 연결값 3개를 만들어 둡니다.
 2. **main 올리기:** `git push origin origin/develop:refs/heads/main`(fast-forward).
 3. **Blueprint:** Render → New → **Blueprint** → 이 저장소, **Branch `main`**을 고르면 `render.yaml`을 읽습니다. 묻는 값을 넣습니다.
-    - `CORS_ORIGINS`: `https://coop-radar.vercel.app,https://coop-radar-*.vercel.app`(Vercel 운영 + 미리보기)
+    - `CORS_ORIGINS`: `https://fieldrun.pages.dev,https://*.fieldrun.pages.dev`(프론트 Cloudflare Pages 운영 + 미리보기. 미리보기 주소는 `<해시>.fieldrun.pages.dev`·`<브랜치>.fieldrun.pages.dev` — [Cloudflare 문서](https://developers.cloudflare.com/pages/configuration/preview-deployments/))
     - `ANTHROPIC_API_KEY`, `KAKAO_REST_API_KEY`
     - `DB_URL`·`DB_USER`·`DB_PASSWORD`(1번에서 만든 값)
     - `JWT_SECRET`은 묻지 않습니다. Render가 무작위 값을 만듭니다.
@@ -71,7 +71,7 @@ ANTHROPIC_API_KEY=... java -jar build/libs/coop-radar-backend-0.0.1.jar --spring
 | E1 운영계획서 추출 | **합격**(9/30, #3). 5건 144/145 = 99.3%(기준 90%), 근거 쪽 번호 193/193(텍스트 쪽). **18건 본 추출 완료**(10/1, #20 호출 2번 — 직무 40개, 약 $2.42) → 시드(#21, ADR-0014) | — |
 | E2 수기 추출 | **합격**(10/1, #6). 39건, 사람 판정 117/117, 2026-2 참여기관에 연결되는 수기 17건 | — |
 | E3 Java SDK | **합격**(10/1, #7). 호출 2번으로 full 필드 추출 성공, 파이썬 E1과 겹치는 15항목 중 14개 값·쪽 일치 | — |
-| E4 배포 | **백엔드 배포 완료**(10/2). Render Starter·싱가포르 — 빌드 약 2분 30초 · 기동 27.8초 · 메모리 276MB/512MB · CORS(운영·미리보기 허용, 다른 출처 403) | 프론트 Vercel 연결(프론트 담당, 프론트 README) |
+| E4 배포 | **백엔드 배포 완료**(10/2). Render Starter·싱가포르 — 빌드 약 2분 30초 · 기동 27.8초 · 메모리 276MB/512MB · CORS(운영·미리보기 허용, 다른 출처 403) · 프론트는 Cloudflare Pages https://fieldrun.pages.dev 에서 이 API를 부른다(10/4 확인) | — |
 | E5 임베딩 | **불합격 → 임베딩 쓰지 않음**(10/1). 학과명 질의 Hit@5: 무작위 29.4% · 키워드 35.3% · Voyage 47.1% · 선호 전공 규칙 52.0%(근사). 추천은 규칙 + 키워드(ADR-0018) | — |
 | E6 외부 데이터 | **합격**(10/1). 국세청·NCS 적재. ODsay는 호출만 확인하고 시드에는 쓰지 않음(ADR-0002 개정) | 통근은 카카오 실시간(ADR-0007) — 키 발급 후 첫 호출 |
 

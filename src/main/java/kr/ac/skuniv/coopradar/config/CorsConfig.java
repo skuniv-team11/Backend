@@ -6,9 +6,9 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * 프론트(Vercel)에서 오는 요청만 허용한다.
+ * 프론트(Cloudflare Pages)에서 오는 요청만 허용한다.
  * 허용 목록은 환경변수 CORS_ORIGINS(쉼표 구분, 패턴 가능)로 넣는다.
- * 예: https://coop-radar.vercel.app,https://coop-radar-*-<팀이름>.vercel.app
+ * 예: https://fieldrun.pages.dev,https://*.fieldrun.pages.dev (운영 + 미리보기)
  */
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
