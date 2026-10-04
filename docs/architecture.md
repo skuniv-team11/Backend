@@ -4,7 +4,7 @@
 | 갈래 | 어디서 | 하는 일 | 원칙 |
 |---|---|---|---|
 | 오프라인 파이프라인 | 로컬 PC (이 저장소 `pipeline/`) | 운영계획서·수기 추출(Claude), 전공 매핑, 국세청·NCS·국민연금·교육통계 적재 | 결과를 검수해 **시드**로 확정. 실행 중 서비스는 이 API들을 부르지 않는다 |
-| 온라인 서비스 | Render + Vercel | 자격 판정(규칙), 추천(규칙 + 키워드, ADR-0018), 설명(Haiku), 모집기간 리플레이, 통근 조회 | 시드만 읽는다. 실행 중 외부 호출은 Claude 설명·카카오(통근 — 주소 검색과 대중교통) 2개뿐이고, 실패해도 캐시·템플릿·'불러오지 못했어요'로 화면이 깨지지 않는다. 카카오 결과(좌표 포함)는 저장하지 않는다(ADR-0007) |
+| 온라인 서비스 | Render + Cloudflare Pages | 자격 판정(규칙), 추천(규칙 + 키워드, ADR-0018), 설명(Haiku), 모집기간 리플레이, 통근 조회 | 시드만 읽는다. 실행 중 외부 호출은 Claude 설명·카카오(통근 — 주소 검색과 대중교통) 2개뿐이고, 실패해도 캐시·템플릿·'불러오지 못했어요'로 화면이 깨지지 않는다. 카카오 결과(좌표 포함)는 저장하지 않는다(ADR-0007) |
 
 ```mermaid
 flowchart LR
@@ -17,7 +17,7 @@ flowchart LR
   subgraph ON["온라인"]
     S --> DB[("Postgres")]
     DB --> API["Spring Boot<br>판정·추천·리플레이"]
-    API --> FE["React (Vercel)"]
+    API --> FE["React (Cloudflare Pages)"]
     API -.-> C["Claude 이유 문장(Haiku)"]
     API -.-> K["카카오 주소 검색·대중교통<br>(통근, 저장 안 함)"]
   end
@@ -31,5 +31,5 @@ P1(여유가 되면 순서대로): 지원 준비 `/plan/apply`(제출물·마감
 
 ## 저장소·배포
 - `skuniv-team11/Backend`(이 저장소): Spring Boot + pipeline + docs. Render Docker, Singapore, `main` 브랜치만 자동 배포, `/actuator/health`
-- `skuniv-team11/Frontend`: React. Vercel, `VITE_API_BASE_URL`로 이 백엔드를 부름. API 계약은 이 저장소 `docs/api/`
+- `skuniv-team11/Frontend`: React. Cloudflare Pages(https://fieldrun.pages.dev), `VITE_API_BASE_URL`로 이 백엔드를 부름. API 계약은 이 저장소 `docs/api/`
 - DB: Render 무료 Postgres(10/2 생성 → 10/15~10/31에 다시 만들어 만료를 발표 뒤로, ADR-0005). 로컬에서 서버를 띄우지 않고 프론트·백엔드 모두 배포 주소로 테스트한다(10/2)

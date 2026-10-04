@@ -9,7 +9,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 
 ## 공통
 - 기본 경로 `/api`, JSON, 필드는 camelCase, 날짜는 ISO 8601(`2026-07-18`, `2026-09-30T14:00:00+09:00`).
-- **인증**: `Authorization: Bearer <accessToken>`. 쿠키는 쓰지 않는다 — Vercel과 Render는 사이트가 달라 서드파티 쿠키 차단에 걸린다.
+- **인증**: `Authorization: Bearer <accessToken>`. 쿠키는 쓰지 않는다 — 프론트(Cloudflare Pages, `pages.dev`)와 Render(`onrender.com`)는 사이트가 달라 서드파티 쿠키 차단에 걸린다.
   - 토큰은 JWT(HS256, 서명 키는 환경변수 `JWT_SECRET`). 만료는 가입 계정 7일, 체험 계정 24시간(계정도 그때 지운다).
   - 로그아웃은 프론트가 토큰을 버리는 것으로 끝난다(서버 호출 없음).
 - **권한**: `공개` / `로그인`(역할 무관) / `STUDENT` / `CENTER`. 아래 목록의 '권한' 열.
