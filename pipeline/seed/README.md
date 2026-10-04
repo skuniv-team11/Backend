@@ -6,7 +6,7 @@
 원본(저장소 밖)                         추출·조회 결과(.gitignore)            사람이 확인한 입력(커밋)
 참여기관 리스트 xlsx ─┐                 e1 out/full/*.json (운영계획서) ─┐    curated/round.json        사업·회차
 매칭 결과 xlsx ── matching_counts.py ─→ out/final_assigned.csv           ├─→ curated/departments.csv   학과(교육통계)
-                      │                 e2 out/*.json (수기)             │    curated/major_aliases.csv 전공 표기 → 학과
+                      │                 e2 out/*.json (수기·실습 결과)   │    curated/major_aliases.csv 전공 표기 → 학과
                       │                 e6 nts_status.csv (국세청)       │    curated/overrides.json    화면용 고침
                       └──────────────── build_seed.py ←──────────────────┘    curated/ids.json          시드 id 등록부
                                              │
@@ -26,7 +26,7 @@ python matching_counts.py "<원본>/★ 2026학년도 2학기 ... 기관-학생 
 python build_seed.py --list "<원본>/2026학년도 2학기 ... 참여기관 리스트(...).xlsx" \
   --plans ../e1_operation_plan/out/full --reviews ../e2_reviews/out \
   --nts ../e6_external/nts_status.csv --nts-checked-on 2026-10-01 \
-  --assigned out/final_assigned.csv --pages out/pages.csv
+  --assigned out/final_assigned.csv --outcomes ../e2_reviews/out/outcomes.json --pages out/pages.csv
 
 # 3) SQL
 python to_sql.py
@@ -50,7 +50,7 @@ python to_sql.py
 - **학과**: 교육통계 2025-10-01 학과별 재학생(72행) 중 재학생이 있는 60개. 폐지·통합 단위(재학생 0)는 선택지에서 뺀다. id는 교육통계 파일의 행 순서로 고정했다.
 - **전공 표기 → 학과**: 리스트 표기 25종을 모두 넣고, 학과 연결은 `status`가 `EXACT`(학과 이름과 똑같음, 9종)·`CONFIRMED`(사람이 확정, 16종 — 10/1 15종, 10/2 '중어전공')인 것만 적재한다. `DRAFT`는 교육통계 대계열·학과명으로 만든 초안이라 적재하지 않는다. 2026-2는 25종 모두 연결됐다(`DRAFT` 없음). 새 표기는 `DRAFT`로 넣고, 확정하면 `CONFIRMED`로 바꿔 다시 만든다.
 - **id**: `curated/ids.json`이 기관(표준명)·직무(표준명|리스트 직무 칸 첫 줄)·근로지(표준명|주소) → id를 기억한다. 한 번 준 id는 바꾸지 않는다. 리스트에서 직무 이름이 바뀌면 새 id가 생기고 옛 직무는 지워진다(담아 둔 지망도 함께).
-- **수기**: 2026-2 참여기관에 연결되는 것만(`common/jobs_sheet.canon`). 부서와 실습 내용·쪽만 넣고 이름·학과·학년·사진·소감은 넣지 않는다.
+- **수기**: 2026-2 참여기관에 연결되는 것만(`common/jobs_sheet.canon`). 부서·실습 내용·쪽과 **실습 결과 중 사실 구절**만 넣고 이름·학과·학년·사진·소감은 넣지 않는다. 수기가 전부 '우수' 수기라 긍정 쪽으로 치우쳐 있어서, 실습 결과는 `e2_reviews/extract_outcomes.py`가 원문에서 그대로 자른 사실(만든 결과물·맡은 일·참여한 프로젝트·채택된 제안)만 남기고 감상·배운 점·평가·개인 진로(입사·채용 등)는 버린다(ADR-0020). `--outcomes`에 그 결과 JSON을 준다.
 - **리플레이**(`replay.py`): 모집기간(7/13~7/24) 일별 가상 신호. 관심(내 지망에 담은 사람) 하나만 만든다 — 직무별 관심 합 = 최종 배정 수(실제 값), 날짜는 시드 고정 난수. 자세한 규칙은 파일 머리 주석.
 
 ## 사는 곳(`area`)
