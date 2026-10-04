@@ -93,13 +93,37 @@ def ask(client, model, system, results, tries=2):
     return None, cost
 
 
+def recheck(a):
+    """거르기 규칙을 고친 뒤 같은 LLM 결과에 다시 적용한다(LLM 출력은 돌릴 때마다 조금씩 달라서)."""
+    out = pathlib.Path(a.out)
+    data = json.loads(out.read_text(encoding="utf-8"))
+    texts = {}
+    for f in glob.glob(str(pathlib.Path(a.reviews) / "*.json")):
+        if "수기" not in pathlib.Path(f).name:
+            continue
+        rec = json.loads(pathlib.Path(f).read_text(encoding="utf-8"))
+        for t in rec["result"]["records"]:
+            texts[(source_name(rec["source_file"]), t["text_page"])] = t.get("results") or ""
+    for r in data["records"]:
+        kept, dropped = check(r["outcomes"], texts[(r["source"], r["text_page"])])
+        r["outcomes"], r["dropped"] = kept, r["dropped"] + dropped
+        for d in dropped:
+            print(f"{r['semester']} {r['institution']} p{r['text_page']}: 버림({d['reason']}) {d['text']}")
+    out.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"다시 거름 → {out}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--reviews", default=str(HERE / "out"), help="run_extract.py 결과 폴더")
     ap.add_argument("--model", default="claude-sonnet-5-5")
     ap.add_argument("--out", default=str(HERE / "out" / "outcomes.json"))
     ap.add_argument("--workers", type=int, default=6, help="동시에 보내는 요청 수")
+    ap.add_argument("--recheck", action="store_true",
+                    help="LLM을 다시 부르지 않고 --out의 남은 구절에 지금 거르기 규칙만 다시 적용한다")
     a = ap.parse_args()
+    if a.recheck:
+        return recheck(a)
 
     import anthropic  # 단위 테스트(check)는 키·패키지 없이 돌게 여기서 부른다
 
