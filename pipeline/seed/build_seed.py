@@ -584,9 +584,9 @@ def validate(seed):
     if len(names) != len(set(names)):
         fail("institution.name 중복")
     for j in seed["job"]:
-        total = sum(s["intent_count"] for s in seed["replay_signal"] if s["job_id"] == j["id"])
+        total = sum(s["interest_count"] for s in seed["replay_signal"] if s["job_id"] == j["id"])
         if total != j["final_assigned"]:
-            fail(f"job {j['id']}: 리플레이 지원 의사 합 {total} ≠ 배정 {j['final_assigned']}")
+            fail(f"job {j['id']}: 리플레이 관심 합 {total} ≠ 배정 {j['final_assigned']}")
 
 
 def main():

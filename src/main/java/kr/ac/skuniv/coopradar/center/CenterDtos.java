@@ -19,10 +19,13 @@ public final class CenterDtos {
     }
 
     /**
-     * @param zeroSignalJobs asOf까지 지원 의사가 0인 직무 수
-     * @param closedJobs     asOf에 마감(CLOSED)인 직무 수
+     * @param interestTotal     asOf까지 관심(담은 사람) 합. 가상 + 실제
+     * @param liveInterestTotal interestTotal 중 실제 사용자가 담은 수
+     * @param zeroSignalJobs    asOf까지 관심이 0인 직무 수
+     * @param closedJobs        asOf에 마감(CLOSED)인 직무 수
      */
-    public record Summary(int jobs, int seats, int intentTotal, int zeroSignalJobs, int closedJobs) {
+    public record Summary(int jobs, int seats, int interestTotal, int liveInterestTotal, int zeroSignalJobs,
+                          int closedJobs) {
     }
 
     /**

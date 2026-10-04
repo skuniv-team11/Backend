@@ -28,7 +28,7 @@ class MigrationTest {
     }
 
     @Test
-    void 테이블_21개가_만들어진다() {
+    void 테이블_22개가_만들어진다() {
         Integer tables = jdbc.sql("""
                         SELECT count(*) FROM information_schema.tables
                         WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
@@ -36,7 +36,7 @@ class MigrationTest {
                         """)
                 .query(Integer.class)
                 .single();
-        assertThat(tables).isEqualTo(21);
+        assertThat(tables).isEqualTo(22); // V1 21개 + V3 job_view
     }
 
     @Test
@@ -53,5 +53,22 @@ class MigrationTest {
                 .list();
         assertThat(columns).containsExactlyInAnyOrder("area.code", "area.name", "area.sido", "area.sort_order",
                 "workplace.address", "workplace.id", "workplace.institution_id");
+    }
+
+    @Test
+    void V3가_적용되고_신호는_관심_하나_조회_기록_테이블이_있다() {
+        Boolean success = jdbc.sql("SELECT success FROM flyway_schema_history WHERE version = '3'")
+                .query(Boolean.class)
+                .single();
+        assertThat(success).isTrue();
+        // ADR-0019: 예전 관심 칸은 없애고 지원 의사 칸을 관심으로 바꿨다
+        List<String> columns = jdbc.sql("""
+                        SELECT table_name || '.' || column_name FROM information_schema.columns
+                        WHERE table_schema = 'public' AND table_name IN ('replay_signal', 'job_view')""")
+                .query(String.class)
+                .list();
+        assertThat(columns).containsExactlyInAnyOrder("replay_signal.job_id", "replay_signal.signal_date",
+                "replay_signal.interest_count", "job_view.id", "job_view.job_id", "job_view.user_id",
+                "job_view.viewed_on");
     }
 }

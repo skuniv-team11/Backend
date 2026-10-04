@@ -10,7 +10,10 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** 회차 직무 전부의 asOf 기준 모집 신호. 지망 점검(#23)과 센터 현황판(#24)이 같이 쓴다. */
+/**
+ * 회차 직무 전부의 asOf 기준 관심 신호. 지망 점검(#23)과 센터 현황판(#24)이 같이 쓴다.
+ * 관심 = 리플레이 가상 값 + 실제 담은 수(기준일 replay.defaultAsOf에 생긴 것으로 본다, ADR-0019).
+ */
 @Service
 public class SignalService {
 
@@ -37,10 +40,22 @@ public class SignalService {
         return requested;
     }
 
-    /** 직무 id → 신호. 회차의 직무가 모두 들어 있다(신호가 없는 직무는 0). */
+    /** 직무 id → 신호. 실제 담은 수는 모든 계정을 센다(센터 현황판). */
     @Transactional(readOnly = true)
     public Map<Integer, Signal> byJob(CurrentRound round, LocalDate asOf) {
+        return byJob(round, asOf, null);
+    }
+
+    /**
+     * 직무 id → 신호. 회차의 직무가 모두 들어 있다(신호가 없는 직무는 0).
+     *
+     * @param excludeUserId 실제 담은 수에서 뺄 계정(지망 점검은 본인). null이면 모두 센다
+     */
+    @Transactional(readOnly = true)
+    public Map<Integer, Signal> byJob(CurrentRound round, LocalDate asOf, Long excludeUserId) {
         var daily = signals.dailyByJob(round.id());
+        var live = signals.liveByJob(round.id(), excludeUserId);
+        LocalDate liveOn = round.replay().defaultAsOf();
         Map<Integer, Signal> out = new HashMap<>();
         db.sql("""
                         SELECT id, headcount, closes_on, close_reason, closes_on_is_virtual
@@ -48,7 +63,8 @@ public class SignalService {
                 .param("round", round.id())
                 .query(rs -> {
                     int jobId = rs.getInt("id");
-                    out.put(jobId, SignalCalculator.compute(daily.getOrDefault(jobId, Map.of()), rs.getInt("headcount"),
+                    out.put(jobId, SignalCalculator.compute(daily.getOrDefault(jobId, Map.of()),
+                            live.getOrDefault(jobId, 0), liveOn, rs.getInt("headcount"),
                             rs.getObject("closes_on", LocalDate.class), rs.getString("close_reason"),
                             rs.getBoolean("closes_on_is_virtual"), round.recruitStart(), round.recruitEnd(), asOf));
                 });

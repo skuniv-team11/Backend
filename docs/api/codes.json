@@ -29,7 +29,7 @@
     "CLOSED": "마감"
   },
   "signalSource": {
-    "REPLAY": "모집기간 리플레이(가상)",
+    "REPLAY": "모집기간 리플레이(가상) + 실제 담은 수",
     "LIVE": "실제 신호"
   },
   "closeReason": {

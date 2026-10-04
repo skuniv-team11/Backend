@@ -54,22 +54,18 @@ class SeedTest {
     }
 
     @Test
-    void 리플레이_지원_의사_합은_배정_수이고_마감일부터와_회차_밖에는_신호가_없다() {
+    void 리플레이_관심_합은_배정_수이고_마감일부터와_회차_밖에는_신호가_없다() {
         assertThat(count("""
                 SELECT count(*) FROM job j
-                WHERE j.final_assigned <> (SELECT coalesce(sum(intent_count), 0) FROM replay_signal s WHERE s.job_id = j.id)
+                WHERE j.final_assigned <> (SELECT coalesce(sum(interest_count), 0) FROM replay_signal s WHERE s.job_id = j.id)
                 """)).isZero();
         assertThat(count("""
                 SELECT count(*) FROM replay_signal s JOIN job j ON j.id = s.job_id JOIN recruit_round r ON r.id = j.round_id
                 WHERE s.signal_date >= j.closes_on OR s.signal_date < r.recruit_start OR s.signal_date > r.recruit_end
                 """)).isZero();
-        // 관심 누적은 어느 날이든 지원 의사 누적 이상
-        assertThat(count("""
-                SELECT count(*) FROM (
-                  SELECT sum(interest_count) OVER w AS interest, sum(intent_count) OVER w AS intent
-                  FROM replay_signal WINDOW w AS (PARTITION BY job_id ORDER BY signal_date)) t
-                WHERE interest < intent
-                """)).isZero();
+        // 관심이 0인 날은 행이 없다(ADR-0019 — 신호는 관심 하나)
+        assertThat(count("SELECT count(*) FROM replay_signal WHERE interest_count = 0")).isZero();
+        assertThat(count("SELECT count(*) FROM replay_signal")).isEqualTo(21);
     }
 
     @Test

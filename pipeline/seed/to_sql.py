@@ -45,7 +45,7 @@ CHILDREN = {
     "review_alert": ["id", "institution_id", "job_id", "kind", "field_key", "description",
                      "source_document_id", "page_a", "quote_a", "page_b", "quote_b"],
     "testimonial": ["id", "source_document_id", "institution_id", "team_text", "activities", "page"],
-    "replay_signal": ["job_id", "signal_date", "interest_count", "intent_count"],
+    "replay_signal": ["job_id", "signal_date", "interest_count"],
 }
 # upsert 키(기본은 id)
 KEYS = {"area": "code"}

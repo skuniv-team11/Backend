@@ -1,5 +1,5 @@
 {
-  "asOf": "2026-07-18",
+  "asOf": "2026-07-23",
   "isVirtual": true,
   "signalSource": "REPLAY",
   "items": [
@@ -12,8 +12,8 @@
         "name": "누리뷰티(가상)"
       },
       "signal": {
-        "intent": 3,
-        "interest": 7,
+        "interest": 3,
+        "liveInterest": 1,
         "headcount": 2,
         "ratio": 1.5,
         "status": "OPEN",
@@ -32,12 +32,12 @@
         "name": "다온커머스(가상)"
       },
       "signal": {
-        "intent": 1,
-        "interest": 4,
+        "interest": 1,
+        "liveInterest": 0,
         "headcount": 2,
         "ratio": 0.5,
         "status": "OPEN",
-        "closesOn": "2026-07-20",
+        "closesOn": "2026-07-24",
         "closeReason": "CENTER_CLOSED",
         "closesOnIsVirtual": true,
         "expectedFullOn": null
@@ -56,8 +56,8 @@
       "fit": "HIGH",
       "remaining": 2,
       "signal": {
-        "intent": 0,
-        "interest": 2,
+        "interest": 0,
+        "liveInterest": 0,
         "headcount": 2,
         "ratio": 0.0,
         "status": "OPEN",
@@ -66,7 +66,7 @@
         "closesOnIsVirtual": false,
         "expectedFullOn": null
       },
-      "why": "1지망과 같은 기관의 직무이고, 지금 지원 의사가 0명이에요."
+      "why": "1지망과 같은 기관의 직무이고, 지금 담은 사람이 0명이에요."
     }
   ]
 }

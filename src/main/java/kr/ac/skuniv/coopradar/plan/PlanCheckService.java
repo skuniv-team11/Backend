@@ -24,8 +24,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 1~3지망 점검(#23). 순위를 정한 지망마다 asOf 기준 모집 신호를 주고, 요건이 맞는 빈 자리를 제안한다(ADR-0016).
- * 몰림 경고는 하지 않는다(ADR-0015). 신호 계산은 센터 현황판과 같고, 적합도는 추천(#15)과 같다.
+ * 1~3지망 점검(#23). 순위를 정한 지망마다 asOf 기준 관심 신호를 주고, 요건이 맞는 빈 자리를 제안한다(ADR-0016).
+ * 몰림 경고는 하지 않는다(ADR-0015). 신호 계산은 센터 현황판과 같지만, 실제 담은 수에서 본인은 뺀다 — 다른 사람이
+ * 몇 명 담았는지를 보여 준다(ADR-0019). 적합도는 추천(#15)과 같다.
  */
 @Service
 public class PlanCheckService {
@@ -51,7 +52,7 @@ public class PlanCheckService {
     public PlanCheck check(AuthUser user, ProfileInput profile, LocalDate requestedAsOf) {
         var round = rounds.current();
         LocalDate asOf = SignalService.resolveAsOf(round, requestedAsOf);
-        Map<Integer, Signal> byJob = signals.byJob(round, asOf);
+        Map<Integer, Signal> byJob = signals.byJob(round, asOf, user.id());
 
         List<CheckedItem> items = new ArrayList<>();
         Set<Integer> plannedJobs = new HashSet<>();
@@ -89,7 +90,7 @@ public class PlanCheckService {
                     || signal.status() == Signal.Status.CLOSED) {
                 continue;
             }
-            int remaining = signal.headcount() - signal.intent();
+            int remaining = signal.headcount() - signal.interest();
             if (remaining > 0) {
                 open.add(new Candidate(s, signal, remaining));
             }
@@ -102,18 +103,18 @@ public class PlanCheckService {
             var r = c.scored().judged().result();
             boolean sameAsFirst = firstChoiceInstitution != null && firstChoiceInstitution == r.institution().id();
             out.add(new Alternative(r.jobId(), r.title(), r.institution(), r.verdict(), c.scored().fit(), c.remaining(),
-                    c.signal(), why(sameAsFirst, c.signal().intent(), c.remaining())));
+                    c.signal(), why(sameAsFirst, c.signal().interest(), c.remaining())));
         }
         return out;
     }
 
     /**
      * 규칙 문장(ADR-0016). 앞: 1지망과 같은 기관이면 '1지망과 같은 기관의 직무이고', 아니면 '관심 분야와 가깝고'.
-     * 뒤: 지원 의사 0이면 '지금 지원 의사가 0명이에요.', 아니면 '남은 자리가 N개예요.'
+     * 뒤: 관심(담은 사람)이 0이면 '지금 담은 사람이 0명이에요.', 아니면 '남은 자리가 N개예요.'
      */
-    static String why(boolean sameAsFirstChoice, int intent, int remaining) {
+    static String why(boolean sameAsFirstChoice, int interest, int remaining) {
         String first = sameAsFirstChoice ? "1지망과 같은 기관의 직무이고" : "관심 분야와 가깝고";
-        String second = intent == 0 ? "지금 지원 의사가 0명이에요." : "남은 자리가 " + remaining + "개예요.";
+        String second = interest == 0 ? "지금 담은 사람이 0명이에요." : "남은 자리가 " + remaining + "개예요.";
         return first + ", " + second;
     }
 }

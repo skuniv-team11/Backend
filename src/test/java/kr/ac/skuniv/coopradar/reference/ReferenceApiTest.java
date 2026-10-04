@@ -109,7 +109,7 @@ class ReferenceApiTest {
                 .andExpect(jsonPath("$.roundNo").value(1))
                 .andExpect(jsonPath("$.recruitStart").value("2026-07-13"))
                 .andExpect(jsonPath("$.recruitEnd").value("2026-07-24"))
-                .andExpect(jsonPath("$.replay.defaultAsOf").value("2026-07-18")) // application.yml app.replay.default-as-of
+                .andExpect(jsonPath("$.replay.defaultAsOf").value("2026-07-23")) // application.yml app.replay.default-as-of
                 .andExpect(jsonPath("$.replay.minDate").value("2026-07-13"))
                 .andExpect(jsonPath("$.replay.maxDate").value("2026-07-24"))
                 .andExpect(jsonPath("$.replay.signalsAreVirtual").value(true))
@@ -129,7 +129,7 @@ class ReferenceApiTest {
 
         db.sql("UPDATE recruit_round SET recruit_start = DATE '2099-07-13', recruit_end = DATE '2099-07-24' WHERE id = 9201")
                 .update();
-        // 설정한 기준일(2026-07-18)이 모집기간보다 앞이면 시작일로 맞춘다
+        // 설정한 기준일(2026-07-23)이 모집기간보다 앞이면 시작일로 맞춘다
         mvc.perform(get("/api/rounds/current"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(9201))

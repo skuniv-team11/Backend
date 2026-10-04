@@ -88,8 +88,8 @@ def code_check(fname):
             base = 2156880 if v["basis"] == "MONTHLY" else 10320
             check(v["minWageRatio"] == round(v["amount"] / base * 100, 1), f"{fname}{path} 최저임금 대비 % 틀림")
         if k == "signal" and isinstance(v, dict):
-            check(v["ratio"] == round(v["intent"] / v["headcount"], 2), f"{fname}{path} ratio 틀림")
-            check(v["interest"] >= v["intent"], f"{fname}{path} 관심 < 지원 의사")
+            check(v["ratio"] == round(v["interest"] / v["headcount"], 2), f"{fname}{path} ratio 틀림")
+            check(0 <= v["liveInterest"] <= v["interest"], f"{fname}{path} 실제 담은 수 > 관심")
             check((v["closesOn"] is None) == (v["closeReason"] is None), f"{fname}{path} 마감일·사유 짝")
     return fn
 for name, d in docs.items():
@@ -110,15 +110,19 @@ for name in ("me-plan-check.json", "center-board.json"):
     planned = {i["jobId"] for i in docs["me-plan.json"]["items"]}
     first = next((i for i in d.get("items", []) if i["rank"] == 1), None)
     for a in d.get("alternatives", []):
-        check(a["remaining"] == a["signal"]["headcount"] - a["signal"]["intent"] and a["remaining"] > 0, f"대안 {a['jobId']} 남은 자리")
+        check(a["remaining"] == a["signal"]["headcount"] - a["signal"]["interest"] and a["remaining"] > 0, f"대안 {a['jobId']} 남은 자리")
         check(a["verdict"] == "ELIGIBLE" and a["signal"]["status"] != "CLOSED", f"대안 {a['jobId']} 조건")
         check(a["jobId"] not in planned, f"대안 {a['jobId']} 이미 담은 직무")
         same = first is not None and first["institution"]["id"] == a["institution"]["id"]
         head = "1지망과 같은 기관의 직무이고" if same else "관심 분야와 가깝고"
-        tail = "지금 지원 의사가 0명이에요." if a["signal"]["intent"] == 0 else f"남은 자리가 {a['remaining']}개예요."
+        tail = "지금 담은 사람이 0명이에요." if a["signal"]["interest"] == 0 else f"남은 자리가 {a['remaining']}개예요."
         check(a["why"] == f"{head}, {tail}", f"대안 {a['jobId']} why 규칙 문장 아님: {a['why']}")
     r0 = docs["rounds-current.json"]["replay"]
     check(r0["minDate"] <= d["asOf"] <= r0["maxDate"], f"{name} asOf 범위")
+
+# 현황판 요약: 실제 담은 수 합 ≤ 관심 합
+check(0 <= docs["center-board.json"]["summary"]["liveInterestTotal"] <= docs["center-board.json"]["summary"]["interestTotal"],
+      "현황판 liveInterestTotal > interestTotal")
 
 # 현황판 위험: NARROW_POOL = 적격 풀 200명 미만, DOC_ALERT = 그 직무 또는 그 기관에 검토 알림(ADR-0016)
 board = docs["center-board.json"]

@@ -3,7 +3,7 @@
 프론트는 이 문서의 응답 예시로 목업을 만들고, 백엔드는 이 형태를 지킨다. 형태를 바꾸려면 이 문서를 먼저 고친다.
 Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 맞다.
 
-**Swagger**: https://coop-radar-api.onrender.com/swagger-ui.html (배포 서버). 드롭다운 '계약'은 이 문서와 예시 JSON으로 만든 24개 전부, '구현'은 지금 코드에 있는 것만 보여 준다(ADR-0011).
+**Swagger**: https://coop-radar-api.onrender.com/swagger-ui.html (배포 서버). 드롭다운 '계약'은 이 문서와 예시 JSON으로 만든 25개 전부, '구현'은 지금 코드에 있는 것만 보여 준다(ADR-0011).
 - '계약' 스펙은 `python scripts/build_openapi.py`가 이 폴더로 만든다(`src/main/resources/static/openapi/contract.json`). 이 문서나 예시 JSON을 고쳤으면 다시 돌려 같은 PR에 넣는다. 예시가 스키마(타입·null·코드값·범위)에 안 맞으면 여기서 실패한다.
 - 새 엔드포인트는 스크립트의 `ENDPOINTS`(요청·응답 스키마와 예시 파일)와 `S`(스키마)에도 넣는다.
 
@@ -19,7 +19,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - 서버에 저장하는 건 `PUT /api/me/profile`에 `consent: true`로 보냈을 때뿐이다. 탈퇴하면 즉시 지운다.
   - 사는 곳은 시·군·구까지만 받는다(`homeAreaCode`). 정확한 주소는 받지 않는다.
   - 요청·응답 본문을 로그에 남기지 않는다.
-- **가상 데이터**: 모집 신호는 모집기간 리플레이용 가상 데이터다. 신호를 주는 응답에는 `isVirtual`과 `signalSource`를 반드시 넣는다.
+- **모집 신호 = 관심**: 관심은 **내 지망에 담은 사람 수**다(순위와 상관없이 [담기]한 사람, 1인 1표). 모집기간 리플레이 가상 값에 실제 사용자가 담은 수를 더해 보여 준다(ADR-0019). 신호를 주는 응답에는 `isVirtual`과 `signalSource`를 반드시 넣는다.
 - **호출 제한**(초기값, 설정으로 조정): 체험 계정 만들기 IP당 1시간 300회(환경변수 `GUEST_PER_IP_PER_HOUR`, 0이면 끔 — 시연장·학교 와이파이는 여럿이 한 IP) → 넘으면 429 + `Retry-After`(초). 이유 문장(LLM) 계정당 1시간 30회·IP당 60회 → 넘으면 **200 + 기본 문장**(화면이 깨지지 않게). 통근 조회 계정당 1시간 30회·서버 전체 하루 900회(카카오 무료 하루 1,000건 안에서 멈춤) → 넘으면 **200 + `available: false`**.
 - **실행 중 외부 호출**은 Claude(이유 문장)·카카오(통근 조회 — 주소 검색과 대중교통) 둘뿐이다(ADR-0002, ADR-0007). 임베딩은 쓰지 않는다(E5 결과, ADR-0018). 둘 다 실패해도 200으로 화면을 유지한다.
 - **코드값**은 영문 대문자이고 DB CHECK와 같은 집합이다(`V1__init.sql`). 화면 표기는 `GET /api/codes`에서 가져간다.
@@ -53,6 +53,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | 22 | 지망 | PUT | `/api/me/plan/ranks` | STUDENT | S5 | 1~3지망 순위 정하기 | [요청](me-plan-ranks.request.json) · [응답](me-plan.json) |
 | 23 | 지망 | POST | `/api/me/plan/check` | STUDENT | S5 | 지망별 모집 신호 + 빈 자리 제안 | [요청](me-plan-check.request.json) · [응답](me-plan-check.json) |
 | 24 | 센터 | GET | `/api/center/board?asOf=` | CENTER | C4 | 모집 현황판 | [응답](center-board.json) |
+| 25 | 직무 | GET | `/api/jobs/{jobId}/views` | 로그인 | S4·C4 | 직무 조회수(학생 계정마다 직무별 하루 1번) | [응답](job-views.json) |
 
 ## 공통 객체
 **Profile** (요청 본문의 `profile`, `PUT /api/me/profile`)
@@ -84,14 +85,17 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 
 **Stipend** — `{basis, amount, minWageRatio}`. `basis`가 `MONTHLY`면 월액, `HOURLY`면 시급(원). `minWageRatio`는 2026 최저임금(월 2,156,880원 / 시 10,320원) 대비 %, 소수 첫째 자리.
 
-**Signal** — `{intent, interest, headcount, ratio, status, closesOn, closeReason, closesOnIsVirtual, expectedFullOn}`
-- `intent`·`interest`는 asOf까지 누적한 지원 의사·관심 수. `ratio` = intent ÷ headcount(소수 둘째 자리).
-- `status`: asOf가 회차 종료일보다 뒤이거나 `closesOn` ≤ asOf면 `CLOSED` → 아니면 `OPEN`. 지원 의사가 정원을 넘어도 몰림 상태·경고는 주지 않는다(ADR-0015, 10/1 회의). 숫자(`intent`·`headcount`·`ratio`)는 그대로 준다.
+**Signal** — `{interest, liveInterest, headcount, ratio, status, closesOn, closeReason, closesOnIsVirtual, expectedFullOn}`
+- `interest`(관심)는 asOf까지 누적한 **내 지망에 담은 사람 수** = 리플레이 가상 값 + 실제 사용자가 담은 수(ADR-0019). `ratio` = interest ÷ headcount(소수 둘째 자리).
+  - 가상 값: 직무별 합 = 최종 배정 수(실제 값), 날짜는 시드 고정 난수(`replay_signal`).
+  - 실제 값(`liveInterest`): 지금 그 직무를 담아 둔 계정 수(`plan_item`, 순위 무관, 1인 1표, 체험 계정 포함 — 체험 계정이 24시간 뒤 지워지면 그 수도 빠진다). 시연 속 '오늘'인 `replay.defaultAsOf`(7/23)에 생긴 관심으로 더한다 — asOf가 그보다 앞이면 0, 그날 이미 마감(`closesOn` ≤ 기준일)인 직무에도 0.
+  - 지망 점검(#23)은 본인이 담은 것을 빼고 **다른 사람** 수만 센다. 현황판(#24)은 모두 센다.
+- `status`: asOf가 회차 종료일보다 뒤이거나 `closesOn` ≤ asOf면 `CLOSED` → 아니면 `OPEN`. 관심이 정원을 넘어도 몰림 상태·경고는 주지 않는다(ADR-0015, 10/1 회의). 숫자(`interest`·`headcount`·`ratio`)는 그대로 준다.
 - `closeReason`: `APPLICATION_DEADLINE`(운영계획서 접수마감일자) · `CENTER_CLOSED`(센터 리스트 모집마감). `closesOnIsVirtual`이 true면 날짜가 생성기가 정한 가상 값이다.
 - `closesOn`은 '이 날부터 지원 불가'다 — 화면은 하루 전 날짜를 마감일로 보여 준다(예: `closesOn` 7/18 → '7/17 마감').
-- `expectedFullOn`: 정원 도달 예상일. 최근 3일 지원 의사 평균 증가량으로 외삽하고, 모집기간 안에 닿지 않거나 이미 닿았으면 null.
+- `expectedFullOn`: 정원 도달 예상일. 최근 3일 관심 평균 증가량(실제 담은 수 포함)으로 외삽하고, 모집기간 안에 닿지 않거나 이미 닿았으면 null.
   - 최근 3일 = asOf와 그 앞 이틀(모집 시작 전 날은 빼고 남은 날 수로 나눈다). 남은 자리 ÷ 하루 평균을 올림한 날 수만큼 asOf에서 더한다.
-  - null: 이미 정원 이상 · `CLOSED` · 최근 3일 지원 의사 0 · 지원할 수 있는 마지막 날(회차 종료일, `closesOn`이 있으면 그 전날)을 넘김.
+  - null: 이미 정원 이상 · `CLOSED` · 최근 3일 관심 증가 0 · 지원할 수 있는 마지막 날(회차 종료일, `closesOn`이 있으면 그 전날)을 넘김.
 
 **Citation** — `{sourceType, documentTitle, page, quote}`. `sourceType`은 `OPERATION_PLAN` · `TESTIMONIAL`. 원문 PDF 링크는 주지 않는다.
 
@@ -112,7 +116,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - 토큰: 역할·체험 여부는 토큰이 아니라 매 요청 DB에서 읽는다. 탈퇴했거나 정리된 계정의 토큰은 401 `AUTH_REQUIRED`.
 
 **내 정보**
-- `DELETE /api/me` → 204. 계정·프로필·담은 지망이 함께 지워진다(DB cascade).
+- `DELETE /api/me` → 204. 계정·프로필·담은 지망이 함께 지워진다(DB cascade). 직무 조회 기록은 조회수로 남고 계정 연결만 끊긴다(`job_view.user_id` NULL).
 - `PUT /api/me/profile`: `consent`가 true가 아니면 400 `CONSENT_REQUIRED`. `GET`에 저장한 게 없으면 404 `PROFILE_NOT_FOUND`.
 - `hasProfile`(`/api/me`)이 false여도 판정·추천은 된다 — 프론트가 입력받은 프로필을 본문에 넣어 보내면 된다.
 
@@ -134,6 +138,11 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - `alerts`: 이 직무에 걸린 알림 + 기관 전체에 걸린 알림(`jobId` null), id 순. 판정 항목이 아닌 알림(선호 전공·기간·지원비 불일치 등)도 여기에는 보인다.
 - `seniorNotes`: 최근 학기 먼저, 같은 학기는 쪽 순.
 - `conditions.stipend.minWageRatio`는 소수 둘째 자리에서 반올림한다. 기준이 `UNSPECIFIED`거나 금액이 없으면 null.
+- 학생(`STUDENT`)이 이 응답을 받으면 조회수에 센다 — 계정마다 직무별로 하루(한국 시간) 한 번. 센터 담당자는 세지 않는다. 기록이 실패해도 상세는 그대로 준다.
+
+**조회수**(`GET /api/jobs/{jobId}/views`, ADR-0019) — 로그인(역할 무관). 없는 직무는 404 `JOB_NOT_FOUND`.
+- `{jobId, views, todayViews}`. `views`는 지금까지, `todayViews`는 오늘(한국 시간) 조회 수. 둘 다 실제 값이다(리플레이·가상 값 없음, 기준일과 상관없음).
+- 이 API를 부르는 것은 조회로 세지 않는다. 조회는 직무 상세(#17)를 열 때만 센다.
 
 **통근**(`POST /api/jobs/{jobId}/commute`, ADR-0007)
 - 본문은 `{homeAreaCode}` 하나. 저장한 프로필이 있어도 프론트가 본문에 넣는다(프로필 값은 본문으로만). null이거나 빠지면 서경대에서 출발한다. `areas`에 없는 코드면 400 `INVALID_INPUT`.
@@ -151,12 +160,13 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - `GET /api/me/plan`·`PUT ranks` 응답의 `items` 순서: 순위 있는 것(1 → 3) 먼저, 그다음 담은 순.
 - `PUT ranks`는 **순위 전체**를 보낸다. 여기 없는 담은 직무는 순위가 지워진다(`rank: null`). 순위는 1~3, 중복 불가, 한 직무에 하나, 3개까지, 담은 직무만 → 어기면 400 `RANK_INVALID`(아무것도 바꾸지 않음). `ranks`가 없거나 원소의 `jobId`·`rank`가 빠지면 400 `INVALID_INPUT`. `[]`이면 순위를 모두 지운다.
 - `check`: 순위가 있는 직무의 신호와 대안을 준다(경고 문장 없음, ADR-0015). `items`는 순위 순, 순위를 안 정했으면 `[]`. 본문 `{profile, asOf?}` — `profile`이 없거나 `asOf` 형식이 틀리면 400 `INVALID_INPUT`.
-  - 대안(`alternatives`) = `verdict`가 `ELIGIBLE`이고, `CLOSED`가 아니고, 남은 자리(`headcount` − `intent`)가 0보다 크고, 이미 담은 직무(`plan_item`)가 아닌 직무. 적합도 점수 → 남은 자리 순으로 최대 5개([ADR-0016](../decisions/0016-demo-profile-and-screen-rules.md)). 적합도 점수는 추천과 같다([ADR-0018](../decisions/0018-recommendation-rule-keyword.md)).
-  - `why`는 규칙 문장이다. 앞: 1지망과 같은 기관이면 '1지망과 같은 기관의 직무이고', 아니면 '관심 분야와 가깝고'. 뒤: 지원 의사가 0이면 '지금 지원 의사가 0명이에요.', 아니면 '남은 자리가 N개예요.' 둘을 쉼표로 잇는다(예: '1지망과 같은 기관의 직무이고, 지금 지원 의사가 0명이에요.').
+  - 신호의 관심은 본인이 담은 것을 뺀 다른 사람 수다(현황판과 다를 수 있다).
+  - 대안(`alternatives`) = `verdict`가 `ELIGIBLE`이고, `CLOSED`가 아니고, 남은 자리(`headcount` − `interest`)가 0보다 크고, 이미 담은 직무(`plan_item`)가 아닌 직무. 적합도 점수 → 남은 자리 순으로 최대 5개([ADR-0016](../decisions/0016-demo-profile-and-screen-rules.md)). 적합도 점수는 추천과 같다([ADR-0018](../decisions/0018-recommendation-rule-keyword.md)).
+  - `why`는 규칙 문장이다. 앞: 1지망과 같은 기관이면 '1지망과 같은 기관의 직무이고', 아니면 '관심 분야와 가깝고'. 뒤: 관심이 0이면 '지금 담은 사람이 0명이에요.', 아니면 '남은 자리가 N개예요.' 둘을 쉼표로 잇는다(예: '1지망과 같은 기관의 직무이고, 지금 담은 사람이 0명이에요.').
 - `asOf`는 회차 기간 안이어야 한다(아니면 400 `AS_OF_OUT_OF_RANGE`). 생략하면 `rounds/current`의 `replay.defaultAsOf`.
 
 **센터** — CENTER만(아니면 403 `FORBIDDEN_ROLE`). 회차 직무 전부를 리스트 순번대로 행으로 준다. `asOf` 규칙은 지망 점검과 같다(생략하면 `replay.defaultAsOf`, 모집기간 밖이면 400 `AS_OF_OUT_OF_RANGE`, 날짜 형식이 아니면 400 `INVALID_INPUT`). 세부 정의는 [ADR-0017](../decisions/0017-center-board-details.md).
-- `summary`: `jobs` 직무 수 · `seats` 정원 합 · `intentTotal` asOf까지 지원 의사 합 · `zeroSignalJobs` 지원 의사가 0인 직무 수 · `closedJobs` `CLOSED` 직무 수.
+- `summary`: `jobs` 직무 수 · `seats` 정원 합 · `interestTotal` asOf까지 관심 합(가상 + 실제) · `liveInterestTotal` 그중 실제 사용자가 담은 수 · `zeroSignalJobs` 관심이 0인 직무 수 · `closedJobs` `CLOSED` 직무 수.
 - `eligiblePool`(적격 학생 풀): 직무의 선호 전공 표기에서 사람이 확정한 학과(중복 없이)의 재학생 수 합. 전공 무관이면 전체 재학생. 확정 전 표기(`DRAFT`, 2026-2는 없음)는 0으로 센다.
 - `risks[].code`(이 순서): `NARROW_POOL` · `PORTFOLIO_REQUIRED` · `CERTIFICATE_REQUIRED`(`detail`은 자격증 원문) · `WEEKEND`(토·일 실습, `detail` '토'·'토·일') · `DOC_ALERT`. `label`은 `codes`의 `risk` 표기.
   - `NARROW_POOL`: 적격 학생 풀(`eligiblePool`)이 200명 미만, `detail` '선호 전공 재학생 N명'. 2026-2 시드 분포(98·102·102·102·102·115·115·198명 …)에서 하위 직무를 가르는 값이다(10/2 결정, [ADR-0016](../decisions/0016-demo-profile-and-screen-rules.md)). 설정 `app.center.narrow-pool-below`(환경변수 `CENTER_NARROW_POOL_BELOW`).

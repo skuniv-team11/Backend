@@ -11,18 +11,21 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import kr.ac.skuniv.coopradar.TestcontainersConfiguration;
 import kr.ac.skuniv.coopradar.contract.Contract;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 /**
  * docs/api #23 지망 점검. 2026-2 실제 시드로 시연 흐름을 본다 — 예시 학생이 소서 국내 마케팅(122)을 1지망,
- * AMD(120)를 2지망으로 두면 7/18 기준 같은 기관 해외 마케팅(123, 지원 의사 0)이 첫 대안으로 나온다.
+ * AMD(120)를 2지망으로 두면 7/23 기준 같은 기관 해외 마케팅(123, 관심 0)이 첫 대안으로 나온다.
+ * 관심 = 내 지망에 담은 사람(가상 + 실제, 본인 제외 — ADR-0019). 테스트마다 담은 지망을 비워 다른 테스트의 영향을 없앤다.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -37,26 +40,36 @@ class PlanCheckApiTest {
     @Autowired
     MockMvc mvc;
 
+    @Autowired
+    JdbcClient db;
+
+    @BeforeEach
+    void 담은_지망을_비운다() {
+        db.sql("DELETE FROM plan_item").update();
+    }
+
     @Test
     void 지망별_신호와_같은_기관_빈_자리를_주고_계약_모양과_같다() throws Exception {
         String token = guestToken();
         rankDemo(token);
         String body = check(token, "{\"profile\": " + PROFILE + "}")
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.asOf").value("2026-07-18"))
+                .andExpect(jsonPath("$.asOf").value("2026-07-23"))
                 .andExpect(jsonPath("$.isVirtual").value(true))
                 .andExpect(jsonPath("$.signalSource").value("REPLAY"))
                 .andExpect(jsonPath("$.items.length()").value(2))
                 .andExpect(jsonPath("$.items[0].rank").value(1))
                 .andExpect(jsonPath("$.items[0].jobId").value(122))
-                .andExpect(jsonPath("$.items[0].signal.intent").value(2))
+                .andExpect(jsonPath("$.items[0].signal.interest").value(2))
+                .andExpect(jsonPath("$.items[0].signal.liveInterest").value(0)) // 본인이 담은 것은 빼고 센다
                 .andExpect(jsonPath("$.items[0].signal.status").value("OPEN")) // 정원에 닿아도 몰림 표시 없음
                 .andExpect(jsonPath("$.items[1].jobId").value(120))
-                .andExpect(jsonPath("$.items[1].signal.expectedFullOn").value("2026-07-21"))
+                .andExpect(jsonPath("$.items[1].signal.interest").value(2))
+                .andExpect(jsonPath("$.items[1].signal.expectedFullOn").doesNotExist()) // 7/23에는 이미 정원(2/2)
                 .andExpect(jsonPath("$.alternatives[0].jobId").value(123))
                 .andExpect(jsonPath("$.alternatives[0].fit").value("HIGH"))
                 .andExpect(jsonPath("$.alternatives[0].remaining").value(2))
-                .andExpect(jsonPath("$.alternatives[0].why").value("1지망과 같은 기관의 직무이고, 지금 지원 의사가 0명이에요."))
+                .andExpect(jsonPath("$.alternatives[0].why").value("1지망과 같은 기관의 직무이고, 지금 담은 사람이 0명이에요."))
                 .andReturn().getResponse().getContentAsString();
         Contract.assertSameShape(body, Contract.responseExample("checkPlan", 200, null));
 
@@ -71,7 +84,7 @@ class PlanCheckApiTest {
         assertThat(verdicts).containsOnly("ELIGIBLE");
         List<String> whys = JsonPath.read(body, "$.alternatives[1:].why");
         assertThat(whys).allSatisfy(w -> assertThat(w).matches("(1지망과 같은 기관의 직무이고|관심 분야와 가깝고), "
-                + "(지금 지원 의사가 0명이에요\\.|남은 자리가 \\d+개예요\\.)"));
+                + "(지금 담은 사람이 0명이에요\\.|남은 자리가 \\d+개예요\\.)"));
     }
 
     @Test
@@ -81,7 +94,12 @@ class PlanCheckApiTest {
         check(token, "{\"profile\": " + PROFILE + ", \"asOf\": \"2026-07-13\"}")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.asOf").value("2026-07-13"))
-                .andExpect(jsonPath("$.items[0].signal.intent").value(0));
+                .andExpect(jsonPath("$.items[0].signal.interest").value(0));
+        // 7/18에는 AMD가 1/2라 정원 도달 예상일이 있다
+        check(token, "{\"profile\": " + PROFILE + ", \"asOf\": \"2026-07-18\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[1].jobId").value(120))
+                .andExpect(jsonPath("$.items[1].signal.expectedFullOn").value("2026-07-21"));
         check(token, "{\"profile\": " + PROFILE + ", \"asOf\": \"2026-07-30\"}")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("AS_OF_OUT_OF_RANGE"));
@@ -101,7 +119,7 @@ class PlanCheckApiTest {
                 .andExpect(jsonPath("$.items").isEmpty())
                 .andExpect(jsonPath("$.alternatives.length()").value(5))
                 .andExpect(jsonPath("$.alternatives[0].jobId").value(123))
-                .andExpect(jsonPath("$.alternatives[0].why").value("관심 분야와 가깝고, 지금 지원 의사가 0명이에요."));
+                .andExpect(jsonPath("$.alternatives[0].why").value("관심 분야와 가깝고, 지금 담은 사람이 0명이에요."));
         // 순위 없이 담기만 해도 대안에서 빠진다
         mvc.perform(post("/api/me/plan/items").header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON).content("{\"jobId\": 123}"));
@@ -115,7 +133,53 @@ class PlanCheckApiTest {
                 .andExpect(jsonPath("$.code").value("FORBIDDEN_ROLE"));
     }
 
+    @Test
+    void 다른_학생이_담은_수가_관심에_더해지고_본인_것은_빠진다() throws Exception {
+        String me = guestToken();
+        rankDemo(me);
+        String other = guestToken();
+        add(other, 123); // 순위 없이 담기만 해도 관심이다
+        add(other, 122);
+
+        String body = check(me, "{\"profile\": " + PROFILE + "}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].jobId").value(122))
+                .andExpect(jsonPath("$.items[0].signal.interest").value(3)) // 가상 2 + 다른 학생 1
+                .andExpect(jsonPath("$.items[0].signal.liveInterest").value(1))
+                .andExpect(jsonPath("$.items[0].signal.ratio").value(1.5))
+                .andExpect(jsonPath("$.alternatives[0].jobId").value(123))
+                .andExpect(jsonPath("$.alternatives[0].signal.interest").value(1))
+                .andExpect(jsonPath("$.alternatives[0].signal.liveInterest").value(1))
+                .andExpect(jsonPath("$.alternatives[0].remaining").value(1))
+                .andExpect(jsonPath("$.alternatives[0].why").value("1지망과 같은 기관의 직무이고, 남은 자리가 1개예요."))
+                .andReturn().getResponse().getContentAsString();
+        Contract.assertSameShape(body, Contract.responseExample("checkPlan", 200, null));
+
+        // 기준일(7/23)보다 앞 날짜에는 실제 담은 수가 없다
+        check(me, "{\"profile\": " + PROFILE + ", \"asOf\": \"2026-07-22\"}")
+                .andExpect(jsonPath("$.items[0].signal.interest").value(2))
+                .andExpect(jsonPath("$.items[0].signal.liveInterest").value(0));
+
+        // 상대 쪽에서 보면 내가 담은 122·120이 보이고, 자기가 담은 것은 빠진다
+        mvc.perform(put("/api/me/plan/ranks").header("Authorization", "Bearer " + other)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"ranks\": [{\"jobId\": 122, \"rank\": 1}, {\"jobId\": 123, \"rank\": 2}]}"))
+                .andExpect(status().isOk());
+        check(other, "{\"profile\": " + PROFILE + "}")
+                .andExpect(jsonPath("$.items[0].jobId").value(122))
+                .andExpect(jsonPath("$.items[0].signal.interest").value(3)) // 가상 2 + 나 1
+                .andExpect(jsonPath("$.items[1].jobId").value(123))
+                .andExpect(jsonPath("$.items[1].signal.interest").value(0))
+                .andExpect(jsonPath("$.items[1].signal.liveInterest").value(0));
+    }
+
     // ───────── 도우미 ─────────
+
+    private void add(String token, int jobId) throws Exception {
+        mvc.perform(post("/api/me/plan/items").header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"jobId\": " + jobId + "}"))
+                .andExpect(status().isCreated());
+    }
 
     private void rankDemo(String token) throws Exception {
         for (int job : new int[] {122, 120}) {

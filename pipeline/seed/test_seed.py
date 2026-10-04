@@ -18,15 +18,12 @@ class ReplayTest(unittest.TestCase):
                 for closes in (None, D(2026, 7, 18), D(2026, 7, 14), D(2026, 7, 24)):
                     yield job_id, hc, fa, closes
 
-    def test_지원_의사_합은_배정_수_관심_누적은_지원_의사_누적_이상_마감일부터는_행이_없다(self):
+    def test_관심_합은_배정_수_마감일부터는_행이_없다(self):
         for job_id, hc, fa, closes in self.cases():
             rows = replay.job_signals(job_id, hc, fa, START, END, closes, "t")
-            self.assertEqual(sum(r[2] for r in rows), fa)
-            ci = cn = 0
-            for day, interest, intent in rows:
-                ci, cn = ci + interest, cn + intent
-                self.assertGreaterEqual(ci, cn)
-                self.assertTrue(interest or intent)
+            self.assertEqual(sum(r[1] for r in rows), fa)
+            for day, interest in rows:
+                self.assertGreater(interest, 0)
                 self.assertTrue(START <= day <= END)
                 if closes:
                     self.assertLess(day, closes)
@@ -46,7 +43,7 @@ class ReplayTest(unittest.TestCase):
             self.assertTrue(START < close < END)
             days = [s["signal_date"] for s in signals if s["job_id"] == job_id]
             self.assertTrue(all(d < close.isoformat() for d in days))
-            self.assertEqual(sum(s["intent_count"] for s in signals if s["job_id"] == job_id), 2)
+            self.assertEqual(sum(s["interest_count"] for s in signals if s["job_id"] == job_id), 2)
 
     def test_열린_날이_없는데_배정이_있으면_멈춘다(self):
         self.assertEqual(replay.job_signals(1, 1, 0, START, END, START, "t"), [])
