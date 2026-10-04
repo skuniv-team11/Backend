@@ -18,7 +18,10 @@ MAX_LEN = 60
 MAX_ITEMS = 3
 # 감상·자기 평가·개인 진로 낱말. 하나라도 있으면 사실 구절로 보지 않는다
 BANNED = ["뿌듯", "보람", "뜻깊", "기뻤", "기쁜", "즐거", "느꼈", "느낄", "깨달", "배울 수", "배웠", "성장",
-          "좋은 기회", "기회였", "입사", "채용", "정직원", "정규직", "합격", "취업연계", "노력하"]
+          "좋은 기회", "기회였", "입사", "채용", "정직원", "정규직", "합격", "취업연계", "노력하",
+          "저의", "제가", "저는"]
+# 문장 중간에서 끊긴 꼴(무엇을 했는지로 끝나지 않음)
+CUT_ENDINGS = ("때", "날", "기도", "하고", "었고", "였고", "는데", "으며", "하며")
 SCHEMA = {
     "type": "object",
     "properties": {"outcomes": {"type": "array", "items": {"type": "string"},
@@ -51,7 +54,9 @@ def check(outcomes, results):
         elif len(text) > MAX_LEN:
             reason = f"{MAX_LEN}자 초과"
         elif any(w in text for w in BANNED):
-            reason = "감상·평가·진로 낱말"
+            reason = "감상·평가·진로·1인칭 낱말"
+        elif text.endswith(CUT_ENDINGS):
+            reason = "문장 중간에서 끊김"
         elif squash(text) in seen:
             reason = "중복"
         elif len(kept) >= MAX_ITEMS:
