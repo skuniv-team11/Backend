@@ -43,6 +43,7 @@ class JobApiTest {
                 .andExpect(jsonPath("$.id").value(101))
                 .andExpect(jsonPath("$.round.termCode").value("2026-2"))
                 .andExpect(jsonPath("$.institution.id").value(1))
+                .andExpect(jsonPath("$.institution.logoPath").value("/logos/1.png"))
                 .andExpect(jsonPath("$.institution.ntsStatus").value("ACTIVE"))
                 .andExpect(jsonPath("$.title").value("AE"))
                 .andExpect(jsonPath("$.team").value("광고사업부"))

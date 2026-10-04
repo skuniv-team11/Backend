@@ -16,7 +16,8 @@
       "team": "마케팅팀",
       "institution": {
         "id": 3,
-        "name": "누리뷰티(가상)"
+        "name": "누리뷰티(가상)",
+        "logoPath": "/logos/3.png"
       },
       "verdict": "ELIGIBLE",
       "majorMatch": "MATCH",
@@ -63,7 +64,8 @@
       "team": "디자인팀",
       "institution": {
         "id": 9,
-        "name": "라온스튜디오(가상)"
+        "name": "라온스튜디오(가상)",
+        "logoPath": "/logos/9.png"
       },
       "verdict": "NEEDS_CHECK",
       "majorMatch": "NOT_LISTED",
@@ -117,7 +119,8 @@
       "team": "개발팀",
       "institution": {
         "id": 5,
-        "name": "가온소프트(가상)"
+        "name": "가온소프트(가상)",
+        "logoPath": null
       },
       "verdict": "NEEDS_CHECK",
       "majorMatch": "NOT_LISTED",

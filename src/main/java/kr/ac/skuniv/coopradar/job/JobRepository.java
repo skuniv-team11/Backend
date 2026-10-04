@@ -56,7 +56,8 @@ public class JobRepository {
                 .query((rs, n) -> new JobRow(
                         rs.getInt("id"),
                         new RoundRef(rs.getInt("round_id"), rs.getString("term_code")),
-                        new Institution(rs.getInt("institution_id"), rs.getString("i_name"), rs.getString("i_size"),
+                        new Institution(rs.getInt("institution_id"), rs.getString("i_name"),
+                                InstitutionLogos.pathFor(rs.getInt("institution_id")), rs.getString("i_size"),
                                 rs.getString("i_listing"), rs.getString("i_business_type"),
                                 rs.getString("i_business_item"), rs.getString("i_address"),
                                 rs.getString("i_nts_status"), rs.getObject("i_nts_checked_on", LocalDate.class)),

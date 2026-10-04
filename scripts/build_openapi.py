@@ -58,6 +58,7 @@ DATE = {"type": "string", "format": "date"}
 DATETIME = {"type": "string", "format": "date-time"}
 ID = {"type": "integer", "minimum": 1}
 PAGE = {"type": "integer", "minimum": 1}
+LOGO_PATH = d(nul(STR), "기관 로고 이미지 경로(API 서버 기준, 예: /logos/3.png). API 기본 주소 뒤에 붙여 <img>로 띄운다. 로고가 없으면 null → 기관명 첫 글자로 대신(ADR-0019)")
 
 def arr(items, **kw):
     return {"type": "array", "items": items, **kw}
@@ -192,7 +193,7 @@ S.update({
             "signalsAreVirtual": BOOL,
         }),
     }),
-    "InstitutionRef": obj({"id": ID, "name": STR}),
+    "InstitutionRef": obj({"id": ID, "name": STR, "logoPath": LOGO_PATH}),
     "ReasonLine": obj({
         "layer": R("ReasonLayer"),
         "item": STR,
@@ -259,7 +260,7 @@ S.update({
         "id": ID,
         "round": R("RoundRef"),
         "institution": obj({
-            "id": ID, "name": STR,
+            "id": ID, "name": STR, "logoPath": LOGO_PATH,
             "size": R("Size"), "listing": R("Listing"),
             "businessType": nul(STR), "businessItem": nul(STR), "address": nul(STR),
             "ntsStatus": nul(R("NtsStatus")), "ntsCheckedOn": nul(DATE),

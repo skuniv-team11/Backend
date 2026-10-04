@@ -26,8 +26,8 @@ public record JobDetail(
         List<Alert> alerts,
         List<SeniorNote> seniorNotes) {
 
-    /** 사업자번호·대표자명은 두지 않는다(ADR-0004). */
-    public record Institution(int id, String name, String size, String listing, String businessType,
+    /** 사업자번호·대표자명은 두지 않는다(ADR-0004). {@code logoPath}는 {@link InstitutionRef}와 같다(ADR-0019). */
+    public record Institution(int id, String name, String logoPath, String size, String listing, String businessType,
                               String businessItem, String address, String ntsStatus, LocalDate ntsCheckedOn) {
     }
 

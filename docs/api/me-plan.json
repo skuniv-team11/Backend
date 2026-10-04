@@ -5,7 +5,8 @@
       "title": "국내 마케팅",
       "institution": {
         "id": 3,
-        "name": "누리뷰티(가상)"
+        "name": "누리뷰티(가상)",
+        "logoPath": "/logos/3.png"
       },
       "rank": 1,
       "addedAt": "2026-10-01T14:05:00+09:00"
@@ -15,7 +16,8 @@
       "title": "MD 보조",
       "institution": {
         "id": 7,
-        "name": "다온커머스(가상)"
+        "name": "다온커머스(가상)",
+        "logoPath": "/logos/7.png"
       },
       "rank": 2,
       "addedAt": "2026-10-01T14:06:00+09:00"
@@ -25,7 +27,8 @@
       "title": "콘텐츠 디자인",
       "institution": {
         "id": 9,
-        "name": "라온스튜디오(가상)"
+        "name": "라온스튜디오(가상)",
+        "logoPath": "/logos/9.png"
       },
       "rank": null,
       "addedAt": "2026-10-01T14:07:00+09:00"
