@@ -97,6 +97,10 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - 최근 3일 = asOf와 그 앞 이틀(모집 시작 전 날은 빼고 남은 날 수로 나눈다). 남은 자리 ÷ 하루 평균을 올림한 날 수만큼 asOf에서 더한다.
   - null: 이미 정원 이상 · `CLOSED` · 최근 3일 관심 증가 0 · 지원할 수 있는 마지막 날(회차 종료일, `closesOn`이 있으면 그 전날)을 넘김.
 
+**InstitutionRef** — `{id, name, logoPath}`. 판정·추천·지망·지망 점검·현황판·검토 알림의 `institution`. 직무 상세의 `institution`(규모·소재지 등이 더 있는 객체)에도 같은 `logoPath`가 있다(ADR-0019).
+- `logoPath`: 기관 로고 PNG 경로(API 서버 기준, 예: `/logos/3.png`). 프론트는 API 기본 주소(`VITE_API_BASE_URL`) 뒤에 붙여 `<img>`로 띄운다. 로그인 없이 받고(`/api` 밖이라 CORS도 필요 없다), 캐시는 하루. 로고가 없으면 null → 기관명 첫 글자로 대신한다. 2026-2 기관 18곳은 모두 있다.
+- 로고는 투명 배경 PNG이고 여백을 잘라 낸 원래 비율이다(최대 600×200). 가로로 긴 글자 로고와 정사각형 아이콘이 섞여 있으니 고정 크기 상자에 `object-fit: contain`으로 넣는다.
+
 **Citation** — `{sourceType, documentTitle, page, quote}`. `sourceType`은 `OPERATION_PLAN` · `TESTIMONIAL`. 원문 PDF 링크는 주지 않는다.
 
 **적합도** — `fit`은 `HIGH` · `MEDIUM`. 점수는 응답에 넣지 않는다(정렬에만 쓴다). 규칙 + 키워드이고 임베딩은 쓰지 않는다(E5 결과, ADR-0018).

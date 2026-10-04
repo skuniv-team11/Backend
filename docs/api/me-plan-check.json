@@ -9,7 +9,8 @@
       "title": "국내 마케팅",
       "institution": {
         "id": 3,
-        "name": "누리뷰티(가상)"
+        "name": "누리뷰티(가상)",
+        "logoPath": "/logos/3.png"
       },
       "signal": {
         "interest": 3,
@@ -29,7 +30,8 @@
       "title": "MD 보조",
       "institution": {
         "id": 7,
-        "name": "다온커머스(가상)"
+        "name": "다온커머스(가상)",
+        "logoPath": "/logos/7.png"
       },
       "signal": {
         "interest": 1,
@@ -50,7 +52,8 @@
       "title": "해외 마케팅",
       "institution": {
         "id": 3,
-        "name": "누리뷰티(가상)"
+        "name": "누리뷰티(가상)",
+        "logoPath": "/logos/3.png"
       },
       "verdict": "ELIGIBLE",
       "fit": "HIGH",

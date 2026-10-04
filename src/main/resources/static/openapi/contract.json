@@ -1211,7 +1211,8 @@
                           "team": "마케팅팀",
                           "institution": {
                             "id": 3,
-                            "name": "누리뷰티(가상)"
+                            "name": "누리뷰티(가상)",
+                            "logoPath": "/logos/3.png"
                           },
                           "verdict": "ELIGIBLE",
                           "majorMatch": "MATCH",
@@ -1258,7 +1259,8 @@
                           "team": "디자인팀",
                           "institution": {
                             "id": 9,
-                            "name": "라온스튜디오(가상)"
+                            "name": "라온스튜디오(가상)",
+                            "logoPath": "/logos/9.png"
                           },
                           "verdict": "NEEDS_CHECK",
                           "majorMatch": "NOT_LISTED",
@@ -1312,7 +1314,8 @@
                           "team": "개발팀",
                           "institution": {
                             "id": 5,
-                            "name": "가온소프트(가상)"
+                            "name": "가온소프트(가상)",
+                            "logoPath": null
                           },
                           "verdict": "NEEDS_CHECK",
                           "majorMatch": "NOT_LISTED",
@@ -1485,7 +1488,8 @@
                           "title": "국내 마케팅",
                           "institution": {
                             "id": 3,
-                            "name": "누리뷰티(가상)"
+                            "name": "누리뷰티(가상)",
+                            "logoPath": "/logos/3.png"
                           },
                           "verdict": "ELIGIBLE",
                           "fit": "HIGH",
@@ -1518,7 +1522,8 @@
                           "title": "해외 마케팅",
                           "institution": {
                             "id": 3,
-                            "name": "누리뷰티(가상)"
+                            "name": "누리뷰티(가상)",
+                            "logoPath": "/logos/3.png"
                           },
                           "verdict": "ELIGIBLE",
                           "fit": "HIGH",
@@ -1545,7 +1550,8 @@
                           "title": "MD 보조",
                           "institution": {
                             "id": 7,
-                            "name": "다온커머스(가상)"
+                            "name": "다온커머스(가상)",
+                            "logoPath": "/logos/7.png"
                           },
                           "verdict": "NEEDS_CHECK",
                           "fit": "MEDIUM",
@@ -1854,6 +1860,7 @@
                       "institution": {
                         "id": 3,
                         "name": "누리뷰티(가상)",
+                        "logoPath": "/logos/3.png",
                         "size": "SME",
                         "listing": "UNLISTED",
                         "businessType": "도소매",
@@ -2226,7 +2233,8 @@
                           "title": "국내 마케팅",
                           "institution": {
                             "id": 3,
-                            "name": "누리뷰티(가상)"
+                            "name": "누리뷰티(가상)",
+                            "logoPath": "/logos/3.png"
                           },
                           "rank": 1,
                           "addedAt": "2026-10-01T14:05:00+09:00"
@@ -2236,7 +2244,8 @@
                           "title": "MD 보조",
                           "institution": {
                             "id": 7,
-                            "name": "다온커머스(가상)"
+                            "name": "다온커머스(가상)",
+                            "logoPath": "/logos/7.png"
                           },
                           "rank": 2,
                           "addedAt": "2026-10-01T14:06:00+09:00"
@@ -2246,7 +2255,8 @@
                           "title": "콘텐츠 디자인",
                           "institution": {
                             "id": 9,
-                            "name": "라온스튜디오(가상)"
+                            "name": "라온스튜디오(가상)",
+                            "logoPath": "/logos/9.png"
                           },
                           "rank": null,
                           "addedAt": "2026-10-01T14:07:00+09:00"
@@ -2562,7 +2572,8 @@
                           "title": "국내 마케팅",
                           "institution": {
                             "id": 3,
-                            "name": "누리뷰티(가상)"
+                            "name": "누리뷰티(가상)",
+                            "logoPath": "/logos/3.png"
                           },
                           "rank": 1,
                           "addedAt": "2026-10-01T14:05:00+09:00"
@@ -2572,7 +2583,8 @@
                           "title": "MD 보조",
                           "institution": {
                             "id": 7,
-                            "name": "다온커머스(가상)"
+                            "name": "다온커머스(가상)",
+                            "logoPath": "/logos/7.png"
                           },
                           "rank": 2,
                           "addedAt": "2026-10-01T14:06:00+09:00"
@@ -2582,7 +2594,8 @@
                           "title": "콘텐츠 디자인",
                           "institution": {
                             "id": 9,
-                            "name": "라온스튜디오(가상)"
+                            "name": "라온스튜디오(가상)",
+                            "logoPath": "/logos/9.png"
                           },
                           "rank": null,
                           "addedAt": "2026-10-01T14:07:00+09:00"
@@ -2732,7 +2745,8 @@
                           "title": "국내 마케팅",
                           "institution": {
                             "id": 3,
-                            "name": "누리뷰티(가상)"
+                            "name": "누리뷰티(가상)",
+                            "logoPath": "/logos/3.png"
                           },
                           "signal": {
                             "interest": 3,
@@ -2752,7 +2766,8 @@
                           "title": "MD 보조",
                           "institution": {
                             "id": 7,
-                            "name": "다온커머스(가상)"
+                            "name": "다온커머스(가상)",
+                            "logoPath": "/logos/7.png"
                           },
                           "signal": {
                             "interest": 1,
@@ -2773,7 +2788,8 @@
                           "title": "해외 마케팅",
                           "institution": {
                             "id": 3,
-                            "name": "누리뷰티(가상)"
+                            "name": "누리뷰티(가상)",
+                            "logoPath": "/logos/3.png"
                           },
                           "verdict": "ELIGIBLE",
                           "fit": "HIGH",
@@ -2932,7 +2948,8 @@
                           "jobId": 101,
                           "institution": {
                             "id": 3,
-                            "name": "누리뷰티(가상)"
+                            "name": "누리뷰티(가상)",
+                            "logoPath": "/logos/3.png"
                           },
                           "title": "국내 마케팅",
                           "headcount": 2,
@@ -2956,7 +2973,8 @@
                           "jobId": 102,
                           "institution": {
                             "id": 3,
-                            "name": "누리뷰티(가상)"
+                            "name": "누리뷰티(가상)",
+                            "logoPath": "/logos/3.png"
                           },
                           "title": "해외 마케팅",
                           "headcount": 2,
@@ -2980,7 +2998,8 @@
                           "jobId": 105,
                           "institution": {
                             "id": 9,
-                            "name": "라온스튜디오(가상)"
+                            "name": "라온스튜디오(가상)",
+                            "logoPath": "/logos/9.png"
                           },
                           "title": "콘텐츠 디자인",
                           "headcount": 1,
@@ -3015,7 +3034,8 @@
                           "jobId": 103,
                           "institution": {
                             "id": 5,
-                            "name": "가온소프트(가상)"
+                            "name": "가온소프트(가상)",
+                            "logoPath": "/logos/5.png"
                           },
                           "title": "웹 서비스 개발",
                           "headcount": 1,
@@ -3047,7 +3067,8 @@
                           "id": 7,
                           "institution": {
                             "id": 5,
-                            "name": "가온소프트(가상)"
+                            "name": "가온소프트(가상)",
+                            "logoPath": "/logos/5.png"
                           },
                           "jobId": 103,
                           "kind": "DOC_INCONSISTENCY",
@@ -4160,11 +4181,19 @@
           },
           "name": {
             "type": "string"
+          },
+          "logoPath": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "기관 로고 이미지 경로(API 서버 기준, 예: /logos/3.png). API 기본 주소 뒤에 붙여 <img>로 띄운다. 로고가 없으면 null → 기관명 첫 글자로 대신(ADR-0019)"
           }
         },
         "required": [
           "id",
-          "name"
+          "name",
+          "logoPath"
         ]
       },
       "JobDetail": {
@@ -4186,6 +4215,13 @@
               },
               "name": {
                 "type": "string"
+              },
+              "logoPath": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "기관 로고 이미지 경로(API 서버 기준, 예: /logos/3.png). API 기본 주소 뒤에 붙여 <img>로 띄운다. 로고가 없으면 null → 기관명 첫 글자로 대신(ADR-0019)"
               },
               "size": {
                 "$ref": "#/components/schemas/Size"
@@ -4232,6 +4268,7 @@
             "required": [
               "id",
               "name",
+              "logoPath",
               "size",
               "listing",
               "businessType",

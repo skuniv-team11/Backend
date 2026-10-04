@@ -20,7 +20,8 @@
       "jobId": 101,
       "institution": {
         "id": 3,
-        "name": "누리뷰티(가상)"
+        "name": "누리뷰티(가상)",
+        "logoPath": "/logos/3.png"
       },
       "title": "국내 마케팅",
       "headcount": 2,
@@ -44,7 +45,8 @@
       "jobId": 102,
       "institution": {
         "id": 3,
-        "name": "누리뷰티(가상)"
+        "name": "누리뷰티(가상)",
+        "logoPath": "/logos/3.png"
       },
       "title": "해외 마케팅",
       "headcount": 2,
@@ -68,7 +70,8 @@
       "jobId": 105,
       "institution": {
         "id": 9,
-        "name": "라온스튜디오(가상)"
+        "name": "라온스튜디오(가상)",
+        "logoPath": "/logos/9.png"
       },
       "title": "콘텐츠 디자인",
       "headcount": 1,
@@ -103,7 +106,8 @@
       "jobId": 103,
       "institution": {
         "id": 5,
-        "name": "가온소프트(가상)"
+        "name": "가온소프트(가상)",
+        "logoPath": "/logos/5.png"
       },
       "title": "웹 서비스 개발",
       "headcount": 1,
@@ -135,7 +139,8 @@
       "id": 7,
       "institution": {
         "id": 5,
-        "name": "가온소프트(가상)"
+        "name": "가온소프트(가상)",
+        "logoPath": "/logos/5.png"
       },
       "jobId": 103,
       "kind": "DOC_INCONSISTENCY",
