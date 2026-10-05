@@ -5,7 +5,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
+import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Layer;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.MajorMatch;
+import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.ReasonLine;
+import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Result;
 import kr.ac.skuniv.coopradar.eligibility.JobRequirement;
 import kr.ac.skuniv.coopradar.recommend.EvidenceText.Segment;
 
@@ -70,6 +73,34 @@ final class ReasonTemplates {
             text += " " + contrast;
         }
         return text;
+    }
+
+    /**
+     * 선호 전공에 소속 학과가 있는지 한 문장. 이유 문장(#16) LLM 문장 뒤에 늘 붙인다 — LLM은 선호 전공을 말하지 않고
+     * 이 사실은 규칙이 맡는다(ADR-0020 10/5 보완). 기본 문장의 선호 전공 문구와 같은 글이다.
+     *
+     * @param majorLabel 소속 학과가 들어 있는 선호 전공 표기(예: 미용예술대학). MATCH가 아니면 무시
+     */
+    static String majorSentence(MajorMatch major, String majorLabel) {
+        return switch (major) {
+            case MATCH -> (majorLabel == null ? "선호 전공에" : "선호 전공 '" + majorLabel + "'에") + " 소속 학과가 들어 있어요.";
+            case OPEN -> "전공 무관 자리예요.";
+            case NOT_LISTED -> MAJOR_NOT_LISTED;
+        };
+    }
+
+    /**
+     * '확인 필요'로 만든 기관 조건(못 미친 조건·직접 확인할 서류·문서 검토)을 판정 이유 글 그대로 한 문장으로.
+     * 없으면 null. 예: "확인해야 할 조건이 있어요(학년 '4학년' · 포트폴리오 '필수')."
+     * LLM은 이 조건을 쓰지 않고(바꿔 말하다 '4학년'을 '4학년 이상'으로 쓰는 일이 있었다) 이 문장이 맡는다.
+     */
+    static String checkSentence(List<ReasonLine> reasons) {
+        List<String> items = reasons.stream()
+                .filter(r -> r.layer() == Layer.INSTITUTION && (r.result() == Result.NOT_MET || r.result() == Result.CHECK))
+                .map(r -> r.item() + " '" + r.requirement() + "'")
+                .distinct()
+                .toList();
+        return items.isEmpty() ? null : "확인해야 할 조건이 있어요(" + String.join(" · ", items) + ").";
     }
 
     /**

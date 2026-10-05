@@ -4,6 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.anthropic.models.messages.MessageCreateParams;
 import java.util.List;
+import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Layer;
+import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.MajorMatch;
+import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.ReasonLine;
+import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Result;
 import kr.ac.skuniv.coopradar.recommend.RecommendDtos.Citation;
 import kr.ac.skuniv.coopradar.recommend.RecommendDtos.SourceType;
 import kr.ac.skuniv.coopradar.recommend.RecommendRepository.JobFacts;
@@ -76,6 +80,53 @@ class ReasonUnitTest {
         assertThat(ReasonService.validate(draft("뷰티에 관심이 있다면 SNS 매거진 채널 운영을 거들어요."), CITES, FASHION, match,
                 "메이크업디자인학과", interest)).isPresent();
         assertThat(ReasonService.interestWords("뷰티에 관심, SNS·마케팅")).containsExactly("뷰티", "관심", "SNS", "마케팅");
+    }
+
+    @Test
+    void 선호_전공은_말하지_않고_원문보다_넓히는_말은_원문에_있을_때만() {
+        // 선호 전공에 소속 학과가 있는지는 규칙 문장이 뒤에 붙인다(ADR-0020 10/5 보완)
+        assertThat(ReasonService.validate(draft("선호 전공은 참고 사항이지만 콘텐츠 제작을 익혀요."), CITES, FACTS)).isEmpty();
+        assertThat(ReasonService.validate(draft("선호전공 미용예술대학에 맞는 온라인 채널 운영이에요."), CITES, FACTS)).isEmpty();
+        // '전 과정'·'전반'·'모든 과정' 등은 근거·직무 원문에 없으면 탈락(띄어쓰기 무시)
+        assertThat(ReasonService.validate(draft("SNS 운영까지 뷰티 마케팅의 전 과정을 경험해요."), CITES, FACTS)).isEmpty();
+        assertThat(ReasonService.validate(draft("SNS 운영까지 마케팅 전과정을 경험해요."), CITES, FACTS)).isEmpty();
+        assertThat(ReasonService.validate(draft("온라인 채널 운영의 모든 과정을 맡아요."), CITES, FACTS)).isEmpty();
+        assertThat(ReasonService.validate(draft("온라인 채널 운영을 총괄해요."), CITES, FACTS)).isEmpty();
+        // 원문에 '전반'이 있으면(선배 수기 '마케팅 업무 전반 보조') 괜찮다
+        assertThat(ReasonService.validate(draft("선배처럼 마케팅 업무 전반을 거들어요."), CITES, FACTS)).isPresent();
+        // 걸린 문장만 빼고 남은 문장은 그대로 쓴다
+        assertThat(ReasonService.validate(draft("온라인 채널 운영을 맡아요. 학과가 선호 전공에도 들어 있어요."), CITES, FACTS))
+                .contains("온라인 채널 운영을 맡아요.");
+        assertThat(ReasonService.validate(draft("온라인 채널 운영을 맡아요. 뷰티 마케팅의 전 과정을 배워요. 트렌드에 관심이 있으면 좋아요."),
+                CITES, FACTS)).contains("온라인 채널 운영을 맡아요. 트렌드에 관심이 있으면 좋아요.");
+        assertThat(ReasonService.sentences("가나다요. 라마바요.  사아요")).containsExactly("가나다요.", "라마바요.", "사아요");
+        // 확인할 조건을 말한 문장도 뺀다('4학년'을 '4학년 이상'으로 바꿔 말한 경우 — 그 조건은 규칙 문장이 붙인다)
+        assertThat(ReasonService.validate(draft("온라인 채널 운영을 맡아요. 다만 4학년 이상과 포트폴리오 제출이 필요한지 확인해야 해요."),
+                CITES, FACTS)).contains("온라인 채널 운영을 맡아요.");
+        assertThat(ReasonService.validate(draft("온라인 채널 운영을 맡아요. 포트폴리오는 확인할 것이 있어요."), CITES, FACTS))
+                .contains("온라인 채널 운영을 맡아요.");
+    }
+
+    @Test
+    void 확인할_조건은_판정_이유_글_그대로_한_문장() {
+        var lines = List.of(
+                new ReasonLine(Layer.SCHOOL_RULE, "이수 학기", "4학기 이상", "5학기", Result.MET, null),
+                new ReasonLine(Layer.INSTITUTION, "학년", "4학년", "3학년", Result.NOT_MET, null),
+                new ReasonLine(Layer.INSTITUTION, "학점", "3.0 이상", "3.4", Result.MET, null),
+                new ReasonLine(Layer.INSTITUTION, "포트폴리오", "필수", "직접 확인", Result.CHECK, null),
+                new ReasonLine(Layer.INSTITUTION, "자격증", "우대", "직접 확인", Result.INFO, null),
+                new ReasonLine(Layer.MAJOR, "선호 전공", "미용예술계열", "메이크업디자인학과", Result.INFO, null));
+        assertThat(ReasonTemplates.checkSentence(lines)).isEqualTo("확인해야 할 조건이 있어요(학년 '4학년' · 포트폴리오 '필수').");
+        assertThat(ReasonTemplates.checkSentence(lines.subList(0, 1))).isNull();
+    }
+
+    @Test
+    void 선호_전공_규칙_문장() {
+        assertThat(ReasonTemplates.majorSentence(MajorMatch.MATCH, "미용예술대학"))
+                .isEqualTo("선호 전공 '미용예술대학'에 소속 학과가 들어 있어요.");
+        assertThat(ReasonTemplates.majorSentence(MajorMatch.MATCH, null)).isEqualTo("선호 전공에 소속 학과가 들어 있어요.");
+        assertThat(ReasonTemplates.majorSentence(MajorMatch.OPEN, null)).isEqualTo("전공 무관 자리예요.");
+        assertThat(ReasonTemplates.majorSentence(MajorMatch.NOT_LISTED, "무시")).isEqualTo(ReasonTemplates.MAJOR_NOT_LISTED);
     }
 
     @Test

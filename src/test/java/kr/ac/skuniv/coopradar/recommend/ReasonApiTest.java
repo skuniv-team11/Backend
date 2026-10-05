@@ -74,9 +74,11 @@ class ReasonApiTest {
                 .andExpect(jsonPath("$.citations[0].sourceType").value("TESTIMONIAL"))
                 .andReturn().getResponse().getContentAsString();
         Contract.assertSameShape(body, Contract.responseExample("getRecommendationReason", 200, null));
-        assertThat(JsonPath.<String>read(body, "$.text")).startsWith("뷰티 브랜드 SNS 마케팅에 관심이 있다면")
-                // 추천 안 같은 팀 직무(123 해외 마케팅)와의 차이는 규칙 문장으로 덧붙인다(ADR-0020)
-                .endsWith("같은 팀의 해외 마케팅과 달리 '영어 가능자' 요건은 없어요.");
+        // LLM 문장 뒤에 규칙 문장: 선호 전공에 소속 학과가 있는지(늘) → 추천 안 같은 팀 직무(123 해외 마케팅)와의 차이(ADR-0020)
+        assertThat(JsonPath.<String>read(body, "$.text")).isEqualTo(
+                "뷰티 브랜드 SNS 마케팅에 관심이 있다면, 선배가 맡았던 'SNS 계정 관리 및 업로드'와 바로 이어지는 자리예요. "
+                        + "선호 전공 '미용예술대학'에 소속 학과가 들어 있어요. "
+                        + "같은 팀의 해외 마케팅과 달리 '영어 가능자' 요건은 없어요.");
         // 근거 인용은 추천(#15)과 같다
         assertThat(JsonPath.<String>read(body, "$.citations[0].quote")).isEqualTo("SNS 계정 관리 및 업로드");
         // LLM에는 기관 업종과 주차 계획도 사실로 준다
@@ -114,11 +116,18 @@ class ReasonApiTest {
         reason(token, 102, "\"뷰티 브랜드 SNS 마케팅\"")
                 .andExpect(jsonPath("$.source").value("LLM"))
                 .andExpect(jsonPath("$.text").value("'SNS 매거진 채널' 콘텐츠 기획을 거들어요. " + ReasonTemplates.MAJOR_NOT_LISTED));
+        assertThat(LAST_MESSAGE.get()).contains("이 사실은 문장 뒤에 따로 붙으니 쓰지 않음");
         NEXT.set(Optional.of(new ReasonDraft("SNS 매거진 채널에서 뷰티 브랜드의 마케팅 전략을 배워요.", List.of())));
         reason(token, 102, "\"뷰티 브랜드 SNS 콘텐츠\"").andExpect(jsonPath("$.source").value("TEMPLATE"));
         NEXT.set(Optional.of(new ReasonDraft("메이크업 디자인 지식을 바탕으로 콘텐츠 제작을 익혀요.", List.of())));
         reason(token, 102, "\"뷰티 SNS 콘텐츠\"").andExpect(jsonPath("$.source").value("TEMPLATE"));
-        assertThat(CALLS.get()).isEqualTo(3);
+        // '선호 전공은 참고 사항이지만…'처럼 선호 전공을 흐리게 말하면 TEMPLATE(그 사실은 규칙 문장이 맡는다).
+        // 계정당 한도(3회)에 걸리지 않게 새 계정으로
+        NEXT.set(Optional.of(new ReasonDraft("선호 전공은 참고 사항이지만 SNS 매거진 채널 콘텐츠를 만들어요.", List.of())));
+        reason(guestToken("STUDENT"), 102, "\"SNS 콘텐츠 제작\"")
+                .andExpect(jsonPath("$.source").value("TEMPLATE"))
+                .andExpect(jsonPath("$.text").value(org.hamcrest.Matchers.endsWith(ReasonTemplates.MAJOR_NOT_LISTED)));
+        assertThat(CALLS.get()).isEqualTo(4);
     }
 
     @Test

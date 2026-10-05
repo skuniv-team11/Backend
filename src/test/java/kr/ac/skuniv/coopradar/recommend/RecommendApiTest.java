@@ -57,6 +57,11 @@ class RecommendApiTest {
                 .andExpect(jsonPath("$.items[2].jobId").value(120))
                 .andExpect(jsonPath("$.items[2].citations.length()").value(1))
                 .andExpect(jsonPath("$.items[2].citations[0].sourceType").value("OPERATION_PLAN"))
+                // 확인 필요인 비욘드(134)는 확인할 조건을 판정 이유 글 그대로 붙인다(3학년 · 포트폴리오 필수)
+                .andExpect(jsonPath("$.items[3].jobId").value(134))
+                .andExpect(jsonPath("$.items[3].verdict").value("NEEDS_CHECK"))
+                .andExpect(jsonPath("$.items[3].reasonTemplate").value(org.hamcrest.Matchers.endsWith(
+                        "확인해야 할 조건이 있어요(학년 '4학년' · 포트폴리오 '필수').")))
                 // 선호 전공 밖인 세정 SNS·영상은 그 사실을 문장에 붙인다
                 .andExpect(jsonPath("$.items[4].jobId").value(102))
                 .andExpect(jsonPath("$.items[4].reasonTemplate").value(org.hamcrest.Matchers.endsWith(
