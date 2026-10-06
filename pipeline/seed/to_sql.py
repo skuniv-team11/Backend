@@ -4,9 +4,9 @@
     python to_sql.py --check    # 파일이 seed.json과 맞는지만 본다(check_pipeline.py가 부른다)
 
 다시 시드해도 사용자 데이터가 같은 행을 가리키게(ADR-0009):
-- 부모 테이블(program·recruit_round·department·area·institution·workplace·job)은 id(area는 code)로 upsert 하고,
-  seed에 없는 행만 지운다. job을 지우면 담아 둔 지망(plan_item)도 함께 지워진다(직무가 없어졌으므로).
-  학생 프로필이 쓰는 학과·사는 곳은 seed에서 빠져도 지우지 않는다.
+- 부모 테이블(program·recruit_round·department·area·certificate·institution·workplace·job)은 id(area·certificate는
+  code)로 upsert 하고, seed에 없는 행만 지운다. job을 지우면 담아 둔 지망(plan_item)도 함께 지워진다(직무가 없어졌으므로).
+  학생 프로필이 쓰는 학과·사는 곳·자격증은 seed에서 빠져도 지우지 않는다.
 - 자식 테이블(근거·알림·수기·신호·전공 표기)은 통째로 지우고 다시 넣는다. 사용자 데이터가 가리키지 않는다.
 - job_embedding(E5)·round_result(센터 동의 뒤 로컬 적재)는 건드리지 않는다.
 Flyway는 이 파일의 checksum이 바뀔 때마다 V* 다음에 한 트랜잭션으로 다시 적용한다.
@@ -24,6 +24,7 @@ PARENTS = {
     "recruit_round": ["id", "program_id", "term_code", "round_no", "recruit_start", "recruit_end"],
     "department": ["id", "name", "college", "enrolled_count", "enrolled_as_of"],
     "area": ["code", "sido", "name", "sort_order"],
+    "certificate": ["code", "label", "sort_order"],
     "institution": ["id", "name", "size", "listing", "business_type", "business_item", "address",
                     "nts_status", "nts_checked_on"],
     "workplace": ["id", "institution_id", "address"],
@@ -31,7 +32,7 @@ PARENTS = {
             "education_goal", "competencies", "course", "job_type", "period_start", "period_end",
             "work_hours_text", "weekly_hours", "weekdays", "overtime", "labor_contract", "stipend_basis",
             "stipend_amount", "benefits", "headcount", "grade_rule", "gpa_min", "portfolio", "certificate",
-            "certificate_text", "major_text", "major_open", "closes_on", "close_reason",
+            "certificate_code", "certificate_text", "major_text", "major_open", "closes_on", "close_reason",
             "closes_on_is_virtual", "final_assigned"],
 }
 CHILDREN = {
@@ -48,7 +49,7 @@ CHILDREN = {
     "replay_signal": ["job_id", "signal_date", "interest_count"],
 }
 # upsert 키(기본은 id)
-KEYS = {"area": "code"}
+KEYS = {"area": "code", "certificate": "code"}
 ARRAYS = {("job", "weekdays"): "varchar(3)[]", ("job", "benefits"): "varchar(20)[]",
           ("testimonial", "activities"): "text[]", ("testimonial", "outcomes"): "text[]"}
 DATES = {("recruit_round", "recruit_start"), ("recruit_round", "recruit_end"),
@@ -137,6 +138,10 @@ def render(seed):
         if p[t]:
             s.append(f"\n-- {t} {len(p[t])}행")
             s += inserts(t, cols, p[t], upsert=True)
+    s.append("\n-- 자격증: seed에서 빠진 코드는 직무 upsert 뒤에 지운다(FK). 프로필이 쓰는 코드는 남긴다(ADR-0021)")
+    s.append(f"DELETE FROM certificate c WHERE c.code NOT IN ({codes(p['certificate'])})\n"
+             f"  AND NOT EXISTS (SELECT 1 FROM job j WHERE j.certificate_code = c.code)\n"
+             f"  AND NOT EXISTS (SELECT 1 FROM student_profile sp WHERE c.code = ANY (sp.certificates));")
     s.append("\n-- 사는 곳: seed에서 빠졌지만 프로필이 쓰고 있어 남은 행은 목록 맨 뒤로")
     s.append("UPDATE area a SET sort_order = 30000 + s.n\n"
              "  FROM (SELECT code, row_number() OVER (ORDER BY code) AS n FROM area WHERE sort_order < 0) s\n"

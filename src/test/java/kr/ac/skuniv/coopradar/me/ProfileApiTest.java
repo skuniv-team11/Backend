@@ -52,6 +52,8 @@ class ProfileApiTest {
         department(DEPT_B, "(가상)프로필학과9012");
         db.sql("INSERT INTO area (code, sido, name, sort_order) "
                 + "VALUES ('" + AREA + "', '인천', '(가상)구9111', 9111) ON CONFLICT DO NOTHING").update();
+        db.sql("INSERT INTO certificate (code, label, sort_order) VALUES ('TEST_PROFILE_A', '(가상)자격증A', 9001), "
+                + "('TEST_PROFILE_B', '(가상)자격증B', 9002) ON CONFLICT DO NOTHING").update();
     }
 
     // ───────── #9 저장 → #8 조회 ─────────
@@ -108,6 +110,38 @@ class ProfileApiTest {
                 .andExpect(jsonPath("$.homeAreaCode").isEmpty())
                 .andExpect(jsonPath("$.homeArea").isEmpty());
         assertThat(count("SELECT count(*) FROM student_profile WHERE user_id = :id", userId(token))).isEqualTo(1);
+    }
+
+    @Test
+    void 자격증은_코드표_순서로_중복_없이_저장하고_빈_목록과_null을_구분한다() throws Exception {
+        // ADR-0021: null = 답하지 않음, [] = 없음. 판정의 자격증 줄이 둘을 다르게 본다
+        String token = memberToken();
+        String saved = save(token, profile(DEPT_A, AREA, true, "[\"TEST_PROFILE_B\", \"TEST_PROFILE_A\", \"TEST_PROFILE_B\"]"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.certificates.length()").value(2))
+                .andExpect(jsonPath("$.certificates[0]").value("TEST_PROFILE_A"))
+                .andExpect(jsonPath("$.certificates[1]").value("TEST_PROFILE_B"))
+                .andReturn().getResponse().getContentAsString();
+        Contract.assertSameShape(saved, Contract.responseExample("saveMyProfile", 200, null));
+        mvc.perform(get("/api/me/profile").header("Authorization", bearer(token)))
+                .andExpect(jsonPath("$.certificates[1]").value("TEST_PROFILE_B"));
+
+        save(token, profile(DEPT_A, AREA, true, "[]"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.certificates").isArray())
+                .andExpect(jsonPath("$.certificates.length()").value(0));
+        save(token, profile(DEPT_A, AREA, true))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.certificates").value(org.hamcrest.Matchers.nullValue()));
+        assertThat(db.sql("SELECT certificates IS NULL FROM student_profile WHERE user_id = :id")
+                .param("id", userId(token)).query(Boolean.class).single()).isTrue();
+
+        for (String bad : List.of("[\"NOPE\"]", "[null]")) {
+            save(token, profile(DEPT_A, AREA, true, bad))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
+                    .andExpect(jsonPath("$.fields[0].field").value("certificates"));
+        }
     }
 
     @Test
@@ -178,6 +212,7 @@ class ProfileApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isExample").value(true))
                 .andExpect(jsonPath("$.department.name").value("메이크업디자인학과"))
+                .andExpect(jsonPath("$.certificates.length()").value(0))
                 .andReturn().getResponse().getContentAsString();
         Contract.assertSameShape(body, Contract.responseExample("getMyProfile", 200, null));
 
@@ -216,6 +251,14 @@ class ProfileApiTest {
                 {"departmentId": %d, "grade": 3, "completedSemesters": 5, "gpa": 3.4, "graduationExpected": false,
                  "interestText": "뷰티 브랜드 SNS 마케팅", "homeAreaCode": %s, "consent": %s}"""
                 .formatted(departmentId, area == null ? "null" : "\"" + area + "\"", consent);
+    }
+
+    /** certificates: JSON 배열 글(예: "[]"). */
+    private static String profile(int departmentId, String area, Boolean consent, String certificates) {
+        return """
+                {"departmentId": %d, "grade": 3, "completedSemesters": 5, "gpa": 3.4, "graduationExpected": false,
+                 "interestText": "뷰티 브랜드 SNS 마케팅", "homeAreaCode": %s, "certificates": %s, "consent": %s}"""
+                .formatted(departmentId, area == null ? "null" : "\"" + area + "\"", certificates, consent);
     }
 
     private String memberToken() throws Exception {

@@ -4,11 +4,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import kr.ac.skuniv.coopradar.reference.ReferenceDtos.Area;
+import kr.ac.skuniv.coopradar.reference.ReferenceDtos.Certificate;
 import kr.ac.skuniv.coopradar.reference.ReferenceDtos.Department;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-/** 기준 정보 시드(department·area·recruit_round·program) 읽기. 시드 테이블은 읽기만 한다(V1 원칙). */
+/** 기준 정보 시드(department·area·certificate·recruit_round·program) 읽기. 시드 테이블은 읽기만 한다(V1 원칙). */
 @Repository
 public class ReferenceRepository {
 
@@ -33,6 +34,17 @@ public class ReferenceRepository {
     public List<Area> areas() {
         return db.sql("SELECT code, sido, name FROM area ORDER BY sort_order")
                 .query((rs, i) -> new Area(rs.getString("code"), rs.getString("sido"), rs.getString("name")))
+                .list();
+    }
+
+    /** 그 회차 직무가 요구·우대하는 자격증만, 코드표 순서(ADR-0021 — 판정에 쓰지 않는 자격증은 묻지 않는다). */
+    public List<Certificate> certificates(int roundId) {
+        return db.sql("""
+                        SELECT c.code, c.label FROM certificate c
+                        WHERE c.code IN (SELECT j.certificate_code FROM job j WHERE j.round_id = :round)
+                        ORDER BY c.sort_order, c.code""")
+                .param("round", roundId)
+                .query((rs, i) -> new Certificate(rs.getString("code"), rs.getString("label")))
                 .list();
     }
 

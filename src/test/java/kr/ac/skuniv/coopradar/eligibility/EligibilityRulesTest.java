@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.EligibilityJob;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Layer;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.MajorMatch;
+import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.ReasonCitation;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.ReasonLine;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Result;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Verdict;
@@ -103,6 +104,7 @@ class EligibilityRulesTest {
         EligibilityJob required = judge(job(b -> {
             b.portfolio = "REQUIRED";
             b.certificate = "REQUIRED";
+            b.certificateCode = "IT";
             b.certificateText = "정보처리기사";
         }), me(3, 5, "3.4", false));
         assertThat(required.verdict()).isEqualTo(Verdict.NEEDS_CHECK);
@@ -113,6 +115,70 @@ class EligibilityRulesTest {
         EligibilityJob preferred = judge(job(b -> b.portfolio = "PREFERRED"), me(3, 5, "3.4", false));
         assertThat(line(preferred, "포트폴리오").result()).isEqualTo(Result.INFO);
         assertThat(preferred.verdict()).isEqualTo(Verdict.ELIGIBLE);
+    }
+
+    @Test
+    void 필수_자격증이_없으면_지원_불가_있으면_충족_답하지_않으면_직접_확인이고_근거가_붙는다() {
+        // ADR-0021: 기관 조건 중 지원 불가로 가는 것은 필수 자격증뿐
+        ReasonCitation plan = new ReasonCitation("OPERATION_PLAN", "(가상)기관 운영계획서", 2, "미용 자격증 소지자");
+        Consumer<Builder> beauty = b -> {
+            b.certificate = "REQUIRED";
+            b.certificateCode = "BEAUTY";
+            b.certificateText = "미용 자격증 소지자";
+            b.certificateCitation = plan;
+        };
+        EligibilityJob lacks = judge(job(beauty), me(3, 5, "3.4", false, List.of()));
+        assertThat(lacks.verdict()).isEqualTo(Verdict.INELIGIBLE);
+        assertThat(line(lacks, "자격증")).extracting(ReasonLine::layer, ReasonLine::requirement, ReasonLine::mine,
+                        ReasonLine::result, ReasonLine::citation)
+                .containsExactly(Layer.INSTITUTION, "필수 (미용 자격증 소지자)", "없음", Result.NOT_MET, plan);
+        assertThat(EligibilityRules.blocks(line(lacks, "자격증"))).isTrue();
+
+        EligibilityJob other = judge(job(beauty), me(3, 5, "3.4", false, List.of("ACCOUNTING")));
+        assertThat(other.verdict()).isEqualTo(Verdict.INELIGIBLE);
+
+        EligibilityJob has = judge(job(beauty), me(3, 5, "3.4", false, List.of("ACCOUNTING", "BEAUTY")));
+        assertThat(has.verdict()).isEqualTo(Verdict.ELIGIBLE);
+        assertThat(line(has, "자격증")).extracting(ReasonLine::mine, ReasonLine::result).containsExactly("있음", Result.MET);
+
+        EligibilityJob unanswered = judge(job(beauty), me(3, 5, "3.4", false));
+        assertThat(unanswered.verdict()).isEqualTo(Verdict.NEEDS_CHECK);
+        assertThat(line(unanswered, "자격증")).extracting(ReasonLine::mine, ReasonLine::result, ReasonLine::citation)
+                .containsExactly("직접 확인", Result.CHECK, plan);
+    }
+
+    @Test
+    void 우대_자격증은_있든_없든_참고이고_학년_학점_미충족은_지원_불가가_아니다() {
+        Consumer<Builder> accounting = b -> {
+            b.certificate = "PREFERRED";
+            b.certificateCode = "ACCOUNTING";
+            b.certificateText = "회계관련 자격증";
+        };
+        EligibilityJob lacks = judge(job(accounting), me(3, 5, "3.4", false, List.of()));
+        assertThat(lacks.verdict()).isEqualTo(Verdict.ELIGIBLE);
+        assertThat(line(lacks, "자격증")).extracting(ReasonLine::requirement, ReasonLine::mine, ReasonLine::result)
+                .containsExactly("우대 (회계관련 자격증)", "없음", Result.INFO);
+        assertThat(line(judge(job(accounting), me(3, 5, "3.4", false, List.of("ACCOUNTING"))), "자격증").mine())
+                .isEqualTo("있음");
+        assertThat(line(judge(job(accounting), me(3, 5, "3.4", false)), "자격증").mine()).isEqualTo("직접 확인");
+
+        EligibilityJob lowGpa = judge(job(b -> b.gradeRule = "Y4"), me(3, 5, "2.0", false, List.of()));
+        assertThat(lowGpa.verdict()).isEqualTo(Verdict.NEEDS_CHECK);
+        assertThat(lowGpa.reasons()).noneMatch(EligibilityRules::blocks);
+    }
+
+    @Test
+    void 자격증_칸에_알림이_걸리면_없어도_확인_필요이고_근거는_남는다() {
+        ReasonCitation plan = new ReasonCitation("OPERATION_PLAN", "(가상)기관 운영계획서", 2, "미용 자격증 소지자");
+        EligibilityJob r = judge(job(b -> {
+            b.certificate = "REQUIRED";
+            b.certificateCode = "BEAUTY";
+            b.certificateCitation = plan;
+            b.alerts = List.of(new AlertRef(9, "DOC_INCONSISTENCY", "certificate"));
+        }), me(3, 5, "3.4", false, List.of()));
+        assertThat(r.verdict()).isEqualTo(Verdict.NEEDS_CHECK);
+        assertThat(line(r, "자격증")).extracting(ReasonLine::result, ReasonLine::alertId, ReasonLine::citation)
+                .containsExactly(Result.CHECK, 9, plan);
     }
 
     @Test
@@ -180,7 +246,11 @@ class EligibilityRulesTest {
     }
 
     private static ProfileInput me(int grade, int semesters, String gpa, boolean graduating) {
-        return new ProfileInput(DEPT, grade, semesters, new BigDecimal(gpa), graduating, null, null);
+        return me(grade, semesters, gpa, graduating, null);
+    }
+
+    private static ProfileInput me(int grade, int semesters, String gpa, boolean graduating, List<String> certificates) {
+        return new ProfileInput(DEPT, grade, semesters, new BigDecimal(gpa), graduating, null, null, certificates);
     }
 
     private static JobRequirement job() {
@@ -192,7 +262,8 @@ class EligibilityRulesTest {
         Builder b = new Builder();
         change.accept(b);
         return new JobRequirement(101, 1, "(가상)마케팅", "(가상)마케팅팀", new InstitutionRef(1, "(가상)기관"), b.course,
-                b.gradeRule, b.gpaMin, b.portfolio, b.certificate, b.certificateText, "미용예술대학", b.majorOpen,
+                b.gradeRule, b.gpaMin, b.portfolio, b.certificate, b.certificateText, b.certificateCode,
+                b.certificateCitation, "미용예술대학", b.majorOpen,
                 b.majorDepartmentIds, b.alerts, b.closing, b.alertCount);
     }
 
@@ -203,6 +274,8 @@ class EligibilityRulesTest {
         String portfolio = "NONE";
         String certificate = "NONE";
         String certificateText = null;
+        String certificateCode = null;
+        ReasonCitation certificateCitation = null;
         boolean majorOpen = false;
         Set<Integer> majorDepartmentIds = Set.of(DEPT);
         List<AlertRef> alerts = List.of();

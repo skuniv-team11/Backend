@@ -8,10 +8,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Layer;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.MajorMatch;
-import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Result;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Verdict;
+import kr.ac.skuniv.coopradar.eligibility.EligibilityRules;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityService;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityService.Judged;
 import kr.ac.skuniv.coopradar.eligibility.ProfileInput;
@@ -180,12 +179,15 @@ public class RecommendService {
         return null;
     }
 
-    /** 추천이 0개일 때 막은 것: 학교 규정 항목별 직무 수 + 지원 불가는 아니지만 기준일에 마감된 직무 수('모집 마감'). */
+    /**
+     * 추천이 0개일 때 막은 것: 지원 불가를 만든 항목별 직무 수(학교 규정 항목 · '자격증', ADR-0021)
+     * + 지원 불가는 아니지만 기준일에 마감된 직무 수('모집 마감').
+     */
     static List<Blocked> blockedBy(List<Judged> judged, LocalDate asOf) {
         Map<String, Integer> counts = new LinkedHashMap<>();
         for (Judged j : judged) {
             j.result().reasons().stream()
-                    .filter(r -> r.layer() == Layer.SCHOOL_RULE && r.result() == Result.NOT_MET)
+                    .filter(EligibilityRules::blocks)
                     .forEach(r -> counts.merge(r.item(), 1, Integer::sum));
             if (j.result().verdict() != Verdict.INELIGIBLE && closedOn(j, asOf)) {
                 counts.merge("모집 마감", 1, Integer::sum);

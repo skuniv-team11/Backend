@@ -22,8 +22,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 /**
- * docs/api #14 판정. 2026-2 실제 시드(R__seed.sql)로 본다 — 40직무, 예시 학생(메이크업디자인학과 id 43, 3학년, 5학기, 3.4).
- * 기대 숫자는 seed.json으로 같은 규칙을 따로 계산해 맞춘 값이다(ADR-0016의 23·17·0과 같다).
+ * docs/api #14 판정. 2026-2 실제 시드(R__seed.sql)로 본다 — 40직무, 예시 학생(메이크업디자인학과 id 43, 3학년, 5학기, 3.4,
+ * 자격증 없음). 기대 숫자는 seed.json으로 같은 규칙을 따로 계산해 맞춘 값이다(ADR-0021의 22·17·1 — 자격증을 묻기 전 ADR-0016은 23·17·0).
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -37,22 +37,39 @@ class EligibilityApiTest {
     MockMvc mvc;
 
     @Test
-    void 예시_학생은_40직무_중_23개_지원_가능_17개_확인_필요이고_계약_모양과_같다() throws Exception {
-        String body = check(guestToken("STUDENT"), profile(MAKEUP, 3, 5, "3.4", false))
+    void 예시_학생은_40직무_중_22개_지원_가능_17개_확인_필요_1개_지원_불가이고_계약_모양과_같다() throws Exception {
+        String body = check(guestToken("STUDENT"), profile(MAKEUP, 3, 5, "3.4", false, "[]"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.round.termCode").value("2026-2"))
                 .andExpect(jsonPath("$.summary.total").value(40))
-                .andExpect(jsonPath("$.summary.eligible").value(23))
+                .andExpect(jsonPath("$.summary.eligible").value(22))
                 .andExpect(jsonPath("$.summary.needsCheck").value(17))
-                .andExpect(jsonPath("$.summary.ineligible").value(0))
+                .andExpect(jsonPath("$.summary.ineligible").value(1))
                 .andExpect(jsonPath("$.jobs.length()").value(40))
                 .andReturn().getResponse().getContentAsString();
         Contract.assertSameShape(body, Contract.responseExample("checkEligibility", 200, null));
 
         // 목록 순서: 지원 가능 → 확인 필요 → 지원 불가
         List<String> verdicts = JsonPath.read(body, "$.jobs[*].verdict");
-        assertThat(verdicts.subList(0, 23)).containsOnly("ELIGIBLE");
-        assertThat(verdicts.subList(23, 40)).containsOnly("NEEDS_CHECK");
+        assertThat(verdicts.subList(0, 22)).containsOnly("ELIGIBLE");
+        assertThat(verdicts.subList(22, 39)).containsOnly("NEEDS_CHECK");
+        assertThat(verdicts.get(39)).isEqualTo("INELIGIBLE");
+
+        // 140 미용 시술 보조: 미용 자격증 필수인데 없음 → 지원 불가, 운영계획서 근거가 붙는다(ADR-0021)
+        Map<String, Object> job140 = job(body, 140);
+        assertThat(job140.get("verdict")).isEqualTo("INELIGIBLE");
+        assertThat(reason(job140, "자격증")).containsEntry("layer", "INSTITUTION")
+                .containsEntry("requirement", "필수 (미용 자격증 or 미용 면허증 소지자)")
+                .containsEntry("mine", "없음").containsEntry("result", "NOT_MET")
+                .containsEntry("citation", Map.of("sourceType", "OPERATION_PLAN",
+                        "documentTitle", "애브뉴준오 더현대서울점 운영계획서", "page", 2,
+                        "quote", "미용 자격증 or 미용 면허증 소지자"));
+        // 117·118 로젠: 회계 자격증 우대 → 참고 줄만(판정을 바꾸지 않는다)
+        assertThat(reason(job(body, 118), "자격증")).containsEntry("requirement", "우대 (회계관련 자격증 취득 및 지식(전공자) 함양)")
+                .containsEntry("mine", "없음").containsEntry("result", "INFO");
+        // 출처는 자격증 줄에만
+        List<Object> citations = JsonPath.read(body, "$.jobs[*].reasons[?(@.citation)].item");
+        assertThat(citations).hasSize(3).containsOnly("자격증");
 
         // 선호 전공이 메이크업디자인학과로 확정된 직무 4개(소서 AMD·국내/해외 마케팅, 비욘드)
         List<Integer> matched = JsonPath.read(body, "$.jobs[?(@.majorMatch == 'MATCH')].jobId");
@@ -101,11 +118,44 @@ class EligibilityApiTest {
     }
 
     @Test
-    void 졸업예정_4학년_평점_4점5면_37개_지원_가능() throws Exception {
-        check(memberToken(), profile(MAKEUP, 4, 7, "4.5", true))
+    void 자격증을_모두_가진_졸업예정_4학년_평점_4점5면_37개_지원_가능() throws Exception {
+        check(memberToken(), profile(MAKEUP, 4, 7, "4.5", true, "[\"ACCOUNTING\", \"BEAUTY\", \"BEAUTY\"]"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.summary.eligible").value(37))
-                .andExpect(jsonPath("$.summary.needsCheck").value(3));
+                .andExpect(jsonPath("$.summary.needsCheck").value(3))
+                .andExpect(jsonPath("$.summary.ineligible").value(0));
+    }
+
+    @Test
+    void 자격증을_답하지_않으면_필수_자격증_직무는_직접_확인으로_남는다() throws Exception {
+        // 프론트가 certificates를 아직 보내지 않아도(빠짐 = null) 이 결정 전과 같다 — 지원 불가로 단정하지 않는다
+        String body = check(memberToken(), profile(MAKEUP, 3, 5, "3.4", false))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.summary.eligible").value(22))
+                .andExpect(jsonPath("$.summary.needsCheck").value(18))
+                .andExpect(jsonPath("$.summary.ineligible").value(0))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(reason(job(body, 140), "자격증")).containsEntry("mine", "직접 확인").containsEntry("result", "CHECK");
+        // 미용 자격증이 있으면 지원 가능
+        String has = check(memberToken(), profile(MAKEUP, 3, 5, "3.4", false, "[\"BEAUTY\"]"))
+                .andExpect(jsonPath("$.summary.eligible").value(23))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(reason(job(has, 140), "자격증")).containsEntry("mine", "있음").containsEntry("result", "MET");
+    }
+
+    @Test
+    void 자격증_코드가_코드표에_없으면_400_profile_certificates() throws Exception {
+        String token = memberToken();
+        for (String bad : List.of("[\"NOPE\"]", "[null]", "[\"BEAUTY\", \"beauty\"]")) {
+            check(token, profile(MAKEUP, 3, 5, "3.4", false, bad))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
+                    .andExpect(jsonPath("$.fields[0].field").value("profile.certificates"));
+        }
+        String many = "[" + String.join(",", java.util.Collections.nCopies(21, "\"BEAUTY\"")) + "]";
+        check(token, profile(MAKEUP, 3, 5, "3.4", false, many))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields[0].field").value("profile.certificates"));
     }
 
     @Test
@@ -155,6 +205,16 @@ class EligibilityApiTest {
                 {"profile": {"departmentId": %d, "grade": %d, "completedSemesters": %d, "gpa": %s,
                  "graduationExpected": %s, "interestText": "뷰티 브랜드 SNS 마케팅", "homeAreaCode": "11350"}}"""
                 .formatted(departmentId, grade, semesters, gpa, graduating);
+    }
+
+    /** certificates: JSON 배열 글(예: "[]", "[\"BEAUTY\"]"). */
+    private static String profile(int departmentId, int grade, int semesters, String gpa, boolean graduating,
+                                  String certificates) {
+        return """
+                {"profile": {"departmentId": %d, "grade": %d, "completedSemesters": %d, "gpa": %s,
+                 "graduationExpected": %s, "interestText": "뷰티 브랜드 SNS 마케팅", "homeAreaCode": "11350",
+                 "certificates": %s}}"""
+                .formatted(departmentId, grade, semesters, gpa, graduating, certificates);
     }
 
     private static Map<String, Object> job(String body, int jobId) {

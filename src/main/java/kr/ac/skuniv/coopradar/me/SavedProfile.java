@@ -2,6 +2,7 @@ package kr.ac.skuniv.coopradar.me;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 /**
  * 저장한 프로필(계약 스키마 SavedProfile, docs/api me-profile.json). {@link ProfileView}에 동의·수정 시각을 더한 모양이다.
@@ -15,6 +16,7 @@ public record SavedProfile(
         boolean graduationExpected,
         String interestText,
         String homeAreaCode,
+        List<String> certificates,
         ProfileView.DepartmentRef department,
         ProfileView.AreaView homeArea,
         boolean isExample,
@@ -24,6 +26,6 @@ public record SavedProfile(
     /** 체험 계정 응답(#5)에 쓰는 모양. 시각은 빠진다. */
     ProfileView toView() {
         return new ProfileView(departmentId, grade, completedSemesters, gpa, graduationExpected, interestText, homeAreaCode,
-                department, homeArea, isExample);
+                certificates, department, homeArea, isExample);
     }
 }

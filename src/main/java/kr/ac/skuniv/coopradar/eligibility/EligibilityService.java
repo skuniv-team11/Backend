@@ -2,6 +2,7 @@ package kr.ac.skuniv.coopradar.eligibility;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import kr.ac.skuniv.coopradar.common.ApiException;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Eligibility;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.EligibilityJob;
@@ -43,11 +44,19 @@ public class EligibilityService {
         return new Eligibility(new RoundRef(round.id(), round.termCode()), summary(jobs), jobs);
     }
 
-    /** 회차 직무 전부를 리스트 순번대로 판정한다. 학과가 시드에 없으면 400 INVALID_INPUT(profile.departmentId). */
+    /**
+     * 회차 직무 전부를 리스트 순번대로 판정한다. 학과가 시드에 없으면 400 INVALID_INPUT(profile.departmentId),
+     * 자격증 코드가 코드표에 없으면 400 INVALID_INPUT(profile.certificates).
+     */
     @Transactional(readOnly = true)
     public List<Judged> judgeAll(int roundId, ProfileInput profile) {
         String department = repository.departmentName(profile.departmentId())
                 .orElseThrow(() -> ApiException.invalid("profile.departmentId", "GET /api/departments의 id"));
+        List<String> certificates = profile.certificates();
+        if (certificates != null && (certificates.stream().anyMatch(Objects::isNull)
+                || !repository.unknownCertificates(certificates).isEmpty())) {
+            throw ApiException.invalid("profile.certificates", "GET /api/certificates의 code");
+        }
         return repository.requirements(roundId).stream()
                 .map(r -> new Judged(r, EligibilityRules.judge(r, profile, department)))
                 .toList();

@@ -103,6 +103,15 @@ class ToSqlTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             build_seed.area_rows([{"code": "26110", "sido": "부산", "name": "중구"}])
 
+    def test_자격증은_code로_upsert하고_직무_upsert_뒤에_프로필이_안_쓰는_코드만_지운다(self):
+        seed = {"certificate": [{"code": "BEAUTY", "label": "미용 자격증·면허증", "sort_order": 1}]}
+        sql = to_sql.render(seed)
+        self.assertIn("INSERT INTO certificate (code, label, sort_order) VALUES\n  ('BEAUTY', '미용 자격증·면허증', 1)\n"
+                      "ON CONFLICT (code) DO UPDATE SET label = EXCLUDED.label, sort_order = EXCLUDED.sort_order;", sql)
+        self.assertIn("DELETE FROM certificate c WHERE c.code NOT IN ('BEAUTY')", sql)
+        self.assertIn("NOT EXISTS (SELECT 1 FROM student_profile sp WHERE c.code = ANY (sp.certificates));", sql)
+        self.assertLess(sql.index("-- 4. 부모 테이블 upsert"), sql.index("DELETE FROM certificate"))
+
     def test_해더의_해시는_seed와_본문을_따른다(self):
         text = json.dumps({"program": [{"id": 1, "code": "X", "name": "n"}]})
         a, c = to_sql.build(text), to_sql.build(text.replace('"n"', '"m"'))
@@ -144,6 +153,27 @@ class NormalizeTest(unittest.TestCase):
         self.assertEqual(b.plan_headcount("중 2명"), 2)
         self.assertEqual(b.plan_headcount("(2명)"), 2)
         self.assertEqual(b.plan_headcount("1인"), 1)
+
+    def test_자격증_언급은_무관이_아니면_잡는다(self):
+        said = lambda t: b.CERT_MENTION.search(b.CERT_NOT_REQUIRED.sub("", t)) is not None  # noqa: E731
+        self.assertTrue(said("미용 자격증 or 미용 면허증 소지자"))
+        self.assertTrue(said("상경계열(경영학과, 회계학과) 또는 회계/자금 자격증 취득자"))
+        self.assertFalse(said("워드/엑셀/파워포인트 : 중 외국어 : 무관 자격증 : 무관"))
+        self.assertFalse(said("1. 자격사항 영상 및 디자인 관련 전공"))
+
+    def test_자격증_고침은_코드가_있고_인용이_추출_원문_안에_있어야_한다(self):
+        pj = {"competencies": {"value": "*Office 활용능력 중급 이상\n*회계관련 자격증 취득 및 지식(전공자) 함양",
+                               "page": 2, "quote": "*Office 활용능력 중급 이상"},
+              "certificate": {"value": "언급 없음", "page": 0, "quote": ""}}
+        ok = {"level": "PREFERRED", "code": "ACCOUNTING", "text": "회계관련 자격증 취득 및 지식(전공자) 함양",
+              "page": 2, "quote": "*회계관련 자격증 취득 및 지식(전공자) 함양"}
+        level, code, txt, ev = b.certificate_override("로젠|회계팀", {"certificate": ok}, pj, {"ACCOUNTING"}, 3)
+        self.assertEqual((level, code, txt), ("PREFERRED", "ACCOUNTING", "회계관련 자격증 취득 및 지식(전공자) 함양"))
+        self.assertEqual(ev, {"value": txt, "page": 2, "quote": "*회계관련 자격증 취득 및 지식(전공자) 함양"})
+        for bad in ({**ok, "quote": "전산회계 1급 소지자"}, {**ok, "code": "BEAUTY"}, {**ok, "level": "NONE"},
+                    {**ok, "page": 4}):
+            with self.assertRaises(SystemExit):
+                b.certificate_override("로젠|회계팀", {"certificate": bad}, pj, {"ACCOUNTING"}, 3)
 
     def test_근거_필드_이름이_V1_허용_목록과_같다(self):
         b.check_allowed_keys()

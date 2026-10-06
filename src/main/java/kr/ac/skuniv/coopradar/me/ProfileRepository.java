@@ -1,7 +1,10 @@
 package kr.ac.skuniv.coopradar.me;
 
 import java.time.Instant;
+import java.sql.Array;
+import java.sql.SQLException;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import kr.ac.skuniv.coopradar.common.Times;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -26,12 +29,28 @@ public class ProfileRepository {
                 .query(Boolean.class).single();
     }
 
+    /**
+     * 자격증 코드표(certificate)에 있는 코드만 코드표 순서로, 중복 없이(ADR-0021). 프로필 저장 검사와 예시 프로필에 쓴다.
+     */
+    public List<String> knownCertificates(List<String> codes) {
+        if (codes.isEmpty()) {
+            return List.of();
+        }
+        return db.sql("SELECT code FROM certificate WHERE code IN (:codes) ORDER BY sort_order, code")
+                .param("codes", codes)
+                .query(String.class)
+                .list();
+    }
+
     /** 체험 계정의 예시 프로필. 시연용 가상 학생이라 동의 시각은 만든 시각으로 둔다. */
-    public void insertExample(long userId, int departmentId, ExampleProfileProperties p, String homeAreaCode, Instant now) {
+    public void insertExample(long userId, int departmentId, ExampleProfileProperties p, String homeAreaCode,
+                              List<String> certificates, Instant now) {
         db.sql("""
                         INSERT INTO student_profile (user_id, department_id, grade, completed_semesters, gpa,
-                                                     graduation_expected, interest_text, home_area_code, consented_at, updated_at)
-                        VALUES (:userId, :departmentId, :grade, :semesters, :gpa, :graduationExpected, :interest, :area, :now, :now)""")
+                                                     graduation_expected, interest_text, home_area_code, certificates,
+                                                     consented_at, updated_at)
+                        VALUES (:userId, :departmentId, :grade, :semesters, :gpa, :graduationExpected, :interest, :area,
+                                CAST(:certificates AS varchar(40)[]), :now, :now)""")
                 .param("userId", userId)
                 .param("departmentId", departmentId)
                 .param("grade", p.grade())
@@ -40,6 +59,7 @@ public class ProfileRepository {
                 .param("graduationExpected", p.graduationExpected())
                 .param("interest", p.interestText())
                 .param("area", homeAreaCode)
+                .param("certificates", array(certificates))
                 .param("now", Times.utc(now))
                 .update();
     }
@@ -52,7 +72,7 @@ public class ProfileRepository {
     public Optional<SavedProfile> findSaved(long userId, boolean isExample) {
         return db.sql("""
                         SELECT p.department_id, p.grade, p.completed_semesters, p.gpa, p.graduation_expected, p.interest_text,
-                               p.home_area_code, p.consented_at, p.updated_at,
+                               p.home_area_code, p.certificates, p.consented_at, p.updated_at,
                                d.name AS department_name, a.sido AS area_sido, a.name AS area_name
                         FROM student_profile p
                         JOIN department d ON d.id = p.department_id
@@ -69,6 +89,7 @@ public class ProfileRepository {
                             rs.getBoolean("graduation_expected"),
                             rs.getString("interest_text"),
                             areaCode,
+                            list(rs.getArray("certificates")),
                             new ProfileView.DepartmentRef(rs.getInt("department_id"), rs.getString("department_name")),
                             areaCode == null ? null
                                     : new ProfileView.AreaView(areaCode, rs.getString("area_sido"), rs.getString("area_name")),
@@ -84,12 +105,18 @@ public class ProfileRepository {
                 .query(Boolean.class).single();
     }
 
-    /** [저장]+동의(#9). 있으면 덮어쓰고 동의 시각도 이번 저장 시각으로 바꾼다. */
-    public void upsert(long userId, ProfileSaveRequest p, Instant now) {
+    /**
+     * [저장]+동의(#9). 있으면 덮어쓰고 동의 시각도 이번 저장 시각으로 바꾼다.
+     *
+     * @param certificates 서비스가 코드표로 확인·정렬한 자격증 코드. null이면 답하지 않음
+     */
+    public void upsert(long userId, ProfileSaveRequest p, List<String> certificates, Instant now) {
         db.sql("""
                         INSERT INTO student_profile (user_id, department_id, grade, completed_semesters, gpa,
-                                                     graduation_expected, interest_text, home_area_code, consented_at, updated_at)
-                        VALUES (:userId, :departmentId, :grade, :semesters, :gpa, :graduationExpected, :interest, :area, :now, :now)
+                                                     graduation_expected, interest_text, home_area_code, certificates,
+                                                     consented_at, updated_at)
+                        VALUES (:userId, :departmentId, :grade, :semesters, :gpa, :graduationExpected, :interest, :area,
+                                CAST(:certificates AS varchar(40)[]), :now, :now)
                         ON CONFLICT (user_id) DO UPDATE SET
                             department_id       = EXCLUDED.department_id,
                             grade               = EXCLUDED.grade,
@@ -98,6 +125,7 @@ public class ProfileRepository {
                             graduation_expected = EXCLUDED.graduation_expected,
                             interest_text       = EXCLUDED.interest_text,
                             home_area_code      = EXCLUDED.home_area_code,
+                            certificates        = EXCLUDED.certificates,
                             consented_at        = EXCLUDED.consented_at,
                             updated_at          = EXCLUDED.updated_at""")
                 .param("userId", userId)
@@ -108,8 +136,18 @@ public class ProfileRepository {
                 .param("graduationExpected", p.graduationExpected())
                 .param("interest", p.interestText())
                 .param("area", p.homeAreaCode())
+                .param("certificates", array(certificates))
                 .param("now", Times.utc(now))
                 .update();
+    }
+
+    /** 배열 칸 값. 목록(Iterable)으로 넘기면 IN 목록처럼 풀려 버려서 배열로 바꿔 넘긴다. */
+    private static String[] array(List<String> codes) {
+        return codes == null ? null : codes.toArray(String[]::new);
+    }
+
+    private static List<String> list(Array array) throws SQLException {
+        return array == null ? null : List.of((String[]) array.getArray());
     }
 
     /** 프로필만 지운다(계정·담은 지망은 남는다, #10). 없어도 그대로 끝난다. */

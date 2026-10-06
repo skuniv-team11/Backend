@@ -20,13 +20,26 @@ public final class EligibilityDtos {
 
     public enum Result { MET, NOT_MET, CHECK, INFO }
 
-    /** 이유 한 줄. alertId는 검토 알림에서 나온 줄에만 있고, 없으면 필드째 빠진다(계약 optional). */
+    /**
+     * 이유 한 줄. alertId는 검토 알림에서 나온 줄에만, citation은 출처가 있는 줄(지금은 자격증 줄, ADR-0021)에만 있고
+     * 없으면 필드째 빠진다(계약 optional).
+     */
     public record ReasonLine(Layer layer, String item, String requirement, String mine, Result result,
-                             @JsonInclude(JsonInclude.Include.NON_NULL) Integer alertId) {
+                             @JsonInclude(JsonInclude.Include.NON_NULL) Integer alertId,
+                             @JsonInclude(JsonInclude.Include.NON_NULL) ReasonCitation citation) {
 
         static ReasonLine of(Layer layer, String item, String requirement, String mine, Result result) {
-            return new ReasonLine(layer, item, requirement, mine, result, null);
+            return new ReasonLine(layer, item, requirement, mine, result, null, null);
         }
+    }
+
+    /**
+     * 이유 줄의 출처(계약 스키마 ReasonCitation — Citation과 같은 모양). 원문 PDF 링크는 주지 않는다.
+     *
+     * @param sourceType source_document.kind(OPERATION_PLAN 등)
+     * @param page       쪽이 없는 문서면 null
+     */
+    public record ReasonCitation(String sourceType, String documentTitle, Integer page, String quote) {
     }
 
     /**

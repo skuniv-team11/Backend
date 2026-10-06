@@ -81,13 +81,13 @@ class FitScorerTest {
     // ───────── 도우미 ─────────
 
     private static List<Judged> judge(List<JobRequirement> jobs) {
-        ProfileInput me = new ProfileInput(DEPT, 3, 5, new BigDecimal("3.4"), false, null, null);
+        ProfileInput me = new ProfileInput(DEPT, 3, 5, new BigDecimal("3.4"), false, null, null, null);
         return jobs.stream().map(r -> new Judged(r, EligibilityRules.judge(r, me, "메이크업디자인학과"))).toList();
     }
 
     private static JobRequirement job(int id, int seq, Set<Integer> majorDepartments, String gradeRule) {
         return new JobRequirement(id, seq, "(가상)직무" + id, "(가상)팀", new InstitutionRef(id, "(가상)기관" + id), "SEMESTER",
-                gradeRule, null, "NONE", "NONE", null, "(가상)전공", false, majorDepartments, List.of(),
+                gradeRule, null, "NONE", "NONE", null, null, null, "(가상)전공", false, majorDepartments, List.of(),
                 new Closing(null, null, false), 0);
     }
 

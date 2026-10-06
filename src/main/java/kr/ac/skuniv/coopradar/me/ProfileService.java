@@ -1,6 +1,9 @@
 package kr.ac.skuniv.coopradar.me;
 
 import java.time.Clock;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 import kr.ac.skuniv.coopradar.auth.AuthUser;
 import kr.ac.skuniv.coopradar.common.ApiException;
 import kr.ac.skuniv.coopradar.common.ErrorCode;
@@ -39,8 +42,23 @@ public class ProfileService {
         if (request.homeAreaCode() != null && !profiles.areaExists(request.homeAreaCode())) {
             throw ApiException.invalid("homeAreaCode", "GET /api/areas의 code");
         }
-        profiles.upsert(user.id(), request, clock.instant());
+        profiles.upsert(user.id(), request, certificates(request.certificates()), clock.instant());
         return profiles.findSaved(user.id(), user.guest()).orElseThrow();
+    }
+
+    /** 코드표에 있는 코드만, 코드표 순서로 중복 없이(ADR-0021). 없는 코드가 있으면 400 INVALID_INPUT(certificates). */
+    private List<String> certificates(List<String> codes) {
+        if (codes == null) {
+            return null;
+        }
+        if (codes.stream().anyMatch(Objects::isNull)) {
+            throw ApiException.invalid("certificates", "GET /api/certificates의 code");
+        }
+        List<String> known = profiles.knownCertificates(codes);
+        if (known.size() != new HashSet<>(codes).size()) {
+            throw ApiException.invalid("certificates", "GET /api/certificates의 code");
+        }
+        return known;
     }
 
     @Transactional

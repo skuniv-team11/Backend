@@ -3,6 +3,7 @@ package kr.ac.skuniv.coopradar.eligibility;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
+import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.ReasonCitation;
 import kr.ac.skuniv.coopradar.job.InstitutionRef;
 import kr.ac.skuniv.coopradar.job.JobDetail.Closing;
 
@@ -14,6 +15,9 @@ import kr.ac.skuniv.coopradar.job.JobDetail.Closing;
  * @param gpaMin                 학점 하한. 없으면 null
  * @param portfolio              REQUIRED · PREFERRED · NONE
  * @param certificate            REQUIRED · PREFERRED · NONE
+ * @param certificateText        자격증 요건 원문(판정 줄의 '필수 (…)'). NONE이면 null
+ * @param certificateCode        자격증 코드(certificate 코드표). NONE이면 null — 프로필의 certificates와 맞춰 본다(ADR-0021)
+ * @param certificateCitation    자격증 요건의 운영계획서 근거(field_evidence certificate). 없으면 null
  * @param majorDepartmentIds     선호 전공 표기에서 사람이 확정한 학과 id(M3). 확정 안 된 표기는 들어 있지 않다
  * @param alerts                 판정 항목(학년·학점·포트폴리오·자격증, ADR-0016)에 걸린 검토 알림
  * @param closing                모집마감(직무 상세의 closing과 같은 값)
@@ -32,6 +36,8 @@ public record JobRequirement(
         String portfolio,
         String certificate,
         String certificateText,
+        String certificateCode,
+        ReasonCitation certificateCitation,
         String majorText,
         boolean majorOpen,
         Set<Integer> majorDepartmentIds,

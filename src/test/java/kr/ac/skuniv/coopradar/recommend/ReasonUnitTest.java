@@ -110,12 +110,12 @@ class ReasonUnitTest {
     @Test
     void 확인할_조건은_판정_이유_글_그대로_한_문장() {
         var lines = List.of(
-                new ReasonLine(Layer.SCHOOL_RULE, "이수 학기", "4학기 이상", "5학기", Result.MET, null),
-                new ReasonLine(Layer.INSTITUTION, "학년", "4학년", "3학년", Result.NOT_MET, null),
-                new ReasonLine(Layer.INSTITUTION, "학점", "3.0 이상", "3.4", Result.MET, null),
-                new ReasonLine(Layer.INSTITUTION, "포트폴리오", "필수", "직접 확인", Result.CHECK, null),
-                new ReasonLine(Layer.INSTITUTION, "자격증", "우대", "직접 확인", Result.INFO, null),
-                new ReasonLine(Layer.MAJOR, "선호 전공", "미용예술계열", "메이크업디자인학과", Result.INFO, null));
+                new ReasonLine(Layer.SCHOOL_RULE, "이수 학기", "4학기 이상", "5학기", Result.MET, null, null),
+                new ReasonLine(Layer.INSTITUTION, "학년", "4학년", "3학년", Result.NOT_MET, null, null),
+                new ReasonLine(Layer.INSTITUTION, "학점", "3.0 이상", "3.4", Result.MET, null, null),
+                new ReasonLine(Layer.INSTITUTION, "포트폴리오", "필수", "직접 확인", Result.CHECK, null, null),
+                new ReasonLine(Layer.INSTITUTION, "자격증", "우대", "직접 확인", Result.INFO, null, null),
+                new ReasonLine(Layer.MAJOR, "선호 전공", "미용예술계열", "메이크업디자인학과", Result.INFO, null, null));
         assertThat(ReasonTemplates.checkSentence(lines)).isEqualTo("확인해야 할 조건이 있어요(학년 '4학년' · 포트폴리오 '필수').");
         assertThat(ReasonTemplates.checkSentence(lines.subList(0, 1))).isNull();
     }

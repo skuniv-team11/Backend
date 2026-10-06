@@ -76,7 +76,8 @@ def code_check(fname):
         if fname == "codes.json":
             return
         check(re.fullmatch(r"[a-z][A-Za-z0-9]*", k) is not None, f"{fname}{path}.{k}: camelCase 아님")
-        if k in FIELD_CODE and isinstance(v, str) and v.isupper():
+        if k in FIELD_CODE and isinstance(v, str) and v.isupper() and fname != "certificates.json":
+            # 자격증 code는 코드표(codes.json)가 아니라 시드의 자격증 코드표(certificate)에서 온다(ADR-0021)
             check(v in codes[FIELD_CODE[k]], f"{fname}{path}.{k}={v} 코드표에 없음")
         if k in ("weekdays",):
             check(all(x in codes["weekday"] for x in v), f"{fname}{path} 요일 코드")
@@ -138,8 +139,11 @@ for j in docs["eligibility.json"]["jobs"]:
     rs = j["reasons"]
     check(all(r["layer"] == "INSTITUTION" and r["result"] == "CHECK" for r in rs if "alertId" in r),
           f"판정 {j['jobId']} alertId는 판정 항목의 CHECK 행에만")
-    if any(r["layer"] == "SCHOOL_RULE" and r["result"] == "NOT_MET" for r in rs):
-        want = "INELIGIBLE"
+    check(all(r["layer"] == "INSTITUTION" and r["item"] == "자격증" for r in rs if "citation" in r),
+          f"판정 {j['jobId']} citation은 지금은 자격증 행에만(ADR-0021)")
+    if any(r["result"] == "NOT_MET" and (r["layer"] == "SCHOOL_RULE" or (r["layer"] == "INSTITUTION" and r["item"] == "자격증"))
+           for r in rs):
+        want = "INELIGIBLE"  # 학교 규정 미충족 또는 필수 자격증 없음(ADR-0021)
     elif any(r["layer"] == "INSTITUTION" and r["result"] in ("NOT_MET", "CHECK") for r in rs):
         want = "NEEDS_CHECK"
     else:
@@ -162,6 +166,12 @@ req = docs["me-plan-ranks.request.json"]["ranks"]
 check(len({r["rank"] for r in req}) == len(req), "순위 요청 중복")
 
 # 프로필 규칙
+cert_codes = [c["code"] for c in docs["certificates.json"]["certificates"]]
+check(len(set(cert_codes)) == len(cert_codes), "certificates 코드 중복")
+for name in ("profile-body.request.json", "me-plan-check.request.json", "me-profile.request.json", "me-profile.json",
+             "auth-guest.json"):
+    d = docs[name]; certs = (d.get("profile") or d).get("certificates")
+    check(certs is None or all(c in cert_codes for c in certs), f"{name} certificates가 자격증 선택지 예시에 없음")
 for name in ("profile-body.request.json", "me-plan-check.request.json"):
     p = docs[name]["profile"]
     check(1 <= p["grade"] <= 4 and 0 <= p["completedSemesters"] <= 8 and 0 <= p["gpa"] <= 4.5

@@ -938,6 +938,18 @@
    "sort_order": 83
   }
  ],
+ "certificate": [
+  {
+   "code": "BEAUTY",
+   "label": "미용 자격증·면허증",
+   "sort_order": 1
+  },
+  {
+   "code": "ACCOUNTING",
+   "label": "회계·자금 관련 자격증",
+   "sort_order": 2
+  }
+ ],
  "institution": [
   {
    "id": 1,
@@ -1265,6 +1277,7 @@
    "gpa_min": null,
    "portfolio": "REQUIRED",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "광고홍보콘텐츠학과",
    "major_open": false,
@@ -1309,6 +1322,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "무대패션디자인전공, 광고홍보콘텐츠학과, 영화영상학과, 경영학부",
    "major_open": false,
@@ -1353,6 +1367,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "무대패션디자인전공, 광고홍보콘텐츠학과, 영화영상학과, 경영학부",
    "major_open": false,
@@ -1397,6 +1412,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "무대패션디자인전공, 광고홍보콘텐츠학과, 영화영상학과, 경영학부",
    "major_open": false,
@@ -1441,6 +1457,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "무대패션디자인전공, 광고홍보콘텐츠학과, 영화영상학과, 경영학부",
    "major_open": false,
@@ -1485,6 +1502,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "무대패션디자인전공, 광고홍보콘텐츠학과, 영화영상학과, 경영학부",
    "major_open": false,
@@ -1529,6 +1547,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "무대패션디자인전공, 광고홍보콘텐츠학과, 경영학부",
    "major_open": false,
@@ -1573,6 +1592,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "무대패션디자인전공, 광고홍보콘텐츠학과, 경영학부",
    "major_open": false,
@@ -1617,6 +1637,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "무대패션디자인전공, 광고홍보콘텐츠학과, 영화영상학과, 경영학부",
    "major_open": false,
@@ -1661,6 +1682,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "무대패션디자인전공",
    "major_open": false,
@@ -1705,6 +1727,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "무대패션디자인전공",
    "major_open": false,
@@ -1749,6 +1772,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "무대패션디자인전공",
    "major_open": false,
@@ -1793,6 +1817,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "무대패션디자인전공",
    "major_open": false,
@@ -1837,6 +1862,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "무대패션디자인전공, 경영학부",
    "major_open": false,
@@ -1879,6 +1905,7 @@
    "gpa_min": null,
    "portfolio": "REQUIRED",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "영상, 디자인계열",
    "major_open": false,
@@ -1921,6 +1948,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "인문, 사회계열",
    "major_open": false,
@@ -1962,8 +1990,9 @@
    "grade_rule": "GRADUATING",
    "gpa_min": 3.5,
    "portfolio": "NONE",
-   "certificate": "NONE",
-   "certificate_text": null,
+   "certificate": "PREFERRED",
+   "certificate_code": "ACCOUNTING",
+   "certificate_text": "회계관련 자격증 취득 및 지식(전공자) 함양",
    "major_text": "경영학부, 금융정보공학과",
    "major_open": false,
    "closes_on": null,
@@ -2004,8 +2033,9 @@
    "grade_rule": "GRADUATING",
    "gpa_min": 3.5,
    "portfolio": "NONE",
-   "certificate": "NONE",
-   "certificate_text": null,
+   "certificate": "PREFERRED",
+   "certificate_code": "ACCOUNTING",
+   "certificate_text": "회계관련 자격증 취득 및 지식(전공자) 함양",
    "major_text": "경영학부, 금융정보공학과",
    "major_open": false,
    "closes_on": null,
@@ -2049,6 +2079,7 @@
    "gpa_min": 3.5,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "소프트웨어학과",
    "major_open": false,
@@ -2093,6 +2124,7 @@
    "gpa_min": 3.0,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "미용예술대학, 경영학부, 광고홍보콘텐츠학과",
    "major_open": false,
@@ -2137,6 +2169,7 @@
    "gpa_min": 3.0,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "디자인학부",
    "major_open": false,
@@ -2181,6 +2214,7 @@
    "gpa_min": 3.0,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "미용예술대학, 경영학부, 광고홍보콘텐츠학과",
    "major_open": false,
@@ -2225,6 +2259,7 @@
    "gpa_min": 3.0,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "미용예술대학, 경영학부, 광고홍보콘텐츠학과, 글로벌비즈니스어학부",
    "major_open": false,
@@ -2269,6 +2304,7 @@
    "gpa_min": 3.0,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "경영학부, 나노화학생명공학과, 물류시스템공학과",
    "major_open": false,
@@ -2313,6 +2349,7 @@
    "gpa_min": 3.0,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "광고홍보콘텐츠학과, 인문사회계열",
    "major_open": false,
@@ -2357,6 +2394,7 @@
    "gpa_min": 3.0,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "광고홍보콘텐츠학과, 인문사회계열",
    "major_open": false,
@@ -2401,6 +2439,7 @@
    "gpa_min": 3.0,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "글로벌비즈니스어학부(영어), 광고홍보콘텐츠학과",
    "major_open": false,
@@ -2445,6 +2484,7 @@
    "gpa_min": 3.6,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "중어전공, 경영학부",
    "major_open": false,
@@ -2489,6 +2529,7 @@
    "gpa_min": 3.0,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "경영학부, 광고홍보콘텐츠학과",
    "major_open": false,
@@ -2531,6 +2572,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "글로벌비즈니스어학부, 경영학부, 광고홍보콘텐츠학과",
    "major_open": false,
@@ -2573,6 +2615,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "글로벌비즈니스어학부, 경영학부, 광고홍보콘텐츠학과",
    "major_open": false,
@@ -2615,6 +2658,7 @@
    "gpa_min": 3.5,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "광고홍보콘텐츠학과",
    "major_open": false,
@@ -2659,6 +2703,7 @@
    "gpa_min": 3.3,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "글로벌비즈니스어학부 영어전공, 경영학부",
    "major_open": false,
@@ -2701,6 +2746,7 @@
    "gpa_min": null,
    "portfolio": "REQUIRED",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "디자인, 영상, 미용예술계열",
    "major_open": false,
@@ -2743,6 +2789,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "디자인계열(시각디자인 선호)",
    "major_open": false,
@@ -2785,6 +2832,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "이공계열",
    "major_open": false,
@@ -2829,6 +2877,7 @@
    "gpa_min": null,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "경영학부, 중어전공",
    "major_open": false,
@@ -2871,6 +2920,7 @@
    "gpa_min": 3.0,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "글로벌비즈니스어학부",
    "major_open": false,
@@ -2915,6 +2965,7 @@
    "gpa_min": 3.0,
    "portfolio": "NONE",
    "certificate": "NONE",
+   "certificate_code": null,
    "certificate_text": null,
    "major_text": "토목건축공학과",
    "major_open": false,
@@ -2956,8 +3007,9 @@
    "grade_rule": "Y3_4",
    "gpa_min": null,
    "portfolio": "NONE",
-   "certificate": "NONE",
-   "certificate_text": null,
+   "certificate": "REQUIRED",
+   "certificate_code": "BEAUTY",
+   "certificate_text": "미용 자격증 or 미용 면허증 소지자",
    "major_text": "헤어디자인학과",
    "major_open": false,
    "closes_on": null,
@@ -9739,6 +9791,16 @@
    "id": 371,
    "source_document_id": 5,
    "institution_id": null,
+   "job_id": 117,
+   "field_key": "certificate",
+   "raw_value": "회계관련 자격증 취득 및 지식(전공자) 함양",
+   "page": 2,
+   "quote": "*회계관련 자격증 취득 및 지식(전공자) 함양"
+  },
+  {
+   "id": 372,
+   "source_document_id": 5,
+   "institution_id": null,
    "job_id": 118,
    "field_key": "department",
    "raw_value": "자금팀",
@@ -9746,7 +9808,7 @@
    "quote": "회계팀 / 자금팀"
   },
   {
-   "id": 372,
+   "id": 373,
    "source_document_id": 5,
    "institution_id": null,
    "job_id": 118,
@@ -9756,7 +9818,7 @@
    "quote": "회계업무지원 / 자금업무지원"
   },
   {
-   "id": 373,
+   "id": 374,
    "source_document_id": 5,
    "institution_id": null,
    "job_id": 118,
@@ -9766,7 +9828,7 @@
    "quote": "▪학기과정 [ ○ ]"
   },
   {
-   "id": 374,
+   "id": 375,
    "source_document_id": 5,
    "institution_id": null,
    "job_id": 118,
@@ -9776,7 +9838,7 @@
    "quote": "▪채용연계형 [ ○ ]"
   },
   {
-   "id": 375,
+   "id": 376,
    "source_document_id": 5,
    "institution_id": null,
    "job_id": 118,
@@ -9786,7 +9848,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 376,
+   "id": 377,
    "source_document_id": 5,
    "institution_id": null,
    "job_id": 118,
@@ -9796,7 +9858,7 @@
    "quote": "오전 8시 30분 ~ 오후 5시 30분"
   },
   {
-   "id": 377,
+   "id": 378,
    "source_document_id": 5,
    "institution_id": null,
    "job_id": 118,
@@ -9806,7 +9868,7 @@
    "quote": "월 [○ ] 화[ ○ ] 수[○ ] 목[ ○ ] 금[ ○ ] 토[ ] 일[ ]"
   },
   {
-   "id": 378,
+   "id": 379,
    "source_document_id": 5,
    "institution_id": null,
    "job_id": 118,
@@ -9816,7 +9878,7 @@
    "quote": "▪상황별 실시 [ ○ ]"
   },
   {
-   "id": 379,
+   "id": 380,
    "source_document_id": 5,
    "institution_id": null,
    "job_id": 118,
@@ -9826,7 +9888,7 @@
    "quote": "Y[ ] / N [ ○ ]"
   },
   {
-   "id": 380,
+   "id": 381,
    "source_document_id": 5,
    "institution_id": null,
    "job_id": 118,
@@ -9836,7 +9898,7 @@
    "quote": "[ 월 기준] / [ 1,617,660 ]원"
   },
   {
-   "id": 381,
+   "id": 382,
    "source_document_id": 5,
    "institution_id": null,
    "job_id": 118,
@@ -9846,7 +9908,7 @@
    "quote": "[ 월 기준] / [ 1,617,660 ]원"
   },
   {
-   "id": 382,
+   "id": 383,
    "source_document_id": 5,
    "institution_id": null,
    "job_id": 118,
@@ -9856,7 +9918,7 @@
    "quote": "*회사 회계/자금 실무에 대한 지식 함양"
   },
   {
-   "id": 383,
+   "id": 384,
    "source_document_id": 5,
    "institution_id": null,
    "job_id": 118,
@@ -9866,7 +9928,7 @@
    "quote": "*자금 운영의 안정성과 흐름의 명확성을 위한 일정관리 및 Data 검토"
   },
   {
-   "id": 384,
+   "id": 385,
    "source_document_id": 5,
    "institution_id": null,
    "job_id": 118,
@@ -9876,7 +9938,7 @@
    "quote": "- 상경계열(경영학과, 회계학과) 또는 회계/자금 자격증 취득자"
   },
   {
-   "id": 385,
+   "id": 386,
    "source_document_id": 5,
    "institution_id": null,
    "job_id": 118,
@@ -9886,7 +9948,7 @@
    "quote": "회계팀 1명, 자금팀 1명"
   },
   {
-   "id": 386,
+   "id": 387,
    "source_document_id": 5,
    "institution_id": null,
    "job_id": 118,
@@ -9896,7 +9958,7 @@
    "quote": "졸업 예정자 선호"
   },
   {
-   "id": 387,
+   "id": 388,
    "source_document_id": 5,
    "institution_id": null,
    "job_id": 118,
@@ -9906,7 +9968,7 @@
    "quote": "3.5 이상 선호"
   },
   {
-   "id": 388,
+   "id": 389,
    "source_document_id": 5,
    "institution_id": null,
    "job_id": 118,
@@ -9916,7 +9978,17 @@
    "quote": "*Office 활용능력 중급 이상"
   },
   {
-   "id": 389,
+   "id": 390,
+   "source_document_id": 5,
+   "institution_id": null,
+   "job_id": 118,
+   "field_key": "certificate",
+   "raw_value": "회계관련 자격증 취득 및 지식(전공자) 함양",
+   "page": 2,
+   "quote": "*회계관련 자격증 취득 및 지식(전공자) 함양"
+  },
+  {
+   "id": 391,
    "source_document_id": 6,
    "institution_id": 6,
    "job_id": null,
@@ -9926,7 +9998,7 @@
    "quote": "기관(법인)명 ㈜선도소프트 영문기관명 sundosoft Co.,Ltd."
   },
   {
-   "id": 390,
+   "id": 392,
    "source_document_id": 6,
    "institution_id": 6,
    "job_id": null,
@@ -9936,7 +10008,7 @@
    "quote": "중소기업 [ ⋁ ] 비상장 [ ⋁ ]"
   },
   {
-   "id": 391,
+   "id": 393,
    "source_document_id": 6,
    "institution_id": 6,
    "job_id": null,
@@ -9946,7 +10018,7 @@
    "quote": "중소기업 [ ⋁ ] 비상장 [ ⋁ ]"
   },
   {
-   "id": 392,
+   "id": 394,
    "source_document_id": 6,
    "institution_id": 6,
    "job_id": null,
@@ -9956,7 +10028,7 @@
    "quote": "서비스 응용소프트웨어개발"
   },
   {
-   "id": 393,
+   "id": 395,
    "source_document_id": 6,
    "institution_id": 6,
    "job_id": null,
@@ -9966,7 +10038,7 @@
    "quote": "서비스 응용소프트웨어개발"
   },
   {
-   "id": 394,
+   "id": 396,
    "source_document_id": 6,
    "institution_id": 6,
    "job_id": null,
@@ -9976,7 +10048,7 @@
    "quote": "사업장소재지 서울시 금천구 가산디지털2로 143, 15층"
   },
   {
-   "id": 395,
+   "id": 397,
    "source_document_id": 6,
    "institution_id": 6,
    "job_id": null,
@@ -9986,7 +10058,7 @@
    "quote": "7월 24일 18시[ ]"
   },
   {
-   "id": 396,
+   "id": 398,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -9996,7 +10068,7 @@
    "quote": "지능정보사업부"
   },
   {
-   "id": 397,
+   "id": 399,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -10006,7 +10078,7 @@
    "quote": "AI·데이터 기반 소프트웨어 개발 및 시스템 구축 인턴"
   },
   {
-   "id": 398,
+   "id": 400,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -10016,7 +10088,7 @@
    "quote": "▪학기과정 [ ⋁ ]"
   },
   {
-   "id": 399,
+   "id": 401,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -10026,7 +10098,7 @@
    "quote": "▪채용연계형 [ ⋁ ]"
   },
   {
-   "id": 400,
+   "id": 402,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -10036,7 +10108,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 401,
+   "id": 403,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -10046,7 +10118,7 @@
    "quote": "오전 9시 00분 ~ 오후 18시 00분 (▸휴게시간 1시간 포함하여 작성)"
   },
   {
-   "id": 402,
+   "id": 404,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -10056,7 +10128,7 @@
    "quote": "월 [ ⋁ ] 화[ ⋁ ] 수[ ⋁ ] 목[ ⋁ ] 금[ ⋁ ] 토[ ] 일[ ]"
   },
   {
-   "id": 403,
+   "id": 405,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -10066,7 +10138,7 @@
    "quote": "▪연장실습 없음 [ ⋁ ]"
   },
   {
-   "id": 404,
+   "id": 406,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -10076,7 +10148,7 @@
    "quote": "Y[ ] / N [ ⋁ ]"
   },
   {
-   "id": 405,
+   "id": 407,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -10086,7 +10158,7 @@
    "quote": "▪지급기준 : [월 기준]▸209시간 [ 월 기준] / [ 2,156,880 ]원"
   },
   {
-   "id": 406,
+   "id": 408,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -10096,7 +10168,7 @@
    "quote": "[ 2,156,880 ]원"
   },
   {
-   "id": 407,
+   "id": 409,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -10106,7 +10178,7 @@
    "quote": "▪식사 [ ⋁ ] ▪교통[ ] ▪기숙사[ ]"
   },
   {
-   "id": 408,
+   "id": 410,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -10116,7 +10188,7 @@
    "quote": "*본 인턴십은 컴퓨터공학 전공 학생들이 실제 산업 현장에서 요구되는 소프트웨어 개발 역량과"
   },
   {
-   "id": 409,
+   "id": 411,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -10126,7 +10198,7 @@
    "quote": "*본 직무는 AI 및 데이터 기반 소프트웨어 개발을 중심으로 다양한 시스템 구축 업무를 수행한"
   },
   {
-   "id": 410,
+   "id": 412,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -10136,7 +10208,7 @@
    "quote": "소프트웨어학과 (1명)"
   },
   {
-   "id": 411,
+   "id": 413,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -10146,7 +10218,7 @@
    "quote": "소프트웨어학과 (1명)"
   },
   {
-   "id": 412,
+   "id": 414,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -10156,7 +10228,7 @@
    "quote": "3~4학년"
   },
   {
-   "id": 413,
+   "id": 415,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -10166,7 +10238,7 @@
    "quote": "3.5 이상"
   },
   {
-   "id": 414,
+   "id": 416,
    "source_document_id": 6,
    "institution_id": null,
    "job_id": 119,
@@ -10176,7 +10248,7 @@
    "quote": "- 소프트웨어 개발에 대한 기본적인 이해와 전공지식, 프로그래밍 언어 활용 능력"
   },
   {
-   "id": 415,
+   "id": 417,
    "source_document_id": 7,
    "institution_id": 7,
    "job_id": null,
@@ -10186,7 +10258,7 @@
    "quote": "기관(법인)명 주식회사 소서 영문기관명 soseo, Inc."
   },
   {
-   "id": 416,
+   "id": 418,
    "source_document_id": 7,
    "institution_id": 7,
    "job_id": null,
@@ -10196,7 +10268,7 @@
    "quote": "중소기업 [ O ] 비상장 [ O ]"
   },
   {
-   "id": 417,
+   "id": 419,
    "source_document_id": 7,
    "institution_id": 7,
    "job_id": null,
@@ -10206,7 +10278,7 @@
    "quote": "중소기업 [ O ] 비상장 [ O ]"
   },
   {
-   "id": 418,
+   "id": 420,
    "source_document_id": 7,
    "institution_id": 7,
    "job_id": null,
@@ -10216,7 +10288,7 @@
    "quote": "도소매 제조업"
   },
   {
-   "id": 419,
+   "id": 421,
    "source_document_id": 7,
    "institution_id": 7,
    "job_id": null,
@@ -10226,7 +10298,7 @@
    "quote": "화장품"
   },
   {
-   "id": 420,
+   "id": 422,
    "source_document_id": 7,
    "institution_id": 7,
    "job_id": null,
@@ -10236,7 +10308,7 @@
    "quote": "사업장소재지 서울시 성동구 뚝섬로1길 25, 706-707호(성수동1가, 서울숲 한라에코밸리)"
   },
   {
-   "id": 421,
+   "id": 423,
    "source_document_id": 7,
    "institution_id": 7,
    "job_id": null,
@@ -10246,7 +10318,7 @@
    "quote": "00월00일00시 [ ] 일정별도협의[ O ]"
   },
   {
-   "id": 422,
+   "id": 424,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10256,7 +10328,7 @@
    "quote": "부서명 세일즈팀"
   },
   {
-   "id": 423,
+   "id": 425,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10266,7 +10338,7 @@
    "quote": "직무명 AMD"
   },
   {
-   "id": 424,
+   "id": 426,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10276,7 +10348,7 @@
    "quote": "서울시 성동구 뚝섬로1길 25, 706-707호"
   },
   {
-   "id": 425,
+   "id": 427,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10286,7 +10358,7 @@
    "quote": "학기과정 [ O ]"
   },
   {
-   "id": 426,
+   "id": 428,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10296,7 +10368,7 @@
    "quote": "직무체험형 [ O ]"
   },
   {
-   "id": 427,
+   "id": 429,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10306,7 +10378,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 428,
+   "id": 430,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10316,7 +10388,7 @@
    "quote": "오전 8시 00분 ~ 오후 5시 00분"
   },
   {
-   "id": 429,
+   "id": 431,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10326,7 +10398,7 @@
    "quote": "월 [O] 화 [O] 수 [O] 목 [O] 금 [O] 토 [ ] 일 [ ]"
   },
   {
-   "id": 430,
+   "id": 432,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10336,7 +10408,7 @@
    "quote": "연장실습 없음 [O]"
   },
   {
-   "id": 431,
+   "id": 433,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10346,7 +10418,7 @@
    "quote": "Y [ ] / N [ O ]"
   },
   {
-   "id": 432,
+   "id": 434,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10356,7 +10428,7 @@
    "quote": "지급기준 : [월 기준]▸ [월 기준] / [1,617,660]원"
   },
   {
-   "id": 433,
+   "id": 435,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10366,7 +10438,7 @@
    "quote": "[월 기준] / [1,617,660]원"
   },
   {
-   "id": 434,
+   "id": 436,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10376,7 +10448,7 @@
    "quote": "식사 [ O ] ▪ 교통 [ ] ▪ 기숙사 [ ]"
   },
   {
-   "id": 435,
+   "id": 437,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10386,7 +10458,7 @@
    "quote": "현직자와의 Co-work을 통해 뷰티 시장에서의 AMD 실무 기회 부여"
   },
   {
-   "id": 436,
+   "id": 438,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10396,7 +10468,7 @@
    "quote": "*플랫폼 운영 및 커뮤니케이션"
   },
   {
-   "id": 437,
+   "id": 439,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10406,7 +10478,7 @@
    "quote": "인문사회계열, 미용예술대학 2명"
   },
   {
-   "id": 438,
+   "id": 440,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10416,7 +10488,7 @@
    "quote": "인문사회계열, 미용예술대학 2명"
   },
   {
-   "id": 439,
+   "id": 441,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10426,7 +10498,7 @@
    "quote": "3-4학년"
   },
   {
-   "id": 440,
+   "id": 442,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10436,7 +10508,7 @@
    "quote": "3.0 이상/4.5"
   },
   {
-   "id": 441,
+   "id": 443,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 120,
@@ -10446,7 +10518,7 @@
    "quote": "오피스 프로그램 우수자, 평소 뷰티에 관심이 많은 자, 온라인MD업무에 관심이 있는 자"
   },
   {
-   "id": 442,
+   "id": 444,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10456,7 +10528,7 @@
    "quote": "부서명 마케팅팀"
   },
   {
-   "id": 443,
+   "id": 445,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10466,7 +10538,7 @@
    "quote": "직무명 디자인"
   },
   {
-   "id": 444,
+   "id": 446,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10476,7 +10548,7 @@
    "quote": "서울시 성동구 뚝섬로1길 25, 706-707호"
   },
   {
-   "id": 445,
+   "id": 447,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10486,7 +10558,7 @@
    "quote": "학기과정 [ O ]"
   },
   {
-   "id": 446,
+   "id": 448,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10496,7 +10568,7 @@
    "quote": "직무체험형 [ O ]"
   },
   {
-   "id": 447,
+   "id": 449,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10506,7 +10578,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 448,
+   "id": 450,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10516,7 +10588,7 @@
    "quote": "오전 8시 00분 ~ 오후 5시 00분"
   },
   {
-   "id": 449,
+   "id": 451,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10526,7 +10598,7 @@
    "quote": "월 [O] 화 [O] 수 [O] 목 [O] 금 [O] 토 [ ] 일 [ ]"
   },
   {
-   "id": 450,
+   "id": 452,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10536,7 +10608,7 @@
    "quote": "연장실습 없음 [O]"
   },
   {
-   "id": 451,
+   "id": 453,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10546,7 +10618,7 @@
    "quote": "Y [ ] / N [ O ]"
   },
   {
-   "id": 452,
+   "id": 454,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10556,7 +10628,7 @@
    "quote": "지급기준 : [월 기준]▸ [월 기준] / [1,617,660]원"
   },
   {
-   "id": 453,
+   "id": 455,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10566,7 +10638,7 @@
    "quote": "[월 기준] / [1,617,660]원"
   },
   {
-   "id": 454,
+   "id": 456,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10576,7 +10648,7 @@
    "quote": "식사 [ O ] ▪ 교통 [ ] ▪ 기숙사 [ ]"
   },
   {
-   "id": 455,
+   "id": 457,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10586,7 +10658,7 @@
    "quote": "현직자와의 Co-work을 통해 뷰티 시장에서의 디자인 실무 기회 부여"
   },
   {
-   "id": 456,
+   "id": 458,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10596,7 +10668,7 @@
    "quote": "*시장환경 및 경쟁사 분석을 통한 디자인 아이디어 제안"
   },
   {
-   "id": 457,
+   "id": 459,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10606,7 +10678,7 @@
    "quote": "디자인학부 2명"
   },
   {
-   "id": 458,
+   "id": 460,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10616,7 +10688,7 @@
    "quote": "디자인학부 2명"
   },
   {
-   "id": 459,
+   "id": 461,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10626,7 +10698,7 @@
    "quote": "3-4학년"
   },
   {
-   "id": 460,
+   "id": 462,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10636,7 +10708,7 @@
    "quote": "3.0 이상/4.5"
   },
   {
-   "id": 461,
+   "id": 463,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 121,
@@ -10646,7 +10718,7 @@
    "quote": "포토샵 활용 가능자(필수), 간단한 코딩 가능자, 영상편집 툴 사용 가능자, 오피스 프로그램"
   },
   {
-   "id": 462,
+   "id": 464,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10656,7 +10728,7 @@
    "quote": "부서명 마케팅팀"
   },
   {
-   "id": 463,
+   "id": 465,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10666,7 +10738,7 @@
    "quote": "직무명 국내 마케팅"
   },
   {
-   "id": 464,
+   "id": 466,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10676,7 +10748,7 @@
    "quote": "서울시 성동구 뚝섬로1길 25, 706-707호"
   },
   {
-   "id": 465,
+   "id": 467,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10686,7 +10758,7 @@
    "quote": "학기과정 [ O ]"
   },
   {
-   "id": 466,
+   "id": 468,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10696,7 +10768,7 @@
    "quote": "직무체험형 [ O ]"
   },
   {
-   "id": 467,
+   "id": 469,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10706,7 +10778,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 468,
+   "id": 470,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10716,7 +10788,7 @@
    "quote": "오전 8시 00분 ~ 오후 5시 00분"
   },
   {
-   "id": 469,
+   "id": 471,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10726,7 +10798,7 @@
    "quote": "월 [O] 화 [O] 수 [O] 목 [O] 금 [O] 토 [ ] 일 [ ]"
   },
   {
-   "id": 470,
+   "id": 472,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10736,7 +10808,7 @@
    "quote": "연장실습 없음 [O]"
   },
   {
-   "id": 471,
+   "id": 473,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10746,7 +10818,7 @@
    "quote": "Y [ ] / N [ O ]"
   },
   {
-   "id": 472,
+   "id": 474,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10756,7 +10828,7 @@
    "quote": "지급기준 : [월 기준]▸ [월 기준] / [1,617,660]원"
   },
   {
-   "id": 473,
+   "id": 475,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10766,7 +10838,7 @@
    "quote": "[월 기준] / [1,617,660]원"
   },
   {
-   "id": 474,
+   "id": 476,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10776,7 +10848,7 @@
    "quote": "식사 [ O ] ▪ 교통 [ ] ▪ 기숙사 [ ]"
   },
   {
-   "id": 475,
+   "id": 477,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10786,7 +10858,7 @@
    "quote": "현직자와의 Co-work을 통해 뷰티 시장에서의 제품 기획 및 국내 마케팅 실무 기회 부여"
   },
   {
-   "id": 476,
+   "id": 478,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10796,7 +10868,7 @@
    "quote": "*시장환경 및 경쟁사 분석을 통한 상품 기획 아이디어 제안"
   },
   {
-   "id": 477,
+   "id": 479,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10806,7 +10878,7 @@
    "quote": "광고홍보콘텐츠학과, 미용예술대학 관련 학과 2명"
   },
   {
-   "id": 478,
+   "id": 480,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10816,7 +10888,7 @@
    "quote": "광고홍보콘텐츠학과, 미용예술대학 관련 학과 2명"
   },
   {
-   "id": 479,
+   "id": 481,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10826,7 +10898,7 @@
    "quote": "3-4학년"
   },
   {
-   "id": 480,
+   "id": 482,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10836,7 +10908,7 @@
    "quote": "3.0 이상/4.5"
   },
   {
-   "id": 481,
+   "id": 483,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 122,
@@ -10846,7 +10918,7 @@
    "quote": "오피스 프로그램 우수자, 평소 뷰티에 관심이 많은 자, 뷰티 SNS를 운영해 본 경험이 있는 자"
   },
   {
-   "id": 482,
+   "id": 484,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -10856,7 +10928,7 @@
    "quote": "부서명 마케팅팀"
   },
   {
-   "id": 483,
+   "id": 485,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -10866,7 +10938,7 @@
    "quote": "직무명 해외 마케팅"
   },
   {
-   "id": 484,
+   "id": 486,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -10876,7 +10948,7 @@
    "quote": "서울시 성동구 뚝섬로1길 25, 706-707호"
   },
   {
-   "id": 485,
+   "id": 487,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -10886,7 +10958,7 @@
    "quote": "학기과정 [ O ]"
   },
   {
-   "id": 486,
+   "id": 488,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -10896,7 +10968,7 @@
    "quote": "직무체험형 [ O ]"
   },
   {
-   "id": 487,
+   "id": 489,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -10906,7 +10978,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 488,
+   "id": 490,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -10916,7 +10988,7 @@
    "quote": "오전 8시 00분 ~ 오후 5시 00분"
   },
   {
-   "id": 489,
+   "id": 491,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -10926,7 +10998,7 @@
    "quote": "월 [O] 화 [O] 수 [O] 목 [O] 금 [O] 토 [ ] 일 [ ]"
   },
   {
-   "id": 490,
+   "id": 492,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -10936,7 +11008,7 @@
    "quote": "연장실습 없음 [O]"
   },
   {
-   "id": 491,
+   "id": 493,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -10946,7 +11018,7 @@
    "quote": "Y [ ] / N [ O ]"
   },
   {
-   "id": 492,
+   "id": 494,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -10956,7 +11028,7 @@
    "quote": "지급기준 : [월 기준]▸ [월 기준] / [1,617,660]원"
   },
   {
-   "id": 493,
+   "id": 495,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -10966,7 +11038,7 @@
    "quote": "[월 기준] / [1,617,660]원"
   },
   {
-   "id": 494,
+   "id": 496,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -10976,7 +11048,7 @@
    "quote": "식사 [ O ] ▪ 교통 [ ] ▪ 기숙사 [ ]"
   },
   {
-   "id": 495,
+   "id": 497,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -10986,7 +11058,7 @@
    "quote": "현직자와의 Co-work을 통해 뷰티 시장에서의 제품 기획 및 해외 마케팅 실무 기회 부여"
   },
   {
-   "id": 496,
+   "id": 498,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -10996,7 +11068,7 @@
    "quote": "*시장환경 및 경쟁사 분석을 통한 상품 기획 아이디어 제안"
   },
   {
-   "id": 497,
+   "id": 499,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -11006,7 +11078,7 @@
    "quote": "광고홍보콘텐츠학과, 글로벌비즈니스어학부 2명"
   },
   {
-   "id": 498,
+   "id": 500,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -11016,7 +11088,7 @@
    "quote": "광고홍보콘텐츠학과, 글로벌비즈니스어학부 2명"
   },
   {
-   "id": 499,
+   "id": 501,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -11026,7 +11098,7 @@
    "quote": "3-4학년"
   },
   {
-   "id": 500,
+   "id": 502,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -11036,7 +11108,7 @@
    "quote": "3.0 이상/4.5"
   },
   {
-   "id": 501,
+   "id": 503,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 123,
@@ -11046,7 +11118,7 @@
    "quote": "영어 가능자, 오피스 프로그램 우수자, 평소 뷰티에 관심이 많은 자, 뷰티 SNS를 운영해 본"
   },
   {
-   "id": 502,
+   "id": 504,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11056,7 +11128,7 @@
    "quote": "부서명 물류팀"
   },
   {
-   "id": 503,
+   "id": 505,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11066,7 +11138,7 @@
    "quote": "직무명 물류"
   },
   {
-   "id": 504,
+   "id": 506,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11076,7 +11148,7 @@
    "quote": "서울시 성동구 뚝섬로1길 25, 706-707호"
   },
   {
-   "id": 505,
+   "id": 507,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11086,7 +11158,7 @@
    "quote": "학기과정 [ O ]"
   },
   {
-   "id": 506,
+   "id": 508,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11096,7 +11168,7 @@
    "quote": "직무체험형 [ O ]"
   },
   {
-   "id": 507,
+   "id": 509,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11106,7 +11178,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 508,
+   "id": 510,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11116,7 +11188,7 @@
    "quote": "오전 8시 00분 ~ 오후 5시 00분"
   },
   {
-   "id": 509,
+   "id": 511,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11126,7 +11198,7 @@
    "quote": "월 [O] 화 [O] 수 [O] 목 [O] 금 [O] 토 [ ] 일 [ ]"
   },
   {
-   "id": 510,
+   "id": 512,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11136,7 +11208,7 @@
    "quote": "연장실습 없음 [O]"
   },
   {
-   "id": 511,
+   "id": 513,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11146,7 +11218,7 @@
    "quote": "Y [ ] / N [ O ]"
   },
   {
-   "id": 512,
+   "id": 514,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11156,7 +11228,7 @@
    "quote": "지급기준 : [월 기준]▸ [월 기준] / [1,617,660]원"
   },
   {
-   "id": 513,
+   "id": 515,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11166,7 +11238,7 @@
    "quote": "[월 기준] / [1,617,660]원"
   },
   {
-   "id": 514,
+   "id": 516,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11176,7 +11248,7 @@
    "quote": "식사 [ O ] ▪ 교통 [ ] ▪ 기숙사 [ ]"
   },
   {
-   "id": 515,
+   "id": 517,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11186,7 +11258,7 @@
    "quote": "현직자와의 Co-work을 통해 뷰티 시장에서의 유통 기획 및 물류 실무 기회 부여"
   },
   {
-   "id": 516,
+   "id": 518,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11196,7 +11268,7 @@
    "quote": "*시장환경 및 자사 물류 시스템 분석을 통한 국내 물류 및 유통 효율 개선 아이디어 제안"
   },
   {
-   "id": 517,
+   "id": 519,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11206,7 +11278,7 @@
    "quote": "물류시스템공학과, 나노화학생명공학과 및 물류 관련 학과 2명"
   },
   {
-   "id": 518,
+   "id": 520,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11216,7 +11288,7 @@
    "quote": "물류시스템공학과, 나노화학생명공학과 및 물류 관련 학과 2명"
   },
   {
-   "id": 519,
+   "id": 521,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11226,7 +11298,7 @@
    "quote": "3-4학년"
   },
   {
-   "id": 520,
+   "id": 522,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11236,7 +11308,7 @@
    "quote": "3.0 이상/4.5"
   },
   {
-   "id": 521,
+   "id": 523,
    "source_document_id": 7,
    "institution_id": null,
    "job_id": 124,
@@ -11246,7 +11318,7 @@
    "quote": "간단한 영어 가능자, 오피스 프로그램 우수자, 물류 시스템(WMS) 운영 경험자"
   },
   {
-   "id": 522,
+   "id": 524,
    "source_document_id": 8,
    "institution_id": 8,
    "job_id": null,
@@ -11256,7 +11328,7 @@
    "quote": "㈜ 제이숲"
   },
   {
-   "id": 523,
+   "id": 525,
    "source_document_id": 8,
    "institution_id": 8,
    "job_id": null,
@@ -11266,7 +11338,7 @@
    "quote": "중소기업 [ O ]"
   },
   {
-   "id": 524,
+   "id": 526,
    "source_document_id": 8,
    "institution_id": 8,
    "job_id": null,
@@ -11276,7 +11348,7 @@
    "quote": "도매 및 소매업"
   },
   {
-   "id": 525,
+   "id": 527,
    "source_document_id": 8,
    "institution_id": 8,
    "job_id": null,
@@ -11286,7 +11358,7 @@
    "quote": "전자상거래업(화장품)"
   },
   {
-   "id": 526,
+   "id": 528,
    "source_document_id": 8,
    "institution_id": 8,
    "job_id": null,
@@ -11296,7 +11368,7 @@
    "quote": "경기도 의정부시"
   },
   {
-   "id": 527,
+   "id": 529,
    "source_document_id": 8,
    "institution_id": 8,
    "job_id": null,
@@ -11306,7 +11378,7 @@
    "quote": "일정별도협의[ O ]"
   },
   {
-   "id": 528,
+   "id": 530,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11316,7 +11388,7 @@
    "quote": "미래1팀"
   },
   {
-   "id": 529,
+   "id": 531,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11326,7 +11398,7 @@
    "quote": "바이럴마케팅"
   },
   {
-   "id": 530,
+   "id": 532,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11336,7 +11408,7 @@
    "quote": "경기도 의정부시 태평로214번길 36, 제이숲"
   },
   {
-   "id": 531,
+   "id": 533,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11346,7 +11418,7 @@
    "quote": "▪ 학기과정 [ O ]"
   },
   {
-   "id": 532,
+   "id": 534,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11356,7 +11428,7 @@
    "quote": "▪ 채용연계형 [ O ]"
   },
   {
-   "id": 533,
+   "id": 535,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11366,7 +11438,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 534,
+   "id": 536,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11376,7 +11448,7 @@
    "quote": "오전 9시 00분 ~ 오후 6 시 00분"
   },
   {
-   "id": 535,
+   "id": 537,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11386,7 +11458,7 @@
    "quote": "월 [O] 화[O] 수 [O]목[O]금 [O] 토 [ ] 일 [ ]"
   },
   {
-   "id": 536,
+   "id": 538,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11396,7 +11468,7 @@
    "quote": "연장실습 없음 [O]"
   },
   {
-   "id": 537,
+   "id": 539,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11406,7 +11478,7 @@
    "quote": "Y [ ] / N [O]"
   },
   {
-   "id": 538,
+   "id": 540,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11416,7 +11488,7 @@
    "quote": "지급기준 : [ 월 기준] / [ 1,941,192 ]원"
   },
   {
-   "id": 539,
+   "id": 541,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11426,7 +11498,7 @@
    "quote": "[ 월 기준] / [ 1,941,192 ]원"
   },
   {
-   "id": 540,
+   "id": 542,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11436,7 +11508,7 @@
    "quote": "식사 [O] ▪ 교통 [ ] ▪ 기숙사 [ ]"
   },
   {
-   "id": 541,
+   "id": 543,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11446,7 +11518,7 @@
    "quote": "*K-뷰티와 연계된 해외 인플루언서 마케팅의 정의와 기초적 실무에 대해 경험"
   },
   {
-   "id": 542,
+   "id": 544,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11456,7 +11528,7 @@
    "quote": "바이럴 마케팅 실무를 경험하며 시장조사, 콘텐츠 기획, 인플루언서 마케팅 운영 역량을 습득하고,"
   },
   {
-   "id": 543,
+   "id": 545,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11466,7 +11538,7 @@
    "quote": "광고홍보콘텐츠학과 또는 인문사회과학 전공 대상 중 1명"
   },
   {
-   "id": 544,
+   "id": 546,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11476,7 +11548,7 @@
    "quote": "인문사회과학 전공 대상 중 1명"
   },
   {
-   "id": 545,
+   "id": 547,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11486,7 +11558,7 @@
    "quote": "4학년(졸업예정)"
   },
   {
-   "id": 546,
+   "id": 548,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11496,7 +11568,7 @@
    "quote": "3.00이상 / 4.5만점"
   },
   {
-   "id": 547,
+   "id": 549,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 125,
@@ -11506,7 +11578,7 @@
    "quote": "OA 역량 : MS Office(Excel, PowerPoint) 활용 가능한 분"
   },
   {
-   "id": 548,
+   "id": 550,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11516,7 +11588,7 @@
    "quote": "부서명 미래 1팀"
   },
   {
-   "id": 549,
+   "id": 551,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11526,7 +11598,7 @@
    "quote": "직무명 AMD"
   },
   {
-   "id": 550,
+   "id": 552,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11536,7 +11608,7 @@
    "quote": "▪ 학기과정 [ O ]"
   },
   {
-   "id": 551,
+   "id": 553,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11546,7 +11618,7 @@
    "quote": "▪ 채용연계형 [ O ]"
   },
   {
-   "id": 552,
+   "id": 554,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11556,7 +11628,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 553,
+   "id": 555,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11566,7 +11638,7 @@
    "quote": "오전 9시 00분 ~ 오후 6 시 00분"
   },
   {
-   "id": 554,
+   "id": 556,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11576,7 +11648,7 @@
    "quote": "월 [O] 화 [O] 수 [O]목 [O]금 [O] 토 [ ] 일 [ ]"
   },
   {
-   "id": 555,
+   "id": 557,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11586,7 +11658,7 @@
    "quote": "▪ 연장실습 없음 [ O ]"
   },
   {
-   "id": 556,
+   "id": 558,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11596,7 +11668,7 @@
    "quote": "Y [ ] / N [O]"
   },
   {
-   "id": 557,
+   "id": 559,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11606,7 +11678,7 @@
    "quote": "▪ 지급기준 : [ 월 기준] / [ 1,941,192 ]원"
   },
   {
-   "id": 558,
+   "id": 560,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11616,7 +11688,7 @@
    "quote": "[ 월 기준] / [ 1,941,192 ]원"
   },
   {
-   "id": 559,
+   "id": 561,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11626,7 +11698,7 @@
    "quote": "▪ 식사 [O] ▪ 교통 [ ] ▪ 기숙사 [ ]"
   },
   {
-   "id": 560,
+   "id": 562,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11636,7 +11708,7 @@
    "quote": "온라인 커머스 운영 및 MD 실무를 경험하며 상품 분석, 시장조사, 데이터 활용 능력을 습득하고,"
   },
   {
-   "id": 561,
+   "id": 563,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11646,7 +11718,7 @@
    "quote": "실습생은 MD 담당자의 지도 아래 상품 운영 지원, 시장 및 경쟁사 조사, 판매 데이터 분석, 프로모션"
   },
   {
-   "id": 562,
+   "id": 564,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11656,7 +11728,7 @@
    "quote": "광고홍보콘텐츠학과 또는 인문사회과학 전공 대상 중 1명"
   },
   {
-   "id": 563,
+   "id": 565,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11666,7 +11738,7 @@
    "quote": "인문사회과학 전공 대상 중 1명"
   },
   {
-   "id": 564,
+   "id": 566,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11676,7 +11748,7 @@
    "quote": "학년 4학년(졸업예정)"
   },
   {
-   "id": 565,
+   "id": 567,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11686,7 +11758,7 @@
    "quote": "3.0이상 / 4.5만점"
   },
   {
-   "id": 566,
+   "id": 568,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 126,
@@ -11696,7 +11768,7 @@
    "quote": "OA 역량 : MS Office(Excel, PowerPoint) 활용 가능자 우대"
   },
   {
-   "id": 567,
+   "id": 569,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11706,7 +11778,7 @@
    "quote": "글로벌팀"
   },
   {
-   "id": 568,
+   "id": 570,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11716,7 +11788,7 @@
    "quote": "글로벌마케팅"
   },
   {
-   "id": 569,
+   "id": 571,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11726,7 +11798,7 @@
    "quote": "경기도 의정부시 태평로214번길 36, 제이숲"
   },
   {
-   "id": 570,
+   "id": 572,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11736,7 +11808,7 @@
    "quote": "▪ 학기과정 [ O ]"
   },
   {
-   "id": 571,
+   "id": 573,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11746,7 +11818,7 @@
    "quote": "▪ 채용연계형 [ O ]"
   },
   {
-   "id": 572,
+   "id": 574,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11756,7 +11828,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 573,
+   "id": 575,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11766,7 +11838,7 @@
    "quote": "오전 9시 00분 ~ 오후 6 시 00분"
   },
   {
-   "id": 574,
+   "id": 576,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11776,7 +11848,7 @@
    "quote": "월 [O] 화[O] 수 [O]목[O]금 [O] 토 [ ] 일 [ ]"
   },
   {
-   "id": 575,
+   "id": 577,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11786,7 +11858,7 @@
    "quote": "▪ 연장실습 없음 [O]"
   },
   {
-   "id": 576,
+   "id": 578,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11796,7 +11868,7 @@
    "quote": "Y[ ] / N[O]"
   },
   {
-   "id": 577,
+   "id": 579,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11806,7 +11878,7 @@
    "quote": "지급기준 : [ 월 기준] / [ 1,941,192 ]원"
   },
   {
-   "id": 578,
+   "id": 580,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11816,7 +11888,7 @@
    "quote": "[ 월 기준] / [ 1,941,192 ]원"
   },
   {
-   "id": 579,
+   "id": 581,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11826,7 +11898,7 @@
    "quote": "식사 [O] ▪ 교통 [ ] ▪ 기숙사 [ ]"
   },
   {
-   "id": 580,
+   "id": 582,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11836,7 +11908,7 @@
    "quote": "*K-뷰티와 연계된 해외 인플루언서 마케팅의 정의와 기초적 실무에 대해 경험"
   },
   {
-   "id": 581,
+   "id": 583,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11846,7 +11918,7 @@
    "quote": "글로벌 미국·일본 체험단 운영을 통해 해외 시장 내 브랜드 인지도와 판매 전환을 확대하기 위해"
   },
   {
-   "id": 582,
+   "id": 584,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11856,7 +11928,7 @@
    "quote": "글로벌 비즈니스어학부(영어), 광고홍보콘텐츠학과 중 2명"
   },
   {
-   "id": 583,
+   "id": 585,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11866,7 +11938,7 @@
    "quote": "광고홍보콘텐츠학과 중 2명"
   },
   {
-   "id": 584,
+   "id": 586,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11876,7 +11948,7 @@
    "quote": "4학년(졸업예정)"
   },
   {
-   "id": 585,
+   "id": 587,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11886,7 +11958,7 @@
    "quote": "3.00이상 / 4.5만점"
   },
   {
-   "id": 586,
+   "id": 588,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 127,
@@ -11896,7 +11968,7 @@
    "quote": "OA 역량 : MS Office(Excel, PowerPoint) 활용 가능한 분"
   },
   {
-   "id": 587,
+   "id": 589,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -11906,7 +11978,7 @@
    "quote": "부서명 전략1팀"
   },
   {
-   "id": 588,
+   "id": 590,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -11916,7 +11988,7 @@
    "quote": "직무명 온/오프라인 데이터 취합 및 마케팅"
   },
   {
-   "id": 589,
+   "id": 591,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -11926,7 +11998,7 @@
    "quote": "경기도 의정부시 태평로214번길 36, 제이숲"
   },
   {
-   "id": 590,
+   "id": 592,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -11936,7 +12008,7 @@
    "quote": "▪ 학기과정 [ O ]"
   },
   {
-   "id": 591,
+   "id": 593,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -11946,7 +12018,7 @@
    "quote": "▪ 채용연계형 [ O ]"
   },
   {
-   "id": 592,
+   "id": 594,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -11956,7 +12028,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 593,
+   "id": 595,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -11966,7 +12038,7 @@
    "quote": "오전 9시 00분 ~ 오후 6 시 00분"
   },
   {
-   "id": 594,
+   "id": 596,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -11976,7 +12048,7 @@
    "quote": "월 [O] 화 [O] 수 [O]목 [O]금 [O] 토 [ ] 일 [ ]"
   },
   {
-   "id": 595,
+   "id": 597,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -11986,7 +12058,7 @@
    "quote": "▪ 연장실습 없음 [ O ]"
   },
   {
-   "id": 596,
+   "id": 598,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -11996,7 +12068,7 @@
    "quote": "Y [ ] / N [O]"
   },
   {
-   "id": 597,
+   "id": 599,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -12006,7 +12078,7 @@
    "quote": "▪ 지급기준 : [ 월 기준] / [ 1,941,192 ]원"
   },
   {
-   "id": 598,
+   "id": 600,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -12016,7 +12088,7 @@
    "quote": "[ 월 기준] / [ 1,941,192 ]원"
   },
   {
-   "id": 599,
+   "id": 601,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -12026,7 +12098,7 @@
    "quote": "▪ 식사 [O] ▪ 교통 [ ] ▪ 기숙사 [ ]"
   },
   {
-   "id": 600,
+   "id": 602,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -12036,7 +12108,7 @@
    "quote": "온·오프라인 채널(이커머스, 오프라인, 폐쇄몰)의 유통 흐름 및 데이터 관리 프로세스 이해"
   },
   {
-   "id": 601,
+   "id": 603,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -12046,7 +12118,7 @@
    "quote": "온·오프라인 채널의 운영 효율성을 높이기 위해 판매, 물류, 마케팅 핵심 데이터를 일관성 있게"
   },
   {
-   "id": 602,
+   "id": 604,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -12056,7 +12128,7 @@
    "quote": "미래융합학부- 비즈니스 중어전공 / 경영학부 경영 전공 중 2명"
   },
   {
-   "id": 603,
+   "id": 605,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -12066,7 +12138,7 @@
    "quote": "경영학부 경영 전공 중 2명"
   },
   {
-   "id": 604,
+   "id": 606,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -12076,7 +12148,7 @@
    "quote": "학년 4학년(졸업예정)"
   },
   {
-   "id": 605,
+   "id": 607,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -12086,7 +12158,7 @@
    "quote": "3.6이상 / 4.5만점"
   },
   {
-   "id": 606,
+   "id": 608,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 128,
@@ -12096,7 +12168,7 @@
    "quote": "OA 역량 : MS Office(Excel, PowerPoint) / 구글스프레드 시트 활용 가능한 분"
   },
   {
-   "id": 607,
+   "id": 609,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12106,7 +12178,7 @@
    "quote": "부서명 전략2팀"
   },
   {
-   "id": 608,
+   "id": 610,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12116,7 +12188,7 @@
    "quote": "직무명 바이럴마케팅"
   },
   {
-   "id": 609,
+   "id": 611,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12126,7 +12198,7 @@
    "quote": "경기도 의정부시 태평로214번길 36, 제이숲"
   },
   {
-   "id": 610,
+   "id": 612,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12136,7 +12208,7 @@
    "quote": "▪ 학기과정 [ O ]"
   },
   {
-   "id": 611,
+   "id": 613,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12146,7 +12218,7 @@
    "quote": "▪ 채용연계형 [ O ]"
   },
   {
-   "id": 612,
+   "id": 614,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12156,7 +12228,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 613,
+   "id": 615,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12166,7 +12238,7 @@
    "quote": "오전 9시 00분 ~ 오후 6 시 00분"
   },
   {
-   "id": 614,
+   "id": 616,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12176,7 +12248,7 @@
    "quote": "월 [O] 화 [O] 수 [O]목 [O]금 [O] 토 [ ] 일 [ ]"
   },
   {
-   "id": 615,
+   "id": 617,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12186,7 +12258,7 @@
    "quote": "▪ 연장실습 없음 [ O ]"
   },
   {
-   "id": 616,
+   "id": 618,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12196,7 +12268,7 @@
    "quote": "Y [ ] / N [O]"
   },
   {
-   "id": 617,
+   "id": 619,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12206,7 +12278,7 @@
    "quote": "▪ 지급기준 : [ 월 기준] / [ 1,941,192 ]원"
   },
   {
-   "id": 618,
+   "id": 620,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12216,7 +12288,7 @@
    "quote": "[ 월 기준] / [ 1,941,192 ]원"
   },
   {
-   "id": 619,
+   "id": 621,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12226,7 +12298,7 @@
    "quote": "▪ 식사 [O] ▪ 교통 [ ] ▪ 기숙사 [ ]"
   },
   {
-   "id": 620,
+   "id": 622,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12236,7 +12308,7 @@
    "quote": "* 인플루언서 마케팅의 정의와 기초적 실무에 대해 경험"
   },
   {
-   "id": 621,
+   "id": 623,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12246,7 +12318,7 @@
    "quote": "인플루언서 체험단 운영을 통해 국내 시장 내 브랜드 인지도와 판매 전환을 확대를 위한"
   },
   {
-   "id": 622,
+   "id": 624,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12256,7 +12328,7 @@
    "quote": "경영학과, 광고홍보콘텐츠학과 중 2명"
   },
   {
-   "id": 623,
+   "id": 625,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12266,7 +12338,7 @@
    "quote": "광고홍보콘텐츠학과 중 2명"
   },
   {
-   "id": 624,
+   "id": 626,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12276,7 +12348,7 @@
    "quote": "학년 4학년(졸업예정)"
   },
   {
-   "id": 625,
+   "id": 627,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12286,7 +12358,7 @@
    "quote": "3.0이상 / 4.5만점"
   },
   {
-   "id": 626,
+   "id": 628,
    "source_document_id": 8,
    "institution_id": null,
    "job_id": 129,
@@ -12296,7 +12368,7 @@
    "quote": "OA 역량 : MS Office(Excel, PowerPoint) 활용 가능한 분"
   },
   {
-   "id": 627,
+   "id": 629,
    "source_document_id": 9,
    "institution_id": 9,
    "job_id": null,
@@ -12306,7 +12378,7 @@
    "quote": "기관(법인)명 주식회사 위아프렌즈 영문기관명 WeAreFriends Co., ltd."
   },
   {
-   "id": 628,
+   "id": 630,
    "source_document_id": 9,
    "institution_id": 9,
    "job_id": null,
@@ -12316,7 +12388,7 @@
    "quote": "중소기업 [ ○ ] 비상장 [ ○ ]"
   },
   {
-   "id": 629,
+   "id": 631,
    "source_document_id": 9,
    "institution_id": 9,
    "job_id": null,
@@ -12326,7 +12398,7 @@
    "quote": "중소기업 [ ○ ] 비상장 [ ○ ]"
   },
   {
-   "id": 630,
+   "id": 632,
    "source_document_id": 9,
    "institution_id": 9,
    "job_id": null,
@@ -12336,7 +12408,7 @@
    "quote": "대기업 [ ] 코스피 [ ] 정보통신업 응용소프트웨어 개발 및 공급업"
   },
   {
-   "id": 631,
+   "id": 633,
    "source_document_id": 9,
    "institution_id": 9,
    "job_id": null,
@@ -12346,7 +12418,7 @@
    "quote": "정보통신업 응용소프트웨어 개발 및 공급업"
   },
   {
-   "id": 632,
+   "id": 634,
    "source_document_id": 9,
    "institution_id": 9,
    "job_id": null,
@@ -12356,7 +12428,7 @@
    "quote": "사업장소재지 서울시 강동구 양재대로 113길 51, 4층 40호"
   },
   {
-   "id": 633,
+   "id": 635,
    "source_document_id": 9,
    "institution_id": 9,
    "job_id": null,
@@ -12366,7 +12438,7 @@
    "quote": "일정별도협의[ ○ ] 일정별도협의[ ○ ] 일정별도협의[ ○ ]"
   },
   {
-   "id": 634,
+   "id": 636,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12376,7 +12448,7 @@
    "quote": "콘텐츠 팀"
   },
   {
-   "id": 635,
+   "id": 637,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12386,7 +12458,7 @@
    "quote": "콘텐츠 마케팅 보조"
   },
   {
-   "id": 636,
+   "id": 638,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12396,7 +12468,7 @@
    "quote": "서울시 강동구 양재대로113길 51, 4층 카페24 40호"
   },
   {
-   "id": 637,
+   "id": 639,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12406,7 +12478,7 @@
    "quote": "▪방학과정 [ ] ▪학기과정 [ O ] ▪방학/학기 연계과정 [ ]"
   },
   {
-   "id": 638,
+   "id": 640,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12416,7 +12488,7 @@
    "quote": "▪직무체험형 [ O ] ▪채용연계형 [ ]"
   },
   {
-   "id": 639,
+   "id": 641,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12426,7 +12498,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 640,
+   "id": 642,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12436,7 +12508,7 @@
    "quote": "오전 9시 00분 ~ 오후 6시 00분 (▸휴게시간 1시간 포함하여 작성)"
   },
   {
-   "id": 641,
+   "id": 643,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12446,7 +12518,7 @@
    "quote": "월 [ ○ ] 화[ ○ ] 수[ ○ ] 목[ ○ ] 금[ ○ ] 토[ ] 일[ ]"
   },
   {
-   "id": 642,
+   "id": 644,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12456,7 +12528,7 @@
    "quote": "▪연장실습 없음 [ ○ ] ▪상황별 실시 [ ] ▪주기적/상시적 실시 [ ]"
   },
   {
-   "id": 643,
+   "id": 645,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12466,7 +12538,7 @@
    "quote": "별도의 근로계약 체결 여부 Y[ ] / N [ ○ ]"
   },
   {
-   "id": 644,
+   "id": 646,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12476,7 +12548,7 @@
    "quote": "▸ [ 월 기준] / [ 1,617,660 ]원"
   },
   {
-   "id": 645,
+   "id": 647,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12486,7 +12558,7 @@
    "quote": "[ 월 기준] / [ 1,617,660 ]원"
   },
   {
-   "id": 646,
+   "id": 648,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12496,7 +12568,7 @@
    "quote": "*온라인 콘텐츠 제작 및 데스크 리서치, 현장 리서치 경험"
   },
   {
-   "id": 647,
+   "id": 649,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12506,7 +12578,7 @@
    "quote": "* 방한 외국인들을 위한 한국 여행 콘텐츠 제작 보조"
   },
   {
-   "id": 648,
+   "id": 650,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12516,7 +12588,7 @@
    "quote": "무관 (1인)"
   },
   {
-   "id": 649,
+   "id": 651,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12526,7 +12598,7 @@
    "quote": "무관 (1인)"
   },
   {
-   "id": 650,
+   "id": 652,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12536,7 +12608,7 @@
    "quote": "4학년"
   },
   {
-   "id": 651,
+   "id": 653,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12546,7 +12618,7 @@
    "quote": "무관"
   },
   {
-   "id": 652,
+   "id": 654,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 130,
@@ -12556,7 +12628,7 @@
    "quote": "콘텐츠 제작 능력, 영어 능력"
   },
   {
-   "id": 653,
+   "id": 655,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12566,7 +12638,7 @@
    "quote": "콘텐츠 팀"
   },
   {
-   "id": 654,
+   "id": 656,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12576,7 +12648,7 @@
    "quote": "콘텐츠 마케팅 보조"
   },
   {
-   "id": 655,
+   "id": 657,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12586,7 +12658,7 @@
    "quote": "서울시 강동구 양재대로113길 51, 4층 카페24 40호"
   },
   {
-   "id": 656,
+   "id": 658,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12596,7 +12668,7 @@
    "quote": "▪방학과정 [ ] ▪학기과정 [ O ] ▪방학/학기 연계과정 [ ]"
   },
   {
-   "id": 657,
+   "id": 659,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12606,7 +12678,7 @@
    "quote": "▪직무체험형 [ O ] ▪채용연계형 [ ]"
   },
   {
-   "id": 658,
+   "id": 660,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12616,7 +12688,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 659,
+   "id": 661,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12626,7 +12698,7 @@
    "quote": "오전 9시 00분 ~ 오후 6시 00분 (▸휴게시간 1시간 포함하여 작성)"
   },
   {
-   "id": 660,
+   "id": 662,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12636,7 +12708,7 @@
    "quote": "월 [ ○ ] 화[ ○ ] 수[ ○ ] 목[ ○ ] 금[ ○ ] 토[ ] 일[ ]"
   },
   {
-   "id": 661,
+   "id": 663,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12646,7 +12718,7 @@
    "quote": "▪연장실습 없음 [ ○ ] ▪상황별 실시 [ ] ▪주기적/상시적 실시 [ ]"
   },
   {
-   "id": 662,
+   "id": 664,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12656,7 +12728,7 @@
    "quote": "별도의 근로계약 체결 여부 Y[ ] / N [ ○ ]"
   },
   {
-   "id": 663,
+   "id": 665,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12666,7 +12738,7 @@
    "quote": "▸ [ 월 기준] / [ 1,617,660 ]원"
   },
   {
-   "id": 664,
+   "id": 666,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12676,7 +12748,7 @@
    "quote": "[ 월 기준] / [ 1,617,660 ]원"
   },
   {
-   "id": 665,
+   "id": 667,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12686,7 +12758,7 @@
    "quote": "*프로그램 기획, 운영 및 파트너 관리, 데이터 관리"
   },
   {
-   "id": 666,
+   "id": 668,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12696,7 +12768,7 @@
    "quote": "1. 운영 중인 등산 및 유교 문화 프로그램 기획을 위한 기초 자료 조사 및 계획안 작성 지원"
   },
   {
-   "id": 667,
+   "id": 669,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12706,7 +12778,7 @@
    "quote": "무관 (1인)"
   },
   {
-   "id": 668,
+   "id": 670,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12716,7 +12788,7 @@
    "quote": "무관 (1인)"
   },
   {
-   "id": 669,
+   "id": 671,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12726,7 +12798,7 @@
    "quote": "4학년"
   },
   {
-   "id": 670,
+   "id": 672,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12736,7 +12808,7 @@
    "quote": "무관"
   },
   {
-   "id": 671,
+   "id": 673,
    "source_document_id": 9,
    "institution_id": null,
    "job_id": 131,
@@ -12746,7 +12818,7 @@
    "quote": "1. 오피스 프로그램 활용 능력: 엑셀(데이터 시트 관리) 및 워드/한글 활용이 능숙한 분"
   },
   {
-   "id": 672,
+   "id": 674,
    "source_document_id": 10,
    "institution_id": 10,
    "job_id": null,
@@ -12756,7 +12828,7 @@
    "quote": "기관(법인)명 스미스 주식회사 영문기관명 SMiTH corporation"
   },
   {
-   "id": 673,
+   "id": 675,
    "source_document_id": 10,
    "institution_id": 10,
    "job_id": null,
@@ -12766,7 +12838,7 @@
    "quote": "중소기업 [ ○ ] 비상장 [ ○ ]"
   },
   {
-   "id": 674,
+   "id": 676,
    "source_document_id": 10,
    "institution_id": 10,
    "job_id": null,
@@ -12776,7 +12848,7 @@
    "quote": "중소기업 [ ○ ] 비상장 [ ○ ]"
   },
   {
-   "id": 675,
+   "id": 677,
    "source_document_id": 10,
    "institution_id": 10,
    "job_id": null,
@@ -12786,7 +12858,7 @@
    "quote": "정보통신업 광고영화 및 비디오물"
   },
   {
-   "id": 676,
+   "id": 678,
    "source_document_id": 10,
    "institution_id": 10,
    "job_id": null,
@@ -12796,7 +12868,7 @@
    "quote": "광고영화 및 비디오물 제작업"
   },
   {
-   "id": 677,
+   "id": 679,
    "source_document_id": 10,
    "institution_id": 10,
    "job_id": null,
@@ -12806,7 +12878,7 @@
    "quote": "사업장소재지 서울시 용산구 원효로 146, 5층"
   },
   {
-   "id": 678,
+   "id": 680,
    "source_document_id": 10,
    "institution_id": 10,
    "job_id": null,
@@ -12816,7 +12888,7 @@
    "quote": "일정별도협의 [ ○ ]"
   },
   {
-   "id": 679,
+   "id": 681,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -12826,7 +12898,7 @@
    "quote": "마케팅솔루션팀"
   },
   {
-   "id": 680,
+   "id": 682,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -12836,7 +12908,7 @@
    "quote": "인턴"
   },
   {
-   "id": 681,
+   "id": 683,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -12846,7 +12918,7 @@
    "quote": "서울시 용산구 원효로 146, 5층"
   },
   {
-   "id": 682,
+   "id": 684,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -12856,7 +12928,7 @@
    "quote": "▪ 학기과정 [ O ]"
   },
   {
-   "id": 683,
+   "id": 685,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -12866,7 +12938,7 @@
    "quote": "▪ 직무체험형 [ O ]"
   },
   {
-   "id": 684,
+   "id": 686,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -12876,7 +12948,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 685,
+   "id": 687,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -12886,7 +12958,7 @@
    "quote": "오전 9시 30분 ~ 오후 6시 30분 (▸휴게시간 1시간 포함하여 작성)"
   },
   {
-   "id": 686,
+   "id": 688,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -12896,7 +12968,7 @@
    "quote": "월 [O] 화 [O] 수 [O] 목 [O] 금 [O] 토 [ ] 일 [ ]"
   },
   {
-   "id": 687,
+   "id": 689,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -12906,7 +12978,7 @@
    "quote": "▪ 상황별 실시 [O]"
   },
   {
-   "id": 688,
+   "id": 690,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -12916,7 +12988,7 @@
    "quote": "Y [ ] / N [ O]"
   },
   {
-   "id": 689,
+   "id": 691,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -12926,7 +12998,7 @@
    "quote": "▪ 지급기준 : [월 기준]▸ [ 기준] / [1,617,660 ]원"
   },
   {
-   "id": 690,
+   "id": 692,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -12936,7 +13008,7 @@
    "quote": "[1,617,660 ]원"
   },
   {
-   "id": 691,
+   "id": 693,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -12946,7 +13018,7 @@
    "quote": "*IP를 활용한 온 오프라인 마케팅 운영 실무 교육"
   },
   {
-   "id": 692,
+   "id": 694,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -12956,7 +13028,7 @@
    "quote": "프로젝트별 기획 및 운영 실무"
   },
   {
-   "id": 693,
+   "id": 695,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -12966,7 +13038,7 @@
    "quote": "광고홍보콘텐츠학과(2명)"
   },
   {
-   "id": 694,
+   "id": 696,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -12976,7 +13048,7 @@
    "quote": "광고홍보콘텐츠학과(2명)"
   },
   {
-   "id": 695,
+   "id": 697,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -12986,7 +13058,7 @@
    "quote": "3,4학년"
   },
   {
-   "id": 696,
+   "id": 698,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -12996,7 +13068,7 @@
    "quote": "3.5이상"
   },
   {
-   "id": 697,
+   "id": 699,
    "source_document_id": 10,
    "institution_id": null,
    "job_id": 132,
@@ -13006,7 +13078,7 @@
    "quote": "문서작성 우수자 / 오피스 활용(중급이상) / 협업 및 커뮤니케이션 역량"
   },
   {
-   "id": 698,
+   "id": 700,
    "source_document_id": 11,
    "institution_id": 11,
    "job_id": null,
@@ -13016,7 +13088,7 @@
    "quote": "기관(법인)명 ㈜델타텍코리아"
   },
   {
-   "id": 699,
+   "id": 701,
    "source_document_id": 11,
    "institution_id": 11,
    "job_id": null,
@@ -13026,7 +13098,7 @@
    "quote": "중소기업 [ O ] 비상장 [ O ]"
   },
   {
-   "id": 700,
+   "id": 702,
    "source_document_id": 11,
    "institution_id": 11,
    "job_id": null,
@@ -13036,7 +13108,7 @@
    "quote": "중소기업 [ O ] 비상장 [ O ]"
   },
   {
-   "id": 701,
+   "id": 703,
    "source_document_id": 11,
    "institution_id": 11,
    "job_id": null,
@@ -13046,7 +13118,7 @@
    "quote": "전문,과학 및 기술서비스엄 소프트웨어 개발 및 공급"
   },
   {
-   "id": 702,
+   "id": 704,
    "source_document_id": 11,
    "institution_id": 11,
    "job_id": null,
@@ -13056,7 +13128,7 @@
    "quote": "서비스 연구 및 개발업 시장조사"
   },
   {
-   "id": 703,
+   "id": 705,
    "source_document_id": 11,
    "institution_id": 11,
    "job_id": null,
@@ -13066,7 +13138,7 @@
    "quote": "서울 영등포구 당산로 41길 11 당산 SK V1 Center W동 1008호"
   },
   {
-   "id": 704,
+   "id": 706,
    "source_document_id": 11,
    "institution_id": 11,
    "job_id": null,
@@ -13076,7 +13148,7 @@
    "quote": "07월24일[ ]"
   },
   {
-   "id": 705,
+   "id": 707,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13086,7 +13158,7 @@
    "quote": "프로젝트 랩(기술무역)"
   },
   {
-   "id": 706,
+   "id": 708,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13096,7 +13168,7 @@
    "quote": "디지털 기술무역/ 협업(OI) 과제 기획 /중개행사"
   },
   {
-   "id": 707,
+   "id": 709,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13106,7 +13178,7 @@
    "quote": "▪학기과정 [ O ]"
   },
   {
-   "id": 708,
+   "id": 710,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13116,7 +13188,7 @@
    "quote": "▪직무체험형 [ O ]"
   },
   {
-   "id": 709,
+   "id": 711,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13126,7 +13198,7 @@
    "quote": "2026년 09월 01일 ~ 2026 년 12월 12일"
   },
   {
-   "id": 710,
+   "id": 712,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13136,7 +13208,7 @@
    "quote": "오전 9시 00분 ~ 오후 18시 00분 (▸휴게시간 1시간 포함하여 작성)"
   },
   {
-   "id": 711,
+   "id": 713,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13146,7 +13218,7 @@
    "quote": "월 [ O ] 화[ O ] 수[ O ] 목[ O ] 금[ O ] 토[ ] 일[ ]"
   },
   {
-   "id": 712,
+   "id": 714,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13156,7 +13228,7 @@
    "quote": "▪연장실습 없음 [ O ]"
   },
   {
-   "id": 713,
+   "id": 715,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13166,7 +13238,7 @@
    "quote": "Y[ ] / N [ O ]"
   },
   {
-   "id": 714,
+   "id": 716,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13176,7 +13248,7 @@
    "quote": "▸ [ 월 기준] / [ 1,620,000 ]원"
   },
   {
-   "id": 715,
+   "id": 717,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13186,7 +13258,7 @@
    "quote": "[ 월 기준] / [ 1,620,000 ]원"
   },
   {
-   "id": 716,
+   "id": 718,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13196,7 +13268,7 @@
    "quote": "▪식사 [ O ] ▪교통[ ] ▪기숙사[ ]"
   },
   {
-   "id": 717,
+   "id": 719,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13206,7 +13278,7 @@
    "quote": "* 디지털무역 기본적인 원리와 직무범위 및 변화동인 이해"
   },
   {
-   "id": 718,
+   "id": 720,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13216,7 +13288,7 @@
    "quote": "* 1. 국내 및 해외 시장조사. DB정리"
   },
   {
-   "id": 719,
+   "id": 721,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13226,7 +13298,7 @@
    "quote": "경영학부 / 글로벌비즈니스어학부(영어) (1명)"
   },
   {
-   "id": 720,
+   "id": 722,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13236,7 +13308,7 @@
    "quote": "(1명)"
   },
   {
-   "id": 721,
+   "id": 723,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13246,7 +13318,7 @@
    "quote": "4 학년"
   },
   {
-   "id": 722,
+   "id": 724,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13256,7 +13328,7 @@
    "quote": "3.3 이상"
   },
   {
-   "id": 723,
+   "id": 725,
    "source_document_id": 11,
    "institution_id": null,
    "job_id": 133,
@@ -13266,7 +13338,7 @@
    "quote": "영어 구사력(회화/작문) 중급수준 이상의 자"
   },
   {
-   "id": 724,
+   "id": 726,
    "source_document_id": 12,
    "institution_id": 12,
    "job_id": null,
@@ -13276,7 +13348,7 @@
    "quote": "기관(법인)명 ㈜비욘드마케팅그룹 영문기관명 Beyond Marketing Group"
   },
   {
-   "id": 725,
+   "id": 727,
    "source_document_id": 12,
    "institution_id": 12,
    "job_id": null,
@@ -13286,7 +13358,7 @@
    "quote": "중소기업 [ O ] 비상장 [ O ]"
   },
   {
-   "id": 726,
+   "id": 728,
    "source_document_id": 12,
    "institution_id": 12,
    "job_id": null,
@@ -13296,7 +13368,7 @@
    "quote": "중소기업 [ O ] 비상장 [ O ]"
   },
   {
-   "id": 727,
+   "id": 729,
    "source_document_id": 12,
    "institution_id": 12,
    "job_id": null,
@@ -13306,7 +13378,7 @@
    "quote": "서비스 도소매 광고대행"
   },
   {
-   "id": 728,
+   "id": 730,
    "source_document_id": 12,
    "institution_id": 12,
    "job_id": null,
@@ -13316,7 +13388,7 @@
    "quote": "광고대행 전자상거래"
   },
   {
-   "id": 729,
+   "id": 731,
    "source_document_id": 12,
    "institution_id": 12,
    "job_id": null,
@@ -13326,7 +13398,7 @@
    "quote": "사업장소재지 서울시 강남구 논현로 651 법무사회관 1, 5, 6층"
   },
   {
-   "id": 730,
+   "id": 732,
    "source_document_id": 12,
    "institution_id": 12,
    "job_id": null,
@@ -13336,7 +13408,7 @@
    "quote": "일정별도협의[ O ] 일정별도협의[ O ] 일정별도협의[ O ]"
   },
   {
-   "id": 731,
+   "id": 733,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13346,7 +13418,7 @@
    "quote": "캠페인 본부(소속팀 중 적합도 판단하여 배치 예정)"
   },
   {
-   "id": 732,
+   "id": 734,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13356,7 +13428,7 @@
    "quote": "디지털 통합 광고대행사 실습"
   },
   {
-   "id": 733,
+   "id": 735,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13366,7 +13438,7 @@
    "quote": "기업주소와 동일"
   },
   {
-   "id": 734,
+   "id": 736,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13376,7 +13448,7 @@
    "quote": "▪학기과정 [ O ]"
   },
   {
-   "id": 735,
+   "id": 737,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13386,7 +13458,7 @@
    "quote": "▪채용연계형 [ O ]"
   },
   {
-   "id": 736,
+   "id": 738,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13396,7 +13468,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 737,
+   "id": 739,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13406,7 +13478,7 @@
    "quote": "오전 9시 30분 ~ 오후 6시 30분 (▸휴게시간 1시간 포함하여 작성)"
   },
   {
-   "id": 738,
+   "id": 740,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13416,7 +13488,7 @@
    "quote": "월 [ O ] 화[ O ] 수[ O ] 목[ O ] 금[ O ] 토[ X ] 일[ X ]"
   },
   {
-   "id": 739,
+   "id": 741,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13426,7 +13498,7 @@
    "quote": "▪연장실습 없음 [ O ]"
   },
   {
-   "id": 740,
+   "id": 742,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13436,7 +13508,7 @@
    "quote": "Y[ ] / N [ O ]"
   },
   {
-   "id": 741,
+   "id": 743,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13446,7 +13518,7 @@
    "quote": "[ 월 기준] / [ 1,617,660 ]원"
   },
   {
-   "id": 742,
+   "id": 744,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13456,7 +13528,7 @@
    "quote": "[ 월 기준] / [ 1,617,660 ]원"
   },
   {
-   "id": 743,
+   "id": 745,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13466,7 +13538,7 @@
    "quote": "디지털 통합 광고대행사 현장실무에 대한 경험"
   },
   {
-   "id": 744,
+   "id": 746,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13476,7 +13548,7 @@
    "quote": "디지털 광고대행사 기획자 AE 업무"
   },
   {
-   "id": 745,
+   "id": 747,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13486,7 +13558,7 @@
    "quote": "디자인&영상대학, 미용예술대학 2명"
   },
   {
-   "id": 746,
+   "id": 748,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13496,7 +13568,7 @@
    "quote": "디자인&영상대학, 미용예술대학 2명"
   },
   {
-   "id": 747,
+   "id": 749,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13506,7 +13578,7 @@
    "quote": "4학년 대상"
   },
   {
-   "id": 748,
+   "id": 750,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13516,7 +13588,7 @@
    "quote": "없음"
   },
   {
-   "id": 749,
+   "id": 751,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13526,7 +13598,7 @@
    "quote": "트랜드에 민감하여 이를 빠르게 캐치할수 있는+남들과는 다른, 풍부한 아이디어로 무장 된 학생"
   },
   {
-   "id": 750,
+   "id": 752,
    "source_document_id": 12,
    "institution_id": null,
    "job_id": 134,
@@ -13536,7 +13608,7 @@
    "quote": "지원서 제출 시, 포트폴리오 필수 제출"
   },
   {
-   "id": 751,
+   "id": 753,
    "source_document_id": 13,
    "institution_id": 13,
    "job_id": null,
@@ -13546,7 +13618,7 @@
    "quote": "기관(법인)명 에이비티아시아 영문기관명 ABT ASIA"
   },
   {
-   "id": 752,
+   "id": 754,
    "source_document_id": 13,
    "institution_id": 13,
    "job_id": null,
@@ -13556,7 +13628,7 @@
    "quote": "중소기업 [ ○ ] 비상장 [ ○ ]"
   },
   {
-   "id": 753,
+   "id": 755,
    "source_document_id": 13,
    "institution_id": 13,
    "job_id": null,
@@ -13566,7 +13638,7 @@
    "quote": "중소기업 [ ○ ] 비상장 [ ○ ]"
   },
   {
-   "id": 754,
+   "id": 756,
    "source_document_id": 13,
    "institution_id": 13,
    "job_id": null,
@@ -13576,7 +13648,7 @@
    "quote": "도매 및 소매업 화장품 제조 및 도소매업"
   },
   {
-   "id": 755,
+   "id": 757,
    "source_document_id": 13,
    "institution_id": 13,
    "job_id": null,
@@ -13586,7 +13658,7 @@
    "quote": "도매 및 소매업 화장품 제조 및 도소매업"
   },
   {
-   "id": 756,
+   "id": 758,
    "source_document_id": 13,
    "institution_id": 13,
    "job_id": null,
@@ -13596,7 +13668,7 @@
    "quote": "사업장소재지 서울특별시 강남구 언주로 537, ABT타워"
   },
   {
-   "id": 757,
+   "id": 759,
    "source_document_id": 13,
    "institution_id": 13,
    "job_id": null,
@@ -13606,7 +13678,7 @@
    "quote": "00월00일00시 [ ]\n일정별도협의[ ○ ]"
   },
   {
-   "id": 758,
+   "id": 760,
    "source_document_id": 13,
    "institution_id": null,
    "job_id": 135,
@@ -13616,7 +13688,7 @@
    "quote": "상품기획팀"
   },
   {
-   "id": 759,
+   "id": 761,
    "source_document_id": 13,
    "institution_id": null,
    "job_id": 135,
@@ -13626,7 +13698,7 @@
    "quote": "패키지 디자인 인턴"
   },
   {
-   "id": 760,
+   "id": 762,
    "source_document_id": 13,
    "institution_id": null,
    "job_id": 135,
@@ -13636,7 +13708,7 @@
    "quote": "주소 -"
   },
   {
-   "id": 761,
+   "id": 763,
    "source_document_id": 13,
    "institution_id": null,
    "job_id": 135,
@@ -13646,7 +13718,7 @@
    "quote": "▪ 학기과정 [ O ]"
   },
   {
-   "id": 762,
+   "id": 764,
    "source_document_id": 13,
    "institution_id": null,
    "job_id": 135,
@@ -13656,7 +13728,7 @@
    "quote": "▪ 채용연계형 [O ]"
   },
   {
-   "id": 763,
+   "id": 765,
    "source_document_id": 13,
    "institution_id": null,
    "job_id": 135,
@@ -13666,7 +13738,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 764,
+   "id": 766,
    "source_document_id": 13,
    "institution_id": null,
    "job_id": 135,
@@ -13676,7 +13748,7 @@
    "quote": "오전 09시 00분 ~ 오후 18시 00분"
   },
   {
-   "id": 765,
+   "id": 767,
    "source_document_id": 13,
    "institution_id": null,
    "job_id": 135,
@@ -13686,7 +13758,7 @@
    "quote": "월 [ㅇ ] 화 [ㅇ ] 수 [ㅇ ] 목 [ㅇ ] 금 [ㅇ ] 토 [ ] 일 [ ]"
   },
   {
-   "id": 766,
+   "id": 768,
    "source_document_id": 13,
    "institution_id": null,
    "job_id": 135,
@@ -13696,7 +13768,7 @@
    "quote": "▪ 상황별 실시 [ㅇ ]"
   },
   {
-   "id": 767,
+   "id": 769,
    "source_document_id": 13,
    "institution_id": null,
    "job_id": 135,
@@ -13706,7 +13778,7 @@
    "quote": "Y [ ] / N [ㅇ ]"
   },
   {
-   "id": 768,
+   "id": 770,
    "source_document_id": 13,
    "institution_id": null,
    "job_id": 135,
@@ -13716,7 +13788,7 @@
    "quote": "지급기준 : [월 기준]▸ [ 209시간 기준] / [2,156,880]원"
   },
   {
-   "id": 769,
+   "id": 771,
    "source_document_id": 13,
    "institution_id": null,
    "job_id": 135,
@@ -13726,7 +13798,7 @@
    "quote": "[ 209시간 기준] / [2,156,880]원"
   },
   {
-   "id": 770,
+   "id": 772,
    "source_document_id": 13,
    "institution_id": null,
    "job_id": 135,
@@ -13736,7 +13808,7 @@
    "quote": "화장품 브랜드의 패키지 디자인 프로세스를 전반적으로 이해하고, 용기 및 단상자의 디자인"
   },
   {
-   "id": 771,
+   "id": 773,
    "source_document_id": 13,
    "institution_id": null,
    "job_id": 135,
@@ -13746,7 +13818,7 @@
    "quote": "화장품 단상자 및 용기 패키지 디자인의 단순 수정 및 베리에이션 작업 지원"
   },
   {
-   "id": 772,
+   "id": 774,
    "source_document_id": 13,
    "institution_id": null,
    "job_id": 135,
@@ -13756,7 +13828,7 @@
    "quote": "디자인 관련 전공자 (패키지/시각디자인 선호 / 1명)"
   },
   {
-   "id": 773,
+   "id": 775,
    "source_document_id": 13,
    "institution_id": null,
    "job_id": 135,
@@ -13766,7 +13838,7 @@
    "quote": "디자인 관련 전공자 (패키지/시각디자인 선호 / 1명)"
   },
   {
-   "id": 774,
+   "id": 776,
    "source_document_id": 13,
    "institution_id": null,
    "job_id": 135,
@@ -13776,7 +13848,7 @@
    "quote": "4학년 선호 (아니여도 무방)"
   },
   {
-   "id": 775,
+   "id": 777,
    "source_document_id": 13,
    "institution_id": null,
    "job_id": 135,
@@ -13786,7 +13858,7 @@
    "quote": "Adobe Illustrator 사용 능숙자 (인쇄용 데이터 작업 가능자 필수)"
   },
   {
-   "id": 776,
+   "id": 778,
    "source_document_id": 14,
    "institution_id": 14,
    "job_id": null,
@@ -13796,7 +13868,7 @@
    "quote": "기관(법인)명 ㈜미디어 코퍼스 영문기관명 Media Corpus"
   },
   {
-   "id": 777,
+   "id": 779,
    "source_document_id": 14,
    "institution_id": 14,
    "job_id": null,
@@ -13806,7 +13878,7 @@
    "quote": "중소기업 [ V ] 비상장 [ V ]"
   },
   {
-   "id": 778,
+   "id": 780,
    "source_document_id": 14,
    "institution_id": 14,
    "job_id": null,
@@ -13816,7 +13888,7 @@
    "quote": "중소기업 [ V ] 비상장 [ V ]"
   },
   {
-   "id": 779,
+   "id": 781,
    "source_document_id": 14,
    "institution_id": 14,
    "job_id": null,
@@ -13826,7 +13898,7 @@
    "quote": "[ ]서비스업, 소매업"
   },
   {
-   "id": 780,
+   "id": 782,
    "source_document_id": 14,
    "institution_id": 14,
    "job_id": null,
@@ -13836,7 +13908,7 @@
    "quote": "컨텐츠 개발 제작공급, 데이터베이스 제작 및"
   },
   {
-   "id": 781,
+   "id": 783,
    "source_document_id": 14,
    "institution_id": 14,
    "job_id": null,
@@ -13846,7 +13918,7 @@
    "quote": "서울특별시 송파구 송파대로 201, A동 1201호 (문정동, 송파테라타워2)"
   },
   {
-   "id": 782,
+   "id": 784,
    "source_document_id": 14,
    "institution_id": 14,
    "job_id": null,
@@ -13856,7 +13928,7 @@
    "quote": "00월00일00시 [ ]"
   },
   {
-   "id": 783,
+   "id": 785,
    "source_document_id": 14,
    "institution_id": null,
    "job_id": 136,
@@ -13866,7 +13938,7 @@
    "quote": "데이터 사업팀"
   },
   {
-   "id": 784,
+   "id": 786,
    "source_document_id": 14,
    "institution_id": null,
    "job_id": 136,
@@ -13876,7 +13948,7 @@
    "quote": "AI 학습데이터 구축 및 품질관리 지원"
   },
   {
-   "id": 785,
+   "id": 787,
    "source_document_id": 14,
    "institution_id": null,
    "job_id": 136,
@@ -13886,7 +13958,7 @@
    "quote": "▪ 학기과정 [ O ]"
   },
   {
-   "id": 786,
+   "id": 788,
    "source_document_id": 14,
    "institution_id": null,
    "job_id": 136,
@@ -13896,7 +13968,7 @@
    "quote": "▪ 직무체험형 [O ]"
   },
   {
-   "id": 787,
+   "id": 789,
    "source_document_id": 14,
    "institution_id": null,
    "job_id": 136,
@@ -13906,7 +13978,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 788,
+   "id": 790,
    "source_document_id": 14,
    "institution_id": null,
    "job_id": 136,
@@ -13916,7 +13988,7 @@
    "quote": "오전 8시 00분 ~ 오후 5시 00분 (▸휴게시간 1시간 포함하여 작성)"
   },
   {
-   "id": 789,
+   "id": 791,
    "source_document_id": 14,
    "institution_id": null,
    "job_id": 136,
@@ -13926,7 +13998,7 @@
    "quote": "월 [ O] 화 [O] 수 [O] 목 [O] 금 [O] 토 [ ] 일 [ ]"
   },
   {
-   "id": 790,
+   "id": 792,
    "source_document_id": 14,
    "institution_id": null,
    "job_id": 136,
@@ -13936,7 +14008,7 @@
    "quote": "▪ 연장실습 없음 [O]"
   },
   {
-   "id": 791,
+   "id": 793,
    "source_document_id": 14,
    "institution_id": null,
    "job_id": 136,
@@ -13946,7 +14018,7 @@
    "quote": "Y [ ] / N [ O]"
   },
   {
-   "id": 792,
+   "id": 794,
    "source_document_id": 14,
    "institution_id": null,
    "job_id": 136,
@@ -13956,7 +14028,7 @@
    "quote": "▪ 지급기준 : [월 기준]▸ [ 기준] / [1,650,000]원"
   },
   {
-   "id": 793,
+   "id": 795,
    "source_document_id": 14,
    "institution_id": null,
    "job_id": 136,
@@ -13966,7 +14038,7 @@
    "quote": "[1,650,000]원"
   },
   {
-   "id": 794,
+   "id": 796,
    "source_document_id": 14,
    "institution_id": null,
    "job_id": 136,
@@ -13976,7 +14048,7 @@
    "quote": "AI 학습데이터 구축 프로젝트의 전 과정을 이해하고, 데이터 수집, 정제, 라벨링, 품질검수 및 운영 지원 업무를"
   },
   {
-   "id": 795,
+   "id": 797,
    "source_document_id": 14,
    "institution_id": null,
    "job_id": 136,
@@ -13986,7 +14058,7 @@
    "quote": "AI 학습데이터 구축 프로젝트에서 필요한 데이터 수집, 정제, 라벨링 및 품질 검수(QA) 업무를 수행하여 AI"
   },
   {
-   "id": 796,
+   "id": 798,
    "source_document_id": 14,
    "institution_id": null,
    "job_id": 136,
@@ -13996,7 +14068,7 @@
    "quote": "이공계열 / 2명"
   },
   {
-   "id": 797,
+   "id": 799,
    "source_document_id": 14,
    "institution_id": null,
    "job_id": 136,
@@ -14006,7 +14078,7 @@
    "quote": "이공계열 / 2명"
   },
   {
-   "id": 798,
+   "id": 800,
    "source_document_id": 14,
    "institution_id": null,
    "job_id": 136,
@@ -14016,7 +14088,7 @@
    "quote": "학년 무관"
   },
   {
-   "id": 799,
+   "id": 801,
    "source_document_id": 14,
    "institution_id": null,
    "job_id": 136,
@@ -14026,7 +14098,7 @@
    "quote": "학점 무관"
   },
   {
-   "id": 800,
+   "id": 802,
    "source_document_id": 14,
    "institution_id": null,
    "job_id": 136,
@@ -14036,7 +14108,7 @@
    "quote": "작업 가이드와 세부 기준을 정확하게 이해하고 준수할 수 있는 역량이 필요합니다. 꼼꼼한 업무"
   },
   {
-   "id": 801,
+   "id": 803,
    "source_document_id": 15,
    "institution_id": 15,
    "job_id": null,
@@ -14046,7 +14118,7 @@
    "quote": "기관(법인)명 주식회사 직진코퍼레이션 영문기관명"
   },
   {
-   "id": 802,
+   "id": 804,
    "source_document_id": 15,
    "institution_id": 15,
    "job_id": null,
@@ -14056,7 +14128,7 @@
    "quote": "중소기업 [ O ] 비상장 [ O ]"
   },
   {
-   "id": 803,
+   "id": 805,
    "source_document_id": 15,
    "institution_id": 15,
    "job_id": null,
@@ -14066,7 +14138,7 @@
    "quote": "중소기업 [ O ] 비상장 [ O ]"
   },
   {
-   "id": 804,
+   "id": 806,
    "source_document_id": 15,
    "institution_id": 15,
    "job_id": null,
@@ -14076,7 +14148,7 @@
    "quote": "[ ]정보통신업\n도매 및 소매업\n정보통신업\n서비스업\n서비스업\n전문, 과학 및 기술서비스업"
   },
   {
-   "id": 805,
+   "id": 807,
    "source_document_id": 15,
    "institution_id": 15,
    "job_id": null,
@@ -14086,7 +14158,7 @@
    "quote": "응용 소프트웨어 개발 및\n공급업 전자상거래 소매업\n포털 및 기타 인터넷 정보\n매개 서비스업"
   },
   {
-   "id": 806,
+   "id": 808,
    "source_document_id": 15,
    "institution_id": 15,
    "job_id": null,
@@ -14096,7 +14168,7 @@
    "quote": "서울특별시 성동구 아차산로7나길 18 1101/1102호 (tmt사무실 : 서울특별시 중구 다산로18 2층)"
   },
   {
-   "id": 807,
+   "id": 809,
    "source_document_id": 15,
    "institution_id": 15,
    "job_id": null,
@@ -14106,7 +14178,7 @@
    "quote": "00월00일00시 [ ]\n일정별도협의[ O ]"
   },
   {
-   "id": 808,
+   "id": 810,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14116,7 +14188,7 @@
    "quote": "경영전략"
   },
   {
-   "id": 809,
+   "id": 811,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14126,7 +14198,7 @@
    "quote": "Business Development(BD) 인턴(중국 시장)"
   },
   {
-   "id": 810,
+   "id": 812,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14136,7 +14208,7 @@
    "quote": "▪ 학기과정 [ O ]"
   },
   {
-   "id": 811,
+   "id": 813,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14146,7 +14218,7 @@
    "quote": "▪ 직무체험형 [ O ]"
   },
   {
-   "id": 812,
+   "id": 814,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14156,7 +14228,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 813,
+   "id": 815,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14166,7 +14238,7 @@
    "quote": "오전 10시 00분 ~ 오후 19시 00분"
   },
   {
-   "id": 814,
+   "id": 816,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14176,7 +14248,7 @@
    "quote": "월 [ O ] 화 [ O ] 수 [ O ] 목 [ O ] 금 [ O ] 토 [ ] 일 [ ]"
   },
   {
-   "id": 815,
+   "id": 817,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14186,7 +14258,7 @@
    "quote": "▪ 연장실습 없음 [ O ]"
   },
   {
-   "id": 816,
+   "id": 818,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14196,7 +14268,7 @@
    "quote": "Y [ ] / N [ O ]"
   },
   {
-   "id": 817,
+   "id": 819,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14206,7 +14278,7 @@
    "quote": "▪ 지급기준 : [월 기준]▸ [ 월 기준] / [ 2,156,880 ]원"
   },
   {
-   "id": 818,
+   "id": 820,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14216,7 +14288,7 @@
    "quote": "[ 2,156,880 ]원"
   },
   {
-   "id": 819,
+   "id": 821,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14226,7 +14298,7 @@
    "quote": "▪ 식사 [ O ] ▪ 교통 [ ] ▪ 기숙사 [ ]"
   },
   {
-   "id": 820,
+   "id": 822,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14236,7 +14308,7 @@
    "quote": "중국 패션 시장 및 글로벌 Business Development(BD) 실무를 경험하며 시장조사, 비즈니스 커뮤니케이션"
   },
   {
-   "id": 821,
+   "id": 823,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14246,7 +14318,7 @@
    "quote": "실습생은 브랜드의 중국 시장 진출을 위하여 중국 시장 및 사업 리서치를 진행하며, toomuchtax 브랜드와"
   },
   {
-   "id": 822,
+   "id": 824,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14256,7 +14328,7 @@
    "quote": "경영계열, 중국 관련 학과(글로벌비즈니스어학부) / 인원: 1명"
   },
   {
-   "id": 823,
+   "id": 825,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14266,7 +14338,7 @@
    "quote": "인원: 1명"
   },
   {
-   "id": 824,
+   "id": 826,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14276,7 +14348,7 @@
    "quote": "3,4학년"
   },
   {
-   "id": 825,
+   "id": 827,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14286,7 +14358,7 @@
    "quote": "상관없음"
   },
   {
-   "id": 826,
+   "id": 828,
    "source_document_id": 15,
    "institution_id": null,
    "job_id": 137,
@@ -14296,7 +14368,7 @@
    "quote": "- 비즈니스 수준의 중국어 커뮤니케이션 역량"
   },
   {
-   "id": 827,
+   "id": 829,
    "source_document_id": 16,
    "institution_id": 16,
    "job_id": null,
@@ -14306,7 +14378,7 @@
    "quote": "기관(법인)명 에퀴코리아㈜ 영문기관명 EQQUIKOREA INC."
   },
   {
-   "id": 828,
+   "id": 830,
    "source_document_id": 16,
    "institution_id": 16,
    "job_id": null,
@@ -14316,7 +14388,7 @@
    "quote": "중소기업 [ ○ ] 비상장 [ ○ ]"
   },
   {
-   "id": 829,
+   "id": 831,
    "source_document_id": 16,
    "institution_id": 16,
    "job_id": null,
@@ -14326,7 +14398,7 @@
    "quote": "중소기업 [ ○ ] 비상장 [ ○ ]"
   },
   {
-   "id": 830,
+   "id": 832,
    "source_document_id": 16,
    "institution_id": 16,
    "job_id": null,
@@ -14336,7 +14408,7 @@
    "quote": "정보통신업 기태 인쇄물 출판업"
   },
   {
-   "id": 831,
+   "id": 833,
    "source_document_id": 16,
    "institution_id": 16,
    "job_id": null,
@@ -14346,7 +14418,7 @@
    "quote": "서비스 소프트웨어 개발 및 공급"
   },
   {
-   "id": 832,
+   "id": 834,
    "source_document_id": 16,
    "institution_id": 16,
    "job_id": null,
@@ -14356,7 +14428,7 @@
    "quote": "서울시 서초구 서초중앙로41 대성빌딩 7층"
   },
   {
-   "id": 833,
+   "id": 835,
    "source_document_id": 16,
    "institution_id": 16,
    "job_id": null,
@@ -14366,7 +14438,7 @@
    "quote": "7월24일24시[ ○ ] 8월5일18시[ ○ ] 8월5일18시[ ○ ]"
   },
   {
-   "id": 834,
+   "id": 836,
    "source_document_id": 16,
    "institution_id": null,
    "job_id": 138,
@@ -14376,7 +14448,7 @@
    "quote": "통역사업부"
   },
   {
-   "id": 835,
+   "id": 837,
    "source_document_id": 16,
    "institution_id": null,
    "job_id": 138,
@@ -14386,7 +14458,7 @@
    "quote": "통역 프로젝트 매니저"
   },
   {
-   "id": 836,
+   "id": 838,
    "source_document_id": 16,
    "institution_id": null,
    "job_id": 138,
@@ -14396,7 +14468,7 @@
    "quote": "▪학기과정 [ O ]"
   },
   {
-   "id": 837,
+   "id": 839,
    "source_document_id": 16,
    "institution_id": null,
    "job_id": 138,
@@ -14406,7 +14478,7 @@
    "quote": "▪직무체험형 [ O ]"
   },
   {
-   "id": 838,
+   "id": 840,
    "source_document_id": 16,
    "institution_id": null,
    "job_id": 138,
@@ -14416,7 +14488,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 839,
+   "id": 841,
    "source_document_id": 16,
    "institution_id": null,
    "job_id": 138,
@@ -14426,7 +14498,7 @@
    "quote": "오전 9시 00분 ~ 오후 6시 00분 (▸휴게시간 1시간 포함하여 작성)"
   },
   {
-   "id": 840,
+   "id": 842,
    "source_document_id": 16,
    "institution_id": null,
    "job_id": 138,
@@ -14436,7 +14508,7 @@
    "quote": "월 [ O ] 화 [ O ] 수 [ O ] 목 [ O ] 금 [ O ] 토 [ ] 일 [ ]"
   },
   {
-   "id": 841,
+   "id": 843,
    "source_document_id": 16,
    "institution_id": null,
    "job_id": 138,
@@ -14446,7 +14518,7 @@
    "quote": "▪연장실습 없음 [O]"
   },
   {
-   "id": 842,
+   "id": 844,
    "source_document_id": 16,
    "institution_id": null,
    "job_id": 138,
@@ -14456,7 +14528,7 @@
    "quote": "Y [ ] / N [ O ]"
   },
   {
-   "id": 843,
+   "id": 845,
    "source_document_id": 16,
    "institution_id": null,
    "job_id": 138,
@@ -14466,7 +14538,7 @@
    "quote": "▪지급기준 : [월 기준]▸[ 기준] / [1,700,000]원"
   },
   {
-   "id": 844,
+   "id": 846,
    "source_document_id": 16,
    "institution_id": null,
    "job_id": 138,
@@ -14476,7 +14548,7 @@
    "quote": "[1,700,000]원"
   },
   {
-   "id": 845,
+   "id": 847,
    "source_document_id": 16,
    "institution_id": null,
    "job_id": 138,
@@ -14486,7 +14558,7 @@
    "quote": "본 현장실습은 통역 프로젝트 운영 과정에 대한 이해를 바탕으로, 실습생이 통역 프로젝트 관리, 통"
   },
   {
-   "id": 846,
+   "id": 848,
    "source_document_id": 16,
    "institution_id": null,
    "job_id": 138,
@@ -14496,7 +14568,7 @@
    "quote": "* 글로벌 수출상담회 등 통역 프로젝트 기획/운영 보조"
   },
   {
-   "id": 847,
+   "id": 849,
    "source_document_id": 16,
    "institution_id": null,
    "job_id": 138,
@@ -14506,7 +14578,7 @@
    "quote": "글로벌비즈니스어학부(영어, 일어, 중어, 노어, 불어) 중 1명"
   },
   {
-   "id": 848,
+   "id": 850,
    "source_document_id": 16,
    "institution_id": null,
    "job_id": 138,
@@ -14516,7 +14588,7 @@
    "quote": "글로벌비즈니스어학부(영어, 일어, 중어, 노어, 불어) 중 1명"
   },
   {
-   "id": 849,
+   "id": 851,
    "source_document_id": 16,
    "institution_id": null,
    "job_id": 138,
@@ -14526,7 +14598,7 @@
    "quote": "4학년"
   },
   {
-   "id": 850,
+   "id": 852,
    "source_document_id": 16,
    "institution_id": null,
    "job_id": 138,
@@ -14536,7 +14608,7 @@
    "quote": "3.0/4.5 이상"
   },
   {
-   "id": 851,
+   "id": 853,
    "source_document_id": 16,
    "institution_id": null,
    "job_id": 138,
@@ -14546,7 +14618,7 @@
    "quote": "* 기본적인 OA 활용 능력: Excel, Word, PowerPoint 활용 가능자"
   },
   {
-   "id": 852,
+   "id": 854,
    "source_document_id": 17,
    "institution_id": 17,
    "job_id": null,
@@ -14556,7 +14628,7 @@
    "quote": "(주)빌딩닥터엔지니어링"
   },
   {
-   "id": 853,
+   "id": 855,
    "source_document_id": 17,
    "institution_id": 17,
    "job_id": null,
@@ -14566,7 +14638,7 @@
    "quote": "중소기업 [ ○ ]"
   },
   {
-   "id": 854,
+   "id": 856,
    "source_document_id": 17,
    "institution_id": 17,
    "job_id": null,
@@ -14576,7 +14648,7 @@
    "quote": "비상장 [ ○ ]"
   },
   {
-   "id": 855,
+   "id": 857,
    "source_document_id": 17,
    "institution_id": 17,
    "job_id": null,
@@ -14586,7 +14658,7 @@
    "quote": "서비스 건축구조설계"
   },
   {
-   "id": 856,
+   "id": 858,
    "source_document_id": 17,
    "institution_id": 17,
    "job_id": null,
@@ -14596,7 +14668,7 @@
    "quote": "서비스 건축구조설계 안전진단"
   },
   {
-   "id": 857,
+   "id": 859,
    "source_document_id": 17,
    "institution_id": 17,
    "job_id": null,
@@ -14606,7 +14678,7 @@
    "quote": "사업장소재지 서울시 광진구 능동로 256, 3층"
   },
   {
-   "id": 858,
+   "id": 860,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14616,7 +14688,7 @@
    "quote": "부서명 안전진단팀"
   },
   {
-   "id": 859,
+   "id": 861,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14626,7 +14698,7 @@
    "quote": "직무명 건축물안전진단"
   },
   {
-   "id": 860,
+   "id": 862,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14636,7 +14708,7 @@
    "quote": "주소 서울시 광진구 능동로 256, 4층"
   },
   {
-   "id": 861,
+   "id": 863,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14646,7 +14718,7 @@
    "quote": "▪학기과정 [ ○ ]"
   },
   {
-   "id": 862,
+   "id": 864,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14656,7 +14728,7 @@
    "quote": "▪채용연계형 [ ○ ]"
   },
   {
-   "id": 863,
+   "id": 865,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14666,7 +14738,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 864,
+   "id": 866,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14676,7 +14748,7 @@
    "quote": "오전 9시 00분 ~ 오후 6시 00분 (▸휴게시간 시간 포함하여 작성 1 )"
   },
   {
-   "id": 865,
+   "id": 867,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14686,7 +14758,7 @@
    "quote": "월 [ ○ ] 화[ ○ ] 수[ ○ ] 목[ ○ ] 금[ ○ ] 토[ ] 일[ ]"
   },
   {
-   "id": 866,
+   "id": 868,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14696,7 +14768,7 @@
    "quote": "▪연장실습 없음 [ ○ ]"
   },
   {
-   "id": 867,
+   "id": 869,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14706,7 +14778,7 @@
    "quote": "Y[ ] / N [ ○ ]"
   },
   {
-   "id": 868,
+   "id": 870,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14716,7 +14788,7 @@
    "quote": "▪지급기준 : [월 기준]▸ [ 기준] / [ 1,650,000 원]"
   },
   {
-   "id": 869,
+   "id": 871,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14726,7 +14798,7 @@
    "quote": "[ 1,650,000 원]"
   },
   {
-   "id": 870,
+   "id": 872,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14736,7 +14808,7 @@
    "quote": "▪식사 [ ○ ] ▪교통[ ] ▪기숙사[ ]"
   },
   {
-   "id": 871,
+   "id": 873,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14746,7 +14818,7 @@
    "quote": "*기존 건물축의 안전진단 및 안전점검의 업무 진행 프로세스 이해"
   },
   {
-   "id": 872,
+   "id": 874,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14756,7 +14828,7 @@
    "quote": "*기존건축물 안전진단"
   },
   {
-   "id": 873,
+   "id": 875,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14766,7 +14838,7 @@
    "quote": "건축공학과 1명"
   },
   {
-   "id": 874,
+   "id": 876,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14776,7 +14848,7 @@
    "quote": "건축공학과 1명"
   },
   {
-   "id": 875,
+   "id": 877,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14786,7 +14858,7 @@
    "quote": "4학년"
   },
   {
-   "id": 876,
+   "id": 878,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14796,7 +14868,7 @@
    "quote": "3.0 이상"
   },
   {
-   "id": 877,
+   "id": 879,
    "source_document_id": 17,
    "institution_id": null,
    "job_id": 139,
@@ -14806,7 +14878,7 @@
    "quote": "한글워드, 엑셀, 파워포인트, CAD 사용 가능"
   },
   {
-   "id": 878,
+   "id": 880,
    "source_document_id": 18,
    "institution_id": 18,
    "job_id": null,
@@ -14816,7 +14888,7 @@
    "quote": "기관(법인)명 애브뉴준오 더현대서울점 영문기관명 Avenue JUNO The Hyundai Seoul"
   },
   {
-   "id": 879,
+   "id": 881,
    "source_document_id": 18,
    "institution_id": 18,
    "job_id": null,
@@ -14826,7 +14898,7 @@
    "quote": "중소기업 [ ○ ]"
   },
   {
-   "id": 880,
+   "id": 882,
    "source_document_id": 18,
    "institution_id": 18,
    "job_id": null,
@@ -14836,7 +14908,7 @@
    "quote": "비상장 [ ○ ]"
   },
   {
-   "id": 881,
+   "id": 883,
    "source_document_id": 18,
    "institution_id": 18,
    "job_id": null,
@@ -14846,7 +14918,7 @@
    "quote": "비상장 [ ○ ] 서비스 미용(종합)"
   },
   {
-   "id": 882,
+   "id": 884,
    "source_document_id": 18,
    "institution_id": 18,
    "job_id": null,
@@ -14856,7 +14928,7 @@
    "quote": "비상장 [ ○ ] 서비스 미용(종합)"
   },
   {
-   "id": 883,
+   "id": 885,
    "source_document_id": 18,
    "institution_id": 18,
    "job_id": null,
@@ -14866,7 +14938,7 @@
    "quote": "사업장소재지 서울시 영등포구 여의대로 108, 더현대서울 3층 애브뉴준오"
   },
   {
-   "id": 884,
+   "id": 886,
    "source_document_id": 18,
    "institution_id": 18,
    "job_id": null,
@@ -14876,7 +14948,7 @@
    "quote": "일정별도협의[ 0 ] 일정별도협의[ 0 ] 일정별도협의[ 0 ] 학교 일정과 동일하게 진행"
   },
   {
-   "id": 885,
+   "id": 887,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
@@ -14886,7 +14958,7 @@
    "quote": "인턴"
   },
   {
-   "id": 886,
+   "id": 888,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
@@ -14896,7 +14968,7 @@
    "quote": "미용 시술 보조"
   },
   {
-   "id": 887,
+   "id": 889,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
@@ -14906,7 +14978,7 @@
    "quote": "▪학기과정 [ 0 ]"
   },
   {
-   "id": 888,
+   "id": 890,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
@@ -14916,7 +14988,7 @@
    "quote": "▪채용연계형 [ 0 ]"
   },
   {
-   "id": 889,
+   "id": 891,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
@@ -14926,7 +14998,7 @@
    "quote": "2026년 9월 1일 ~ 2026년 12월 12일"
   },
   {
-   "id": 890,
+   "id": 892,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
@@ -14936,7 +15008,7 @@
    "quote": "오전 11시 00분 ~ 오후 20시 00분 (▸휴게시간 1시간 포함하여 작성)"
   },
   {
-   "id": 891,
+   "id": 893,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
@@ -14946,7 +15018,7 @@
    "quote": "월 [ ] 화[ 0 ] 수[ 0 ] 목[ 0 ] 금[ 0 ] 토[ 0 ] 일[ ]"
   },
   {
-   "id": 892,
+   "id": 894,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
@@ -14956,7 +15028,7 @@
    "quote": "▪연장실습 없음 [ 0 ]"
   },
   {
-   "id": 893,
+   "id": 895,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
@@ -14966,7 +15038,7 @@
    "quote": "Y[ ] / N [ 0 ]"
   },
   {
-   "id": 894,
+   "id": 896,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
@@ -14976,7 +15048,7 @@
    "quote": "[ 월 기준] / [ 1,617,660 ]원"
   },
   {
-   "id": 895,
+   "id": 897,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
@@ -14986,7 +15058,7 @@
    "quote": "[ 월 기준] / [ 1,617,660 ]원"
   },
   {
-   "id": 896,
+   "id": 898,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
@@ -14996,7 +15068,7 @@
    "quote": "*미래의 디자이너 양성"
   },
   {
-   "id": 897,
+   "id": 899,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
@@ -15006,7 +15078,7 @@
    "quote": "가장 기초적인 고객 샴푸를 선배 인턴들에게 돌아가며 교육 진행 후 실제 고객님 샴푸에 투입"
   },
   {
-   "id": 898,
+   "id": 900,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
@@ -15016,7 +15088,7 @@
    "quote": "미용학과(2명)"
   },
   {
-   "id": 899,
+   "id": 901,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
@@ -15026,7 +15098,7 @@
    "quote": "미용학과(2명)"
   },
   {
-   "id": 900,
+   "id": 902,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
@@ -15036,7 +15108,7 @@
    "quote": "3, 4학년"
   },
   {
-   "id": 901,
+   "id": 903,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
@@ -15046,7 +15118,7 @@
    "quote": "무관"
   },
   {
-   "id": 902,
+   "id": 904,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
@@ -15056,12 +15128,12 @@
    "quote": "미용 자격증 or 미용 면허증 소지자"
   },
   {
-   "id": 903,
+   "id": 905,
    "source_document_id": 18,
    "institution_id": null,
    "job_id": 140,
    "field_key": "certificate",
-   "raw_value": "언급 없음",
+   "raw_value": "미용 자격증 or 미용 면허증 소지자",
    "page": 2,
    "quote": "미용 자격증 or 미용 면허증 소지자"
   }

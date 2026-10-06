@@ -21,6 +21,13 @@ public final class ReferenceDtos {
     public record Areas(List<Area> areas) {
     }
 
+    /** 자격증 선택지 하나(#26, ADR-0021). code는 프로필 certificates에 넣는 값이다. */
+    public record Certificate(String code, String label) {
+    }
+
+    public record Certificates(List<Certificate> certificates) {
+    }
+
     /**
      * 현재 모집 회차(#13). {@code replay}는 S5·C4 날짜 슬라이더 범위와 기본 기준일이다.
      * 판정·지망 점검·현황판의 asOf 범위 검사도 이 값을 쓴다(README '지망' — asOf는 회차 기간 안).

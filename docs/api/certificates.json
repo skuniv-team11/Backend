@@ -1,0 +1,12 @@
+{
+  "certificates": [
+    {
+      "code": "BEAUTY",
+      "label": "미용 자격증·면허증"
+    },
+    {
+      "code": "ACCOUNTING",
+      "label": "회계·자금 관련 자격증"
+    }
+  ]
+}
