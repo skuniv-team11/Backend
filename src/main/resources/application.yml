@@ -16,7 +16,7 @@ spring:
 
 springdoc:
   # Swagger UI 드롭다운에 스펙 두 개(ADR-0011)
-  #  계약 = docs/api로 만든 정적 파일(static/openapi/contract.json, scripts/build_openapi.py가 생성) — 25개 전부
+  #  계약 = docs/api로 만든 정적 파일(static/openapi/contract.json, scripts/build_openapi.py가 생성) — 26개 전부
   #  구현 = springdoc이 지금 컨트롤러에서 만든 것(/v3/api-docs) — 구현된 것만
   paths-to-match: /api/**
   swagger-ui:
@@ -96,3 +96,5 @@ app:
     graduation-expected: false
     interest-text: 뷰티 브랜드 SNS 마케팅
     home-area-code: "11350"
+    # 가진 자격증(certificate 코드표의 code). 비우면 '자격증 없음' — 필수 자격증 직무가 지원 불가로 보인다(ADR-0021)
+    certificates: []

@@ -23,7 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * docs/api #2 코드값 · #11 학과 · #12 사는 곳 · #13 현재 회차. 전부 공개(토큰 없이 200).
+ * docs/api #2 코드값 · #11 학과 · #12 사는 곳 · #13 현재 회차 · #26 자격증. 전부 공개(토큰 없이 200).
  * 시드 테이블에는 가상 행(id·순서 9000번대, 회차·사업은 다른 테스트와 겹치지 않게 92xx)만 넣고, 실제 시드가 있어도 깨지지 않게 '포함'으로 확인한다.
  * 회차 행은 '가장 최근 회차'를 바꾸므로 테스트가 끝나면 지운다.
  */
@@ -145,6 +145,30 @@ class ReferenceApiTest {
         assertThat(RoundService.clamp(LocalDate.of(2026, 7, 1), min, max)).isEqualTo(min);
         assertThat(RoundService.clamp(LocalDate.of(2026, 8, 1), min, max)).isEqualTo(max);
         assertThat(RoundService.clamp(null, min, max)).isEqualTo(min);
+    }
+
+    // ───────── #26 자격증 ─────────
+
+    @Test
+    void 자격증은_현재_회차_직무가_요구_우대하는_것만_코드표_순서로_준다() throws Exception {
+        // 2026-2 시드: 미용 시술 보조(필수 BEAUTY), 로젠 회계·자금업무지원(우대 ACCOUNTING) — ADR-0021
+        db.sql("INSERT INTO certificate (code, label, sort_order) VALUES ('TEST_UNUSED', '(가상)안 쓰는 자격증', 0) "
+                + "ON CONFLICT DO NOTHING").update();
+        String body = mvc.perform(get("/api/certificates"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        Contract.assertSameShape(body, Contract.responseExample("getCertificates", 200, null));
+        assertThat(JsonPath.<List<String>>read(body, "$.certificates[*].code")).containsExactly("BEAUTY", "ACCOUNTING");
+        assertThat(JsonPath.<List<String>>read(body, "$.certificates[*].label"))
+                .containsExactly("미용 자격증·면허증", "회계·자금 관련 자격증");
+
+        // 더 최근 회차(직무 없음)가 생기면 그 회차 기준이라 빈 목록
+        program();
+        round(9202, "2099-2", 1, "2099-03-02", "2099-03-13");
+        mvc.perform(get("/api/certificates"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.certificates").isArray())
+                .andExpect(jsonPath("$.certificates.length()").value(0));
     }
 
     // ───────── 공통 ─────────

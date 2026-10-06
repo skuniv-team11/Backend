@@ -90,7 +90,9 @@ public class AuthService {
             if (departmentId.isPresent()) {
                 String area = example.homeAreaCode() != null && profiles.areaExists(example.homeAreaCode())
                         ? example.homeAreaCode() : null;
-                profiles.insertExample(id, departmentId.get(), example, area, now);
+                // 자격증 코드표에 없는 코드는 넣지 않는다(시드가 바뀌어도 체험 계정은 만들어지게)
+                profiles.insertExample(id, departmentId.get(), example, area,
+                        profiles.knownCertificates(example.certificates()), now);
                 profile = profiles.findView(id, true).orElseThrow();
             }
         }

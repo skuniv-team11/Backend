@@ -105,6 +105,21 @@ class RecommendApiTest {
     }
 
     @Test
+    void 필수_자격증이_없어_지원_불가인_직무도_blockedBy에_센다() throws Exception {
+        // ADR-0021: 이수 학기가 모자라 40개 모두 지원 불가이고, 미용 시술 보조는 자격증으로도 막혀 있다
+        recommend(guestToken("STUDENT"), """
+                {"profile": {"departmentId": 43, "grade": 2, "completedSemesters": 3, "gpa": 3.4,
+                 "graduationExpected": false, "interestText": null, "homeAreaCode": null, "certificates": []}}""")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isEmpty())
+                .andExpect(jsonPath("$.blockedBy.length()").value(2))
+                .andExpect(jsonPath("$.blockedBy[0].item").value("이수 학기"))
+                .andExpect(jsonPath("$.blockedBy[0].count").value(40))
+                .andExpect(jsonPath("$.blockedBy[1].item").value("자격증"))
+                .andExpect(jsonPath("$.blockedBy[1].count").value(1));
+    }
+
+    @Test
     void 입력이_틀리면_400_센터는_403_토큰이_없으면_401() throws Exception {
         recommend(guestToken("STUDENT"), "{\"profile\": {\"departmentId\": 9999, \"grade\": 3, \"completedSemesters\": 5,"
                 + " \"gpa\": 3.4, \"graduationExpected\": false}}")

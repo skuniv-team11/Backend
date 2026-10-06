@@ -157,6 +157,9 @@ class AuthApiTest {
                 .andExpect(jsonPath("$.profile.gpa").value(3.4))
                 .andExpect(jsonPath("$.profile.homeAreaCode").isEmpty())
                 .andExpect(jsonPath("$.profile.homeArea").isEmpty())
+                // 예시 학생은 자격증 없음(ADR-0021) — null(답하지 않음)이 아니라 빈 목록
+                .andExpect(jsonPath("$.profile.certificates").isArray())
+                .andExpect(jsonPath("$.profile.certificates.length()").value(0))
                 .andReturn().getResponse().getContentAsString();
         Contract.assertSameShape(noArea, Contract.responseExample("createGuest", 201, null));
         OffsetDateTime exp = OffsetDateTime.parse(JsonPath.read(noArea, "$.expiresAt"));

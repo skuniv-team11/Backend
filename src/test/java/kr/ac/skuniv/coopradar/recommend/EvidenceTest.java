@@ -174,6 +174,6 @@ class EvidenceTest {
 
     private static JobRequirement requirement(int id, String title, String gradeRule, BigDecimal gpa) {
         return new JobRequirement(id, id, title, "마케팅팀", new InstitutionRef(7, "소서"), "SEMESTER", gradeRule, gpa, "NONE",
-                "NONE", null, "미용예술대학", false, Set.of(43), List.of(), new Closing(null, null, false), 0);
+                "NONE", null, null, null, "미용예술대학", false, Set.of(43), List.of(), new Closing(null, null, false), 0);
     }
 }
