@@ -9,7 +9,8 @@
 - 참여기관 리스트(센터가 정리·공지한 값) 기준: 정원, 실습지원비, 실습기간, 요일, 근무시간, 학년, 학점, 선호 전공, 근로지 주소, 모집마감 표시
 - 운영계획서 추출 기준: 기관 현황, 부서·직무명, 직무 개요·교육목표·요구역량, 주차별 계획, 과정·유형, 연장실습, 근로계약,
   지급 기준, 복리, 자격증, 접수마감일, 근거(쪽·인용문), 문서 내부 불일치
-- curated/: 학과(교육통계 2025-10-01), 전공 표기 → 학과 매핑(EXACT·CONFIRMED만 적재), 시드 id, 화면용 고침(overrides)
+- curated/: 학과(교육통계 2025-10-01), 전공 표기 → 학과 매핑(EXACT·CONFIRMED만 적재), 시드 id, 화면용 고침(overrides),
+  자격증 코드표(certificates.csv). 자격증 요건은 사람이 overrides.json에 코드와 함께 적는다(ADR-0021)
 
 넣지 않는 것(ADR-0004): 사업자번호·대표자명·매출액·기타사항, 학과×직무 매칭 집계, 수기의 이름·학과·학년·사진.
 """
@@ -35,6 +36,9 @@ OVERTIME = {"없음": "NONE", "상황별 실시": "OCCASIONAL", "주기적/상�
 BASIS = {"월 기준": "MONTHLY", "시간 기준": "HOURLY"}
 BENEFITS = {"식사": "MEAL", "교통": "TRANSPORT", "기숙사": "DORM", "현물": "IN_KIND"}
 LEVEL = {"필수": "REQUIRED", "우대": "PREFERRED", "언급 없음": "NONE"}
+# 자격증·면허를 말하는데 고침(overrides.json certificate)이 없으면 멈춘다. '자격증 : 무관'은 요건이 아니다(ADR-0021)
+CERT_MENTION = re.compile(r"자격증|면허")
+CERT_NOT_REQUIRED = re.compile(r"자격증\s*:\s*무관")
 GRADE = {"3, 4학년": "Y3_4", "4학년": "Y4", "졸업예정자": "GRADUATING"}
 GRADE_KO = {"Y3_4": "3·4학년", "Y4": "4학년", "GRADUATING": "졸업예정자"}
 NTS = {"01": "ACTIVE", "02": "SUSPENDED", "03": "CLOSED"}
@@ -55,7 +59,7 @@ LIMITS = {("institution", "name"): 100, ("institution", "business_type"): 100, (
           ("job", "major_text"): 300, ("job_weekly_plan", "weeks_label"): 30, ("field_evidence", "quote"): 200,
           ("review_alert", "quote_a"): 200, ("review_alert", "quote_b"): 200, ("testimonial", "team_text"): 100,
           ("source_document", "title"): 200, ("department", "name"): 50, ("major_alias", "label"): 100,
-          ("area", "sido"): 10, ("area", "name"): 20}
+          ("area", "sido"): 10, ("area", "name"): 20, ("certificate", "label"): 100}
 SENSITIVE = re.compile(r"\d{3}-?\d{2}-?\d{5}|대표자|대표이사")   # 사업자번호·대표자명이 근거 문구에 섞이면 멈춘다
 
 
@@ -192,9 +196,36 @@ def load_curated():
     aliases = list(csv.DictReader((CURATED / "major_aliases.csv").open(encoding="utf-8")))
     areas = list(csv.DictReader((CURATED / "areas.csv").open(encoding="utf-8")))
     overrides = json.loads((CURATED / "overrides.json").read_text(encoding="utf-8"))
+    certs = list(csv.DictReader((CURATED / "certificates.csv").open(encoding="utf-8")))
     ids_path = CURATED / "ids.json"
     ids = json.loads(ids_path.read_text(encoding="utf-8")) if ids_path.exists() else {}
-    return rnd, deps, aliases, areas, overrides, ids, ids_path
+    return rnd, deps, aliases, areas, certs, overrides, ids, ids_path
+
+
+def certificate_rows(certs):
+    """자격증 코드표(curated/certificates.csv) → certificate 행. 순서는 파일 순서(ADR-0021)."""
+    rows = [{"code": c["code"], "label": c["label"].strip(), "sort_order": i} for i, c in enumerate(certs, start=1)]
+    for r in rows:
+        if not re.fullmatch(r"[A-Z][A-Z0-9_]*", r["code"]) or not r["label"]:
+            fail(f"certificates.csv {r['code']!r}: 코드는 영문 대문자·숫자·_, 이름은 비울 수 없음")
+    if len({r["code"] for r in rows}) != len(rows):
+        fail("certificates.csv: 코드가 겹침")
+    return rows
+
+
+def certificate_override(job_key, ov, pj, codes, pages):
+    """overrides.json의 자격증 고침 → (요건, 코드, 판정 줄 원문, 근거). 인용은 그 직무 추출 원문 안에 있어야 한다."""
+    c = ov["certificate"]
+    if c.get("level") not in ("REQUIRED", "PREFERRED") or c.get("code") not in codes:
+        fail(f"{job_key}: overrides.json certificate는 level REQUIRED·PREFERRED, code는 certificates.csv에 있는 것")
+    if not text(c.get("text")) or not text(c.get("quote")) or not 0 < c.get("page", 0) <= pages:
+        fail(f"{job_key}: overrides.json certificate에 text·quote와 문서 안의 page가 필요합니다")
+    squash = lambda v: re.sub(r"\s+", "", v or "")  # noqa: E731
+    source = "".join(squash(f["value"] if isinstance(f["value"], str) else " ".join(f["value"])) + squash(f["quote"])
+                     for f in pj.values() if isinstance(f, dict) and "quote" in f)
+    if squash(c["quote"]) not in source:
+        fail(f"{job_key}: 자격증 인용이 계획서 추출 원문에 없습니다 — {c['quote'][:40]!r}")
+    return c["level"], c["code"], text(c["text"]), {"value": text(c["text"]), "page": c["page"], "quote": c["quote"]}
 
 
 def area_rows(areas):
@@ -279,7 +310,7 @@ def load_outcomes(path):
 
 def build(a):
     check_allowed_keys()
-    rnd, deps, aliases, areas, overrides, ids_data, ids_path = load_curated()
+    rnd, deps, aliases, areas, certs, overrides, ids_data, ids_path = load_curated()
     ids = Ids(ids_data)
     round_ = rnd["round"]
     start, end = dt.date.fromisoformat(round_["recruit_start"]), dt.date.fromisoformat(round_["recruit_end"])
@@ -289,12 +320,15 @@ def build(a):
         pages = {r["file"]: int(r["pages"]) for r in csv.DictReader(open(a.pages, encoding="utf-8"))}
     plans = load_plans(a.plans, pages)
 
-    seed = {t: [] for t in ["program", "recruit_round", "department", "area", "institution", "workplace", "job",
-                            "major_alias", "major_alias_department", "job_major_alias", "job_weekly_plan",
+    seed = {t: [] for t in ["program", "recruit_round", "department", "area", "certificate", "institution", "workplace",
+                            "job", "major_alias", "major_alias_department", "job_major_alias", "job_weekly_plan",
                             "source_document", "field_evidence", "review_alert", "testimonial", "replay_signal"]}
     seed["program"].append(rnd["program"])
     seed["recruit_round"].append(round_)
     seed["area"] = area_rows(areas)
+    seed["certificate"] = certificate_rows(certs)
+    cert_codes = {c["code"] for c in seed["certificate"]}
+    used_certs = set()
 
     # 학과: 재학생이 있는 학과만(교육통계 72행 중 폐지·통합 단위는 재학생 0)
     dep_id = {}
@@ -431,6 +465,7 @@ def build(a):
             p_portfolio = LEVEL[g("portfolio")]
             portfolio = l_portfolio or p_portfolio
             certificate = LEVEL[g("certificate")]
+            certificate_code = certificate_text = None
             benefits = [BENEFITS[b] for b in g("benefits")]
             if "식사" in note and "MEAL" not in benefits:
                 benefits.append("MEAL")
@@ -453,6 +488,19 @@ def build(a):
             ov = job_overrides.get(job_key, {})
             if ov:
                 used_overrides.add(job_key)
+            # 자격증: 판정이 코드로 보므로(필수인데 없으면 지원 불가) 사람이 코드를 적은 고침만 쓴다(ADR-0021)
+            if "certificate" in ov:
+                certificate, certificate_code, certificate_text, pj["certificate"] = certificate_override(
+                    job_key, ov, pj, cert_codes, plan["pages"])
+                used_certs.add(certificate_code)
+            elif certificate != "NONE":
+                fail(f"{job_key}: 계획서 자격증이 {g('certificate')}인데 코드가 없습니다 — "
+                     f"curated/certificates.csv와 overrides.json certificate에 넣으세요")
+            else:
+                said = " ".join(text(g(k)) or "" for k in ("competencies", "major_requirement", "certificate"))
+                if CERT_MENTION.search(CERT_NOT_REQUIRED.sub("", said)):
+                    fail(f"{job_key}: 계획서가 자격증·면허를 말하는데 자격증 칸은 '언급 없음'입니다 — 원문을 보고 "
+                         f"overrides.json certificate(필수·우대와 코드)를 넣으세요: {said[:60]!r}")
             title = g("job_title")
             m = re.match(r"^\[\s*(.+?)\(\d+\)\s*-\s*(.+?)\s*\]$", title or "")   # 세정: '[디지털미디어팀(1)- SNS, 영상]'
             title = m[2] if m else title
@@ -474,8 +522,8 @@ def build(a):
                 "labor_contract": {"Y": True, "N": False}.get(g("labor_contract")),
                 "stipend_basis": basis, "stipend_amount": stipend, "benefits": benefits,
                 "headcount": headcount, "grade_rule": GRADE[l_grade], "gpa_min": l_gpa,
-                "portfolio": portfolio, "certificate": certificate,
-                "certificate_text": text(pj["certificate"]["quote"]) if certificate != "NONE" else None,
+                "portfolio": portfolio, "certificate": certificate, "certificate_code": certificate_code,
+                "certificate_text": certificate_text,
                 "major_text": l_major, "major_open": False,
                 "closes_on": closes_on.isoformat() if closes_on else None, "close_reason": close_reason,
                 "closes_on_is_virtual": False, "final_assigned": fa}
@@ -538,7 +586,8 @@ def build(a):
             review.append({"job_id": job_id, "list_seq": r["seq"], "기관": name, "team": team, "title": title,
                            "plan_department": g("department"), "plan_title": g("job_title"),
                            "headcount": headcount, "final_assigned": fa, "stipend": stipend, "grade": l_grade,
-                           "gpa_min": l_gpa, "portfolio": portfolio, "certificate": certificate, "major_text": l_major,
+                           "gpa_min": l_gpa, "portfolio": portfolio, "certificate": certificate,
+                           "certificate_code": certificate_code, "major_text": l_major,
                            "closes_on": job["closes_on"], "close_reason": close_reason})
 
     unused = set(assigned) - used_assigned
@@ -546,6 +595,8 @@ def build(a):
         fail(f"배정 수를 붙일 직무를 못 찾음: {sorted(unused)} — 매칭 결과의 직무 표기와 리스트 첫 줄을 맞추세요")
     if set(job_overrides) - used_overrides:
         fail(f"overrides.json에 쓰이지 않은 키: {sorted(set(job_overrides) - used_overrides)}")
+    if cert_codes - used_certs:
+        fail(f"certificates.csv에 어느 직무도 쓰지 않는 코드: {sorted(cert_codes - used_certs)} — 선택지에서 빼세요(최소 수집)")
 
     # 수기(E2): 2026-2 참여기관에 연결되는 것만. 이름·학과·학년·사진·소감은 넣지 않는다.
     # 실습 결과는 extract_outcomes.py가 원문에서 고른 사실 구절만 넣는다(감상·배운 점·개인 진로는 버림, ADR-0020)

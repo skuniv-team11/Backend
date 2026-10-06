@@ -11,7 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
-/** 앱이 뜰 때 Flyway가 V1·V2를 Postgres 18에 적용하는지 본다. */
+/** 앱이 뜰 때 Flyway가 V1~V5를 Postgres 18에 적용하는지 본다. */
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
 class MigrationTest {
@@ -28,7 +28,7 @@ class MigrationTest {
     }
 
     @Test
-    void 테이블_22개가_만들어진다() {
+    void 테이블_23개가_만들어진다() {
         Integer tables = jdbc.sql("""
                         SELECT count(*) FROM information_schema.tables
                         WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
@@ -36,7 +36,7 @@ class MigrationTest {
                         """)
                 .query(Integer.class)
                 .single();
-        assertThat(tables).isEqualTo(22); // V1 21개 + V3 job_view
+        assertThat(tables).isEqualTo(23); // V1 21개 + V3 job_view + V5 certificate
     }
 
     @Test
@@ -86,5 +86,26 @@ class MigrationTest {
                 .list();
         assertThat(columns).containsExactlyInAnyOrder("id", "source_document_id", "institution_id", "team_text",
                 "activities", "outcomes", "page");
+    }
+
+    @Test
+    void V5가_적용되고_자격증_코드표와_직무_코드_프로필_자격증_칸이_있다() {
+        Boolean success = jdbc.sql("SELECT success FROM flyway_schema_history WHERE version = '5'")
+                .query(Boolean.class)
+                .single();
+        assertThat(success).isTrue();
+        // ADR-0021: 자격증 요건이 있으면 코드가 있어야 하고, 없으면 코드도 없다
+        Integer mismatched = jdbc.sql("SELECT count(*) FROM job WHERE (certificate = 'NONE') <> (certificate_code IS NULL)")
+                .query(Integer.class)
+                .single();
+        assertThat(mismatched).isZero();
+        List<String> columns = jdbc.sql("""
+                        SELECT table_name || '.' || column_name FROM information_schema.columns
+                        WHERE table_schema = 'public' AND (table_name = 'certificate'
+                           OR column_name IN ('certificate_code', 'certificates'))""")
+                .query(String.class)
+                .list();
+        assertThat(columns).containsExactlyInAnyOrder("certificate.code", "certificate.label", "certificate.sort_order",
+                "job.certificate_code", "student_profile.certificates");
     }
 }
