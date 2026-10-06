@@ -73,7 +73,7 @@ ANTHROPIC_API_KEY=... java -jar build/libs/coop-radar-backend-0.0.1.jar --spring
 | E3 Java SDK | **합격**(10/1, #7). 호출 2번으로 full 필드 추출 성공, 파이썬 E1과 겹치는 15항목 중 14개 값·쪽 일치 | — |
 | E4 배포 | **백엔드 배포 완료**(10/2). Render Starter·싱가포르 — 빌드 약 2분 30초 · 기동 27.8초 · 메모리 276MB/512MB · CORS(운영·미리보기 허용, 다른 출처 403) · 프론트는 Cloudflare Pages https://fieldrun.pages.dev 에서 이 API를 부른다(10/4 확인) | — |
 | E5 임베딩 | **불합격 → 임베딩 쓰지 않음**(10/1). 학과명 질의 Hit@5: 무작위 29.4% · 키워드 35.3% · Voyage 47.1% · 선호 전공 규칙 52.0%(근사). 추천은 규칙 + 키워드(ADR-0018) | — |
-| E6 외부 데이터 | **합격**(10/1). 국세청·NCS 적재. ODsay는 호출만 확인하고 시드에는 쓰지 않음(ADR-0002 개정) | 통근은 카카오 실시간(ADR-0007) — 키 발급 후 첫 호출 |
+| E6 외부 데이터 | **합격**(10/1). 국세청·NCS 적재. ODsay는 호출만 확인하고 시드에는 쓰지 않음(ADR-0002 개정). 통근은 카카오 실시간(ADR-0007, 10/2 배포 서버에서 확인) | — |
 
 실행 방법은 [pipeline/README.md](pipeline/README.md)에 있습니다.
 
