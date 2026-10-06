@@ -103,17 +103,19 @@ public class PlanCheckService {
             var r = c.scored().judged().result();
             boolean sameAsFirst = firstChoiceInstitution != null && firstChoiceInstitution == r.institution().id();
             out.add(new Alternative(r.jobId(), r.title(), r.institution(), r.verdict(), c.scored().fit(), c.remaining(),
-                    c.signal(), why(sameAsFirst, c.signal().interest(), c.remaining())));
+                    c.signal(), why(sameAsFirst, c.scored().interestMatch(), c.signal().interest(), c.remaining())));
         }
         return out;
     }
 
     /**
-     * 규칙 문장(ADR-0016). 앞: 1지망과 같은 기관이면 '1지망과 같은 기관의 직무이고', 아니면 '관심 분야와 가깝고'.
+     * 규칙 문장(ADR-0016). 앞: 1지망과 같은 기관이면 '1지망과 같은 기관의 직무이고', 관심 문장과 겹치면 '관심 분야와 가깝고',
+     * 둘 다 아니면 '지원 조건을 모두 통과했고'(대안은 모두 지원 가능이다 — 겹치지 않는데 가깝다고 말하지 않는다, ADR-0022).
      * 뒤: 관심(담은 사람)이 0이면 '지금 담은 사람이 0명이에요.', 아니면 '남은 자리가 N개예요.'
      */
-    static String why(boolean sameAsFirstChoice, int interest, int remaining) {
-        String first = sameAsFirstChoice ? "1지망과 같은 기관의 직무이고" : "관심 분야와 가깝고";
+    static String why(boolean sameAsFirstChoice, boolean interestMatch, int interest, int remaining) {
+        String first = sameAsFirstChoice ? "1지망과 같은 기관의 직무이고"
+                : interestMatch ? "관심 분야와 가깝고" : "지원 조건을 모두 통과했고";
         String second = interest == 0 ? "지금 담은 사람이 0명이에요." : "남은 자리가 " + remaining + "개예요.";
         return first + ", " + second;
     }

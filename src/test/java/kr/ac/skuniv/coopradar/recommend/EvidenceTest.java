@@ -63,6 +63,28 @@ class EvidenceTest {
     }
 
     @Test
+    void 긴_조각은_문장으로_나누고_그래도_150자를_넘으면_띄어쓰기에서_끊는다() {
+        // ADR-0022: 전에는 긴 조각을 버려서 직무 개요가 한 줄로 긴 직무는 교육 목표만 인용됐다
+        String sentences = "본 직무는 AI 및 데이터 기반 소프트웨어 개발을 중심으로 다양한 시스템 구축 업무를 수행한다. "
+                + "주요 업무는 데이터 수집 및 전처리, 간단한 AI 모델 적용 및 테스트, 웹 또는 응용 프로그램 개발 보조로 구성된다. "
+                + "또한 요구사항 분석, 문서 작성, 코드 리뷰 및 테스트 참여를 통해 실제 개발 프로세스를 경험하게 된다.";
+        assertThat(EvidenceText.fit(sentences)).containsExactly(
+                "본 직무는 AI 및 데이터 기반 소프트웨어 개발을 중심으로 다양한 시스템 구축 업무를 수행한다.",
+                "주요 업무는 데이터 수집 및 전처리, 간단한 AI 모델 적용 및 테스트, 웹 또는 응용 프로그램 개발 보조로 구성된다.",
+                "또한 요구사항 분석, 문서 작성, 코드 리뷰 및 테스트 참여를 통해 실제 개발 프로세스를 경험하게 된다.");
+        String noStop = "가장 기초적인 고객 샴푸를 선배 인턴들에게 돌아가며 교육 진행 후 실제 고객님 샴푸에 투입 ".repeat(4).strip();
+        List<String> cut = EvidenceText.fit(noStop);
+        assertThat(cut).hasSizeGreaterThan(1).allMatch(x -> x.length() <= EvidenceText.MAX_LENGTH);
+        assertThat(String.join(" ", cut)).isEqualTo(noStop); // 글자는 고치지 않는다
+        assertThat(EvidenceText.fit("짧은 조각")).containsExactly("짧은 조각");
+
+        JobText longOverview = new JobText(1, 1, "팀", "직무", noStop, null, "미래의 디자이너 양성", null, 2, null, 2, 2, "계획서");
+        assertThat(EvidenceText.segments(longOverview).getFirst())
+                .satisfies(x -> assertThat(x.kind()).isEqualTo(Kind.OVERVIEW))
+                .satisfies(x -> assertThat(x.text()).startsWith("가장 기초적인 고객 샴푸를"));
+    }
+
+    @Test
     void 짧은_조각은_이웃과_붙이고_괄호_안_쉼표와_머리말은_나누지_않는다() {
         JobText j = new JobText(1, 1, "팀", "직무", "[AE] - 브랜드 소셜미디어 채널 기획",
                 "오피스 프로그램(Excel, PowerPoint) 활용 가능한 분 / 지식/기술 역량 : SNS 운영", null,

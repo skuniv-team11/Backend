@@ -115,9 +115,9 @@ for name in ("me-plan-check.json", "center-board.json"):
         check(a["verdict"] == "ELIGIBLE" and a["signal"]["status"] != "CLOSED", f"대안 {a['jobId']} 조건")
         check(a["jobId"] not in planned, f"대안 {a['jobId']} 이미 담은 직무")
         same = first is not None and first["institution"]["id"] == a["institution"]["id"]
-        head = "1지망과 같은 기관의 직무이고" if same else "관심 분야와 가깝고"
+        heads = ["1지망과 같은 기관의 직무이고"] if same else ["관심 분야와 가깝고", "지원 조건을 모두 통과했고"]  # ADR-0022
         tail = "지금 담은 사람이 0명이에요." if a["signal"]["interest"] == 0 else f"남은 자리가 {a['remaining']}개예요."
-        check(a["why"] == f"{head}, {tail}", f"대안 {a['jobId']} why 규칙 문장 아님: {a['why']}")
+        check(a["why"] in [f"{h}, {tail}" for h in heads], f"대안 {a['jobId']} why 규칙 문장 아님: {a['why']}")
     r0 = docs["rounds-current.json"]["replay"]
     check(r0["minDate"] <= d["asOf"] <= r0["maxDate"], f"{name} asOf 범위")
 

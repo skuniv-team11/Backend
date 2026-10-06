@@ -28,8 +28,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 적합도 추천(#15, ADR-0018). 판정에서 지원 불가가 아니고 기준일에 마감되지 않은 직무(ADR-0016)를
- * 규칙+키워드 점수로 줄 세워 상위 5개를 준다.
+ * 적합도 추천(#15, ADR-0018). 판정에서 지원 불가가 아니고 기준일에 마감되지 않은 직무(ADR-0016) 중
+ * 추천할 이유가 있는 직무(선호 전공이 맞거나 관심 문장과 겹침, ADR-0022)를 규칙+키워드 점수로 줄 세워 상위 5개까지 준다.
  * 근거 인용과 기본 이유 문장은 관심 문장과 겹치는 원문을 골라 만든다(ADR-0020, {@link EvidencePicker}·{@link ReasonTemplates}).
  * 실행 중 외부 호출이 없다. LLM 이유 문장은 #16이 따로 만든다.
  * 지망 점검(#23)도 같은 점수로 빈 자리의 적합도를 정한다.
@@ -39,6 +39,8 @@ public class RecommendService {
 
     static final int LIMIT = 5;
     static final String REASON_PENDING = "PENDING";
+    /** 추천 0개일 때 blockedBy 항목: 선호 전공도 관심 문장도 맞지 않아 뺀 직무(ADR-0022). */
+    static final String UNRELATED = "관심 분야";
 
     private final EligibilityService eligibility;
     private final RecommendRepository repository;
@@ -76,17 +78,14 @@ public class RecommendService {
                     REASON_PENDING, e.citations()));
         }
         return new Recommendations(new RoundRef(round.id(), round.termCode()), items,
-                items.isEmpty() ? blockedBy(judged, asOf) : List.of());
+                items.isEmpty() ? blockedBy(judged, score(round.id(), judged, profile), asOf) : List.of());
     }
 
     /** 추천 상위 5개의 설명. */
     @Transactional(readOnly = true)
     public List<Explained> top(int roundId, List<Judged> judged, ProfileInput profile, LocalDate asOf) {
         Context ctx = context(roundId, profile);
-        List<Scored> top = score(roundId, judged, profile).stream()
-                .filter(s -> !closedOn(s.judged(), asOf))
-                .limit(LIMIT)
-                .toList();
+        List<Scored> top = recommendable(score(roundId, judged, profile), asOf);
         return top.stream().map(s -> explain(ctx, s, top)).toList();
     }
 
@@ -98,7 +97,7 @@ public class RecommendService {
     public Optional<Explained> explain(int roundId, List<Judged> judged, ProfileInput profile, LocalDate asOf, int jobId) {
         Context ctx = context(roundId, profile);
         List<Scored> all = score(roundId, judged, profile);
-        List<Scored> top = all.stream().filter(s -> !closedOn(s.judged(), asOf)).limit(LIMIT).toList();
+        List<Scored> top = recommendable(all, asOf);
         return all.stream().filter(s -> s.jobId() == jobId).findFirst()
                 .map(s -> explain(ctx, s, top.contains(s) ? top : List.of()));
     }
@@ -110,6 +109,11 @@ public class RecommendService {
         JobText text = ctx.texts().get(jobId);
         return text == null ? List.of()
                 : ctx.picker().pick(text, ctx.testimonials().getOrDefault(institutionId, List.of())).citations();
+    }
+
+    /** 추천 목록: 기준일에 마감되지 않았고 추천할 이유가 있는 직무 중 점수 상위 5개까지(ADR-0022). */
+    static List<Scored> recommendable(List<Scored> scored, LocalDate asOf) {
+        return scored.stream().filter(s -> !closedOn(s.judged(), asOf)).filter(Scored::relevant).limit(LIMIT).toList();
     }
 
     /** 기준일에 마감됐는지(closesOn ≤ 기준일, closesOn = 이 날부터 지원 불가). */
@@ -181,9 +185,10 @@ public class RecommendService {
 
     /**
      * 추천이 0개일 때 막은 것: 지원 불가를 만든 항목별 직무 수(학교 규정 항목 · '자격증', ADR-0021)
-     * + 지원 불가는 아니지만 기준일에 마감된 직무 수('모집 마감').
+     * + 지원 불가는 아니지만 기준일에 마감된 직무 수('모집 마감')
+     * + 지원할 수 있고 마감 전이지만 선호 전공도 관심 문장도 맞지 않는 직무 수('관심 분야', ADR-0022).
      */
-    static List<Blocked> blockedBy(List<Judged> judged, LocalDate asOf) {
+    static List<Blocked> blockedBy(List<Judged> judged, List<Scored> scored, LocalDate asOf) {
         Map<String, Integer> counts = new LinkedHashMap<>();
         for (Judged j : judged) {
             j.result().reasons().stream()
@@ -191,6 +196,11 @@ public class RecommendService {
                     .forEach(r -> counts.merge(r.item(), 1, Integer::sum));
             if (j.result().verdict() != Verdict.INELIGIBLE && closedOn(j, asOf)) {
                 counts.merge("모집 마감", 1, Integer::sum);
+            }
+        }
+        for (Scored s : scored) {
+            if (!closedOn(s.judged(), asOf) && !s.relevant()) {
+                counts.merge(UNRELATED, 1, Integer::sum);
             }
         }
         return counts.entrySet().stream().map(e -> new Blocked(e.getKey(), e.getValue())).toList();

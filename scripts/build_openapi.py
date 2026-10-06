@@ -250,9 +250,11 @@ S.update({
     }),
     "Recommendations": obj({
         "round": R("RoundRef"),
-        "items": d(arr(R("Recommendation"), maxItems=5), "INELIGIBLE과 기준일에 마감된 직무를 뺀 적합도 점수 상위 5개. 점수는 주지 않는다"),
+        "items": d(arr(R("Recommendation"), maxItems=5),
+                   "INELIGIBLE과 기준일에 마감된 직무를 빼고, 선호 전공이 맞거나 관심 문장과 겹치는 직무만 적합도 점수 순으로 5개까지"
+                   "(0~5개, ADR-0022). 점수는 주지 않는다"),
         "blockedBy": d(arr(obj({"item": STR, "count": INT})),
-                       "items가 비었을 때 막은 요건별 직무 수(학교 규정 항목 · '자격증' · '모집 마감')"),
+                       "items가 비었을 때 막은 요건별 직무 수(학교 규정 항목 · '자격증' · '모집 마감' · '관심 분야'). 1~4개면 []"),
     }),
     "RecommendationReason": obj({
         "jobId": ID,
@@ -383,7 +385,8 @@ S.update({
             "fit": R("Fit"),
             "remaining": {"type": "integer", "minimum": 1},
             "signal": R("Signal"),
-            "why": d(STR, "규칙 문장. 1지망과 같은 기관이면 '1지망과 같은 기관의 직무이고', 아니면 '관심 분야와 가깝고' + 관심 0이면 '지금 담은 사람이 0명이에요.', 아니면 '남은 자리가 N개예요.'"),
+            "why": d(STR, "규칙 문장. 1지망과 같은 기관이면 '1지망과 같은 기관의 직무이고', 관심 문장과 겹치면 '관심 분야와 가깝고', "
+                          "둘 다 아니면 '지원 조건을 모두 통과했고' + 관심 0이면 '지금 담은 사람이 0명이에요.', 아니면 '남은 자리가 N개예요.'"),
         }), maxItems=5), "verdict ELIGIBLE · CLOSED 아님 · 남은 자리(headcount − interest) > 0 · 이미 담은 직무 아님. 적합도 점수 → 남은 자리 순 최대 5개"),
     }),
     "CenterBoard": obj({

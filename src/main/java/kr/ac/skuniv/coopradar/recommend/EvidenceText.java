@@ -11,6 +11,8 @@ import java.util.regex.Pattern;
  * <ul>
  *   <li>조각은 원문 글자 그대로다. 앞의 글머리표·번호·[머리말]·'OA 역량 :' 같은 머리말만 떼고 고치지 않는다
  *       (이유 문장 검증이 원문 대조를 한다). 줄 전체가 [팀명(인원)-설명]이면 괄호 안 설명을 쓴다</li>
+ *   <li>150자를 넘는 조각은 문장(마침표 뒤)으로 나누고, 그래도 길면 150자 안쪽의 띄어쓰기에서 끊는다. 끊은 조각도 원문
+ *       글자 그대로다(전에는 긴 조각을 버려서 직무 개요가 한 줄로 긴 직무는 교육 목표만 인용됐다, ADR-0022)</li>
  *   <li>근거 쪽이 없는 칸은 인용하지 않는다. 주차 계획은 쪽이 따로 없어서, 서식에서 그 앞(직무 개요)과 뒤(전공 요건)가
  *       같은 쪽일 때만 그 쪽으로 인용한다</li>
  * </ul>
@@ -54,6 +56,8 @@ final class EvidenceText {
     /** 요건이 아닌 항목(요구 역량 칸에 적힌 '무관'·'제한 없음' 등). */
     private static final Pattern NOT_A_REQUIREMENT = Pattern.compile("^(제한\\s*없음|무관|없음|해당\\s*없음|-)$");
     private static final Pattern TEAM_NOISE = Pattern.compile("\\([^)]*\\)|[\\s\\d\\p{Punct}·&]+");
+    /** 문장 끝(마침표·물음표·느낌표 뒤의 띄어쓰기). 긴 조각을 나눌 때 쓴다. */
+    private static final Pattern SENTENCE_END = Pattern.compile("(?<=[.!?。])\\s+");
 
     private EvidenceText() {
     }
@@ -151,12 +155,36 @@ final class EvidenceText {
     private static void add(List<Segment> out, Set<String> seen, Kind kind, String[] parts, int page, String source) {
         String body = squash(source);
         for (String part : parts) {
-            String c = clean(part);
-            if (c.length() < MIN_LENGTH || c.length() > MAX_LENGTH || !body.contains(squash(c)) || !seen.add(squash(c))) {
-                continue;
+            for (String c : fit(clean(part))) {
+                if (c.length() < MIN_LENGTH || !body.contains(squash(c)) || !seen.add(squash(c))) {
+                    continue;
+                }
+                out.add(new Segment(kind, c, page));
             }
-            out.add(new Segment(kind, c, page));
         }
+    }
+
+    /** 150자 안쪽 조각으로: 문장(마침표 뒤)으로 나누고, 그래도 길면 150자 안쪽의 마지막 띄어쓰기에서 끊는다. 글자는 고치지 않는다. */
+    static List<String> fit(String c) {
+        if (c.length() <= MAX_LENGTH) {
+            return List.of(c);
+        }
+        List<String> out = new ArrayList<>();
+        for (String sentence : SENTENCE_END.split(c)) {
+            String rest = sentence.strip();
+            while (rest.length() > MAX_LENGTH) {
+                int cut = rest.lastIndexOf(' ', MAX_LENGTH);
+                if (cut < MIN_LENGTH) {
+                    cut = MAX_LENGTH;
+                }
+                out.add(rest.substring(0, cut).strip());
+                rest = rest.substring(cut).strip();
+            }
+            if (!rest.isEmpty()) {
+                out.add(rest);
+            }
+        }
+        return out;
     }
 
     private static List<String> lines(String s) {
