@@ -7,7 +7,7 @@
 - 부모 테이블(program·recruit_round·department·area·certificate·institution·workplace·job)은 id(area·certificate는
   code)로 upsert 하고, seed에 없는 행만 지운다. job을 지우면 담아 둔 지망(plan_item)도 함께 지워진다(직무가 없어졌으므로).
   학생 프로필이 쓰는 학과·사는 곳·자격증은 seed에서 빠져도 지우지 않는다.
-- 자식 테이블(근거·알림·수기·신호·전공 표기)은 통째로 지우고 다시 넣는다. 사용자 데이터가 가리키지 않는다.
+- 자식 테이블(근거·알림·판정 출처·수기·신호·전공 표기)은 통째로 지우고 다시 넣는다. 사용자 데이터가 가리키지 않는다.
 - job_embedding(E5)·round_result(센터 동의 뒤 로컬 적재)는 건드리지 않는다.
 Flyway는 이 파일의 checksum이 바뀔 때마다 V* 다음에 한 트랜잭션으로 다시 적용한다.
 """
@@ -45,6 +45,7 @@ CHILDREN = {
                        "page", "quote"],
     "review_alert": ["id", "institution_id", "job_id", "kind", "field_key", "description",
                      "source_document_id", "page_a", "quote_a", "page_b", "quote_b"],
+    "requirement_source": ["job_id", "item", "source_type", "document_title", "page", "quote"],
     "testimonial": ["id", "source_document_id", "institution_id", "team_text", "activities", "outcomes", "page"],
     "replay_signal": ["job_id", "signal_date", "interest_count"],
 }
@@ -56,7 +57,7 @@ DATES = {("recruit_round", "recruit_start"), ("recruit_round", "recruit_end"),
          ("department", "enrolled_as_of"), ("institution", "nts_checked_on"), ("job", "period_start"),
          ("job", "period_end"), ("job", "closes_on"), ("replay_signal", "signal_date")}
 # 지울 때는 FK를 거꾸로 따라간다
-DELETE_CHILDREN = ["replay_signal", "testimonial", "review_alert", "field_evidence", "source_document",
+DELETE_CHILDREN = ["replay_signal", "testimonial", "requirement_source", "review_alert", "field_evidence", "source_document",
                    "job_weekly_plan", "job_major_alias", "major_alias_department", "major_alias"]
 CHUNK = 200
 

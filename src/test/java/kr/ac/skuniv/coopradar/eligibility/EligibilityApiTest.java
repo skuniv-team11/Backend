@@ -67,9 +67,26 @@ class EligibilityApiTest {
         // 117·118 로젠: 회계 자격증 우대 → 참고 줄만(판정을 바꾸지 않는다)
         assertThat(reason(job(body, 118), "자격증")).containsEntry("requirement", "우대 (회계관련 자격증 취득 및 지식(전공자) 함양)")
                 .containsEntry("mine", "없음").containsEntry("result", "INFO");
-        // 출처는 자격증 줄에만
-        List<Object> citations = JsonPath.read(body, "$.jobs[*].reasons[?(@.citation)].item");
-        assertThat(citations).hasSize(3).containsOnly("자격증");
+        // 판정 이유 줄마다 출처(ADR-0023): 학교 규정 = 모집안내 문장, 학년·학점·포트폴리오·선호 전공 = 참여기관 리스트 칸
+        String list = "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트";
+        Map<String, Object> cited = job(body, 101);
+        assertThat(reason(cited, "이수 학기")).containsEntry("citation", cite("SCHOOL_NOTICE",
+                "2026학년도 2학기 표준 현장실습학기제 학생 모집안내", null,
+                "4학기 이상 수료한 재학생(편입생의 경우 본교에서 1학기 이상 이수한 학생)"));
+        assertThat(reason(cited, "학년")).containsEntry("citation", cite("INSTITUTION_LIST", list, null, "학년: 4학년"));
+        assertThat(reason(cited, "포트폴리오"))
+                .containsEntry("citation", cite("INSTITUTION_LIST", list, null, "포트폴리오 필수 제출"));
+        assertThat(reason(cited, "선호 전공"))
+                .containsEntry("citation", cite("INSTITUTION_LIST", list, null, "전공: 광고홍보콘텐츠학과"));
+        assertThat(reason(job(body, 117), "학점"))
+                .containsEntry("citation", cite("INSTITUTION_LIST", list, null, "학점 3.5 이상"));
+        assertThat(reason(job(body, 117), "자격증")).containsEntry("citation",
+                cite("OPERATION_PLAN", "로젠 운영계획서", 2, "회계관련 자격증 취득 및 지식(전공자) 함양"));
+        // 2026-2 시드는 알림으로 새로 만든 행이 없어 모든 행에 출처가 있다. 쪽이 없으면 page는 null로 나간다
+        List<Object> withCitation = JsonPath.read(body, "$.jobs[*].reasons[?(@.citation)]");
+        List<Object> all = JsonPath.read(body, "$.jobs[*].reasons[*]");
+        assertThat(withCitation).hasSameSizeAs(all);
+        assertThat(body).contains("\"page\":null");
 
         // 선호 전공이 메이크업디자인학과로 확정된 직무 4개(소서 AMD·국내/해외 마케팅, 비욘드)
         List<Integer> matched = JsonPath.read(body, "$.jobs[?(@.majorMatch == 'MATCH')].jobId");
@@ -215,6 +232,16 @@ class EligibilityApiTest {
                  "graduationExpected": %s, "interestText": "뷰티 브랜드 SNS 마케팅", "homeAreaCode": "11350",
                  "certificates": %s}}"""
                 .formatted(departmentId, grade, semesters, gpa, graduating, certificates);
+    }
+
+    /** citation 기대값(page가 null일 수 있어 Map.of 대신). */
+    private static Map<String, Object> cite(String sourceType, String documentTitle, Integer page, String quote) {
+        Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("sourceType", sourceType);
+        m.put("documentTitle", documentTitle);
+        m.put("page", page);
+        m.put("quote", quote);
+        return m;
     }
 
     private static Map<String, Object> job(String body, int jobId) {

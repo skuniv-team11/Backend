@@ -16,7 +16,7 @@ import kr.ac.skuniv.coopradar.job.JobDetail.Closing;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-/** 판정에 쓰는 시드 읽기(job·선호 전공 매핑·검토 알림·학과·자격증). 시드 테이블은 읽기만 한다(V1 원칙). */
+/** 판정에 쓰는 시드 읽기(job·선호 전공 매핑·검토 알림·학과·자격증·판정 출처). 시드 테이블은 읽기만 한다(V1 원칙). */
 @Repository
 public class EligibilityRepository {
 
@@ -78,18 +78,28 @@ public class EligibilityRepository {
                     }
                 });
 
+        // 판정 이유 줄의 출처(ADR-0023): 직무별 항목 → 원문
+        Map<Integer, Map<String, ReasonCitation>> sources = new HashMap<>();
+        db.sql("""
+                        SELECT s.job_id, s.item, s.source_type, s.document_title, s.page, s.quote
+                        FROM requirement_source s
+                        JOIN job j ON j.id = s.job_id
+                        WHERE j.round_id = :round""")
+                .param("round", roundId)
+                .query(rs -> {
+                    sources.computeIfAbsent(rs.getInt("job_id"), k -> new HashMap<>()).put(rs.getString("item"),
+                            new ReasonCitation(rs.getString("source_type"), rs.getString("document_title"),
+                                    rs.getObject("page", Integer.class), rs.getString("quote")));
+                });
+
         return db.sql("""
                         SELECT j.id, j.list_seq, j.title, j.team, j.institution_id, i.name AS institution_name,
                                j.course, j.grade_rule, j.gpa_min, j.portfolio, j.certificate, j.certificate_text,
-                               j.certificate_code, ce.page AS certificate_page, ce.quote AS certificate_quote,
-                               cd.kind AS certificate_source_type, cd.title AS certificate_document,
+                               j.certificate_code,
                                j.major_text, j.major_open, j.closes_on, j.close_reason, j.closes_on_is_virtual,
                                (SELECT count(*) FROM review_alert a WHERE a.job_id = j.id) AS alert_count
                         FROM job j
                         JOIN institution i ON i.id = j.institution_id
-                        LEFT JOIN field_evidence ce ON ce.job_id = j.id AND ce.field_key = 'certificate'
-                                                   AND j.certificate <> 'NONE'
-                        LEFT JOIN source_document cd ON cd.id = ce.source_document_id
                         WHERE j.round_id = :round
                         ORDER BY j.list_seq""")
                 .param("round", roundId)
@@ -99,16 +109,11 @@ public class EligibilityRepository {
                     List<AlertRef> alerts = new ArrayList<>(byInstitution.getOrDefault(institutionId, List.of()));
                     alerts.addAll(byJob.getOrDefault(jobId, List.of()));
                     alerts.sort((a, b) -> Integer.compare(a.id(), b.id()));
-                    // 자격증 요건의 운영계획서 근거(ADR-0021). 요건이 없거나 근거가 없으면 null
-                    String document = rs.getString("certificate_document");
-                    ReasonCitation certificateCitation = document == null ? null
-                            : new ReasonCitation(rs.getString("certificate_source_type"), document,
-                                    (Integer) rs.getObject("certificate_page"), rs.getString("certificate_quote"));
                     return new JobRequirement(jobId, rs.getInt("list_seq"), rs.getString("title"), rs.getString("team"),
                             new InstitutionRef(institutionId, rs.getString("institution_name")),
                             rs.getString("course"), rs.getString("grade_rule"), rs.getBigDecimal("gpa_min"),
                             rs.getString("portfolio"), rs.getString("certificate"), rs.getString("certificate_text"),
-                            rs.getString("certificate_code"), certificateCitation,
+                            rs.getString("certificate_code"), Map.copyOf(sources.getOrDefault(jobId, Map.of())),
                             rs.getString("major_text"), rs.getBoolean("major_open"),
                             Set.copyOf(majors.getOrDefault(jobId, Set.of())), List.copyOf(alerts),
                             new Closing(rs.getObject("closes_on", LocalDate.class), rs.getString("close_reason"),

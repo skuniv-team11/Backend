@@ -116,7 +116,9 @@
   },
   "sourceType": {
     "OPERATION_PLAN": "운영계획서",
-    "TESTIMONIAL": "선배 수기"
+    "TESTIMONIAL": "선배 수기",
+    "INSTITUTION_LIST": "참여기관 리스트",
+    "SCHOOL_NOTICE": "학생 모집안내"
   },
   "reasonSource": {
     "LLM": "AI 생성",

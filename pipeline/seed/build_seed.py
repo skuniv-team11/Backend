@@ -59,7 +59,8 @@ LIMITS = {("institution", "name"): 100, ("institution", "business_type"): 100, (
           ("job", "major_text"): 300, ("job_weekly_plan", "weeks_label"): 30, ("field_evidence", "quote"): 200,
           ("review_alert", "quote_a"): 200, ("review_alert", "quote_b"): 200, ("testimonial", "team_text"): 100,
           ("source_document", "title"): 200, ("department", "name"): 50, ("major_alias", "label"): 100,
-          ("area", "sido"): 10, ("area", "name"): 20, ("certificate", "label"): 100}
+          ("area", "sido"): 10, ("area", "name"): 20, ("certificate", "label"): 100,
+          ("requirement_source", "document_title"): 200, ("requirement_source", "quote"): 300}
 SENSITIVE = re.compile(r"\d{3}-?\d{2}-?\d{5}|대표자|대표이사")   # 사업자번호·대표자명이 근거 문구에 섞이면 멈춘다
 
 
@@ -101,6 +102,14 @@ def list_lines(cell):
 
 def after_colon(line):
     return line.split(":", 1)[1].strip() if ":" in line else line.lstrip("■ ").strip()
+
+
+def list_quote(cell, pattern):
+    """리스트 칸에서 pattern이 든 줄을 원문 그대로(앞의 ■·- 글머리표만 뗌). 판정 이유 줄의 출처(ADR-0023)."""
+    for ln in list_lines(cell):
+        if re.search(pattern, ln):
+            return re.sub(r"^[■\-*•\s]+", "", ln).strip()
+    return None
 
 
 def list_field(cell, label):
@@ -322,7 +331,10 @@ def build(a):
 
     seed = {t: [] for t in ["program", "recruit_round", "department", "area", "certificate", "institution", "workplace",
                             "job", "major_alias", "major_alias_department", "job_major_alias", "job_weekly_plan",
-                            "source_document", "field_evidence", "review_alert", "testimonial", "replay_signal"]}
+                            "source_document", "field_evidence", "review_alert", "requirement_source", "testimonial",
+                            "replay_signal"]}
+    # 판정 이유 줄 출처의 문서명: 리스트 파일 이름에서 끝의 괄호(상시 업데이트 진행중 등)를 뗀다(ADR-0023)
+    list_title = re.sub(r"\s*\([^)]*\)\s*$", "", pathlib.Path(a.list).stem).strip()
     seed["program"].append(rnd["program"])
     seed["recruit_round"].append(round_)
     seed["area"] = area_rows(areas)
@@ -543,6 +555,29 @@ def build(a):
                                                     "content": text(w["content"])})
             for k, key in JOB_KEYS.items():
                 evidence(doc_id, ("job_id", job_id), key, pj[k])
+
+            # 판정 이유 줄의 출처(ADR-0023): 판정이 쓴 값이 나온 원문. 리스트 값은 리스트 칸, 계획서 값은 계획서 쪽·인용
+            def source(item, quote, page=None, title=list_title, kind="INSTITUTION_LIST"):
+                if not quote:
+                    fail(f"{job_key}: 판정 이유 출처({item})의 원문을 못 찾았습니다")
+                quote = re.sub(r"^[■\-*•\s]+", "", quote).strip()   # 앞의 글머리표만 뗀다(추천 인용과 같음)
+                seed["requirement_source"].append({"job_id": job_id, "item": item, "source_type": kind,
+                                                   "document_title": title, "page": page, "quote": quote[:300]})
+
+            source("GRADE", list_quote(r["선호전공학년"], r"학년"))
+            if l_major:
+                source("MAJOR", list_quote(r["선호전공학년"], r"전공"))
+            if l_gpa:
+                source("GPA", list_quote(note, r"학점\s*\d"))
+            plan_title = f"{name} 운영계획서"
+            if l_portfolio:
+                source("PORTFOLIO", list_quote(note, r"포트폴리오[^\n]*필수"))
+            elif portfolio != "NONE" and pj["portfolio"]["page"] > 0 and text(pj["portfolio"]["quote"]):
+                f = pj["portfolio"]   # 계획서에만 있는 포트폴리오 요건(2026-2는 없음). 근거 쪽이 없으면 출처 없이 둔다
+                source("PORTFOLIO", text(f["quote"]), f["page"], plan_title, "OPERATION_PLAN")
+            if certificate != "NONE":
+                f = pj["certificate"]
+                source("CERTIFICATE", text(f["quote"]), f["page"], plan_title, "OPERATION_PLAN")
 
             # 리스트 ↔ 계획서 비교(LIST_MISMATCH). 계획서가 확실할 때만 비교한다
             def mismatch(key, field, what, l_val, p_val):

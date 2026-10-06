@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.tuple;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.EligibilityJob;
@@ -125,7 +126,7 @@ class EligibilityRulesTest {
             b.certificate = "REQUIRED";
             b.certificateCode = "BEAUTY";
             b.certificateText = "미용 자격증 소지자";
-            b.certificateCitation = plan;
+            b.sources = Map.of("CERTIFICATE", plan);
         };
         EligibilityJob lacks = judge(job(beauty), me(3, 5, "3.4", false, List.of()));
         assertThat(lacks.verdict()).isEqualTo(Verdict.INELIGIBLE);
@@ -173,7 +174,7 @@ class EligibilityRulesTest {
         EligibilityJob r = judge(job(b -> {
             b.certificate = "REQUIRED";
             b.certificateCode = "BEAUTY";
-            b.certificateCitation = plan;
+            b.sources = Map.of("CERTIFICATE", plan);
             b.alerts = List.of(new AlertRef(9, "DOC_INCONSISTENCY", "certificate"));
         }), me(3, 5, "3.4", false, List.of()));
         assertThat(r.verdict()).isEqualTo(Verdict.NEEDS_CHECK);
@@ -263,7 +264,7 @@ class EligibilityRulesTest {
         change.accept(b);
         return new JobRequirement(101, 1, "(가상)마케팅", "(가상)마케팅팀", new InstitutionRef(1, "(가상)기관"), b.course,
                 b.gradeRule, b.gpaMin, b.portfolio, b.certificate, b.certificateText, b.certificateCode,
-                b.certificateCitation, "미용예술대학", b.majorOpen,
+                b.sources, "미용예술대학", b.majorOpen,
                 b.majorDepartmentIds, b.alerts, b.closing, b.alertCount);
     }
 
@@ -275,7 +276,7 @@ class EligibilityRulesTest {
         String certificate = "NONE";
         String certificateText = null;
         String certificateCode = null;
-        ReasonCitation certificateCitation = null;
+        Map<String, ReasonCitation> sources = Map.of();
         boolean majorOpen = false;
         Set<Integer> majorDepartmentIds = Set.of(DEPT);
         List<AlertRef> alerts = List.of();

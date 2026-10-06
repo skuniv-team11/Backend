@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.MajorMatch;
 import kr.ac.skuniv.coopradar.eligibility.JobRequirement;
@@ -196,6 +197,6 @@ class EvidenceTest {
 
     private static JobRequirement requirement(int id, String title, String gradeRule, BigDecimal gpa) {
         return new JobRequirement(id, id, title, "마케팅팀", new InstitutionRef(7, "소서"), "SEMESTER", gradeRule, gpa, "NONE",
-                "NONE", null, null, null, "미용예술대학", false, Set.of(43), List.of(), new Closing(null, null, false), 0);
+                "NONE", null, null, Map.of(), "미용예술대학", false, Set.of(43), List.of(), new Closing(null, null, false), 0);
     }
 }

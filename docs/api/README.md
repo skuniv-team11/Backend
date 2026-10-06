@@ -89,7 +89,16 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   | 필수(`REQUIRED`) | `CHECK`, `mine` '직접 확인' | `MET` '있음' | `NOT_MET` '없음' → `INELIGIBLE` |
   | 우대(`PREFERRED`) | `INFO` '직접 확인' | `INFO` '있음' | `INFO` '없음' |
 
-  - `citation`: 그 요건의 운영계획서 근거 `{sourceType, documentTitle, page, quote}`(Citation과 같은 모양, 원문 PDF 링크 없음). 지금은 자격증 행에만 있고, 없으면 필드째 빠진다. 학교 규정·참여기관 리스트 칸 출처는 다음 변경에서 같은 모양으로 다른 행에도 붙는다(`sourceType` 값이 늘고, 쪽이 없는 문서는 `page`가 null).
+- `citation`(ADR-0023): 그 행의 판정이 쓴 요건 원문 `{sourceType, documentTitle, page, quote}`(Citation과 같은 모양, 원문 파일 링크 없음). `quote`는 원문 그대로(앞의 ■·-·* 글머리표만 뗌)다.
+
+  | 행 | `sourceType` | `documentTitle` | `page` | `quote` 예 |
+  |---|---|---|---|---|
+  | 이수 학기 · 졸업예정자 계절제 | `SCHOOL_NOTICE` | 2026학년도 2학기 표준 현장실습학기제 학생 모집안내 | null(웹 공지) | 4학기 이상 수료한 재학생(…) · 졸업예정자의 계절제 참여 불가 |
+  | 학년 · 학점 · 포트폴리오 · 선호 전공 | `INSTITUTION_LIST` | 2026학년도 2학기 표준 현장실습학기제 참여기관 리스트 | null(엑셀) | 학년 : 3, 4학년 · 학점 3.5 이상 · 포트폴리오 필수 제출 · 전공 : 헤어디자인학과 |
+  | 자격증 | `OPERATION_PLAN` | <기관> 운영계획서 | 쪽 | 미용 자격증 or 미용 면허증 소지자 |
+
+  - 판정이 리스트 값을 쓰는 항목(학년·학점·선호 전공·리스트의 포트폴리오 필수)은 리스트 칸, 계획서 값을 쓰는 항목(자격증, 리스트에 없는 포트폴리오 요건)은 계획서 쪽·인용이다.
+  - 검토 알림으로 새로 만든 행(`alertId`, 원래 행이 없던 항목)에는 없다 — 알림 자체가 두 원문을 갖고 있다(직무 상세·현황판 `alerts`). 원래 행이 알림으로 `CHECK`가 된 경우는 원래 출처가 남는다. 출처를 못 찾은 행에도 필드가 없다.
 - 검토 알림(M2)의 `fieldKey`가 판정 항목(`gradeRequirement`·`gpaRequirement`·`portfolio`·`certificate`)이면 그 항목 행이 `CHECK`가 되고 `alertId`가 붙는다. 그 밖의 알림(선호 전공·기간·지원비·기관 현황 등)은 판정을 바꾸지 않는다 — 학생 목록은 `alertCount`로 '문서 검토' 꼬리표만 단다([ADR-0016](../decisions/0016-demo-profile-and-screen-rules.md)). 알림 행은 `item` '<필드 표기> 표기'(예: '학점 요건 표기'), `requirement`는 알림 종류별 문장, `mine` '—'. `alertId`가 없는 행에는 필드 자체가 없다.
 - `majorMatch`는 `MATCH` · `NOT_LISTED` · `OPEN`(전공 무관). `MATCH`는 직무의 선호 전공 표기가 사람이 확정한 학과 매핑(M3)에 내 학과가 있을 때다 — 확정 전 표기(`DRAFT`, 2026-2는 없음)는 누구에게도 `MATCH`가 아니다. `MAJOR` 행은 직무마다 하나, `INFO`.
 
@@ -111,7 +120,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - `logoPath`: 기관 로고 PNG 경로(API 서버 기준, 예: `/logos/3.png`). 프론트는 API 기본 주소(`VITE_API_BASE_URL`) 뒤에 붙여 `<img>`로 띄운다. 로그인 없이 받고(`/api` 밖이라 CORS도 필요 없다), 캐시는 하루. 로고가 없으면 null → 기관명 첫 글자로 대신한다. 2026-2 기관 18곳은 모두 있다.
 - 로고는 투명 배경 PNG이고 여백을 잘라 낸 원래 비율이다(최대 600×200). 가로로 긴 글자 로고와 정사각형 아이콘이 섞여 있으니 고정 크기 상자에 `object-fit: contain`으로 넣는다.
 
-**Citation** — `{sourceType, documentTitle, page, quote}`. `sourceType`은 `OPERATION_PLAN` · `TESTIMONIAL`. 원문 PDF 링크는 주지 않는다.
+**Citation** — `{sourceType, documentTitle, page, quote}`. `sourceType`은 `OPERATION_PLAN` · `TESTIMONIAL`(추천 근거), 판정 이유 행의 `citation`은 `INSTITUTION_LIST` · `SCHOOL_NOTICE`도 쓰고 그때 `page`는 null이다. 원문 PDF 링크는 주지 않는다.
 
 **적합도** — `fit`은 `HIGH` · `MEDIUM`. 점수는 응답에 넣지 않는다(정렬에만 쓴다). 규칙 + 키워드이고 임베딩은 쓰지 않는다(E5 결과, ADR-0018).
 - 점수 = 5 × 선호 전공 일치(`MATCH`·`OPEN`) + 2 × 관심 키워드 유사도(0~1) + 1 × `ELIGIBLE` + 0.5 × 지원비(최저임금 대비 75% → 0, 100% 이상 → 1) + 0.5 × 채용연계형. 같은 점수면 리스트 순번. 선호 전공이 맞는 직무가 늘 먼저다.
@@ -160,7 +169,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 **직무** — 없으면 404 `JOB_NOT_FOUND`. `evidence`는 AI가 운영계획서에서 뽑은 값과 근거(허용 필드만), `seniorNotes`는 같은 기관의 선배 수기(이름·학과·학년·소감 없음). 통근 시간은 이 응답에 없다 — `workplace.hasCoordinates`가 true면 프론트가 통근 조회를 따로 부른다. 근로지 주소가 있으면 true다(좌표는 DB에 없고 통근 조회 때 카카오 주소 검색으로 구한다. 이름은 그대로 둔다).
 - `requirements.majorAliases`: `[{label, departments: [{id, name}]}]` — 직무의 선호 전공 표기(`job_major_alias`)마다 확정된 학과 대응(`major_alias_department`, EXACT·CONFIRMED만 적재됨). `majorOpen`이면 `[]`. 화면의 '선호 전공 안내'(표기 → 학과)와 판정 이유의 '표기 해석'에 쓴다. 표기 순서는 표기 id 순, 학과는 id 순. 확정 전 표기(`DRAFT`, 2026-2는 없음)는 `departments: []`.
 - `evidence`: 이 직무의 근거 + 그 기관의 근거(기관명·규모·소재지·접수 마감 등). 순서는 직무 필드(V1 허용 목록 순서: 부서 → 직무명 → … → 자격증) 다음 기관 필드. `label`은 서버가 붙이는 한글 표기(예: `stipendAmount` → '실습지원비').
-- `alerts`: 이 직무에 걸린 알림 + 기관 전체에 걸린 알림(`jobId` null), id 순. 판정 항목이 아닌 알림(선호 전공·기간·지원비 불일치 등)도 여기에는 보인다.
+- `alerts`: 이 직무에 걸린 알림 + 기관 전체에 걸린 알림(`jobId` null), id 순. 판정 항목이 아닌 알림(선호 전공·기간·지원비 불일치 등)도 여기에는 보인다. `documentTitle`은 `pageA`·`quoteA`(`DOC_INCONSISTENCY`면 `pageB`·`quoteB`도)가 있는 문서 이름이다(예: '소서 운영계획서', ADR-0023). `LIST_MISMATCH`의 리스트 쪽 값은 `description`에 들어 있다.
 - `seniorNotes`: 최근 학기 먼저, 같은 학기는 쪽 순. `activities`는 실습 내용(원문 항목), `outcomes`는 실습 결과 문단에서 원문 그대로 자른 **사실 구절** 0~3개(60자 이내 — 만든 결과물·맡은 일·참여한 프로젝트·채택된 제안). 수기가 전부 '우수' 수기라 감상·배운 점·평가·개인 진로(입사·채용 등)는 넣지 않았다(ADR-0020). 화면에는 '우수 참여수기 기준'임을 밝힌다(`documentTitle`에 들어 있다).
 - `conditions.stipend.minWageRatio`는 소수 둘째 자리에서 반올림한다. 기준이 `UNSPECIFIED`거나 금액이 없으면 null.
 - 학생(`STUDENT`)이 이 응답을 받으면 조회수에 센다 — 계정마다 직무별로 하루(한국 시간) 한 번. 센터 담당자는 세지 않는다. 기록이 실패해도 상세는 그대로 준다.

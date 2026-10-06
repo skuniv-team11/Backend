@@ -11,7 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
-/** 앱이 뜰 때 Flyway가 V1~V5를 Postgres 18에 적용하는지 본다. */
+/** 앱이 뜰 때 Flyway가 V1~V6을 Postgres 18에 적용하는지 본다. */
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
 class MigrationTest {
@@ -28,7 +28,7 @@ class MigrationTest {
     }
 
     @Test
-    void 테이블_23개가_만들어진다() {
+    void 테이블_24개가_만들어진다() {
         Integer tables = jdbc.sql("""
                         SELECT count(*) FROM information_schema.tables
                         WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
@@ -36,7 +36,7 @@ class MigrationTest {
                         """)
                 .query(Integer.class)
                 .single();
-        assertThat(tables).isEqualTo(23); // V1 21개 + V3 job_view + V5 certificate
+        assertThat(tables).isEqualTo(24); // V1 21개 + V3 job_view + V5 certificate + V6 requirement_source
     }
 
     @Test
@@ -107,5 +107,29 @@ class MigrationTest {
                 .list();
         assertThat(columns).containsExactlyInAnyOrder("certificate.code", "certificate.label", "certificate.sort_order",
                 "job.certificate_code", "student_profile.certificates");
+    }
+
+    @Test
+    void V6이_적용되고_판정_출처는_직무마다_학년이_있고_리스트_출처에는_쪽이_없다() {
+        Boolean success = jdbc.sql("SELECT success FROM flyway_schema_history WHERE version = '6'")
+                .query(Boolean.class)
+                .single();
+        assertThat(success).isTrue();
+        // ADR-0023: 학년은 40직무 모두 리스트 칸, 학점 하한·자격증은 있는 직무만
+        Integer missing = jdbc.sql("""
+                        SELECT count(*) FROM job j
+                        WHERE NOT EXISTS (SELECT 1 FROM requirement_source s WHERE s.job_id = j.id AND s.item = 'GRADE')
+                           OR (j.gpa_min IS NOT NULL
+                               AND NOT EXISTS (SELECT 1 FROM requirement_source s WHERE s.job_id = j.id AND s.item = 'GPA'))
+                           OR (j.certificate <> 'NONE'
+                               AND NOT EXISTS (SELECT 1 FROM requirement_source s WHERE s.job_id = j.id AND s.item = 'CERTIFICATE'))""")
+                .query(Integer.class)
+                .single();
+        assertThat(missing).isZero();
+        Integer listWithPage = jdbc.sql(
+                        "SELECT count(*) FROM requirement_source WHERE source_type = 'INSTITUTION_LIST' AND page IS NOT NULL")
+                .query(Integer.class)
+                .single();
+        assertThat(listWithPage).isZero();
     }
 }
