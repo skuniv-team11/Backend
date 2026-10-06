@@ -146,6 +146,7 @@
       "kind": "DOC_INCONSISTENCY",
       "fieldKey": "majorRequirement",
       "description": "(가상) 교육목표에 적힌 전공과 학생요건의 전공이 다름",
+      "documentTitle": "가온소프트(가상) 운영계획서",
       "pageA": 2,
       "quoteA": "(가상) 소프트웨어 전공",
       "pageB": 3,

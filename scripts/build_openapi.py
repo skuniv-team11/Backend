@@ -210,10 +210,13 @@ S.update({
         "mine": STR,
         "result": R("ReasonResult"),
         "alertId": d(ID, "검토 알림(M2)의 fieldKey가 판정 항목(gradeRequirement·gpaRequirement·portfolio·certificate)이면 그 항목 행(CHECK)에 붙는다"),
-        "citation": d(R("ReasonCitation"), "그 요건의 출처. 지금은 자격증 행에만 있다(ADR-0021). 없으면 필드째 빠진다"),
+        "citation": d(R("ReasonCitation"), "그 행의 판정이 쓴 요건 원문(ADR-0023). 학교 규정 = 학생 모집안내, "
+                                             "학년·학점·포트폴리오·선호 전공 = 참여기관 리스트 칸, 자격증 = 운영계획서. "
+                                             "알림으로 새로 만든 행이나 출처를 못 찾은 행에는 필드가 없다"),
     }, optional=("alertId", "citation")),
     "ReasonCitation": obj({"sourceType": R("SourceType"), "documentTitle": STR,
-                           "page": d(nul(PAGE), "쪽이 없는 문서면 null"), "quote": STR},
+                           "page": d(nul(PAGE), "쪽이 없는 문서(참여기관 리스트 엑셀, 모집안내 웹 공지)면 null"),
+                           "quote": d(STR, "원문 그대로(앞의 글머리표만 뗌)")},
                           desc="판정 이유 줄의 출처(Citation과 같은 모양). 원문 PDF 링크는 주지 않는다"),
     "EligibilityJob": obj({
         "jobId": ID, "title": STR, "team": STR,
@@ -269,6 +272,7 @@ S.update({
         "kind": R("AlertKind"),
         "fieldKey": nul(STR),
         "description": STR,
+        "documentTitle": d(nul(STR), "pageA·quoteA(·pageB·quoteB)가 있는 문서 이름(예: 소서 운영계획서). 문서가 없으면 null(ADR-0023)"),
         "pageA": nul(PAGE), "quoteA": nul(STR),
         "pageB": nul(PAGE), "quoteB": nul(STR),
     }, desc="M2 검토 알림"),

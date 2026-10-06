@@ -113,7 +113,7 @@ class FitScorerTest {
 
     private static JobRequirement job(int id, int seq, Set<Integer> majorDepartments, String gradeRule) {
         return new JobRequirement(id, seq, "(가상)직무" + id, "(가상)팀", new InstitutionRef(id, "(가상)기관" + id), "SEMESTER",
-                gradeRule, null, "NONE", "NONE", null, null, null, "(가상)전공", false, majorDepartments, List.of(),
+                gradeRule, null, "NONE", "NONE", null, null, Map.of(), "(가상)전공", false, majorDepartments, List.of(),
                 new Closing(null, null, false), 0);
     }
 

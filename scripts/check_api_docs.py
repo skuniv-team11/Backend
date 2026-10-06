@@ -52,7 +52,9 @@ for k, col in pairs.items():
 check(set(codes["benefit"]) == ddl_array("benefits"), "benefit ≠ DDL")
 check(set(codes["weekday"]) == ddl_array("weekdays"), "weekday ≠ DDL")
 src_kind = set(re.findall(r"'([A-Z_]+)'", re.search(r"kind\s+varchar\(20\)\s+NOT NULL CHECK \(kind IN \('OPERATION_PLAN[^)]*\)\)", DDL).group(0)))
-check(set(codes["sourceType"]) == src_kind, "sourceType ≠ source_document.kind")
+# 판정 이유 출처(ADR-0023)는 문서 테이블 밖의 원문(참여기관 리스트 칸·모집안내 공지)도 가리켜 sourceType이 더 넓다
+check(src_kind <= set(codes["sourceType"]) and set(codes["sourceType"]) - src_kind == {"INSTITUTION_LIST", "SCHOOL_NOTICE"},
+      "sourceType ⊇ source_document.kind + INSTITUTION_LIST · SCHOOL_NOTICE")
 
 # 예시 안의 모든 코드값이 코드표에 있는지
 FIELD_CODE = {"verdict": "verdict", "layer": "reasonLayer", "result": "reasonResult", "majorMatch": "majorMatch",
@@ -139,8 +141,11 @@ for j in docs["eligibility.json"]["jobs"]:
     rs = j["reasons"]
     check(all(r["layer"] == "INSTITUTION" and r["result"] == "CHECK" for r in rs if "alertId" in r),
           f"판정 {j['jobId']} alertId는 판정 항목의 CHECK 행에만")
-    check(all(r["layer"] == "INSTITUTION" and r["item"] == "자격증" for r in rs if "citation" in r),
-          f"판정 {j['jobId']} citation은 지금은 자격증 행에만(ADR-0021)")
+    check(all("alertId" not in r or r["item"] in ("학년", "학점", "포트폴리오", "자격증") for r in rs if "citation" in r),
+          f"판정 {j['jobId']} 알림으로 새로 만든 행에는 citation이 없다(ADR-0023)")
+    check(all(r["citation"]["sourceType"] == {"SCHOOL_RULE": "SCHOOL_NOTICE"}.get(r["layer"], r["citation"]["sourceType"])
+              and (r["citation"]["page"] is None) == (r["citation"]["sourceType"] != "OPERATION_PLAN")
+              for r in rs if "citation" in r), f"판정 {j['jobId']} citation 출처 종류·쪽")
     if any(r["result"] == "NOT_MET" and (r["layer"] == "SCHOOL_RULE" or (r["layer"] == "INSTITUTION" and r["item"] == "자격증"))
            for r in rs):
         want = "INELIGIBLE"  # 학교 규정 미충족 또는 필수 자격증 없음(ADR-0021)

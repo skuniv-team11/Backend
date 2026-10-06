@@ -60,9 +60,10 @@ public class CenterRepository {
     /** 회차 기관들에 걸린 알림 전부(직무 알림 + 기관 전체 알림), id 순. */
     List<Alert> alerts(int roundId) {
         return db.sql("""
-                        SELECT a.*, i.name AS i_name
+                        SELECT a.*, i.name AS i_name, d.title AS doc_title
                         FROM review_alert a
                         JOIN institution i ON i.id = a.institution_id
+                        LEFT JOIN source_document d ON d.id = a.source_document_id
                         WHERE a.institution_id IN (SELECT institution_id FROM job WHERE round_id = :round)
                           AND (a.job_id IS NULL OR a.job_id IN (SELECT id FROM job WHERE round_id = :round))
                         ORDER BY a.id""")

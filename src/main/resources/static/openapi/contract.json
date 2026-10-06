@@ -207,7 +207,9 @@
                       },
                       "sourceType": {
                         "OPERATION_PLAN": "운영계획서",
-                        "TESTIMONIAL": "선배 수기"
+                        "TESTIMONIAL": "선배 수기",
+                        "INSTITUTION_LIST": "참여기관 리스트",
+                        "SCHOOL_NOTICE": "학생 모집안내"
                       },
                       "reasonSource": {
                         "LLM": "AI 생성",
@@ -1233,28 +1235,52 @@
                               "item": "이수 학기",
                               "requirement": "4학기 이상",
                               "mine": "5학기",
-                              "result": "MET"
+                              "result": "MET",
+                              "citation": {
+                                "sourceType": "SCHOOL_NOTICE",
+                                "documentTitle": "2026학년도 2학기 표준 현장실습학기제 학생 모집안내",
+                                "page": null,
+                                "quote": "4학기 이상 수료한 재학생(편입생의 경우 본교에서 1학기 이상 이수한 학생)"
+                              }
                             },
                             {
                               "layer": "INSTITUTION",
                               "item": "학년",
                               "requirement": "3·4학년",
                               "mine": "3학년",
-                              "result": "MET"
+                              "result": "MET",
+                              "citation": {
+                                "sourceType": "INSTITUTION_LIST",
+                                "documentTitle": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
+                                "page": null,
+                                "quote": "학년 : 3, 4학년"
+                              }
                             },
                             {
                               "layer": "INSTITUTION",
                               "item": "학점",
                               "requirement": "3.0 이상",
                               "mine": "3.4",
-                              "result": "MET"
+                              "result": "MET",
+                              "citation": {
+                                "sourceType": "INSTITUTION_LIST",
+                                "documentTitle": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
+                                "page": null,
+                                "quote": "학점 3.0 이상"
+                              }
                             },
                             {
                               "layer": "MAJOR",
                               "item": "선호 전공",
                               "requirement": "미용예술대학, 경영학과",
                               "mine": "메이크업디자인학과",
-                              "result": "INFO"
+                              "result": "INFO",
+                              "citation": {
+                                "sourceType": "INSTITUTION_LIST",
+                                "documentTitle": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
+                                "page": null,
+                                "quote": "전공 : 미용예술대학, 경영학과"
+                              }
                             }
                           ]
                         },
@@ -1281,35 +1307,65 @@
                               "item": "이수 학기",
                               "requirement": "4학기 이상",
                               "mine": "5학기",
-                              "result": "MET"
+                              "result": "MET",
+                              "citation": {
+                                "sourceType": "SCHOOL_NOTICE",
+                                "documentTitle": "2026학년도 2학기 표준 현장실습학기제 학생 모집안내",
+                                "page": null,
+                                "quote": "4학기 이상 수료한 재학생(편입생의 경우 본교에서 1학기 이상 이수한 학생)"
+                              }
                             },
                             {
                               "layer": "INSTITUTION",
                               "item": "학년",
                               "requirement": "3·4학년",
                               "mine": "3학년",
-                              "result": "MET"
+                              "result": "MET",
+                              "citation": {
+                                "sourceType": "INSTITUTION_LIST",
+                                "documentTitle": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
+                                "page": null,
+                                "quote": "학년 : 3, 4학년"
+                              }
                             },
                             {
                               "layer": "INSTITUTION",
                               "item": "학점",
                               "requirement": "3.5 이상",
                               "mine": "3.4",
-                              "result": "NOT_MET"
+                              "result": "NOT_MET",
+                              "citation": {
+                                "sourceType": "INSTITUTION_LIST",
+                                "documentTitle": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
+                                "page": null,
+                                "quote": "학점 3.5 이상"
+                              }
                             },
                             {
                               "layer": "INSTITUTION",
                               "item": "포트폴리오",
                               "requirement": "필수",
                               "mine": "직접 확인",
-                              "result": "CHECK"
+                              "result": "CHECK",
+                              "citation": {
+                                "sourceType": "INSTITUTION_LIST",
+                                "documentTitle": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
+                                "page": null,
+                                "quote": "포트폴리오 필수 제출"
+                              }
                             },
                             {
                               "layer": "MAJOR",
                               "item": "선호 전공",
                               "requirement": "시각디자인 관련 전공",
                               "mine": "메이크업디자인학과",
-                              "result": "INFO"
+                              "result": "INFO",
+                              "citation": {
+                                "sourceType": "INSTITUTION_LIST",
+                                "documentTitle": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
+                                "page": null,
+                                "quote": "전공 : 시각디자인 관련 전공"
+                              }
                             }
                           ]
                         },
@@ -1336,21 +1392,39 @@
                               "item": "이수 학기",
                               "requirement": "4학기 이상",
                               "mine": "5학기",
-                              "result": "MET"
+                              "result": "MET",
+                              "citation": {
+                                "sourceType": "SCHOOL_NOTICE",
+                                "documentTitle": "2026학년도 2학기 표준 현장실습학기제 학생 모집안내",
+                                "page": null,
+                                "quote": "4학기 이상 수료한 재학생(편입생의 경우 본교에서 1학기 이상 이수한 학생)"
+                              }
                             },
                             {
                               "layer": "INSTITUTION",
                               "item": "학년",
                               "requirement": "4학년",
                               "mine": "3학년",
-                              "result": "NOT_MET"
+                              "result": "NOT_MET",
+                              "citation": {
+                                "sourceType": "INSTITUTION_LIST",
+                                "documentTitle": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
+                                "page": null,
+                                "quote": "학년 : 4학년"
+                              }
                             },
                             {
                               "layer": "MAJOR",
                               "item": "선호 전공",
                               "requirement": "소프트웨어·컴퓨터 관련 전공",
                               "mine": "메이크업디자인학과",
-                              "result": "INFO"
+                              "result": "INFO",
+                              "citation": {
+                                "sourceType": "INSTITUTION_LIST",
+                                "documentTitle": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
+                                "page": null,
+                                "quote": "전공 : 소프트웨어·컴퓨터 관련 전공"
+                              }
                             }
                           ]
                         },
@@ -1377,14 +1451,26 @@
                               "item": "이수 학기",
                               "requirement": "4학기 이상",
                               "mine": "5학기",
-                              "result": "MET"
+                              "result": "MET",
+                              "citation": {
+                                "sourceType": "SCHOOL_NOTICE",
+                                "documentTitle": "2026학년도 2학기 표준 현장실습학기제 학생 모집안내",
+                                "page": null,
+                                "quote": "4학기 이상 수료한 재학생(편입생의 경우 본교에서 1학기 이상 이수한 학생)"
+                              }
                             },
                             {
                               "layer": "INSTITUTION",
                               "item": "학년",
                               "requirement": "3·4학년",
                               "mine": "3학년",
-                              "result": "MET"
+                              "result": "MET",
+                              "citation": {
+                                "sourceType": "INSTITUTION_LIST",
+                                "documentTitle": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
+                                "page": null,
+                                "quote": "학년 : 3, 4학년"
+                              }
                             },
                             {
                               "layer": "INSTITUTION",
@@ -1404,7 +1490,13 @@
                               "item": "선호 전공",
                               "requirement": "헤어디자인학과",
                               "mine": "메이크업디자인학과",
-                              "result": "INFO"
+                              "result": "INFO",
+                              "citation": {
+                                "sourceType": "INSTITUTION_LIST",
+                                "documentTitle": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
+                                "page": null,
+                                "quote": "전공 : 헤어디자인학과"
+                              }
                             }
                           ]
                         }
@@ -3145,6 +3237,7 @@
                           "kind": "DOC_INCONSISTENCY",
                           "fieldKey": "majorRequirement",
                           "description": "(가상) 교육목표에 적힌 전공과 학생요건의 전공이 다름",
+                          "documentTitle": "가온소프트(가상) 운영계획서",
                           "pageA": 2,
                           "quoteA": "(가상) 소프트웨어 전공",
                           "pageB": 3,
@@ -3390,6 +3483,13 @@
           "description": {
             "type": "string"
           },
+          "documentTitle": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "pageA·quoteA(·pageB·quoteB)가 있는 문서 이름(예: 소서 운영계획서). 문서가 없으면 null(ADR-0023)"
+          },
           "pageA": {
             "type": [
               "integer",
@@ -3424,6 +3524,7 @@
           "kind",
           "fieldKey",
           "description",
+          "documentTitle",
           "pageA",
           "quoteA",
           "pageB",
@@ -5351,10 +5452,11 @@
               "null"
             ],
             "minimum": 1,
-            "description": "쪽이 없는 문서면 null"
+            "description": "쪽이 없는 문서(참여기관 리스트 엑셀, 모집안내 웹 공지)면 null"
           },
           "quote": {
-            "type": "string"
+            "type": "string",
+            "description": "원문 그대로(앞의 글머리표만 뗌)"
           }
         },
         "required": [
@@ -5399,7 +5501,7 @@
           },
           "citation": {
             "$ref": "#/components/schemas/ReasonCitation",
-            "description": "그 요건의 출처. 지금은 자격증 행에만 있다(ADR-0021). 없으면 필드째 빠진다"
+            "description": "그 행의 판정이 쓴 요건 원문(ADR-0023). 학교 규정 = 학생 모집안내, 학년·학점·포트폴리오·선호 전공 = 참여기관 리스트 칸, 자격증 = 운영계획서. 알림으로 새로 만든 행이나 출처를 못 찾은 행에는 필드가 없다"
           }
         },
         "required": [
@@ -5798,9 +5900,11 @@
         "type": "string",
         "enum": [
           "OPERATION_PLAN",
-          "TESTIMONIAL"
+          "TESTIMONIAL",
+          "INSTITUTION_LIST",
+          "SCHOOL_NOTICE"
         ],
-        "description": "`OPERATION_PLAN` 운영계획서 · `TESTIMONIAL` 선배 수기"
+        "description": "`OPERATION_PLAN` 운영계획서 · `TESTIMONIAL` 선배 수기 · `INSTITUTION_LIST` 참여기관 리스트 · `SCHOOL_NOTICE` 학생 모집안내"
       },
       "Stipend": {
         "type": "object",

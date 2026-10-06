@@ -175,6 +175,14 @@ class NormalizeTest(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 b.certificate_override("로젠|회계팀", {"certificate": bad}, pj, {"ACCOUNTING"}, 3)
 
+    def test_판정_출처는_리스트_칸의_그_줄을_글머리표만_떼고(self):
+        cell = "■ 전공: 광고홍보콘텐츠학과\n■ 학년: 4학년"
+        self.assertEqual(b.list_quote(cell, r"학년"), "학년: 4학년")
+        self.assertEqual(b.list_quote(cell, r"전공"), "전공: 광고홍보콘텐츠학과")
+        note = "*모집마감\n- 서류마감일 : 26. 7. 17. 12:00\n- 포트폴리오 필수 제출"
+        self.assertEqual(b.list_quote(note, r"포트폴리오[^\n]*필수"), "포트폴리오 필수 제출")
+        self.assertIsNone(b.list_quote(note, r"학점\s*\d"))
+
     def test_근거_필드_이름이_V1_허용_목록과_같다(self):
         b.check_allowed_keys()
 

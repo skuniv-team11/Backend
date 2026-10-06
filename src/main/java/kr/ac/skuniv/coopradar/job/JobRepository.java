@@ -120,9 +120,10 @@ public class JobRepository {
     /** 이 직무에 걸린 알림과 기관 전체에 걸린 알림(job_id NULL). */
     List<Alert> alerts(int jobId, int institutionId) {
         return db.sql("""
-                        SELECT a.*, i.name AS i_name
+                        SELECT a.*, i.name AS i_name, d.title AS doc_title
                         FROM review_alert a
                         JOIN institution i ON i.id = a.institution_id
+                        LEFT JOIN source_document d ON d.id = a.source_document_id
                         WHERE a.job_id = :job OR (a.job_id IS NULL AND a.institution_id = :institution)
                         ORDER BY a.id""")
                 .param("job", jobId)
@@ -172,7 +173,7 @@ public class JobRepository {
                 .list();
     }
 
-    /** review_alert 행(+ i_name 열) → Alert. 현황판도 쓴다. */
+    /** review_alert 행(+ i_name·doc_title 열) → Alert. 현황판도 쓴다. */
     public static Alert alert(ResultSet rs) throws SQLException {
         return new Alert(
                 rs.getInt("id"),
@@ -181,6 +182,7 @@ public class JobRepository {
                 rs.getString("kind"),
                 rs.getString("field_key"),
                 rs.getString("description"),
+                rs.getString("doc_title"),
                 shortOrNull(rs, "page_a"),
                 rs.getString("quote_a"),
                 shortOrNull(rs, "page_b"),

@@ -8,6 +8,7 @@ import java.util.Map;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.EligibilityJob;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Layer;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.MajorMatch;
+import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.ReasonCitation;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.ReasonLine;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Result;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Verdict;
@@ -25,10 +26,18 @@ import kr.ac.skuniv.coopradar.eligibility.JobRequirement.AlertRef;
  * </ol>
  * 판정: SCHOOL_RULE에 NOT_MET 또는 자격증 줄이 NOT_MET(필수 자격증 없음) → INELIGIBLE,
  * 아니면 INSTITUTION에 NOT_MET·CHECK → NEEDS_CHECK, 아니면 ELIGIBLE.
+ * 줄마다 출처(citation)를 붙인다(ADR-0023): 학교 규정 = 학생 모집안내 문장, 그 밖 = 직무의 requirement_source.
  */
 public final class EligibilityRules {
 
     static final int MIN_COMPLETED_SEMESTERS = 4;
+
+    /** 학교 규정의 출처(ADR-0012·0023). 진로취업처 공지(2026. 6. 15. 게시, 웹 글이라 쪽이 없다)의 문장 그대로. */
+    static final String SCHOOL_NOTICE = "2026학년도 2학기 표준 현장실습학기제 학생 모집안내";
+    static final ReasonCitation SEMESTER_SOURCE = new ReasonCitation("SCHOOL_NOTICE", SCHOOL_NOTICE, null,
+            "4학기 이상 수료한 재학생(편입생의 경우 본교에서 1학기 이상 이수한 학생)");
+    static final ReasonCitation VACATION_SOURCE = new ReasonCitation("SCHOOL_NOTICE", SCHOOL_NOTICE, null,
+            "졸업예정자의 계절제 참여 불가");
 
     /** 자격증 줄의 항목 이름. 기관 조건 중 이 줄의 NOT_MET만 지원 불가로 간다(ADR-0021). */
     public static final String CERTIFICATE_ITEM = "자격증";
@@ -54,7 +63,8 @@ public final class EligibilityRules {
         institutionConditions(job, me, reasons);
         MajorMatch match = majorMatch(job, me.departmentId());
         reasons.add(ReasonLine.of(Layer.MAJOR, "선호 전공",
-                job.majorOpen() ? "전공 무관" : orDash(job.majorText()), departmentName, Result.INFO));
+                job.majorOpen() ? "전공 무관" : orDash(job.majorText()), departmentName, Result.INFO,
+                job.sources().get("MAJOR")));
         return new EligibilityJob(job.jobId(), job.title(), job.team(), job.institution(), verdict(reasons), match,
                 job.closing(), job.alertCount(), List.copyOf(reasons));
     }
@@ -87,32 +97,33 @@ public final class EligibilityRules {
     private static void schoolRules(JobRequirement job, ProfileInput me, List<ReasonLine> out) {
         int semesters = me.completedSemesters();
         out.add(ReasonLine.of(Layer.SCHOOL_RULE, "이수 학기", MIN_COMPLETED_SEMESTERS + "학기 이상", semesters + "학기",
-                semesters >= MIN_COMPLETED_SEMESTERS ? Result.MET : Result.NOT_MET));
+                semesters >= MIN_COMPLETED_SEMESTERS ? Result.MET : Result.NOT_MET, SEMESTER_SOURCE));
         // VACATION_SEMESTER(방학·학기 연계)가 계절제에 드는지는 센터 확인 전이라 붙이지 않는다(ADR-0012)
         if ("VACATION".equals(job.course())) {
             boolean graduating = me.graduationExpected();
             out.add(ReasonLine.of(Layer.SCHOOL_RULE, "졸업예정자 계절제", "졸업예정자는 방학 과정 불가",
-                    graduating ? "졸업예정" : "졸업예정 아님", graduating ? Result.NOT_MET : Result.MET));
+                    graduating ? "졸업예정" : "졸업예정 아님", graduating ? Result.NOT_MET : Result.MET, VACATION_SOURCE));
         }
     }
 
     private static void institutionConditions(JobRequirement job, ProfileInput me, List<ReasonLine> out) {
         int grade = me.grade();
+        ReasonCitation gradeSource = job.sources().get("GRADE");
         switch (job.gradeRule()) {
             case "Y3_4" -> out.add(ReasonLine.of(Layer.INSTITUTION, "학년", "3·4학년", grade + "학년",
-                    grade >= 3 ? Result.MET : Result.NOT_MET));
+                    grade >= 3 ? Result.MET : Result.NOT_MET, gradeSource));
             case "Y4" -> out.add(ReasonLine.of(Layer.INSTITUTION, "학년", "4학년", grade + "학년",
-                    grade == 4 ? Result.MET : Result.NOT_MET));
+                    grade == 4 ? Result.MET : Result.NOT_MET, gradeSource));
             case "GRADUATING" -> out.add(ReasonLine.of(Layer.INSTITUTION, "학년", "졸업예정자",
                     me.graduationExpected() ? "졸업예정" : "졸업예정 아님",
-                    me.graduationExpected() ? Result.MET : Result.NOT_MET));
+                    me.graduationExpected() ? Result.MET : Result.NOT_MET, gradeSource));
             default -> throw new IllegalStateException("모르는 grade_rule: " + job.gradeRule());
         }
         if (job.gpaMin() != null) {
             out.add(ReasonLine.of(Layer.INSTITUTION, "학점", oneDecimal(job.gpaMin()) + " 이상", oneDecimal(me.gpa()),
-                    me.gpa().compareTo(job.gpaMin()) >= 0 ? Result.MET : Result.NOT_MET));
+                    me.gpa().compareTo(job.gpaMin()) >= 0 ? Result.MET : Result.NOT_MET, job.sources().get("GPA")));
         }
-        document(out, "포트폴리오", job.portfolio(), null);
+        document(out, "포트폴리오", job.portfolio(), null, job.sources().get("PORTFOLIO"));
         certificate(out, job, me.certificates());
         for (AlertRef alert : job.alerts()) {
             String item = JUDGED_FIELDS.get(alert.fieldKey());
@@ -144,12 +155,13 @@ public final class EligibilityRules {
     }
 
     /** 필수면 학생이 직접 확인할 항목(CHECK), 우대면 참고(INFO), 없으면 줄을 만들지 않는다. */
-    private static void document(List<ReasonLine> out, String item, String requirement, String detail) {
+    private static void document(List<ReasonLine> out, String item, String requirement, String detail,
+                                 ReasonCitation source) {
         switch (requirement) {
             case "REQUIRED" -> out.add(ReasonLine.of(Layer.INSTITUTION, item, "필수" + detail(detail), "직접 확인",
-                    Result.CHECK));
+                    Result.CHECK, source));
             case "PREFERRED" -> out.add(ReasonLine.of(Layer.INSTITUTION, item, "우대" + detail(detail), "직접 확인",
-                    Result.INFO));
+                    Result.INFO, source));
             default -> {
             }
         }
@@ -178,8 +190,8 @@ public final class EligibilityRules {
             result = required ? Result.NOT_MET : Result.INFO;
         }
         String requirement = (required ? "필수" : "우대") + detail(job.certificateText());
-        out.add(new ReasonLine(Layer.INSTITUTION, CERTIFICATE_ITEM, requirement, have, result, null,
-                job.certificateCitation()));
+        out.add(ReasonLine.of(Layer.INSTITUTION, CERTIFICATE_ITEM, requirement, have, result,
+                job.sources().get("CERTIFICATE")));
     }
 
     private static String detail(String text) {
