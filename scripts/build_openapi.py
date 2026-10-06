@@ -92,6 +92,9 @@ S["EvidenceFieldKey"] = {"type": "string", "enum": ddl_field_keys(),
 AREA_CODE = {"type": "string", "pattern": r"^(11|28|41)\d{3}$",
              "description": "시·군·구 5자리(서울 11·인천 28·경기 41). `GET /api/areas`의 code"}
 
+CERTIFICATE_CODE = {"type": "string", "pattern": r"^[A-Z][A-Z0-9_]*$", "maxLength": 40,
+                    "description": "`GET /api/certificates`의 code"}
+
 PROFILE_PROPS = {
     "departmentId": d(ID, "`GET /api/departments`의 id"),
     "grade": {"type": "integer", "minimum": 1, "maximum": 4},
@@ -100,8 +103,11 @@ PROFILE_PROPS = {
     "graduationExpected": d(BOOL, "다음 졸업(2026-2 회차 → 2027년 2월) 예정이면 true"),
     "interestText": nul({"type": "string", "maxLength": 200, "description": "적합도 추천의 질의. 200자 이하"}),
     "homeAreaCode": d(nul(AREA_CODE), "사는 곳(선택). null이면 통근을 서경대에서 출발로 본다. 통근 조회에만 쓴다"),
+    "certificates": d(nul(arr(CERTIFICATE_CODE, maxItems=20)),
+                      "가진 자격증(선택, ADR-0021). []이면 없음, null이거나 빠지면 답하지 않음(자격증 줄이 '직접 확인'). "
+                      "판정의 자격증 줄에만 쓴다"),
 }
-PROFILE_OPTIONAL = ("interestText", "homeAreaCode")
+PROFILE_OPTIONAL = ("interestText", "homeAreaCode", "certificates")
 PROFILE_VIEW_PROPS = {
     **PROFILE_PROPS,
     "department": R("DepartmentRef"),
@@ -178,6 +184,9 @@ S.update({
     "Departments": obj({"departments": arr(R("Department"))}),
     "Area": obj({"code": AREA_CODE, "sido": STR, "name": STR}),
     "Areas": obj({"areas": arr(R("Area"))}),
+    "Certificate": obj({"code": CERTIFICATE_CODE, "label": STR}),
+    "Certificates": d(obj({"certificates": arr(R("Certificate"))}),
+                      "이번 회차 직무가 요구·우대하는 자격증만, 코드표 순서(ADR-0021)"),
     "RoundRef": obj({"id": ID, "termCode": {"type": "string", "pattern": r"^\d{4}-[12]$"}}),
     "CurrentRound": obj({
         "id": ID,
@@ -201,7 +210,11 @@ S.update({
         "mine": STR,
         "result": R("ReasonResult"),
         "alertId": d(ID, "검토 알림(M2)의 fieldKey가 판정 항목(gradeRequirement·gpaRequirement·portfolio·certificate)이면 그 항목 행(CHECK)에 붙는다"),
-    }, optional=("alertId",)),
+        "citation": d(R("ReasonCitation"), "그 요건의 출처. 지금은 자격증 행에만 있다(ADR-0021). 없으면 필드째 빠진다"),
+    }, optional=("alertId", "citation")),
+    "ReasonCitation": obj({"sourceType": R("SourceType"), "documentTitle": STR,
+                           "page": d(nul(PAGE), "쪽이 없는 문서면 null"), "quote": STR},
+                          desc="판정 이유 줄의 출처(Citation과 같은 모양). 원문 PDF 링크는 주지 않는다"),
     "EligibilityJob": obj({
         "jobId": ID, "title": STR, "team": STR,
         "institution": R("InstitutionRef"),
@@ -238,7 +251,8 @@ S.update({
     "Recommendations": obj({
         "round": R("RoundRef"),
         "items": d(arr(R("Recommendation"), maxItems=5), "INELIGIBLE과 기준일에 마감된 직무를 뺀 적합도 점수 상위 5개. 점수는 주지 않는다"),
-        "blockedBy": d(arr(obj({"item": STR, "count": INT})), "items가 비었을 때 막은 요건별 직무 수"),
+        "blockedBy": d(arr(obj({"item": STR, "count": INT})),
+                       "items가 비었을 때 막은 요건별 직무 수(학교 규정 항목 · '자격증' · '모집 마감')"),
     }),
     "RecommendationReason": obj({
         "jobId": ID,
@@ -455,6 +469,7 @@ ENDPOINTS = {
                                   errors=["AS_OF_OUT_OF_RANGE"]),
     "GET /api/jobs/{jobId}/views": dict(op="getJobViews", ok={200: ("JobViews", ["job-views.json"])},
                                         errors=["JOB_NOT_FOUND"]),
+    "GET /api/certificates": dict(op="getCertificates", ok={200: ("Certificates", ["certificates.json"])}),
 }
 OK_TEXT = {200: "성공", 201: "만들었음", 204: "본문 없음"}
 STATUS_TEXT = {200: "이미 담겨 있음(그대로)", 201: "새로 담음"}  # POST /api/me/plan/items

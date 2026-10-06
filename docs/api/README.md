@@ -3,7 +3,7 @@
 프론트는 이 문서의 응답 예시로 목업을 만들고, 백엔드는 이 형태를 지킨다. 형태를 바꾸려면 이 문서를 먼저 고친다.
 Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 맞다.
 
-**Swagger**: https://coop-radar-api.onrender.com/swagger-ui.html (배포 서버). 드롭다운 '계약'은 이 문서와 예시 JSON으로 만든 25개 전부, '구현'은 지금 코드에 있는 것만 보여 준다(ADR-0011).
+**Swagger**: https://coop-radar-api.onrender.com/swagger-ui.html (배포 서버). 드롭다운 '계약'은 이 문서와 예시 JSON으로 만든 26개 전부, '구현'은 지금 코드에 있는 것만 보여 준다(ADR-0011).
 - '계약' 스펙은 `python scripts/build_openapi.py`가 이 폴더로 만든다(`src/main/resources/static/openapi/contract.json`). 이 문서나 예시 JSON을 고쳤으면 다시 돌려 같은 PR에 넣는다. 예시가 스키마(타입·null·코드값·범위)에 안 맞으면 여기서 실패한다.
 - 새 엔드포인트는 스크립트의 `ENDPOINTS`(요청·응답 스키마와 예시 파일)와 `S`(스키마)에도 넣는다.
 
@@ -54,6 +54,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | 23 | 지망 | POST | `/api/me/plan/check` | STUDENT | S5 | 지망별 모집 신호 + 빈 자리 제안 | [요청](me-plan-check.request.json) · [응답](me-plan-check.json) |
 | 24 | 센터 | GET | `/api/center/board?asOf=` | CENTER | C4 | 모집 현황판 | [응답](center-board.json) |
 | 25 | 직무 | GET | `/api/jobs/{jobId}/views` | 로그인 | S4·C4 | 직무 조회수(학생 계정마다 직무별 하루 1번) | [응답](job-views.json) |
+| 26 | 기준 정보 | GET | `/api/certificates` | 공개 | S1 | 자격증 선택지(이번 회차 직무가 요구·우대하는 것만, ADR-0021) | [응답](certificates.json) |
 
 ## 공통 객체
 **Profile** (요청 본문의 `profile`, `PUT /api/me/profile`)
@@ -66,10 +67,11 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | `graduationExpected` | boolean | 다음 졸업(2026-2 회차 → 2027년 2월) 예정이면 true |
 | `interestText` | string \| null | 200자 이하. 적합도 추천의 질의 |
 | `homeAreaCode` | string \| null | 사는 곳. `GET /api/areas`의 `code`(시·군·구 5자리). 선택 — null이면 통근을 서경대에서 출발로 본다. 통근 조회에만 쓴다 |
+| `certificates` | string[] \| null | 가진 자격증. `GET /api/certificates`의 `code` 목록(20개 이하, 중복은 하나로 본다). 선택 — `[]`이면 없음, null이거나 빠지면 답하지 않음(자격증 줄이 '직접 확인'). 판정의 자격증 줄에만 쓴다([ADR-0021](../decisions/0021-certificate-profile.md)) |
 
 **판정** — `verdict`는 `ELIGIBLE`(지원 가능) · `NEEDS_CHECK`(확인 필요) · `INELIGIBLE`(지원 불가).
-- 이유 한 줄은 `{layer, item, requirement, mine, result, alertId?}`. `layer`는 `SCHOOL_RULE` · `INSTITUTION` · `MAJOR`, `result`는 `MET` · `NOT_MET` · `CHECK` · `INFO`.
-- 정하는 순서: `SCHOOL_RULE`에 `NOT_MET`이 하나라도 있으면 `INELIGIBLE` → 아니면 `INSTITUTION`에 `NOT_MET`·`CHECK`가 하나라도 있으면 `NEEDS_CHECK` → 아니면 `ELIGIBLE`. `MAJOR`는 판정에 넣지 않는다(참고 표시).
+- 이유 한 줄은 `{layer, item, requirement, mine, result, alertId?, citation?}`. `layer`는 `SCHOOL_RULE` · `INSTITUTION` · `MAJOR`, `result`는 `MET` · `NOT_MET` · `CHECK` · `INFO`.
+- 정하는 순서: `SCHOOL_RULE`에 `NOT_MET`이 하나라도 있거나 `INSTITUTION`의 자격증 줄이 `NOT_MET`(필수 자격증 없음)이면 `INELIGIBLE` → 아니면 `INSTITUTION`에 `NOT_MET`·`CHECK`가 하나라도 있으면 `NEEDS_CHECK` → 아니면 `ELIGIBLE`. `MAJOR`는 판정에 넣지 않는다(참고 표시).
 - 학교 규정(`SCHOOL_RULE`) 행은 두 가지뿐이다(근거: 2026-2 학생 모집안내, 10/1 확정). 결과는 `MET`·`NOT_MET`만 쓴다.
 
   | `item` | `requirement` | 쓰는 값 | `NOT_MET` |
@@ -79,7 +81,15 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 
   - 이수 학기 행은 모든 직무에, 졸업예정자 계절제 행은 `course`가 `VACATION`인 직무에만 붙는다. `VACATION_SEMESTER`(방학·학기 연계)가 계절제에 드는지는 센터 확인 항목이라, 확인 전까지는 이 행을 붙이지 않는다.
   - 모집안내의 나머지 참여 제한 네 가지(휴학·수료·학사학위취득유예·대학원생, 현장실습 학점 18학점 초과, 재직 중, 부정 실습 제재)는 프로필로 묻지도 저장하지도 않는다. 화면에 고정 안내로만 보여 준다(프론트 상수, 최소 수집 — ADR-0008).
-- 기관 조건(`INSTITUTION`) 행: 학년(`gradeRule` — `Y3_4` 3학년 이상 / `Y4` 4학년 / `GRADUATING` `graduationExpected`) · 학점(`gpaMin`이 있을 때만, 같으면 `MET`) · 포트폴리오·자격증(`REQUIRED`면 `CHECK`, `PREFERRED`면 `INFO` — 판정에 안 들어감, `NONE`이면 행 없음). 학년·학점 미충족은 `NOT_MET`이지만 판정은 `NEEDS_CHECK`다(기관이 정하는 조건이라).
+- 기관 조건(`INSTITUTION`) 행: 학년(`gradeRule` — `Y3_4` 3학년 이상 / `Y4` 4학년 / `GRADUATING` `graduationExpected`) · 학점(`gpaMin`이 있을 때만, 같으면 `MET`) · 포트폴리오(`REQUIRED`면 `CHECK`, `PREFERRED`면 `INFO` — 판정에 안 들어감, `NONE`이면 행 없음) · 자격증(아래 표). 학년·학점 미충족은 `NOT_MET`이지만 판정은 `NEEDS_CHECK`다(기관이 정하는 조건이라).
+- 자격증 행(`item` '자격증', [ADR-0021](../decisions/0021-certificate-profile.md)): `requirement`는 '필수 (원문)' · '우대 (원문)', 직무에 자격증 요건이 없으면(`NONE`) 행 없음. 기관 조건 중 지원 불가로 가는 것은 필수 자격증뿐이다(모집기간 안에 새로 갖출 수 없어서).
+
+  | 직무 | `certificates` null | 직무의 자격증 코드가 있음 | 없음 |
+  |---|---|---|---|
+  | 필수(`REQUIRED`) | `CHECK`, `mine` '직접 확인' | `MET` '있음' | `NOT_MET` '없음' → `INELIGIBLE` |
+  | 우대(`PREFERRED`) | `INFO` '직접 확인' | `INFO` '있음' | `INFO` '없음' |
+
+  - `citation`: 그 요건의 운영계획서 근거 `{sourceType, documentTitle, page, quote}`(Citation과 같은 모양, 원문 PDF 링크 없음). 지금은 자격증 행에만 있고, 없으면 필드째 빠진다. 학교 규정·참여기관 리스트 칸 출처는 다음 변경에서 같은 모양으로 다른 행에도 붙는다(`sourceType` 값이 늘고, 쪽이 없는 문서는 `page`가 null).
 - 검토 알림(M2)의 `fieldKey`가 판정 항목(`gradeRequirement`·`gpaRequirement`·`portfolio`·`certificate`)이면 그 항목 행이 `CHECK`가 되고 `alertId`가 붙는다. 그 밖의 알림(선호 전공·기간·지원비·기관 현황 등)은 판정을 바꾸지 않는다 — 학생 목록은 `alertCount`로 '문서 검토' 꼬리표만 단다([ADR-0016](../decisions/0016-demo-profile-and-screen-rules.md)). 알림 행은 `item` '<필드 표기> 표기'(예: '학점 요건 표기'), `requirement`는 알림 종류별 문장, `mine` '—'. `alertId`가 없는 행에는 필드 자체가 없다.
 - `majorMatch`는 `MATCH` · `NOT_LISTED` · `OPEN`(전공 무관). `MATCH`는 직무의 선호 전공 표기가 사람이 확정한 학과 매핑(M3)에 내 학과가 있을 때다 — 확정 전 표기(`DRAFT`, 2026-2는 없음)는 누구에게도 `MATCH`가 아니다. `MAJOR` 행은 직무마다 하나, `INFO`.
 
@@ -121,14 +131,17 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 
 **내 정보**
 - `DELETE /api/me` → 204. 계정·프로필·담은 지망이 함께 지워진다(DB cascade). 직무 조회 기록은 조회수로 남고 계정 연결만 끊긴다(`job_view.user_id` NULL).
-- `PUT /api/me/profile`: `consent`가 true가 아니면 400 `CONSENT_REQUIRED`. `GET`에 저장한 게 없으면 404 `PROFILE_NOT_FOUND`.
+- `PUT /api/me/profile`: `consent`가 true가 아니면 400 `CONSENT_REQUIRED`. `GET`에 저장한 게 없으면 404 `PROFILE_NOT_FOUND`. `certificates`는 보낸 그대로(null·`[]`·코드 목록) 저장하고 돌려준다 — 코드는 중복을 빼고 `GET /api/certificates` 순서로 맞춘다.
 - `hasProfile`(`/api/me`)이 false여도 판정·추천은 된다 — 프론트가 입력받은 프로필을 본문에 넣어 보내면 된다.
 
+**자격증 선택지**(`GET /api/certificates`, [ADR-0021](../decisions/0021-certificate-profile.md)) — `{certificates: [{code, label}]}`. 현재 회차 직무가 요구(`REQUIRED`)하거나 우대(`PREFERRED`)하는 자격증만, 코드표 순서로 준다(2026-2는 2개). 판정에 쓰지 않는 자격증은 묻지 않는다(최소 수집).
+- 프로필 화면(S1)의 체크 목록으로 쓴다. 다 확인하고 하나도 고르지 않았으면 `certificates: []`(없음)를 보낸다. 묻지 않았으면 필드를 빼도 된다(null — 필수 자격증 직무는 '직접 확인'으로 남는다).
+
 **판정·추천**
-- `eligibility`: 회차 직무 **전부**(2026-2는 40행)를 돌려준다. S4의 '요건 ↔ 내 판정'도 이 응답의 해당 행을 쓴다(별도 API 없음). 순서는 판정(`ELIGIBLE` → `NEEDS_CHECK` → `INELIGIBLE`) → 센터 참여기관 리스트 순번. 학과가 `departments`에 없으면 400 `INVALID_INPUT`(`profile.departmentId`). `homeAreaCode`는 판정에 쓰지 않아 형식만 본다.
+- `eligibility`: 회차 직무 **전부**(2026-2는 40행)를 돌려준다. S4의 '요건 ↔ 내 판정'도 이 응답의 해당 행을 쓴다(별도 API 없음). 순서는 판정(`ELIGIBLE` → `NEEDS_CHECK` → `INELIGIBLE`) → 센터 참여기관 리스트 순번. 학과가 `departments`에 없으면 400 `INVALID_INPUT`(`profile.departmentId`), 자격증 코드가 `certificate` 코드표에 없으면 400 `INVALID_INPUT`(`profile.certificates`). `homeAreaCode`는 판정에 쓰지 않아 형식만 본다.
   - `closing`: `{closesOn, closeReason, closesOnIsVirtual}` — 직무 상세의 `closing`과 같은 값이다(기준일과 상관없이 고정, 마감이 없으면 `closesOn`·`closeReason`이 null). 목록은 `closesOn` ≤ 기준일(아래 `recommendations`와 같다)이면 '마감' 꼬리표를 단다.
   - `alertCount`: 그 직무에 걸린 검토 알림 수. `jobId`가 그 직무인 알림만 세고, 기관 단위 알림은 세지 않는다.
-- `recommendations`: `INELIGIBLE`과 기준일(리플레이 중에는 `rounds/current`의 `replay.defaultAsOf`, 운영 때는 오늘)에 마감된(`closesOn` ≤ 기준일) 직무를 뺀 직무 중 적합도 점수 상위 5개. 점수는 응답에 넣지 않는다. 이유는 `reasonTemplate`(규칙 문장)을 바로 주고 `reasonStatus: PENDING`이면 프론트가 카드마다 16번을 부른다. 0개면 `items: []`와 `blockedBy: [{item, count}]` — 학교 규정에서 막은 항목별 직무 수(예: 이수 학기 40)와, 지원 불가는 아니지만 마감돼 빠진 직무 수(`item` '모집 마감').
+- `recommendations`: `INELIGIBLE`과 기준일(리플레이 중에는 `rounds/current`의 `replay.defaultAsOf`, 운영 때는 오늘)에 마감된(`closesOn` ≤ 기준일) 직무를 뺀 직무 중 적합도 점수 상위 5개. 점수는 응답에 넣지 않는다. 이유는 `reasonTemplate`(규칙 문장)을 바로 주고 `reasonStatus: PENDING`이면 프론트가 카드마다 16번을 부른다. 0개면 `items: []`와 `blockedBy: [{item, count}]` — 지원 불가로 막은 항목별 직무 수(학교 규정 항목, 예: 이수 학기 40, 그리고 필수 자격증이 없는 직무 수 `item` '자격증')와, 지원 불가는 아니지만 마감돼 빠진 직무 수(`item` '모집 마감').
   - `reasonTemplate`(ADR-0020): 해당하는 이유를 '관심 분야 → 선호 전공 포함(또는 전공 무관) → 채용연계형' 순으로 두 개까지 잇는다. 관심 분야는 겹친 원문을 그대로 짚고(예: "관심 분야가 직무 개요 '자사 SNS 채널 콘텐츠 운영 및 홍보 마케팅 업무 지원'과 겹치고" — 40자 넘는 원문이면 "관심 분야와 직무 내용이 가깝고"), 선호 전공은 소속 학과가 들어 있는 표기를 짚는다("선호 전공 '미용예술대학'에 소속 학과가 들어 있어요"). 관심 문구는 관심 유사도가 높을 때(적합도 HIGH 기준과 같음)만 넣는다. 하나도 없으면 '지원 조건을 모두 통과한 자리예요.'(`ELIGIBLE`) 또는 '확인할 조건만 챙기면 지원할 수 있는 자리예요.'. 그 뒤에 해당하면 한 문장씩 붙는다:
     - 선호 전공에 소속 학과가 없으면: '선호 전공에 소속 학과는 없어요(선호 전공은 참고 사항이에요).'
     - 추천 5개 안에 같은 기관·같은 팀의 다른 직무가 있고 요건(요구 역량 항목·학년·학점·포트폴리오·자격증) 차이가 1~2개면: "같은 팀의 해외 마케팅과 달리 '영어 가능자' 요건은 없어요." / "… 요건이 있어요."

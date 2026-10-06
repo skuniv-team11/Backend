@@ -6,8 +6,8 @@
   "summary": {
     "total": 40,
     "eligible": 12,
-    "needsCheck": 28,
-    "ineligible": 0
+    "needsCheck": 27,
+    "ineligible": 1
   },
   "jobs": [
     {
@@ -149,6 +149,60 @@
           "layer": "MAJOR",
           "item": "선호 전공",
           "requirement": "소프트웨어·컴퓨터 관련 전공",
+          "mine": "메이크업디자인학과",
+          "result": "INFO"
+        }
+      ]
+    },
+    {
+      "jobId": 107,
+      "title": "헤어 시술 보조",
+      "team": "헤어팀",
+      "institution": {
+        "id": 12,
+        "name": "누리헤어(가상)",
+        "logoPath": null
+      },
+      "verdict": "INELIGIBLE",
+      "majorMatch": "NOT_LISTED",
+      "closing": {
+        "closesOn": null,
+        "closeReason": null,
+        "closesOnIsVirtual": false
+      },
+      "alertCount": 0,
+      "reasons": [
+        {
+          "layer": "SCHOOL_RULE",
+          "item": "이수 학기",
+          "requirement": "4학기 이상",
+          "mine": "5학기",
+          "result": "MET"
+        },
+        {
+          "layer": "INSTITUTION",
+          "item": "학년",
+          "requirement": "3·4학년",
+          "mine": "3학년",
+          "result": "MET"
+        },
+        {
+          "layer": "INSTITUTION",
+          "item": "자격증",
+          "requirement": "필수 (미용 자격증 소지자)",
+          "mine": "없음",
+          "result": "NOT_MET",
+          "citation": {
+            "sourceType": "OPERATION_PLAN",
+            "documentTitle": "누리헤어(가상) 운영계획서",
+            "page": 2,
+            "quote": "미용 자격증 소지자"
+          }
+        },
+        {
+          "layer": "MAJOR",
+          "item": "선호 전공",
+          "requirement": "헤어디자인학과",
           "mine": "메이크업디자인학과",
           "result": "INFO"
         }

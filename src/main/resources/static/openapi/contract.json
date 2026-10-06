@@ -502,6 +502,7 @@
                         "graduationExpected": false,
                         "interestText": "뷰티 브랜드 SNS 마케팅",
                         "homeAreaCode": "11350",
+                        "certificates": [],
                         "department": {
                           "id": 31,
                           "name": "메이크업디자인학과"
@@ -705,6 +706,7 @@
                       "graduationExpected": false,
                       "interestText": "뷰티 브랜드 SNS 마케팅",
                       "homeAreaCode": "11350",
+                      "certificates": [],
                       "department": {
                         "id": 31,
                         "name": "메이크업디자인학과"
@@ -811,6 +813,7 @@
                     "graduationExpected": false,
                     "interestText": "뷰티 브랜드 SNS 마케팅",
                     "homeAreaCode": "11350",
+                    "certificates": [],
                     "consent": true
                   }
                 }
@@ -842,6 +845,7 @@
                       "graduationExpected": false,
                       "interestText": "뷰티 브랜드 SNS 마케팅",
                       "homeAreaCode": "11350",
+                      "certificates": [],
                       "department": {
                         "id": 31,
                         "name": "메이크업디자인학과"
@@ -1169,7 +1173,8 @@
                       "gpa": 3.4,
                       "graduationExpected": false,
                       "interestText": "뷰티 브랜드 SNS 마케팅",
-                      "homeAreaCode": "11350"
+                      "homeAreaCode": "11350",
+                      "certificates": []
                     }
                   }
                 }
@@ -1201,8 +1206,8 @@
                       "summary": {
                         "total": 40,
                         "eligible": 12,
-                        "needsCheck": 28,
-                        "ineligible": 0
+                        "needsCheck": 27,
+                        "ineligible": 1
                       },
                       "jobs": [
                         {
@@ -1348,6 +1353,60 @@
                               "result": "INFO"
                             }
                           ]
+                        },
+                        {
+                          "jobId": 107,
+                          "title": "헤어 시술 보조",
+                          "team": "헤어팀",
+                          "institution": {
+                            "id": 12,
+                            "name": "누리헤어(가상)",
+                            "logoPath": null
+                          },
+                          "verdict": "INELIGIBLE",
+                          "majorMatch": "NOT_LISTED",
+                          "closing": {
+                            "closesOn": null,
+                            "closeReason": null,
+                            "closesOnIsVirtual": false
+                          },
+                          "alertCount": 0,
+                          "reasons": [
+                            {
+                              "layer": "SCHOOL_RULE",
+                              "item": "이수 학기",
+                              "requirement": "4학기 이상",
+                              "mine": "5학기",
+                              "result": "MET"
+                            },
+                            {
+                              "layer": "INSTITUTION",
+                              "item": "학년",
+                              "requirement": "3·4학년",
+                              "mine": "3학년",
+                              "result": "MET"
+                            },
+                            {
+                              "layer": "INSTITUTION",
+                              "item": "자격증",
+                              "requirement": "필수 (미용 자격증 소지자)",
+                              "mine": "없음",
+                              "result": "NOT_MET",
+                              "citation": {
+                                "sourceType": "OPERATION_PLAN",
+                                "documentTitle": "누리헤어(가상) 운영계획서",
+                                "page": 2,
+                                "quote": "미용 자격증 소지자"
+                              }
+                            },
+                            {
+                              "layer": "MAJOR",
+                              "item": "선호 전공",
+                              "requirement": "헤어디자인학과",
+                              "mine": "메이크업디자인학과",
+                              "result": "INFO"
+                            }
+                          ]
                         }
                       ]
                     }
@@ -1452,7 +1511,8 @@
                       "gpa": 3.4,
                       "graduationExpected": false,
                       "interestText": "뷰티 브랜드 SNS 마케팅",
-                      "homeAreaCode": "11350"
+                      "homeAreaCode": "11350",
+                      "certificates": []
                     }
                   }
                 }
@@ -1686,7 +1746,8 @@
                       "gpa": 3.4,
                       "graduationExpected": false,
                       "interestText": "뷰티 브랜드 SNS 마케팅",
-                      "homeAreaCode": "11350"
+                      "homeAreaCode": "11350",
+                      "certificates": []
                     }
                   }
                 }
@@ -3249,6 +3310,46 @@
           }
         }
       }
+    },
+    "/api/certificates": {
+      "get": {
+        "tags": [
+          "기준 정보"
+        ],
+        "operationId": "getCertificates",
+        "summary": "자격증 선택지(이번 회차 직무가 요구·우대하는 것만, ADR-0021)",
+        "x-auth": "공개",
+        "description": "권한: **공개** · 화면: S1 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Certificates"
+                },
+                "examples": {
+                  "certificates.json": {
+                    "summary": "docs/api/certificates.json",
+                    "value": {
+                      "certificates": [
+                        {
+                          "code": "BEAUTY",
+                          "label": "미용 자격증·면허증"
+                        },
+                        {
+                          "code": "ACCOUNTING",
+                          "label": "회계·자금 관련 자격증"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3560,6 +3661,39 @@
           "rows",
           "alerts"
         ]
+      },
+      "Certificate": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "maxLength": 40,
+            "description": "`GET /api/certificates`의 code"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "label"
+        ]
+      },
+      "Certificates": {
+        "type": "object",
+        "properties": {
+          "certificates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Certificate"
+            }
+          }
+        },
+        "required": [
+          "certificates"
+        ],
+        "description": "이번 회차 직무가 요구·우대하는 자격증만, 코드표 순서(ADR-0021)"
       },
       "Citation": {
         "type": "object",
@@ -5007,6 +5141,20 @@
             ],
             "pattern": "^(11|28|41)\\d{3}$",
             "description": "사는 곳(선택). null이면 통근을 서경대에서 출발로 본다. 통근 조회에만 쓴다"
+          },
+          "certificates": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$",
+              "maxLength": 40,
+              "description": "`GET /api/certificates`의 code"
+            },
+            "maxItems": 20,
+            "description": "가진 자격증(선택, ADR-0021). []이면 없음, null이거나 빠지면 답하지 않음(자격증 줄이 '직접 확인'). 판정의 자격증 줄에만 쓴다"
           }
         },
         "required": [
@@ -5073,6 +5221,20 @@
             "pattern": "^(11|28|41)\\d{3}$",
             "description": "사는 곳(선택). null이면 통근을 서경대에서 출발로 본다. 통근 조회에만 쓴다"
           },
+          "certificates": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$",
+              "maxLength": 40,
+              "description": "`GET /api/certificates`의 code"
+            },
+            "maxItems": 20,
+            "description": "가진 자격증(선택, ADR-0021). []이면 없음, null이거나 빠지면 답하지 않음(자격증 줄이 '직접 확인'). 판정의 자격증 줄에만 쓴다"
+          },
           "consent": {
             "type": "boolean",
             "description": "true가 아니면 400 CONSENT_REQUIRED"
@@ -5131,6 +5293,20 @@
             "pattern": "^(11|28|41)\\d{3}$",
             "description": "사는 곳(선택). null이면 통근을 서경대에서 출발로 본다. 통근 조회에만 쓴다"
           },
+          "certificates": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$",
+              "maxLength": 40,
+              "description": "`GET /api/certificates`의 code"
+            },
+            "maxItems": 20,
+            "description": "가진 자격증(선택, ADR-0021). []이면 없음, null이거나 빠지면 답하지 않음(자격증 줄이 '직접 확인'). 판정의 자격증 줄에만 쓴다"
+          },
           "department": {
             "$ref": "#/components/schemas/DepartmentRef"
           },
@@ -5159,6 +5335,35 @@
           "homeArea",
           "isExample"
         ]
+      },
+      "ReasonCitation": {
+        "type": "object",
+        "properties": {
+          "sourceType": {
+            "$ref": "#/components/schemas/SourceType"
+          },
+          "documentTitle": {
+            "type": "string"
+          },
+          "page": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "description": "쪽이 없는 문서면 null"
+          },
+          "quote": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceType",
+          "documentTitle",
+          "page",
+          "quote"
+        ],
+        "description": "판정 이유 줄의 출처(Citation과 같은 모양). 원문 PDF 링크는 주지 않는다"
       },
       "ReasonLayer": {
         "type": "string",
@@ -5191,6 +5396,10 @@
             "type": "integer",
             "minimum": 1,
             "description": "검토 알림(M2)의 fieldKey가 판정 항목(gradeRequirement·gpaRequirement·portfolio·certificate)이면 그 항목 행(CHECK)에 붙는다"
+          },
+          "citation": {
+            "$ref": "#/components/schemas/ReasonCitation",
+            "description": "그 요건의 출처. 지금은 자격증 행에만 있다(ADR-0021). 없으면 필드째 빠진다"
           }
         },
         "required": [
@@ -5338,7 +5547,7 @@
                 "count"
               ]
             },
-            "description": "items가 비었을 때 막은 요건별 직무 수"
+            "description": "items가 비었을 때 막은 요건별 직무 수(학교 규정 항목 · '자격증' · '모집 마감')"
           }
         },
         "required": [
@@ -5435,6 +5644,20 @@
             ],
             "pattern": "^(11|28|41)\\d{3}$",
             "description": "사는 곳(선택). null이면 통근을 서경대에서 출발로 본다. 통근 조회에만 쓴다"
+          },
+          "certificates": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$",
+              "maxLength": 40,
+              "description": "`GET /api/certificates`의 code"
+            },
+            "maxItems": 20,
+            "description": "가진 자격증(선택, ADR-0021). []이면 없음, null이거나 빠지면 답하지 않음(자격증 줄이 '직접 확인'). 판정의 자격증 줄에만 쓴다"
           },
           "department": {
             "$ref": "#/components/schemas/DepartmentRef"
