@@ -27,7 +27,7 @@ public class OpenApiConfig {
                         .title("현장뛰자 API — 구현")
                         .version("0.0.1")
                         .description("지금 코드에 있는 엔드포인트만 보인다(springdoc이 컨트롤러에서 만든다). "
-                                + "24개 전체 계약은 위 드롭다운의 '계약'에서 본다."))
+                                + "25개 전체 계약은 위 드롭다운의 '계약'에서 본다."))
                 .components(new Components().addSecuritySchemes(BEARER, new SecurityScheme()
                         .type(SecurityScheme.Type.HTTP)
                         .scheme("bearer")

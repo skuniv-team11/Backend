@@ -16,7 +16,7 @@ spring:
 
 springdoc:
   # Swagger UI 드롭다운에 스펙 두 개(ADR-0011)
-  #  계약 = docs/api로 만든 정적 파일(static/openapi/contract.json, scripts/build_openapi.py가 생성) — 24개 전부
+  #  계약 = docs/api로 만든 정적 파일(static/openapi/contract.json, scripts/build_openapi.py가 생성) — 25개 전부
   #  구현 = springdoc이 지금 컨트롤러에서 만든 것(/v3/api-docs) — 구현된 것만
   paths-to-match: /api/**
   swagger-ui:
