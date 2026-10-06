@@ -57,6 +57,32 @@ class FitScorerTest {
     }
 
     @Test
+    void 선호_전공도_관심도_맞지_않으면_추천할_이유가_없다() {
+        // ADR-0022: 점수가 있어도 이유가 없는 직무는 추천하지 않는다
+        var jobs = List.of(job(1, 1, Set.of(), "Y3_4"), job(2, 2, Set.of(), "Y3_4"), job(3, 3, Set.of(DEPT), "Y3_4"));
+        Map<Integer, Features> f = Map.of(
+                1, features("소프트웨어 개발 및 시스템 구축", "EXPERIENCE", 1_617_660),
+                2, features("미용 시술 보조와 고객 응대", "HIRING", 2_156_880),
+                3, features("물류 창고 재고 관리", "EXPERIENCE", 1_617_660));
+        List<Scored> s = FitScorer.score(judge(jobs), f, "소프트웨어 개발");
+        assertThat(s).filteredOn(Scored::relevant).extracting(Scored::jobId).containsExactlyInAnyOrder(1, 3);
+        assertThat(s).filteredOn(x -> x.jobId() == 2).singleElement()
+                .satisfies(x -> assertThat(x.interestMatch()).isFalse());
+        // 관심 문장이 없으면 선호 전공이 맞는 직무만
+        assertThat(FitScorer.score(judge(jobs), f, null)).filteredOn(Scored::relevant).extracting(Scored::jobId)
+                .containsExactly(3);
+    }
+
+    @Test
+    void 관심_겹침은_원_코사인_하한과_0점05_또는_최댓값의_절반으로_본다() {
+        assertThat(FitScorer.interestMatch(0.041, 1.0)).isTrue();   // '백엔드 개발자' ↔ 소프트웨어 개발(가장 많이 겹침)
+        assertThat(FitScorer.interestMatch(0.016, 0.40)).isFalse(); // '개발' 한 낱말만 겹친 마케팅 직무
+        assertThat(FitScorer.interestMatch(0.06, 0.30)).isTrue();   // 많이 겹치는 직무가 따로 있어도 0.05 이상이면
+        assertThat(FitScorer.interestMatch(0.015, 1.0)).isFalse();  // 1등이어도 하한 아래면 우연
+        assertThat(FitScorer.interestMatch(0.0, 0.0)).isFalse();
+    }
+
+    @Test
     void 같은_조건이면_지원_가능_지원비_채용연계_순으로_가점() {
         var jobs = List.of(
                 job(1, 1, Set.of(), "Y4"),      // 3학년이라 확인 필요

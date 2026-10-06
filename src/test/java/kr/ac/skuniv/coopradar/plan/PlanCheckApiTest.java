@@ -79,12 +79,16 @@ class PlanCheckApiTest {
         assertThat(statuses).containsOnly("OPEN");
         List<Integer> remaining = JsonPath.read(body, "$.alternatives[*].remaining");
         assertThat(remaining).allSatisfy(r -> assertThat(r).isPositive());
-        // ADR-0016: 대안은 ELIGIBLE만, 1지망 기관이 아니면 '관심 분야와 가깝고'
+        // ADR-0016: 대안은 ELIGIBLE만. 1지망 기관이 아니면 관심 문장과 겹칠 때만 '관심 분야와 가깝고',
+        // 겹치지 않으면 '지원 조건을 모두 통과했고'(ADR-0022 — 가깝지 않은데 가깝다고 말하지 않는다)
         List<String> verdicts = JsonPath.read(body, "$.alternatives[*].verdict");
         assertThat(verdicts).containsOnly("ELIGIBLE");
         List<String> whys = JsonPath.read(body, "$.alternatives[1:].why");
-        assertThat(whys).allSatisfy(w -> assertThat(w).matches("(1지망과 같은 기관의 직무이고|관심 분야와 가깝고), "
-                + "(지금 담은 사람이 0명이에요\\.|남은 자리가 \\d+개예요\\.)"));
+        assertThat(whys).allSatisfy(w -> assertThat(w).matches(
+                "(1지망과 같은 기관의 직무이고|관심 분야와 가깝고|지원 조건을 모두 통과했고), "
+                        + "(지금 담은 사람이 0명이에요\\.|남은 자리가 \\d+개예요\\.)"));
+        assertThat(whys).anyMatch(w -> w.startsWith("관심 분야와 가깝고"))
+                .anyMatch(w -> w.startsWith("지원 조건을 모두 통과했고"));
     }
 
     @Test
