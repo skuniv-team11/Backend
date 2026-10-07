@@ -3,7 +3,7 @@
 프론트는 이 문서의 응답 예시로 목업을 만들고, 백엔드는 이 형태를 지킨다. 형태를 바꾸려면 이 문서를 먼저 고친다.
 Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 맞다.
 
-**Swagger**: https://coop-radar-api.onrender.com/swagger-ui.html (배포 서버). 드롭다운 '계약'은 이 문서와 예시 JSON으로 만든 26개 전부, '구현'은 지금 코드에 있는 것만 보여 준다(ADR-0011).
+**Swagger**: https://coop-radar-api.onrender.com/swagger-ui.html (배포 서버). 드롭다운 '계약'은 이 문서와 예시 JSON으로 만든 27개 전부, '구현'은 지금 코드에 있는 것만 보여 준다(ADR-0011).
 - '계약' 스펙은 `python scripts/build_openapi.py`가 이 폴더로 만든다(`src/main/resources/static/openapi/contract.json`). 이 문서나 예시 JSON을 고쳤으면 다시 돌려 같은 PR에 넣는다. 예시가 스키마(타입·null·코드값·범위)에 안 맞으면 여기서 실패한다.
 - 새 엔드포인트는 스크립트의 `ENDPOINTS`(요청·응답 스키마와 예시 파일)와 `S`(스키마)에도 넣는다.
 
@@ -55,6 +55,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | 24 | 센터 | GET | `/api/center/board?asOf=` | CENTER | C4 | 모집 현황판 | [응답](center-board.json) |
 | 25 | 직무 | GET | `/api/jobs/{jobId}/views` | 로그인 | S4·C4 | 직무 조회수(학생 계정마다 직무별 하루 1번) | [응답](job-views.json) |
 | 26 | 기준 정보 | GET | `/api/certificates` | 공개 | S1 | 자격증 선택지(이번 회차 직무가 요구·우대하는 것만, ADR-0021) | [응답](certificates.json) |
+| 27 | 지망 | POST | `/api/me/plan/items/{jobId}/alternatives` | STUDENT | S3·S4 | 담은 직무의 모집 신호 + 그 직무 기준 빈 자리 제안([담기] 바로 뒤, ADR-0029) | [요청](me-plan-check.request.json) · [응답](me-plan-item-alternatives.json) |
 
 ## 공통 객체
 **Profile** (요청 본문의 `profile`, `PUT /api/me/profile`)
@@ -204,6 +205,11 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - 신호의 관심은 본인이 담은 것을 뺀 다른 사람 수다(현황판과 다를 수 있다).
   - 대안(`alternatives`) = `verdict`가 `ELIGIBLE`이고, `CLOSED`가 아니고, 남은 자리(`headcount` − `interest`)가 0보다 크고, 이미 담은 직무(`plan_item`)가 아닌 직무. 적합도 점수 → 남은 자리 순으로 최대 5개([ADR-0016](../decisions/0016-demo-profile-and-screen-rules.md)). 적합도 점수는 추천과 같다([ADR-0018](../decisions/0018-recommendation-rule-keyword.md)).
   - `why`는 규칙 문장이다. 앞: 1지망과 같은 기관이면 '1지망과 같은 기관의 직무이고', 관심 문장과 겹치면(위 '추천할 이유'의 관심 기준) '관심 분야와 가깝고', 둘 다 아니면 '지원 조건을 모두 통과했고'(ADR-0022). 뒤: 관심이 0이면 '지금 담은 사람이 0명이에요.', 아니면 '남은 자리가 N개예요.' 둘을 쉼표로 잇는다(예: '1지망과 같은 기관의 직무이고, 지금 담은 사람이 0명이에요.').
+- 담은 직무 기준 빈 자리(`POST items/{jobId}/alternatives`, ADR-0029): [담기]가 201·200으로 끝난 바로 뒤에 화면이 부른다. 본문은 `check`와 같다(`{profile, asOf?}`).
+  - `item` = 그 담은 직무와 신호(순위를 안 정했으면 `rank: null`). 관심은 `check`처럼 본인을 뺀 다른 사람 수다.
+  - `alternatives`는 `check`와 같은 규칙·순서·모양이다(최대 5개, 그 직무와 이미 담은 직무는 빠진다). `why` 앞부분만 기준이 1지망 대신 이 직무다 — 같은 기관이면 '방금 담은 직무와 같은 기관의 직무이고'.
+  - 제안을 띄울지는 화면이 정한다: `item.signal.interest ≥ item.signal.headcount`이고 `alternatives`가 있을 때만(내 지망 카드 안 제안과 같은 기준). 응답에 몰림 상태·경고 문장은 없고, 화면도 '몰림' 단어를 쓰지 않는다(ADR-0015).
+  - 이번 회차에서 담지 않은 직무면 404 `PLAN_ITEM_NOT_FOUND`.
 - `asOf`는 회차 기간 안이어야 한다(아니면 400 `AS_OF_OUT_OF_RANGE`). 생략하면 `rounds/current`의 `replay.defaultAsOf`.
 
 **센터** — CENTER만(아니면 403 `FORBIDDEN_ROLE`). 회차 직무 전부를 리스트 순번대로 행으로 준다. `asOf` 규칙은 지망 점검과 같다(생략하면 `replay.defaultAsOf`, 모집기간 밖이면 400 `AS_OF_OUT_OF_RANGE`, 날짜 형식이 아니면 400 `INVALID_INPUT`). 세부 정의는 [ADR-0017](../decisions/0017-center-board-details.md).
@@ -228,7 +234,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | `FORBIDDEN_ROLE` | 403 | 역할이 맞지 않음(학생이 현황판 등) |
 | `PROFILE_NOT_FOUND` | 404 | 저장한 프로필 없음 |
 | `JOB_NOT_FOUND` | 404 | 없는 직무 |
-| `PLAN_ITEM_NOT_FOUND` | 404 | 담지 않은 직무를 취소 |
+| `PLAN_ITEM_NOT_FOUND` | 404 | 담지 않은 직무를 취소하거나 그 직무 기준 빈 자리를 물음 |
 | `EMAIL_TAKEN` | 409 | 이미 가입한 이메일 |
 | `RATE_LIMITED` | 429 | 체험 계정 만들기 호출 제한 |
 | `INTERNAL` | 500 | 그 밖의 서버 오류 |
