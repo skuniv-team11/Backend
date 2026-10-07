@@ -67,15 +67,16 @@ class CenterApiTest {
                 .andReturn().getResponse().getContentAsString();
         Contract.assertSameShape(body, Contract.responseExample("getCenterBoard", 200, null));
 
-        // 101: 7/18 센터 모집마감 → CLOSED, 광고홍보콘텐츠학과 115명 → 대상 학과 좁음, 포트폴리오 필수
+        // 101: 7/18 센터 모집마감 → CLOSED, 광고홍보콘텐츠학과 115명 + 옛 이름 광고홍보영상학과 80명(ADR-0025) → 대상 학과 좁음,
+        // 포트폴리오 필수
         Map<String, Object> r101 = row(body, 101);
         assertThat(JsonPath.<String>read(r101, "$.signal.status")).isEqualTo("CLOSED");
         assertThat(JsonPath.<Integer>read(r101, "$.signal.interest")).isEqualTo(2);
-        assertThat(JsonPath.<Integer>read(r101, "$.eligiblePool")).isEqualTo(115);
+        assertThat(JsonPath.<Integer>read(r101, "$.eligiblePool")).isEqualTo(195);
         assertThat(JsonPath.<List<String>>read(r101, "$.risks[*].code"))
                 .containsExactly("NARROW_POOL", "PORTFOLIO_REQUIRED");
         assertThat(JsonPath.<String>read(r101, "$.risks[0].label")).isEqualTo("대상 학과가 좁음");
-        assertThat(JsonPath.<String>read(r101, "$.risks[0].detail")).isEqualTo("선호 전공 재학생 115명");
+        assertThat(JsonPath.<String>read(r101, "$.risks[0].detail")).isEqualTo("선호 전공 재학생 195명");
 
         // 120: 7/23에는 이미 정원(2/2)이라 예상일 없음 — 7/18에는 최근 3일 추세로 7/21에 정원 도달 예상
         assertThat(JsonPath.<Object>read(row(body, 120), "$.signal.expectedFullOn")).isNull();

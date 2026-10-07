@@ -146,11 +146,10 @@ for j in docs["eligibility.json"]["jobs"]:
     check(all(r["citation"]["sourceType"] == {"SCHOOL_RULE": "SCHOOL_NOTICE"}.get(r["layer"], r["citation"]["sourceType"])
               and (r["citation"]["page"] is None) == (r["citation"]["sourceType"] != "OPERATION_PLAN")
               for r in rs if "citation" in r), f"판정 {j['jobId']} citation 출처 종류·쪽")
-    if any(r["result"] == "NOT_MET" and (r["layer"] == "SCHOOL_RULE" or (r["layer"] == "INSTITUTION" and r["item"] == "자격증"))
-           for r in rs):
-        want = "INELIGIBLE"  # 학교 규정 미충족 또는 필수 자격증 없음(ADR-0021)
-    elif any(r["layer"] == "INSTITUTION" and r["result"] in ("NOT_MET", "CHECK") for r in rs):
-        want = "NEEDS_CHECK"
+    if any(r["result"] == "NOT_MET" and r["layer"] in ("SCHOOL_RULE", "INSTITUTION") for r in rs):
+        want = "INELIGIBLE"  # 학교 규정·기관 조건(학년·학점·필수 자격증)을 못 맞춤(ADR-0024)
+    elif any(r["layer"] == "INSTITUTION" and r["result"] == "CHECK" for r in rs):
+        want = "NEEDS_CHECK"  # 챙길 것: 필수 포트폴리오, 문서끼리 엇갈린 판정 항목
     else:
         want = "ELIGIBLE"
     check(j["verdict"] == want, f"판정 {j['jobId']} {j['verdict']} ≠ {want}")

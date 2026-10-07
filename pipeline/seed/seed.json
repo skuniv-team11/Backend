@@ -1951,7 +1951,7 @@
    "certificate_code": null,
    "certificate_text": null,
    "major_text": "인문, 사회계열",
-   "major_open": false,
+   "major_open": true,
    "closes_on": "2026-07-24",
    "close_reason": "APPLICATION_DEADLINE",
    "closes_on_is_virtual": false,
@@ -2575,7 +2575,7 @@
    "certificate_code": null,
    "certificate_text": null,
    "major_text": "글로벌비즈니스어학부, 경영학부, 광고홍보콘텐츠학과",
-   "major_open": false,
+   "major_open": true,
    "closes_on": null,
    "close_reason": null,
    "closes_on_is_virtual": false,
@@ -2618,7 +2618,7 @@
    "certificate_code": null,
    "certificate_text": null,
    "major_text": "글로벌비즈니스어학부, 경영학부, 광고홍보콘텐츠학과",
-   "major_open": false,
+   "major_open": true,
    "closes_on": null,
    "close_reason": null,
    "closes_on_is_virtual": false,
@@ -3126,6 +3126,10 @@
    "department_id": 10
   },
   {
+   "alias_id": 1,
+   "department_id": 9
+  },
+  {
    "alias_id": 2,
    "department_id": 37
   },
@@ -3144,6 +3148,10 @@
   {
    "alias_id": 5,
    "department_id": 9
+  },
+  {
+   "alias_id": 5,
+   "department_id": 10
   },
   {
    "alias_id": 6,
@@ -15564,10 +15572,10 @@
   {
    "job_id": 116,
    "item": "MAJOR",
-   "source_type": "INSTITUTION_LIST",
-   "document_title": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
-   "page": null,
-   "quote": "전공 : 인문, 사회계열"
+   "source_type": "OPERATION_PLAN",
+   "document_title": "챔프스터디 운영계획서",
+   "page": 4,
+   "quote": "전공무관 3명"
   },
   {
    "job_id": 117,
@@ -15908,10 +15916,10 @@
   {
    "job_id": 130,
    "item": "MAJOR",
-   "source_type": "INSTITUTION_LIST",
-   "document_title": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
-   "page": null,
-   "quote": "전공 : 글로벌비즈니스어학부, 경영학부, 광고홍보콘텐츠학과"
+   "source_type": "OPERATION_PLAN",
+   "document_title": "위아프렌즈 운영계획서",
+   "page": 3,
+   "quote": "무관 (1인)"
   },
   {
    "job_id": 131,
@@ -15924,10 +15932,10 @@
   {
    "job_id": 131,
    "item": "MAJOR",
-   "source_type": "INSTITUTION_LIST",
-   "document_title": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
-   "page": null,
-   "quote": "전공 : 글로벌비즈니스어학부, 경영학부, 광고홍보콘텐츠학과"
+   "source_type": "OPERATION_PLAN",
+   "document_title": "위아프렌즈 운영계획서",
+   "page": 5,
+   "quote": "무관 (1인)"
   },
   {
    "job_id": 132,

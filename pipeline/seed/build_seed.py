@@ -475,6 +475,9 @@ def build(a):
             # 계획서 값
             basis = BASIS.get(g("stipend_basis"), "UNSPECIFIED")
             p_portfolio = LEVEL[g("portfolio")]
+            # 선호 전공: 리스트 표기 그대로 두되, 계획서가 '전공 무관'이면 전공 무관으로 본다 — 기관이 직접 쓴 문서라서
+            # (10/7 사용자 결정, ADR-0025). 리스트와 다르면 아래에서 LIST_MISMATCH 알림도 그대로 만든다
+            major_open = "무관" in (g("major_requirement") or "")
             portfolio = l_portfolio or p_portfolio
             certificate = LEVEL[g("certificate")]
             certificate_code = certificate_text = None
@@ -536,7 +539,7 @@ def build(a):
                 "headcount": headcount, "grade_rule": GRADE[l_grade], "gpa_min": l_gpa,
                 "portfolio": portfolio, "certificate": certificate, "certificate_code": certificate_code,
                 "certificate_text": certificate_text,
-                "major_text": l_major, "major_open": False,
+                "major_text": l_major, "major_open": major_open,
                 "closes_on": closes_on.isoformat() if closes_on else None, "close_reason": close_reason,
                 "closes_on_is_virtual": False, "final_assigned": fa}
             if not team or not title:
@@ -565,7 +568,10 @@ def build(a):
                                                    "document_title": title, "page": page, "quote": quote[:300]})
 
             source("GRADE", list_quote(r["선호전공학년"], r"학년"))
-            if l_major:
+            if major_open:   # 판정이 쓴 값('전공 무관')은 계획서 쪽·인용(ADR-0025)
+                f = pj["major_requirement"]
+                source("MAJOR", text(f["quote"]), f["page"], f"{name} 운영계획서", "OPERATION_PLAN")
+            elif l_major:
                 source("MAJOR", list_quote(r["선호전공학년"], r"전공"))
             if l_gpa:
                 source("GPA", list_quote(note, r"학점\s*\d"))
