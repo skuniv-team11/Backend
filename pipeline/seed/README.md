@@ -7,6 +7,7 @@
 참여기관 리스트 xlsx ─┐                 e1 out/full/*.json (운영계획서) ─┐    curated/round.json        사업·회차
 매칭 결과 xlsx ── matching_counts.py ─→ out/final_assigned.csv           ├─→ curated/departments.csv   학과(교육통계)
                       │                 e2 out/*.json (수기·실습 결과)   │    curated/major_aliases.csv 전공 표기 → 학과
+                      │                                                  │    curated/department_clusters.csv 가까운 학과 묶음
                       │                 e6 nts_status.csv (국세청)       │    curated/overrides.json    화면용 고침·자격증
                       │                                                  │    curated/certificates.csv  자격증 코드표
                       └──────────────── build_seed.py ←──────────────────┘    curated/ids.json          시드 id 등록부
@@ -76,3 +77,7 @@ python areas.py "<법정동코드 전체자료.zip>"     # → curated/areas.csv
 - (없음) — 사는 곳(`area`)은 10/2부터 아래 '사는 곳'대로 들어간다.
 - 좌표는 시드에 없다. 통근 조회 때 카카오 주소 검색으로 그때 구하고 버린다(ADR-0007).
 - `job_embedding`(E5)·`round_result`(센터 동의 뒤 로컬 적재)는 이 시드가 건드리지 않는다.
+
+## 가까운 학과 묶음 (ADR-0028)
+
+`curated/department_clusters.csv` — 같은 묶음의 학과끼리 '가까운 전공'이다(예: 컴퓨터공학과 ↔ 소프트웨어학과). `status`가 `CONFIRMED`인 묶음만 `department_cluster`·`department_cluster_member`에 넣는다(`DRAFT`는 넣지 않음). 학과 이름은 재학생이 있는 학과여야 하고 한 묶음에 둘 이상. 선호 전공 판정에는 직무가 학과를 콕 집어 적은 표기(학과 2개 이하)만 쓰므로, 계열 표기 직무는 묶음과 상관없다. 묶음을 고치면 `build_seed.py` → `to_sql.py`를 다시 돌리고, 이유 문장의 지난 매칭 숫자(`recommend.MatchingHistory`)가 같은지 확인한다 — 그 숫자는 이 묶음으로 센 값이다.

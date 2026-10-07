@@ -38,7 +38,9 @@ class ReasonApiTest {
     static final AtomicReference<Optional<ReasonDraft>> NEXT = new AtomicReference<>(Optional.empty());
     static final AtomicInteger CALLS = new AtomicInteger();
     static final AtomicReference<String> LAST_MESSAGE = new AtomicReference<>();
-    static final String NOT_LISTED = "메이크업디자인학과는 회사가 선호하는 전공에는 없지만, 선호 전공은 지원 자격과는 상관없어요.";
+    // 세정 SNS, 영상(102): 선호 전공(무대패션디자인전공·광고홍보콘텐츠학과·영화영상학과·경영학부)과 메이크업디자인학과는 먼 전공(ADR-0028)
+    static final String NOT_LISTED = "메이크업디자인학과는 회사가 선호하는 전공(무대패션디자인전공·광고홍보콘텐츠학과 등)과는 거리가 있는 전공이에요. "
+            + "지난 매칭(2025-2~2026-2)에서 이렇게 먼 전공으로 매칭된 학생은 73명 중 7명이었어요.";
 
     @TestConfiguration
     static class StubConfig {

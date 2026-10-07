@@ -102,25 +102,30 @@ public class RecommendRepository {
         return out;
     }
 
+    /** 직무의 선호 전공 표기 하나와 확정된 학과(ADR-0026·0028 문장에 쓴다). */
+    record Alias(String label, Set<Integer> departments) {
+    }
+
     /**
-     * 직무별로, 이 학과가 들어 있는 선호 전공 표기(예: 메이크업디자인학과 → '미용예술대학'). 여러 개면 가장 좁은 표기(가리키는
-     * 학과가 적은 것 — 학과를 콕 집은 표기가 계열보다 먼저, ADR-0026), 같으면 표기 id가 작은 것.
+     * 회차 직무별 선호 전공 표기 — 가리키는 학과가 적은 표기 먼저(같으면 표기 id 순). 이유 문장이 내 학과가 든 가장 좁은 표기,
+     * 가까운 학과가 든 가장 좁은 표기, 먼 전공일 때의 표기 요약을 고른다. 확정 전 표기는 학과가 비어 있다.
      */
-    Map<Integer, String> majorLabels(int roundId, int departmentId) {
-        Map<Integer, String> out = new HashMap<>();
+    Map<Integer, List<Alias>> majorAliases(int roundId) {
+        Map<Integer, List<Alias>> out = new HashMap<>();
         db.sql("""
-                        SELECT jma.job_id, ma.label
+                        SELECT jma.job_id, ma.label,
+                               (SELECT array_agg(mad.department_id ORDER BY mad.department_id)
+                                FROM major_alias_department mad WHERE mad.alias_id = ma.id) AS departments
                         FROM job_major_alias jma
                         JOIN job j ON j.id = jma.job_id
                         JOIN major_alias ma ON ma.id = jma.alias_id
-                        JOIN major_alias_department mad ON mad.alias_id = jma.alias_id
-                        WHERE j.round_id = :round AND mad.department_id = :department
+                        WHERE j.round_id = :round
                         ORDER BY jma.job_id,
                                  (SELECT count(*) FROM major_alias_department m2 WHERE m2.alias_id = ma.id), ma.id""")
                 .param("round", roundId)
-                .param("department", departmentId)
                 .query(rs -> {
-                    out.putIfAbsent(rs.getInt("job_id"), rs.getString("label"));
+                    out.computeIfAbsent(rs.getInt("job_id"), k -> new ArrayList<>())
+                            .add(new Alias(rs.getString("label"), Set.copyOf(integers(rs.getArray("departments")))));
                 });
         return out;
     }

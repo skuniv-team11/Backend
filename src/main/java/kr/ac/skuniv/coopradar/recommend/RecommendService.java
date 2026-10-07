@@ -2,10 +2,12 @@ package kr.ac.skuniv.coopradar.recommend;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.MajorMatch;
@@ -129,8 +131,14 @@ public class RecommendService {
     }
 
     /** 근거를 고르는 데 필요한 것을 한 번에 읽는다(요청마다 — 직무 40개라 가볍다). */
+    /**
+     * @param aliases 직무별 선호 전공 표기(가리키는 학과가 적은 것 먼저)
+     * @param departmentId 학생 학과
+     * @param near   학생 학과와 같은 묶음의 가까운 학과(ADR-0028)
+     */
     private record Context(Map<Integer, JobText> texts, Map<Integer, List<Testimonial>> testimonials,
-                           Map<Integer, String> majorLabels, Map<String, String> certificateLabels, EvidencePicker picker) {
+                           Map<Integer, List<RecommendRepository.Alias>> aliases, int departmentId, Set<Integer> near,
+                           Map<String, String> certificateLabels, EvidencePicker picker) {
     }
 
     private Context context(int roundId, ProfileInput profile) {
@@ -138,8 +146,9 @@ public class RecommendService {
                 .collect(Collectors.toMap(JobText::jobId, Function.identity(), (a, b) -> a, LinkedHashMap::new));
         Map<Integer, List<Testimonial>> testimonials = repository.testimonials(roundId);
         List<Testimonial> allTestimonials = testimonials.values().stream().flatMap(List::stream).toList();
-        return new Context(texts, testimonials, repository.majorLabels(roundId, profile.departmentId()),
-                repository.certificateLabels(), new EvidencePicker(texts.values(), allTestimonials, profile.interestText()));
+        return new Context(texts, testimonials, repository.majorAliases(roundId), profile.departmentId(),
+                eligibility.nearDepartments(profile.departmentId()), repository.certificateLabels(),
+                new EvidencePicker(texts.values(), allTestimonials, profile.interestText()));
     }
 
     private static Explained explain(Context ctx, Scored s, List<Scored> top) {
@@ -149,12 +158,36 @@ public class RecommendService {
                 : ctx.picker().pick(text, ctx.testimonials().getOrDefault(r.institution().id(), List.of()));
         String contrast = contrast(ctx, s, top);
         boolean hiring = "HIRING".equals(s.features().jobType());
-        String majorLabel = r.majorMatch() == MajorMatch.MATCH ? ctx.majorLabels().get(r.jobId()) : null;
+        String majorLabel = majorLabel(ctx, r.jobId(), r.majorMatch(), FitSentences.majorText(r));
         String lead = FitSentences.lead(s.judged(), ctx.certificateLabels());
         String major = FitSentences.major(r.verdict(), s.major(), FitSentences.department(r), majorLabel);
         String template = ReasonTemplates.build(lead, major, s.interestFit(), picked.matched(), hiring, contrast);
         return new Explained(s, picked.citations(), template, picked.matched(), contrast, lead, major,
                 ReasonTemplates.interestNote(s.interestFit()));
+    }
+
+    /**
+     * 전공 문장에 쓸 선호 전공 표기: 포함이면 내 학과가 든 가장 좁은 표기, 가까운 전공이면 가까운 학과가 든 가장 좁은 표기,
+     * 밖이면 표기 요약('A·B 등' — 리스트에 적힌 순서), 전공 무관이면 없음.
+     *
+     * @param majorText 선호 전공 원문(리스트 칸). 요약의 표기 순서를 회사가 적은 순서로 맞춘다
+     */
+    static String majorLabel(Context ctx, int jobId, MajorMatch match, String majorText) {
+        List<RecommendRepository.Alias> aliases = ctx.aliases().getOrDefault(jobId, List.of());
+        return switch (match) {
+            case MATCH -> aliases.stream().filter(a -> a.departments().contains(ctx.departmentId()))
+                    .map(RecommendRepository.Alias::label).findFirst().orElse(null);
+            case NEAR -> aliases.stream().filter(a -> a.departments().size() <= FitScorer.DIRECT_MAX_DEPARTMENTS)
+                    .filter(a -> a.departments().stream().anyMatch(ctx.near()::contains))
+                    .map(RecommendRepository.Alias::label).findFirst().orElse(null);
+            case NOT_LISTED -> {
+                String text = majorText == null ? "" : majorText;
+                yield FitSentences.labelSummary(aliases.stream().map(RecommendRepository.Alias::label)
+                        .sorted(Comparator.comparingInt(l -> text.indexOf(l) < 0 ? Integer.MAX_VALUE : text.indexOf(l)))
+                        .toList());
+            }
+            case OPEN -> null;
+        };
     }
 
     /** 추천 안에서 같은 기관·같은 팀인 다른 직무(순위가 앞선 것 먼저)와 요건이 다른 점. */

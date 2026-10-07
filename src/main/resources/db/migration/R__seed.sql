@@ -1,7 +1,7 @@
 -- R__seed.sql — 시드 데이터(Flyway 반복 마이그레이션, ADR-0014). 손으로 고치지 않는다.
 -- 만드는 법: python pipeline/seed/build_seed.py ... → python pipeline/seed/to_sql.py (pipeline/seed/README.md)
--- seed.json sha256: bf36cf3e133adb7611631cfae87660586cc8e2b7f08f58409c9dc5f579ce04be
--- body sha256: 4eca13019b63a89bdd632dd5f23f43fc5d05f7a186e882d03726d614dd9cef75
+-- seed.json sha256: c8ed7325ee881975499a39d480c55db897d44a982bd84e9dcc341c93c21d2c2d
+-- body sha256: 0fe17855060b0afae3893567b4c951bc7a0756b44c4f82a342f6e061112ec035
 
 -- 1. 자식 테이블은 통째로 지운다(다시 넣는다)
 DELETE FROM replay_signal;
@@ -14,6 +14,8 @@ DELETE FROM job_weekly_plan;
 DELETE FROM job_major_alias;
 DELETE FROM major_alias_department;
 DELETE FROM major_alias;
+DELETE FROM department_cluster_member;
+DELETE FROM department_cluster;
 
 -- 2. 부모 테이블: seed에 없는 행을 지운다(job → plan_item cascade). 학생 프로필이 쓰는 학과는 남긴다
 DELETE FROM job WHERE id NOT IN (101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140);
@@ -492,6 +494,62 @@ INSERT INTO major_alias_department (alias_id, department_id) VALUES
   (23, 33),
   (24, 21),
   (25, 44);
+
+-- department_cluster 11행
+INSERT INTO department_cluster (id, label) VALUES
+  (1, '컴퓨터·소프트웨어'),
+  (2, '경영·금융'),
+  (3, '경영·물류'),
+  (4, '마케팅·광고'),
+  (5, '광고·영상'),
+  (6, '미용'),
+  (7, '디자인'),
+  (8, '어학'),
+  (9, '공공·인재'),
+  (10, '화학·생명'),
+  (11, '건설·도시');
+
+-- department_cluster_member 39행
+INSERT INTO department_cluster_member (cluster_id, department_id) VALUES
+  (1, 23),
+  (1, 24),
+  (1, 26),
+  (1, 27),
+  (1, 28),
+  (2, 5),
+  (2, 6),
+  (2, 33),
+  (3, 5),
+  (3, 30),
+  (3, 11),
+  (4, 5),
+  (4, 10),
+  (4, 9),
+  (5, 10),
+  (5, 9),
+  (5, 42),
+  (6, 41),
+  (6, 43),
+  (6, 44),
+  (6, 45),
+  (6, 48),
+  (6, 49),
+  (6, 50),
+  (6, 51),
+  (7, 35),
+  (7, 36),
+  (7, 37),
+  (7, 38),
+  (7, 39),
+  (8, 1),
+  (8, 2),
+  (9, 19),
+  (9, 12),
+  (9, 18),
+  (10, 32),
+  (10, 31),
+  (11, 21),
+  (11, 22);
 
 -- job_major_alias 89행
 INSERT INTO job_major_alias (job_id, alias_id) VALUES

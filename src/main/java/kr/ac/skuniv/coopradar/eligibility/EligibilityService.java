@@ -3,9 +3,11 @@ package kr.ac.skuniv.coopradar.eligibility;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import kr.ac.skuniv.coopradar.common.ApiException;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Eligibility;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.EligibilityJob;
@@ -86,9 +88,25 @@ public class EligibilityService {
                 || !repository.unknownCertificates(certificates).isEmpty())) {
             throw ApiException.invalid("profile.certificates", "GET /api/certificates의 code");
         }
+        // 가까운 전공(ADR-0028): 내 학과와 같은 묶음의 학과 중, 직무가 학과를 콕 집어 적은 학과만
+        Set<Integer> near = repository.nearDepartments(profile.departmentId());
+        Map<Integer, Set<Integer>> named = near.isEmpty() ? Map.of() : repository.namedDepartments(roundId);
         return repository.requirements(roundId).stream()
-                .map(r -> new Judged(r, EligibilityRules.judge(r, profile, department)))
+                .map(r -> new Judged(r, EligibilityRules.judge(r, profile, department,
+                        intersect(near, named.getOrDefault(r.jobId(), Set.of())))))
                 .toList();
+    }
+
+    private static Set<Integer> intersect(Set<Integer> a, Set<Integer> b) {
+        Set<Integer> out = new HashSet<>(a);
+        out.retainAll(b);
+        return out;
+    }
+
+    /** 내 학과와 같은 묶음의 가까운 학과(ADR-0028). 이유 문장이 가까운 학과가 든 선호 전공 표기를 고를 때 쓴다. */
+    @Transactional(readOnly = true)
+    public Set<Integer> nearDepartments(int departmentId) {
+        return repository.nearDepartments(departmentId);
     }
 
     static Summary summary(List<EligibilityJob> jobs) {

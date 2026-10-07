@@ -241,6 +241,25 @@ class EligibilityRulesTest {
         assertThat(outside.verdict()).isEqualTo(Verdict.ELIGIBLE);
     }
 
+    @Test
+    void 선호_전공_학과가_내_가까운_학과면_NEAR이고_판정은_그대로다() {
+        // ADR-0028: 가까운 학과(서비스가 같은 묶음 ∩ 직무가 콕 집은 학과로 넘긴다)가 선호 전공 학과에 있으면 NEAR
+        JobRequirement job = job(b -> b.majorDepartmentIds = Set.of(1, 2));
+        EligibilityJob near = EligibilityRules.judge(job, me(3, 5, "3.4", false), "메이크업디자인학과", Set.of(2, 9));
+        assertThat(near.majorMatch()).isEqualTo(MajorMatch.NEAR);
+        assertThat(near.verdict()).isEqualTo(Verdict.ELIGIBLE);
+        assertThat(line(near, "선호 전공").result()).isEqualTo(Result.INFO);
+        // 가까운 학과가 선호 전공 학과에 없으면 밖, 내 학과가 있으면 가까운 학과와 상관없이 MATCH, 전공 무관이 먼저
+        assertThat(EligibilityRules.judge(job, me(3, 5, "3.4", false), "메이크업디자인학과", Set.of(9)).majorMatch())
+                .isEqualTo(MajorMatch.NOT_LISTED);
+        assertThat(EligibilityRules.judge(job(b -> b.majorDepartmentIds = Set.of(DEPT, 2)), me(3, 5, "3.4", false),
+                "메이크업디자인학과", Set.of(2)).majorMatch()).isEqualTo(MajorMatch.MATCH);
+        assertThat(EligibilityRules.judge(job(b -> {
+            b.majorOpen = true;
+            b.majorDepartmentIds = Set.of();
+        }), me(3, 5, "3.4", false), "메이크업디자인학과", Set.of(2)).majorMatch()).isEqualTo(MajorMatch.OPEN);
+    }
+
     // ───────── 도우미 ─────────
 
     private static EligibilityJob judge(JobRequirement job, ProfileInput me) {

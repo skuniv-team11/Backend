@@ -122,4 +122,16 @@ class SeedTest {
         assertThat(count("SELECT count(*) FROM job WHERE major_text IS NOT NULL AND id NOT IN (SELECT job_id FROM job_major_alias)"))
                 .isZero();
     }
+
+    @Test
+    void 가까운_학과_묶음은_확정한_것만_들어간다() {
+        // ADR-0028: pipeline/seed/curated/department_clusters.csv의 CONFIRMED 11묶음. 한 묶음에 학과 둘 이상
+        assertThat(count("SELECT count(*) FROM department_cluster")).isEqualTo(11);
+        assertThat(count("SELECT count(*) FROM (SELECT cluster_id FROM department_cluster_member GROUP BY cluster_id "
+                + "HAVING count(*) < 2) t")).isZero();
+        // 컴퓨터공학과(26)와 소프트웨어학과(28)는 같은 묶음, 군사학과(15)는 어느 묶음에도 없다
+        assertThat(count("SELECT count(*) FROM department_cluster_member a JOIN department_cluster_member b "
+                + "ON a.cluster_id = b.cluster_id WHERE a.department_id = 26 AND b.department_id = 28")).isEqualTo(1);
+        assertThat(count("SELECT count(*) FROM department_cluster_member WHERE department_id = 15")).isZero();
+    }
 }

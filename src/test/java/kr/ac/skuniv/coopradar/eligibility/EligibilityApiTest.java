@@ -131,6 +131,25 @@ class EligibilityApiTest {
     }
 
     @Test
+    void 선호_전공이_콕_집은_학과와_같은_묶음이면_가까운_전공이다() throws Exception {
+        // ADR-0028: 컴퓨터공학과(26) — 119는 '소프트웨어학과'만 적어 가까운 전공, 136은 '이공계열'이라 선호 전공 안
+        String cs = check(guestToken("STUDENT"), profile(26, 3, 5, "4.0", false, "[]"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(job(cs, 119).get("majorMatch")).isEqualTo("NEAR");
+        assertThat(job(cs, 119).get("verdict")).isEqualTo("ELIGIBLE");
+        assertThat(job(cs, 136).get("majorMatch")).isEqualTo("MATCH");
+        // 경영학부(5)는 금융정보공학과와 같은 묶음이지만 136은 계열 표기('이공계열')라 가까운 전공으로 보지 않는다.
+        // 군사학과(15)는 어느 묶음에도 없어 소서 국내 마케팅(122)이 선호 전공 밖
+        String biz = check(guestToken("STUDENT"), profile(5, 3, 5, "4.0", false, "[]"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(job(biz, 136).get("majorMatch")).isEqualTo("NOT_LISTED");
+        String army = check(guestToken("STUDENT"), profile(15, 3, 5, "4.0", false, "[]"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(job(army, 122).get("majorMatch")).isEqualTo("NOT_LISTED");
+        assertThat(JsonPath.<List<String>>read(army, "$.jobs[*].majorMatch")).doesNotContain("NEAR");
+    }
+
+    @Test
     void 기준일에_마감된_직무는_같은_판정의_맨_아래로() throws Exception {
         // ADR-0027: 광고홍보콘텐츠학과(10) 4학년 — 101 AE는 리스트 1번이지만 7/18 마감이라 같은 판정 묶음의 맨 끝
         String body = check(guestToken("STUDENT"), profile(10, 4, 7, "4.0", false, "[]"))

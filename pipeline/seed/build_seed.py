@@ -59,6 +59,7 @@ LIMITS = {("institution", "name"): 100, ("institution", "business_type"): 100, (
           ("job", "major_text"): 300, ("job_weekly_plan", "weeks_label"): 30, ("field_evidence", "quote"): 200,
           ("review_alert", "quote_a"): 200, ("review_alert", "quote_b"): 200, ("testimonial", "team_text"): 100,
           ("source_document", "title"): 200, ("department", "name"): 50, ("major_alias", "label"): 100,
+          ("department_cluster", "label"): 50,
           ("area", "sido"): 10, ("area", "name"): 20, ("certificate", "label"): 100,
           ("requirement_source", "document_title"): 200, ("requirement_source", "quote"): 300}
 SENSITIVE = re.compile(r"\d{3}-?\d{2}-?\d{5}|대표자|대표이사")   # 사업자번호·대표자명이 근거 문구에 섞이면 멈춘다
@@ -203,12 +204,32 @@ def load_curated():
     rnd = json.loads((CURATED / "round.json").read_text(encoding="utf-8"))
     deps = list(csv.DictReader((CURATED / "departments.csv").open(encoding="utf-8")))
     aliases = list(csv.DictReader((CURATED / "major_aliases.csv").open(encoding="utf-8")))
+    clusters = list(csv.DictReader((CURATED / "department_clusters.csv").open(encoding="utf-8")))
     areas = list(csv.DictReader((CURATED / "areas.csv").open(encoding="utf-8")))
     overrides = json.loads((CURATED / "overrides.json").read_text(encoding="utf-8"))
     certs = list(csv.DictReader((CURATED / "certificates.csv").open(encoding="utf-8")))
     ids_path = CURATED / "ids.json"
     ids = json.loads(ids_path.read_text(encoding="utf-8")) if ids_path.exists() else {}
-    return rnd, deps, aliases, areas, certs, overrides, ids, ids_path
+    return rnd, deps, aliases, clusters, areas, certs, overrides, ids, ids_path
+
+
+def cluster_rows(clusters, dep_id, live):
+    """가까운 학과 묶음(curated/department_clusters.csv) → department_cluster·department_cluster_member 행(ADR-0028).
+    CONFIRMED만 넣는다. 학과 이름은 재학생이 있는 학과여야 하고 한 묶음에 둘 이상."""
+    rows, members = [], []
+    for c in clusters:
+        if c["status"] not in ("CONFIRMED", "DRAFT"):
+            fail(f"department_clusters.csv {c['label']}: status는 CONFIRMED·DRAFT 중 하나")
+        names = [n for n in c["departments"].split(";") if n]
+        bad = [n for n in names if n not in live]
+        if bad:
+            fail(f"department_clusters.csv {c['label']}: 학과 시드에 없는 이름 {bad}")
+        if len(set(names)) < 2 or len(set(names)) != len(names):
+            fail(f"department_clusters.csv {c['label']}: 서로 다른 학과 둘 이상")
+        if c["status"] == "CONFIRMED":
+            rows.append({"id": int(c["id"]), "label": c["label"]})
+            members += [{"cluster_id": int(c["id"]), "department_id": dep_id[n]} for n in names]
+    return rows, members
 
 
 def certificate_rows(certs):
@@ -319,7 +340,7 @@ def load_outcomes(path):
 
 def build(a):
     check_allowed_keys()
-    rnd, deps, aliases, areas, certs, overrides, ids_data, ids_path = load_curated()
+    rnd, deps, aliases, clusters, areas, certs, overrides, ids_data, ids_path = load_curated()
     ids = Ids(ids_data)
     round_ = rnd["round"]
     start, end = dt.date.fromisoformat(round_["recruit_start"]), dt.date.fromisoformat(round_["recruit_end"])
@@ -330,7 +351,8 @@ def build(a):
     plans = load_plans(a.plans, pages)
 
     seed = {t: [] for t in ["program", "recruit_round", "department", "area", "certificate", "institution", "workplace",
-                            "job", "major_alias", "major_alias_department", "job_major_alias", "job_weekly_plan",
+                            "job", "major_alias", "major_alias_department", "department_cluster", "department_cluster_member",
+                            "job_major_alias", "job_weekly_plan",
                             "source_document", "field_evidence", "review_alert", "requirement_source", "testimonial",
                             "replay_signal"]}
     # 판정 이유 줄 출처의 문서명: 리스트 파일 이름에서 끝의 괄호(상시 업데이트 진행중 등)를 뗀다(ADR-0023)
@@ -366,6 +388,9 @@ def build(a):
             fail(f"major_aliases.csv {al['label']}: EXACT는 표기와 같은 학과 하나만")
         if al["status"] in ("EXACT", "CONFIRMED"):
             seed["major_alias_department"] += [{"alias_id": int(al["id"]), "department_id": dep_id[n]} for n in names]
+
+    # 가까운 학과 묶음(ADR-0028): 사람이 확정한 것(CONFIRMED)만. 같은 묶음의 학과끼리 '가까운 전공'
+    seed["department_cluster"], seed["department_cluster_member"] = cluster_rows(clusters, dep_id, live)
 
     # 국세청 상태(사업자번호 열은 읽지 않는다)
     nts = {}

@@ -33,6 +33,39 @@ public class EligibilityRepository {
                 .optional();
     }
 
+    /** 내 학과와 같은 묶음(department_cluster)에 든 다른 학과 — 가까운 학과(ADR-0028). */
+    public Set<Integer> nearDepartments(int departmentId) {
+        return new HashSet<>(db.sql("""
+                        SELECT DISTINCT other.department_id
+                        FROM department_cluster_member mine
+                        JOIN department_cluster_member other ON other.cluster_id = mine.cluster_id
+                        WHERE mine.department_id = :id AND other.department_id <> :id""")
+                .param("id", departmentId)
+                .query(Integer.class)
+                .list());
+    }
+
+    /**
+     * 회차 직무별로 학과를 콕 집어 적은 선호 전공 표기(가리키는 학과가 {@link EligibilityRules#NAMED_MAX_DEPARTMENTS}개 이하)의
+     * 학과. 가까운 전공은 이 학과와만 따진다 — 계열·단과대 표기는 회사가 범위를 직접 정한 것이라서(ADR-0028).
+     */
+    public Map<Integer, Set<Integer>> namedDepartments(int roundId) {
+        Map<Integer, Set<Integer>> out = new HashMap<>();
+        db.sql("""
+                        SELECT jma.job_id, mad.department_id
+                        FROM job_major_alias jma
+                        JOIN job j ON j.id = jma.job_id
+                        JOIN major_alias_department mad ON mad.alias_id = jma.alias_id
+                        WHERE j.round_id = :round
+                          AND (SELECT count(*) FROM major_alias_department m2 WHERE m2.alias_id = jma.alias_id) <= :named""")
+                .param("round", roundId)
+                .param("named", EligibilityRules.NAMED_MAX_DEPARTMENTS)
+                .query(rs -> {
+                    out.computeIfAbsent(rs.getInt("job_id"), k -> new HashSet<>()).add(rs.getInt("department_id"));
+                });
+        return out;
+    }
+
     /** 자격증 코드표(certificate)에 없는 코드. 프로필의 certificates 검사용(ADR-0021). */
     public List<String> unknownCertificates(Collection<String> codes) {
         if (codes.isEmpty()) {

@@ -17,6 +17,7 @@
   },
   "majorMatch": {
     "MATCH": "선호 전공",
+    "NEAR": "가까운 전공",
     "NOT_LISTED": "선호 전공 밖",
     "OPEN": "전공 무관"
   },
