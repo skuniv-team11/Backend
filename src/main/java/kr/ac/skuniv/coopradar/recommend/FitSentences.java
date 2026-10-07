@@ -6,13 +6,13 @@ import java.util.Map;
 import java.util.Optional;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.EligibilityJob;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Layer;
-import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.MajorMatch;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.ReasonLine;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Result;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Verdict;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityRules;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityService.Judged;
 import kr.ac.skuniv.coopradar.eligibility.JobRequirement;
+import kr.ac.skuniv.coopradar.recommend.FitScorer.MajorTier;
 
 /**
  * '왜 나에게 맞는지(또는 왜 지금은 안 되는지)'를 학생의 값으로 말하는 규칙 문장(ADR-0024). 판정 이유 줄(요건 ↔ 내 값)을
@@ -47,21 +47,25 @@ public final class FitSentences {
     }
 
     /**
-     * 내 학과와 회사가 선호하는 전공. 지원 불가 직무에는 쓰지 않는다(null).
+     * 내 학과와 회사가 선호하는 전공(ADR-0026). 지원 불가 직무에는 쓰지 않는다(null).
+     * 학과를 콕 집은 표기면 "…선호하는 전공이에요"/"…전공('무대패션디자인전공')에 들어가요", 계열·단과대 표기면
+     * "…선호하는 전공 범위('미용예술대학')에 들어가요".
      *
-     * @param majorLabel 내 학과가 들어 있는 선호 전공 표기(예: 미용예술대학). 학과 이름과 같으면 표기를 다시 말하지 않는다
+     * @param majorLabel 내 학과가 들어 있는 가장 좁은 선호 전공 표기(예: 미용예술대학). 학과 이름과 같으면 표기를 다시 말하지 않는다
      */
-    public static String major(Verdict verdict, MajorMatch match, String department, String majorLabel) {
+    public static String major(Verdict verdict, MajorTier tier, String department, String majorLabel) {
         if (verdict == Verdict.INELIGIBLE) {
             return null;
         }
         String me = department == null || department.isBlank() ? "내 학과" : department.strip();
-        return switch (match) {
+        String label = majorLabel == null || majorLabel.isBlank() ? null : majorLabel.strip();
+        return switch (tier) {
             case OPEN -> OPEN;
-            case MATCH -> majorLabel == null ? Josa.eunNeun(me) + " 회사가 선호하는 전공에 들어가요."
-                    : majorLabel.strip().equals(me) ? Josa.eunNeun(me) + " 회사가 선호하는 전공이에요."
-                    : Josa.eunNeun(me) + " 회사가 선호하는 전공('" + majorLabel.strip() + "')에 들어가요.";
-            case NOT_LISTED -> Josa.eunNeun(me) + " 회사가 선호하는 전공에는 없지만, 선호 전공은 지원 자격과는 상관없어요.";
+            case DIRECT -> label == null || label.equals(me) ? Josa.eunNeun(me) + " 회사가 선호하는 전공이에요."
+                    : Josa.eunNeun(me) + " 회사가 선호하는 전공('" + label + "')에 들어가요.";
+            case GROUP -> Josa.eunNeun(me) + " 회사가 선호하는 전공 범위" + (label == null ? "" : "('" + label + "')")
+                    + "에 들어가요.";
+            case NONE -> Josa.eunNeun(me) + " 회사가 선호하는 전공에는 없지만, 선호 전공은 지원 자격과는 상관없어요.";
         };
     }
 

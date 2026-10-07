@@ -7,11 +7,12 @@ import java.util.Set;
 import java.util.stream.Stream;
 import kr.ac.skuniv.coopradar.eligibility.JobRequirement;
 import kr.ac.skuniv.coopradar.recommend.EvidenceText.Segment;
+import kr.ac.skuniv.coopradar.recommend.FitScorer.Interest;
 
 /**
  * 바로 보여 주는 기본 이유 문장(규칙, ADR-0020·0024). 이유 문장(#16) LLM이 실패해도 이 문장이 남는다.
- * 순서: 판정 한 줄(내 학년·학점 등 갖춘 조건, 또는 챙길 것) → 내 학과와 선호 전공 → 관심 분야가 겹친 원문 → 채용연계형 →
- * 추천 안 같은 팀 직무와의 차이. 앞의 두 문장은 {@link FitSentences}가 만든다.
+ * 순서: 판정 한 줄(내 학년·학점 등 갖춘 조건, 또는 챙길 것) → 내 학과와 선호 전공 → 관심 분야(많이 겹치면 겹친 원문, 조금·적게
+ * 겹치면 그 사실 — 적합도가 '보통'인 까닭) → 채용연계형 → 추천 안 같은 팀 직무와의 차이. 앞의 두 문장은 {@link FitSentences}가 만든다.
  */
 final class ReasonTemplates {
 
@@ -27,21 +28,23 @@ final class ReasonTemplates {
     /**
      * @param lead          판정 한 줄({@link FitSentences#lead})
      * @param major         내 학과와 선호 전공({@link FitSentences#major}). 지원 불가면 null
-     * @param interestClose 관심 유사도가 높음(적합도 HIGH 기준과 같음)
+     * @param interest      관심 근거(관심 문장이 없으면 NOT_GIVEN — 문장 없음)
      * @param matched       관심 문장과 겹쳐 고른 계획서 조각. 없으면 null
      * @param contrast      같은 팀 다른 추천 직무와의 차이 문장. 없으면 null
      */
-    static String build(String lead, String major, boolean interestClose, Segment matched, boolean hiring,
+    static String build(String lead, String major, Interest interest, Segment matched, boolean hiring,
                         String contrast) {
         List<String> out = new ArrayList<>();
         out.add(lead);
         if (major != null) {
             out.add(major);
         }
-        if (interestClose) {
+        if (interest == Interest.CLOSE) {
             out.add(matched != null && matched.text().length() <= QUOTE_IN_SENTENCE
                     ? "관심 분야가 " + matched.kind().label + " '" + matched.text() + "'" + withOrAnd(matched.text()) + " 겹쳐요."
                     : "관심 분야와 직무 내용이 가까워요.");
+        } else if (interestNote(interest) != null) {
+            out.add(interestNote(interest));
         }
         if (hiring) {
             out.add(HIRING);
@@ -50,6 +53,15 @@ final class ReasonTemplates {
             out.add(contrast);
         }
         return String.join(" ", out);
+    }
+
+    /** 관심 분야가 조금·적게 겹칠 때 한 문장(적합도가 '보통'인 까닭). 많이 겹치거나 관심을 안 적었으면 null. */
+    static String interestNote(Interest interest) {
+        return switch (interest) {
+            case SOME -> "관심 분야와는 조금 겹쳐요.";
+            case NONE -> "관심 분야와 겹치는 내용은 적어요.";
+            case CLOSE, NOT_GIVEN -> null;
+        };
     }
 
     /**
@@ -108,13 +120,8 @@ final class ReasonTemplates {
         return "'" + String.join("' · '", items) + "'";
     }
 
-    /** 앞말 끝 글자에 받침이 있으면 '과', 없으면 '와'. 한글이 아니면 '와'. */
+    /** 앞말 끝소리에 받침이 있으면 '과', 없으면 '와'({@link FitSentences.Josa#batchim} — 끝의 괄호 덧말은 읽지 않는다). */
     static String withOrAnd(String word) {
-        String w = word.strip();
-        char last = w.isEmpty() ? ' ' : w.charAt(w.length() - 1);
-        if (last >= '가' && last <= '힣') {
-            return (last - '가') % 28 == 0 ? "와" : "과";
-        }
-        return "와";
+        return FitSentences.Josa.batchim(word) ? "과" : "와";
     }
 }

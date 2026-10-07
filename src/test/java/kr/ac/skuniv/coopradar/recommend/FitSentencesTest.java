@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.MajorMatch;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Verdict;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityRules;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityService.Judged;
@@ -16,6 +15,7 @@ import kr.ac.skuniv.coopradar.eligibility.JobRequirement.AlertRef;
 import kr.ac.skuniv.coopradar.eligibility.ProfileInput;
 import kr.ac.skuniv.coopradar.job.InstitutionRef;
 import kr.ac.skuniv.coopradar.job.JobDetail.Closing;
+import kr.ac.skuniv.coopradar.recommend.FitScorer.MajorTier;
 import kr.ac.skuniv.coopradar.recommend.FitSentences.Josa;
 import org.junit.jupiter.api.Test;
 
@@ -67,15 +67,18 @@ class FitSentencesTest {
     }
 
     @Test
-    void 전공_문장은_내_학과_이름으로_말하고_선호_전공은_자격이_아니라고_한다() {
-        assertThat(FitSentences.major(Verdict.ELIGIBLE, MajorMatch.MATCH, "메이크업디자인학과", "미용예술대학"))
-                .isEqualTo("메이크업디자인학과는 회사가 선호하는 전공('미용예술대학')에 들어가요.");
-        assertThat(FitSentences.major(Verdict.ELIGIBLE, MajorMatch.MATCH, "광고홍보콘텐츠학과", "광고홍보콘텐츠학과"))
+    void 전공_문장은_내_학과_이름으로_학과_지명과_계열을_나눠_말한다() {
+        // ADR-0026: 학과를 콕 집은 표기는 '선호하는 전공', 계열·단과대 표기는 '선호하는 전공 범위'
+        assertThat(FitSentences.major(Verdict.ELIGIBLE, MajorTier.GROUP, "메이크업디자인학과", "미용예술대학"))
+                .isEqualTo("메이크업디자인학과는 회사가 선호하는 전공 범위('미용예술대학')에 들어가요.");
+        assertThat(FitSentences.major(Verdict.ELIGIBLE, MajorTier.DIRECT, "광고홍보콘텐츠학과", "광고홍보콘텐츠학과"))
                 .isEqualTo("광고홍보콘텐츠학과는 회사가 선호하는 전공이에요.");
-        assertThat(FitSentences.major(Verdict.NEEDS_CHECK, MajorMatch.NOT_LISTED, "무대패션전공", null))
+        assertThat(FitSentences.major(Verdict.ELIGIBLE, MajorTier.DIRECT, "무대패션전공", "무대패션디자인전공"))
+                .isEqualTo("무대패션전공은 회사가 선호하는 전공('무대패션디자인전공')에 들어가요.");
+        assertThat(FitSentences.major(Verdict.NEEDS_CHECK, MajorTier.NONE, "무대패션전공", null))
                 .isEqualTo("무대패션전공은 회사가 선호하는 전공에는 없지만, 선호 전공은 지원 자격과는 상관없어요.");
-        assertThat(FitSentences.major(Verdict.ELIGIBLE, MajorMatch.OPEN, "군사학과", null)).isEqualTo(FitSentences.OPEN);
-        assertThat(FitSentences.major(Verdict.INELIGIBLE, MajorMatch.MATCH, "군사학과", "사회계열")).isNull();
+        assertThat(FitSentences.major(Verdict.ELIGIBLE, MajorTier.OPEN, "군사학과", null)).isEqualTo(FitSentences.OPEN);
+        assertThat(FitSentences.major(Verdict.INELIGIBLE, MajorTier.GROUP, "군사학과", "사회계열")).isNull();
     }
 
     @Test

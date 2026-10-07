@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.MajorMatch;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Verdict;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityService.Judged;
@@ -12,29 +13,44 @@ import kr.ac.skuniv.coopradar.job.Stipend;
 import kr.ac.skuniv.coopradar.recommend.RecommendDtos.Fit;
 
 /**
- * 적합도 점수(ADR-0018). 규칙 + 키워드이고 임베딩은 쓰지 않는다(E5: 임베딩이 선호 전공 규칙보다 낫지 않았다).
- * <pre>
- * 점수 = 5 × 선호 전공 일치(MATCH·OPEN)
- *      + 2 × 관심 키워드 유사도(후보 중 최댓값으로 나눈 0~1, 관심 문장이 없으면 0)
- *      + 1 × 지원 가능(ELIGIBLE)
- *      + 0.5 × 지원비(최저임금 대비 75% → 0, 100% 이상 → 1)
- *      + 0.5 × 채용연계형
- * </pre>
- * 선호 전공 가중치(5)가 나머지 합(4)보다 커서 전공이 맞는 직무가 늘 먼저다. 같은 점수면 리스트 순번.
- * 등급: 선호 전공이 맞고, 관심 문장을 안 적었거나 관심 유사도가 0.5 이상이면 HIGH, 아니면 MEDIUM.
+ * 적합도(ADR-0026, ADR-0018·0022를 고침). 규칙 + 키워드이고 임베딩은 쓰지 않는다(E5).
  * <p>
- * 추천할 이유가 있는 직무(ADR-0022): 선호 전공이 맞거나(MATCH·OPEN), 관심 문장과 겹친다 — 원 코사인이 0.02 이상이면서
- * 0.05 이상이거나 가장 많이 겹친 직무의 절반 이상. 둘 다 아니면 점수가 있어도 추천하지 않는다(5개보다 적을 수 있다).
+ * 추천 근거는 둘이다.
+ * <ul>
+ *   <li><b>전공</b>: 회사가 내 학과를 콕 집어 적었나({@link MajorTier#DIRECT} — 그 표기가 가리키는 학과가 2개 이하),
+ *       내 학과가 든 계열·단과대로 적었나({@link MajorTier#GROUP} — 3개 이상), 전공을 따지지 않나({@link MajorTier#OPEN}),
+ *       선호 전공 밖인가({@link MajorTier#NONE})</li>
+ *   <li><b>관심</b>: 관심 문장과 직무 텍스트의 키워드 유사도. 겹침({@link #interestMatch} — 원 코사인 0.02 이상이면서 0.05 이상이거나
+ *       가장 많이 겹친 직무의 절반 이상), 많이 겹침(겹치면서 최댓값의 절반 이상)</li>
+ * </ul>
+ * <pre>
+ * 점수 = 전공(학과 지명 3 · 계열 2 · 전공 무관 1 · 밖 0)
+ *      + 3 × 관심 유사도(최댓값으로 나눈 0~1, 겹칠 때만)
+ *      + 1 × 지원 가능(ELIGIBLE — 확인 필요는 포트폴리오를 준비해야 한다)
+ *      + 0.5 × 지원비(최저임금 대비 75% → 0, 100% 이상 → 1) + 0.5 × 채용연계형
+ * </pre>
+ * <ul>
+ *   <li><b>추천할 이유</b>: 전공이 학과 지명·계열이거나, 관심 문장과 겹친다. 전공 무관은 관심 문장이 없을 때만 이유다 —
+ *       그때는 전공밖에 볼 것이 없고 '전공 때문에 밀리지 않는 자리'라는 뜻이 된다. 관심 문장을 적었는데 겹치지 않으면, 누구나
+ *       지원할 수 있다는 것만으로는 나에게 맞는다는 뜻이 아니라서 뺀다. 전공 무관은 점수가 낮아(1) 학과 지명·계열 뒤에 온다</li>
+ *   <li><b>등급</b>: 맞는 근거(학과 지명·계열, 관심 많이 겹침)가 하나 이상이고 어긋나는 근거(선호 전공 밖, 관심을 적었는데 많이
+ *       겹치지 않음)가 없으면 HIGH, 아니면 MEDIUM. 전공 무관과 관심을 안 적은 것은 어느 쪽도 아니다</li>
+ *   <li><b>순서</b>: HIGH 먼저, 그 안에서 점수, 같으면 리스트 순번</li>
+ * </ul>
  * 기본 이유 문장과 근거 인용은 {@link ReasonTemplates}·{@link EvidencePicker}가 만든다(ADR-0020).
  */
 public final class FitScorer {
 
-    static final double W_MAJOR = 5;
-    static final double W_INTEREST = 2;
+    static final double W_DIRECT = 3;
+    static final double W_GROUP = 2;
+    static final double W_OPEN = 1;
+    static final double W_INTEREST = 3;
     static final double W_ELIGIBLE = 1;
     static final double W_STIPEND = 0.5;
     static final double W_HIRING = 0.5;
     public static final double HIGH_INTEREST = 0.5;
+    /** 선호 전공 표기가 가리키는 학과가 이 수 이하면 '학과 지명'(예: 광고홍보콘텐츠학과 → 새·옛 이름 2개), 넘으면 계열·단과대. */
+    public static final int DIRECT_MAX_DEPARTMENTS = 2;
     /** 관심 문장과 겹친다고 볼 원 코사인 하한(이보다 낮으면 '프로젝트'·'개발' 같은 흔한 낱말 하나가 겹친 정도다). */
     static final double INTEREST_FLOOR = 0.02;
     /** 이 이상이면 가장 많이 겹친 직무와 상관없이 겹친다고 본다. */
@@ -43,32 +59,53 @@ public final class FitScorer {
     private FitScorer() {
     }
 
-    /** 직무 하나의 점수 재료. text는 키워드 유사도에 쓰는 직무 텍스트다. */
-    public record Features(String text, String jobType, Stipend stipend) {
+    /** 전공 근거의 세기. */
+    public enum MajorTier { DIRECT, GROUP, OPEN, NONE }
+
+    /** 관심 근거: 관심 문장이 없음 · 겹치지 않음 · 조금 겹침 · 많이 겹침. */
+    public enum Interest { NOT_GIVEN, NONE, SOME, CLOSE }
+
+    /**
+     * 직무 하나의 점수 재료. text는 키워드 유사도에 쓰는 직무 텍스트, directDepartments는 학과를 콕 집은 표기
+     * (가리키는 학과가 {@link #DIRECT_MAX_DEPARTMENTS}개 이하)에 든 학과.
+     */
+    public record Features(String text, String jobType, Stipend stipend, Set<Integer> directDepartments) {
     }
 
     /**
-     * @param interest      관심 키워드 유사도(0~1, 후보 중 최댓값 기준). 관심 문장이 없으면 0
-     * @param interestMatch 관심 문장과 겹친다(원 코사인 기준, {@link #interestMatch}). 관심 문장이 없으면 false
+     * @param interest 관심 키워드 유사도(0~1, 회차 직무 중 최댓값 기준). 관심 문장이 없으면 0
      */
-    public record Scored(Judged judged, Features features, double score, double interest, boolean majorFit,
-                         boolean interestMatch, Fit fit) {
+    public record Scored(Judged judged, Features features, double score, double interest, MajorTier major,
+                         Interest interestFit, Fit fit) {
 
         public int jobId() {
             return judged.requirement().jobId();
         }
 
-        /** 추천할 이유가 있는가: 선호 전공이 맞거나 관심 문장과 겹친다(ADR-0022). */
+        /** 추천할 이유가 있는가: 전공이 학과 지명·계열이거나, 관심 문장과 겹치거나, 관심 문장 없이 전공 무관(ADR-0026). */
         public boolean relevant() {
-            return majorFit || interestMatch;
+            return major == MajorTier.DIRECT || major == MajorTier.GROUP || interestMatch()
+                    || (major == MajorTier.OPEN && interestFit == Interest.NOT_GIVEN);
+        }
+
+        /** 관심 문장과 겹친다(조금 이상). 지망 점검의 빈 자리 문장도 쓴다. */
+        public boolean interestMatch() {
+            return interestFit == Interest.SOME || interestFit == Interest.CLOSE;
+        }
+
+        public boolean interestClose() {
+            return interestFit == Interest.CLOSE;
         }
     }
 
     /**
-     * 지원 불가가 아닌 직무를 점수 순으로. 관심 유사도(IDF·최댓값)는 지원 불가를 포함한 회차 직무 전부로 잰다 — 판정에 따라
-     * 기준이 흔들려 가장 많이 겹친 직무가 지원 불가로 빠졌다고 덜 겹친 직무가 '가장 가깝다'가 되지 않게(ADR-0024).
+     * 지원 불가가 아닌 직무를 HIGH 먼저, 점수 순으로. 관심 유사도(IDF·최댓값)는 지원 불가를 포함한 회차 직무 전부로 잰다 —
+     * 판정에 따라 기준이 흔들려 가장 많이 겹친 직무가 지원 불가로 빠졌다고 덜 겹친 직무가 '가장 가깝다'가 되지 않게(ADR-0024).
+     *
+     * @param departmentId 학생 학과(전공 근거가 학과 지명인지 볼 때)
      */
-    public static List<Scored> score(List<Judged> judged, Map<Integer, Features> features, String interestText) {
+    public static List<Scored> score(List<Judged> judged, Map<Integer, Features> features, String interestText,
+                                     int departmentId) {
         boolean hasInterest = interestText != null && !interestText.isBlank();
         double[] sims = new double[judged.size()];
         double[] raw = new double[judged.size()];
@@ -97,18 +134,50 @@ public final class FitScorer {
                 continue;
             }
             Features f = features.get(j.requirement().jobId());
-            MajorMatch major = j.result().majorMatch();
-            boolean majorFit = major == MajorMatch.MATCH || major == MajorMatch.OPEN;
+            MajorTier major = tier(j.result().majorMatch(), f.directDepartments(), departmentId);
+            Interest interest = !hasInterest ? Interest.NOT_GIVEN
+                    : !interestMatch(raw[i], sims[i]) ? Interest.NONE
+                    : sims[i] >= HIGH_INTEREST ? Interest.CLOSE : Interest.SOME;
             boolean eligible = j.result().verdict() == Verdict.ELIGIBLE;
             boolean hiring = "HIRING".equals(f.jobType());
-            double score = (majorFit ? W_MAJOR : 0) + W_INTEREST * sims[i] + (eligible ? W_ELIGIBLE : 0)
+            double interestPoints = interest == Interest.SOME || interest == Interest.CLOSE ? W_INTEREST * sims[i] : 0;
+            double score = majorPoints(major) + interestPoints + (eligible ? W_ELIGIBLE : 0)
                     + W_STIPEND * stipendScore(f.stipend()) + (hiring ? W_HIRING : 0);
-            Fit fit = majorFit && (!hasInterest || interestClose(sims[i])) ? Fit.HIGH : Fit.MEDIUM;
-            out.add(new Scored(j, f, score, sims[i], majorFit, hasInterest && interestMatch(raw[i], sims[i]), fit));
+            out.add(new Scored(j, f, score, sims[i], major, interest, grade(major, interest)));
         }
-        out.sort(Comparator.comparingDouble(Scored::score).reversed()
+        out.sort(Comparator.comparing((Scored s) -> s.fit() == Fit.HIGH ? 0 : 1)
+                .thenComparing(Comparator.comparingDouble(Scored::score).reversed())
                 .thenComparingInt(s -> s.judged().requirement().listSeq()));
         return out;
+    }
+
+    /** 전공 근거. 선호 전공에 들면(MATCH) 학과를 콕 집은 표기에 들었는지로 학과 지명·계열을 가른다. */
+    static MajorTier tier(MajorMatch match, Set<Integer> directDepartments, int departmentId) {
+        return switch (match) {
+            case OPEN -> MajorTier.OPEN;
+            case NOT_LISTED -> MajorTier.NONE;
+            case MATCH -> directDepartments != null && directDepartments.contains(departmentId)
+                    ? MajorTier.DIRECT : MajorTier.GROUP;
+        };
+    }
+
+    static double majorPoints(MajorTier tier) {
+        return switch (tier) {
+            case DIRECT -> W_DIRECT;
+            case GROUP -> W_GROUP;
+            case OPEN -> W_OPEN;
+            case NONE -> 0;
+        };
+    }
+
+    /**
+     * 등급: 맞는 근거(학과 지명·계열, 관심 많이 겹침)가 하나 이상이고 어긋나는 근거(선호 전공 밖, 관심을 적었는데 많이 겹치지
+     * 않음)가 없으면 HIGH. 전공 무관과 관심을 안 적은 것은 맞는 근거도 어긋나는 근거도 아니다.
+     */
+    static Fit grade(MajorTier major, Interest interest) {
+        boolean fits = major == MajorTier.DIRECT || major == MajorTier.GROUP || interest == Interest.CLOSE;
+        boolean against = major == MajorTier.NONE || interest == Interest.NONE || interest == Interest.SOME;
+        return fits && !against ? Fit.HIGH : Fit.MEDIUM;
     }
 
     /** 최저임금 대비 75%(법정 하한) → 0, 100% 이상 → 1, 사이는 비례. 금액·기준이 없으면 0. */
@@ -133,8 +202,4 @@ public final class FitScorer {
         return raw >= INTEREST_FLOOR && (raw >= INTEREST_CLEAR || normalized >= HIGH_INTEREST);
     }
 
-    /** 관심 유사도가 높은가(적합도 HIGH와 기본 이유 문장의 '관심 분야' 기준). 관심 문장이 없으면 0이라 false. */
-    static boolean interestClose(double interest) {
-        return interest > 0 && interest >= HIGH_INTEREST;
-    }
 }

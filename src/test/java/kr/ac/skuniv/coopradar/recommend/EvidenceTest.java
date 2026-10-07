@@ -14,6 +14,7 @@ import kr.ac.skuniv.coopradar.recommend.EvidencePicker.Testimonial;
 import kr.ac.skuniv.coopradar.recommend.EvidenceText.JobText;
 import kr.ac.skuniv.coopradar.recommend.EvidenceText.Kind;
 import kr.ac.skuniv.coopradar.recommend.EvidenceText.Segment;
+import kr.ac.skuniv.coopradar.recommend.FitScorer.Interest;
 import kr.ac.skuniv.coopradar.recommend.RecommendDtos.Citation;
 import kr.ac.skuniv.coopradar.recommend.RecommendDtos.SourceType;
 import org.junit.jupiter.api.Test;
@@ -151,17 +152,22 @@ class EvidenceTest {
         String lead = "3학년이라 지원 조건(3·4학년)을 모두 갖췄어요.";
         String major = "메이크업디자인학과는 회사가 선호하는 전공('미용예술대학')에 들어가요.";
         Segment comp = new Segment(Kind.COMPETENCY, "뷰티 SNS를 운영해 본 경험이 있는 자", 4);
-        assertThat(ReasonTemplates.build(lead, major, true, comp, false, null))
+        assertThat(ReasonTemplates.build(lead, major, Interest.CLOSE, comp, false, null))
                 .isEqualTo(lead + " " + major + " 관심 분야가 요구 역량 '뷰티 SNS를 운영해 본 경험이 있는 자'와 겹쳐요.");
         Segment overview = new Segment(Kind.OVERVIEW, "자사 SNS 채널 콘텐츠 운영 및 홍보 마케팅 업무 지원", 4);
-        assertThat(ReasonTemplates.build(lead, major, true, overview, false, null))
+        assertThat(ReasonTemplates.build(lead, major, Interest.CLOSE, overview, false, null))
                 .endsWith("관심 분야가 직무 개요 '자사 SNS 채널 콘텐츠 운영 및 홍보 마케팅 업무 지원'과 겹쳐요.");
-        // 관심이 가깝지 않으면(적합도 기준) 관심 문구를 넣지 않는다. 채용연계형은 뜻을 풀어 붙인다
-        assertThat(ReasonTemplates.build(lead, major, false, overview, true, null))
+        // 관심을 안 적었으면 관심 문구가 없다. 채용연계형은 뜻을 풀어 붙인다
+        assertThat(ReasonTemplates.build(lead, major, Interest.NOT_GIVEN, overview, true, null))
                 .isEqualTo(lead + " " + major + " " + ReasonTemplates.HIRING);
+        // 관심을 적었는데 조금·적게 겹치면 그 사실을 말한다(적합도가 '보통'인 까닭, ADR-0026)
+        assertThat(ReasonTemplates.build(lead, major, Interest.SOME, overview, false, null))
+                .isEqualTo(lead + " " + major + " 관심 분야와는 조금 겹쳐요.");
+        assertThat(ReasonTemplates.build(lead, major, Interest.NONE, overview, false, null))
+                .isEqualTo(lead + " " + major + " 관심 분야와 겹치는 내용은 적어요.");
         // 40자 넘는 원문은 문장에 넣지 않는다(인용 칸에만)
         Segment longText = new Segment(Kind.OVERVIEW, "가".repeat(41), 4);
-        assertThat(ReasonTemplates.build(lead, null, true, longText, false, "같은 팀의 A와 달리 'B' 요건이 있어요."))
+        assertThat(ReasonTemplates.build(lead, null, Interest.CLOSE, longText, false, "같은 팀의 A와 달리 'B' 요건이 있어요."))
                 .isEqualTo(lead + " 관심 분야와 직무 내용이 가까워요. 같은 팀의 A와 달리 'B' 요건이 있어요.");
     }
 
@@ -186,6 +192,7 @@ class EvidenceTest {
         assertThat(ReasonTemplates.withOrAnd("해외 마케팅")).isEqualTo("과");
         assertThat(ReasonTemplates.withOrAnd("있는 자")).isEqualTo("와");
         assertThat(ReasonTemplates.withOrAnd("AMD")).isEqualTo("와");
+        assertThat(ReasonTemplates.withOrAnd("AI 툴 활용 콘텐츠 제작 실습 (이미지·영상 생성, 보정, 응용)")).isEqualTo("과");
     }
 
     private static EvidencePicker picker(String interest) {

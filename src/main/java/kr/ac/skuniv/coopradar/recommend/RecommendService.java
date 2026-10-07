@@ -59,9 +59,10 @@ public class RecommendService {
      * @param contrast 추천 안의 같은 팀 다른 직무와 요건이 다른 점(없으면 null). 기본 문장 끝에 이미 들어 있다
      * @param lead     판정 한 줄(내 값으로 갖춘 조건·챙길 것, ADR-0024). 기본 문장의 맨 앞이고 LLM 문장 앞에도 붙는다
      * @param major    내 학과와 선호 전공 한 문장. 기본 문장의 두 번째이고 LLM 문장 앞에도 붙는다
+     * @param interestNote 관심 분야가 조금·적게 겹친다는 한 문장(많이 겹치거나 관심을 안 적었으면 null). LLM 문장 앞에도 붙는다
      */
     record Explained(Scored scored, List<Citation> citations, String template, EvidenceText.Segment matched,
-                     String contrast, String lead, String major) {
+                     String contrast, String lead, String major, String interestNote) {
     }
 
     @Transactional(readOnly = true)
@@ -125,7 +126,7 @@ public class RecommendService {
     /** 지원 불가가 아닌 직무 전부의 점수(높은 순). 지망 점검이 빈 자리 적합도에 쓴다. 관심 유사도는 회차 직무 전부로 잰다. */
     @Transactional(readOnly = true)
     public List<Scored> score(int roundId, List<Judged> judged, ProfileInput profile) {
-        return FitScorer.score(judged, repository.features(roundId), profile.interestText());
+        return FitScorer.score(judged, repository.features(roundId), profile.interestText(), profile.departmentId());
     }
 
     /** 근거를 고르는 데 필요한 것을 한 번에 읽는다(요청마다 — 직무 40개라 가볍다). */
@@ -151,10 +152,10 @@ public class RecommendService {
         boolean hiring = "HIRING".equals(s.features().jobType());
         String majorLabel = r.majorMatch() == MajorMatch.MATCH ? ctx.majorLabels().get(r.jobId()) : null;
         String lead = FitSentences.lead(s.judged(), ctx.certificateLabels());
-        String major = FitSentences.major(r.verdict(), r.majorMatch(), FitSentences.department(r), majorLabel);
-        String template = ReasonTemplates.build(lead, major, FitScorer.interestClose(s.interest()), picked.matched(),
-                hiring, contrast);
-        return new Explained(s, picked.citations(), template, picked.matched(), contrast, lead, major);
+        String major = FitSentences.major(r.verdict(), s.major(), FitSentences.department(r), majorLabel);
+        String template = ReasonTemplates.build(lead, major, s.interestFit(), picked.matched(), hiring, contrast);
+        return new Explained(s, picked.citations(), template, picked.matched(), contrast, lead, major,
+                ReasonTemplates.interestNote(s.interestFit()));
     }
 
     /** 추천 안에서 같은 기관·같은 팀인 다른 직무(순위가 앞선 것 먼저)와 요건이 다른 점. */

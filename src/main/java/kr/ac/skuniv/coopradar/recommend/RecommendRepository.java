@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import kr.ac.skuniv.coopradar.job.Stipend;
 import kr.ac.skuniv.coopradar.recommend.EvidencePicker.Testimonial;
 import kr.ac.skuniv.coopradar.recommend.EvidenceText.JobText;
@@ -28,7 +29,8 @@ public class RecommendRepository {
 
     /**
      * 회차 직무별 점수 재료. 키워드 유사도 텍스트 = 부서 · 직무명 · 직무 개요 · 교육 목표 · 요구 역량 · 주차 계획 · 기관 업태·종목.
-     * 선호 전공 원문은 넣지 않는다(전공은 규칙이 따로 본다, E5와 같은 이유).
+     * 선호 전공 원문은 넣지 않는다(전공은 규칙이 따로 본다, E5와 같은 이유). directDepartments = 학과를 콕 집은 선호 전공 표기
+     * (가리키는 학과가 {@link FitScorer#DIRECT_MAX_DEPARTMENTS}개 이하)에 든 학과(ADR-0026).
      */
     Map<Integer, Features> features(int roundId) {
         Map<Integer, Features> out = new HashMap<>();
@@ -37,14 +39,22 @@ public class RecommendRepository {
                                concat_ws(E'\\n', j.team, j.title, j.overview, j.education_goal, j.competencies,
                                          (SELECT string_agg(p.content, E'\\n' ORDER BY p.seq)
                                           FROM job_weekly_plan p WHERE p.job_id = j.id),
-                                         i.business_type, i.business_item) AS text
+                                         i.business_type, i.business_item) AS text,
+                               (SELECT array_agg(DISTINCT mad.department_id)
+                                FROM job_major_alias jma
+                                JOIN major_alias_department mad ON mad.alias_id = jma.alias_id
+                                WHERE jma.job_id = j.id
+                                  AND (SELECT count(*) FROM major_alias_department m2 WHERE m2.alias_id = jma.alias_id)
+                                      <= :direct) AS direct
                         FROM job j
                         JOIN institution i ON i.id = j.institution_id
                         WHERE j.round_id = :round""")
                 .param("round", roundId)
+                .param("direct", FitScorer.DIRECT_MAX_DEPARTMENTS)
                 .query(rs -> {
                     out.put(rs.getInt("id"), new Features(rs.getString("text"), rs.getString("job_type"),
-                            Stipend.of(rs.getString("stipend_basis"), (Integer) rs.getObject("stipend_amount"))));
+                            Stipend.of(rs.getString("stipend_basis"), (Integer) rs.getObject("stipend_amount")),
+                            Set.copyOf(integers(rs.getArray("direct")))));
                 });
         return out;
     }
@@ -92,7 +102,10 @@ public class RecommendRepository {
         return out;
     }
 
-    /** 직무별로, 이 학과가 들어 있는 선호 전공 표기(예: 메이크업디자인학과 → '미용예술대학'). 여러 개면 표기 id가 작은 것. */
+    /**
+     * 직무별로, 이 학과가 들어 있는 선호 전공 표기(예: 메이크업디자인학과 → '미용예술대학'). 여러 개면 가장 좁은 표기(가리키는
+     * 학과가 적은 것 — 학과를 콕 집은 표기가 계열보다 먼저, ADR-0026), 같으면 표기 id가 작은 것.
+     */
     Map<Integer, String> majorLabels(int roundId, int departmentId) {
         Map<Integer, String> out = new HashMap<>();
         db.sql("""
@@ -102,7 +115,8 @@ public class RecommendRepository {
                         JOIN major_alias ma ON ma.id = jma.alias_id
                         JOIN major_alias_department mad ON mad.alias_id = jma.alias_id
                         WHERE j.round_id = :round AND mad.department_id = :department
-                        ORDER BY jma.job_id, ma.id""")
+                        ORDER BY jma.job_id,
+                                 (SELECT count(*) FROM major_alias_department m2 WHERE m2.alias_id = ma.id), ma.id""")
                 .param("round", roundId)
                 .param("department", departmentId)
                 .query(rs -> {
@@ -145,6 +159,13 @@ public class RecommendRepository {
     private static Integer page(ResultSet rs, String column) throws SQLException {
         int v = rs.getInt(column);
         return rs.wasNull() ? null : v;
+    }
+
+    private static List<Integer> integers(Array array) throws SQLException {
+        if (array == null) {
+            return List.of();
+        }
+        return Arrays.stream((Object[]) array.getArray()).map(x -> ((Number) x).intValue()).toList();
     }
 
     private static List<String> strings(Array array) throws SQLException {

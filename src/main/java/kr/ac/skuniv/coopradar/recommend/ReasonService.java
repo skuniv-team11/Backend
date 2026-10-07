@@ -29,6 +29,7 @@ import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Verdict;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityService;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityService.Judged;
 import kr.ac.skuniv.coopradar.eligibility.ProfileInput;
+import kr.ac.skuniv.coopradar.recommend.FitScorer.Interest;
 import kr.ac.skuniv.coopradar.recommend.FitScorer.Scored;
 import kr.ac.skuniv.coopradar.recommend.RecommendService.Explained;
 import kr.ac.skuniv.coopradar.recommend.RecommendDtos.Citation;
@@ -132,7 +133,7 @@ public class ReasonService {
         }
         String department = target.result().reasons().stream()
                 .filter(r -> r.layer() == Layer.MAJOR).map(ReasonLine::mine).findFirst().orElse("");
-        Optional<String> text = writer.write(systemPrompt, userMessage(profile, department, job, facts, citations))
+        Optional<String> text = writer.write(systemPrompt, userMessage(profile, department, job, facts, citations, scored.interestFit()))
                 .flatMap(d -> validate(d, citations, facts, job.majorMatch(), department, profile.interestText()));
         if (text.isEmpty()) {
             return new RecommendationReason(job.jobId(), ReasonSource.TEMPLATE, template, citations);
@@ -144,13 +145,16 @@ public class ReasonService {
     }
 
     /**
-     * 검증을 통과한 LLM 문장(하는 일)에 규칙 문장을 붙인다(ADR-0024): 앞에 판정 한 줄(내 값으로 갖춘 조건·챙길 것)과
-     * 내 학과와 선호 전공, 뒤에 추천 안 같은 팀 직무와의 차이. 모두 기본 문장과 같은 글이다.
+     * 검증을 통과한 LLM 문장(하는 일)에 규칙 문장을 붙인다(ADR-0024·0026): 앞에 판정 한 줄(내 값으로 갖춘 조건·챙길 것),
+     * 내 학과와 선호 전공, 관심 분야가 조금·적게 겹치면 그 사실, 뒤에 추천 안 같은 팀 직무와의 차이. 모두 기본 문장과 같은 글이다.
      */
     static String finish(String text, EligibilityJob job, Explained explained) {
         StringBuilder b = new StringBuilder(explained.lead());
         if (explained.major() != null) {
             b.append(' ').append(explained.major());
+        }
+        if (explained.interestNote() != null) {
+            b.append(' ').append(explained.interestNote());
         }
         b.append(' ').append(text);
         if (explained.contrast() != null) {
@@ -270,13 +274,19 @@ public class ReasonService {
     }
 
     static String userMessage(ProfileInput profile, String department, EligibilityJob job, JobFacts facts,
-                              List<Citation> citations) {
+                              List<Citation> citations, Interest interest) {
         StringBuilder b = new StringBuilder();
         b.append("[학생]\n");
         b.append("학과: ").append(department).append('\n');
         b.append("학년: ").append(profile.grade()).append("학년\n");
-        String interest = profile.interestText();
-        b.append("관심 분야: ").append(interest == null || interest.isBlank() ? "적지 않음" : interest.strip()).append("\n\n");
+        String interestText = profile.interestText();
+        b.append("관심 분야: ").append(interestText == null || interestText.isBlank() ? "적지 않음" : interestText.strip()).append('\n');
+        b.append("관심 분야와 직무가 겹치는 정도: ").append(switch (interest) {
+            case CLOSE -> "많음";
+            case SOME -> "조금 — 겹치는 부분만 짧게, 억지로 잇지 않음";
+            case NONE -> "거의 없음 — 관심 분야와 잇지 말고 하는 일만 씀";
+            case NOT_GIVEN -> "—";
+        }).append("\n\n");
 
         b.append("[직무]\n");
         b.append("기관: ").append(facts.institution()).append('\n');
