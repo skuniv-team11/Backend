@@ -48,8 +48,10 @@ import org.springframework.stereotype.Service;
  *       근거·직무 원문에 실제로 있음. 하나라도 어기면 TEMPLATE. 마크다운 별표는 지운다</li>
  *   <li>키 없음·실패·제한 시간·호출 제한·지원 불가 직무 → 200 + TEMPLATE(화면 유지)</li>
  *   <li>캐시는 메모리(프롬프트 버전 + 모델 + 직무 + 학과·학년·관심 분야 + 판정·적합도의 해시). 서버가 다시 뜨면 비워진다</li>
- *   <li>근거 인용·기본 문장은 추천(#15)과 같다(ADR-0020). LLM 문장 뒤에는 선호 전공에 소속 학과가 있는지·같은 팀 직무와의
- *       차이를 규칙 문장으로 붙인다({@link #finish}). LLM은 선호 전공을 말하지 않는다</li>
+ *   <li>근거 인용·기본 문장은 추천(#15)과 같다(ADR-0020). LLM은 하는 일만 쓰고, 그 앞에 '왜 나에게 맞는지'(판정 한 줄 —
+ *       내 학년·학점 등 갖춘 조건이나 챙길 것, 내 학과와 선호 전공)를, 뒤에 같은 팀 직무와의 차이를 규칙 문장으로 붙인다
+ *       ({@link #finish}, ADR-0024). LLM은 선호 전공·조건을 말하지 않는다</li>
+ *   <li>지원 불가 직무는 못 맞춘 조건을 내 값과 함께 말하는 규칙 문장만 준다({@link FitSentences#lead})</li>
  * </ul>
  */
 @Service
@@ -57,7 +59,6 @@ public class ReasonService {
 
     static final int MIN_LENGTH = 10;
     static final int MAX_LENGTH = 200;
-    static final String INELIGIBLE_TEXT = "학교 규정에 맞지 않아 지금은 지원할 수 없는 자리예요.";
     private static final Pattern QUOTED = Pattern.compile("[\"“'‘「『]([^\"”'’」』]{4,})[\"”'’」』]");
     private static final int FACT_LIMIT = 600;
     private static final Pattern DEPARTMENT_SUFFIX = Pattern.compile("(학과|학부|전공)$");
@@ -107,7 +108,8 @@ public class ReasonService {
                 .orElseThrow(() -> new ApiException(ErrorCode.JOB_NOT_FOUND, "없는 직무예요"));
         EligibilityJob job = target.result();
         if (job.verdict() == Verdict.INELIGIBLE) {
-            return new RecommendationReason(job.jobId(), ReasonSource.TEMPLATE, INELIGIBLE_TEXT,
+            return new RecommendationReason(job.jobId(), ReasonSource.TEMPLATE,
+                    FitSentences.lead(target, repository.certificateLabels()),
                     recommend.citations(round.id(), profile, job.jobId(), job.institution().id()));
         }
         Explained explained = recommend.explain(round.id(), judged, profile, asOf, job.jobId()).orElseThrow();
@@ -142,19 +144,17 @@ public class ReasonService {
     }
 
     /**
-     * 검증을 통과한 LLM 문장 뒤에 규칙 문장을 붙인다(ADR-0020): 선호 전공에 소속 학과가 있는지(늘 — LLM은 선호 전공을
-     * 말하지 않는다), 추천 안 같은 팀 직무와 요건이 다르면 그 차이, '확인 필요'면 확인할 조건. 모두 기본 문장과 같은 글이다.
+     * 검증을 통과한 LLM 문장(하는 일)에 규칙 문장을 붙인다(ADR-0024): 앞에 판정 한 줄(내 값으로 갖춘 조건·챙길 것)과
+     * 내 학과와 선호 전공, 뒤에 추천 안 같은 팀 직무와의 차이. 모두 기본 문장과 같은 글이다.
      */
     static String finish(String text, EligibilityJob job, Explained explained) {
-        StringBuilder b = new StringBuilder(text);
-        if (explained.majorSentence() != null) {
-            b.append(' ').append(explained.majorSentence());
+        StringBuilder b = new StringBuilder(explained.lead());
+        if (explained.major() != null) {
+            b.append(' ').append(explained.major());
         }
+        b.append(' ').append(text);
         if (explained.contrast() != null) {
             b.append(' ').append(explained.contrast());
-        }
-        if (explained.checkSentence() != null) {
-            b.append(' ').append(explained.checkSentence());
         }
         return b.toString();
     }
@@ -292,14 +292,14 @@ public class ReasonService {
                 .append(" (내 학과 ").append(switch (job.majorMatch()) {
                     case MATCH -> "포함";
                     case OPEN -> "— 전공 무관";
-                    case NOT_LISTED -> "미포함 — 선호 전공은 참고 사항이라 지원은 할 수 있음";
-                }).append(") — 이 사실은 문장 뒤에 따로 붙으니 쓰지 않음\n");
+                    case NOT_LISTED -> "미포함 — 선호 전공은 지원 자격이 아니라 지원은 할 수 있음";
+                }).append(") — 이 사실은 문장 앞에 따로 붙으니 쓰지 않음\n");
         b.append("판정: ").append(CodeLabels.label("verdict", job.verdict().name()));
         List<String> checks = job.reasons().stream()
-                .filter(r -> r.layer() == Layer.INSTITUTION && (r.result() == Result.NOT_MET || r.result() == Result.CHECK))
+                .filter(r -> r.layer() == Layer.INSTITUTION && r.result() == Result.CHECK)
                 .map(r -> r.item() + " " + r.requirement()).toList();
         if (!checks.isEmpty()) {
-            b.append(" (확인할 것: ").append(String.join(", ", checks)).append(") — 이 조건은 문장 뒤에 따로 붙으니 쓰지 않음");
+            b.append(" (챙길 것: ").append(String.join(", ", checks)).append(") — 이 조건은 문장 앞에 따로 붙으니 쓰지 않음");
         }
         b.append("\n\n[근거]\n");
         if (citations.isEmpty()) {

@@ -15,17 +15,17 @@ import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Verdict;
 import kr.ac.skuniv.coopradar.eligibility.JobRequirement.AlertRef;
 
 /**
- * 자격 판정 3층 규칙(docs/api/README.md '판정', ADR-0012). AI를 쓰지 않는 규칙 엔진이고 DB를 모른다.
+ * 자격 판정 3층 규칙(docs/api/README.md '판정', ADR-0012·0024). AI를 쓰지 않는 규칙 엔진이고 DB를 모른다.
  * <ol>
  *   <li>학교 규정(SCHOOL_RULE): 이수 학기 4학기 이상 · 졸업예정자는 방학 과정(VACATION) 불가. MET·NOT_MET만</li>
  *   <li>기관 조건(INSTITUTION): 학년(3·4학년 / 4학년 / 졸업예정자) · 학점 하한 · 포트폴리오 · 자격증.
- *       자격증은 프로필의 certificates와 직무의 자격증 코드를 맞춰 본다 — 필수인데 없으면 NOT_MET(ADR-0021).
+ *       자격증은 프로필의 certificates와 직무의 자격증 코드를 맞춰 본다 — 프로필에 없으면(null 포함) 없음이다(ADR-0024).
  *       검토 알림의 fieldKey가 이 넷 중 하나면 그 항목 행이 CHECK가 되고 alertId가 붙는다(ADR-0016).
  *       그 밖의 알림(선호 전공·기간·지원비 등)은 판정을 바꾸지 않는다 — 목록의 alertCount로만 보인다</li>
  *   <li>선호 전공(MAJOR): 참고 표시(INFO)만. 판정에 넣지 않는다</li>
  * </ol>
- * 판정: SCHOOL_RULE에 NOT_MET 또는 자격증 줄이 NOT_MET(필수 자격증 없음) → INELIGIBLE,
- * 아니면 INSTITUTION에 NOT_MET·CHECK → NEEDS_CHECK, 아니면 ELIGIBLE.
+ * 판정(ADR-0024): 학교 규정이나 기관 조건에 NOT_MET(못 맞춘 조건 — 학년·학점·필수 자격증)이 하나라도 있으면 INELIGIBLE,
+ * 아니면 기관 조건에 CHECK(준비할 서류 — 필수 포트폴리오, 또는 문서끼리 엇갈린 판정 항목)가 있으면 NEEDS_CHECK, 아니면 ELIGIBLE.
  * 줄마다 출처(citation)를 붙인다(ADR-0023): 학교 규정 = 학생 모집안내 문장, 그 밖 = 직무의 requirement_source.
  */
 public final class EligibilityRules {
@@ -39,8 +39,10 @@ public final class EligibilityRules {
     static final ReasonCitation VACATION_SOURCE = new ReasonCitation("SCHOOL_NOTICE", SCHOOL_NOTICE, null,
             "졸업예정자의 계절제 참여 불가");
 
-    /** 자격증 줄의 항목 이름. 기관 조건 중 이 줄의 NOT_MET만 지원 불가로 간다(ADR-0021). */
+    /** 자격증 줄의 항목 이름. */
     public static final String CERTIFICATE_ITEM = "자격증";
+    /** 필수·우대 포트폴리오 줄의 '내 조건'. 프로필로 묻지 않고 학생이 준비해서 낸다(ADR-0024). */
+    static final String PREPARE = "직접 준비";
 
     /** 판정 항목 필드 → 이유 줄의 항목 이름(ADR-0016). 이 필드에 걸린 알림만 판정을 바꾼다. */
     static final Map<String, String> JUDGED_FIELDS = Map.of(
@@ -73,18 +75,16 @@ public final class EligibilityRules {
         if (reasons.stream().anyMatch(EligibilityRules::blocks)) {
             return Verdict.INELIGIBLE;
         }
-        boolean institutionOpen = reasons.stream()
-                .anyMatch(r -> r.layer() == Layer.INSTITUTION && (r.result() == Result.NOT_MET || r.result() == Result.CHECK));
-        return institutionOpen ? Verdict.NEEDS_CHECK : Verdict.ELIGIBLE;
+        boolean toPrepare = reasons.stream().anyMatch(r -> r.layer() == Layer.INSTITUTION && r.result() == Result.CHECK);
+        return toPrepare ? Verdict.NEEDS_CHECK : Verdict.ELIGIBLE;
     }
 
     /**
-     * 이 줄이 지원 불가를 만드는지: 학교 규정 미충족, 또는 필수 자격증 없음(ADR-0021). 학년·학점 미충족은 기관이 학생을 보고
-     * 바꿀 여지가 있어 확인 필요로 둔다. 추천이 0개일 때 막은 항목(blockedBy)도 이 줄로 센다.
+     * 이 줄이 지원 불가를 만드는지: 학교 규정이나 기관 조건(학년·학점·필수 자격증)을 못 맞춤(ADR-0024).
+     * 문서끼리 엇갈린 항목은 CHECK로 바뀌어 있어 여기에 걸리지 않는다. 추천이 0개일 때 막은 항목(blockedBy)도 이 줄로 센다.
      */
     public static boolean blocks(ReasonLine r) {
-        return r.result() == Result.NOT_MET && (r.layer() == Layer.SCHOOL_RULE
-                || r.layer() == Layer.INSTITUTION && CERTIFICATE_ITEM.equals(r.item()));
+        return r.result() == Result.NOT_MET && (r.layer() == Layer.SCHOOL_RULE || r.layer() == Layer.INSTITUTION);
     }
 
     static MajorMatch majorMatch(JobRequirement job, int departmentId) {
@@ -154,13 +154,13 @@ public final class EligibilityRules {
         return -1;
     }
 
-    /** 필수면 학생이 직접 확인할 항목(CHECK), 우대면 참고(INFO), 없으면 줄을 만들지 않는다. */
+    /** 필수면 학생이 준비해서 낼 서류(CHECK), 우대면 참고(INFO), 없으면 줄을 만들지 않는다. */
     private static void document(List<ReasonLine> out, String item, String requirement, String detail,
                                  ReasonCitation source) {
         switch (requirement) {
-            case "REQUIRED" -> out.add(ReasonLine.of(Layer.INSTITUTION, item, "필수" + detail(detail), "직접 확인",
+            case "REQUIRED" -> out.add(ReasonLine.of(Layer.INSTITUTION, item, "필수" + detail(detail), PREPARE,
                     Result.CHECK, source));
-            case "PREFERRED" -> out.add(ReasonLine.of(Layer.INSTITUTION, item, "우대" + detail(detail), "직접 확인",
+            case "PREFERRED" -> out.add(ReasonLine.of(Layer.INSTITUTION, item, "우대" + detail(detail), PREPARE,
                     Result.INFO, source));
             default -> {
             }
@@ -168,9 +168,9 @@ public final class EligibilityRules {
     }
 
     /**
-     * 자격증 줄(ADR-0021). 프로필의 certificates에 직무의 자격증 코드가 있는지 본다.
-     * 답하지 않았으면(null) 지금까지처럼 필수는 직접 확인(CHECK), 우대는 참고(INFO).
-     * 필수인데 없으면 NOT_MET → 판정이 지원 불가가 된다. 우대는 있든 없든 참고(INFO)다. 운영계획서 근거를 붙인다.
+     * 자격증 줄(ADR-0021·0024). 프로필의 certificates에 직무의 자격증 코드가 있는지 본다. 프로필에 없으면(null 포함) 없음 —
+     * 필수면 NOT_MET → 지원 불가, 우대면 있든 없든 참고(INFO)다. 직무의 자격증 코드가 없어 맞춰 볼 수 없으면 직접 확인(CHECK·INFO).
+     * 운영계획서 근거를 붙인다.
      */
     private static void certificate(List<ReasonLine> out, JobRequirement job, List<String> mine) {
         boolean required = "REQUIRED".equals(job.certificate());
@@ -179,10 +179,10 @@ public final class EligibilityRules {
         }
         String have;
         Result result;
-        if (mine == null || job.certificateCode() == null) {
+        if (job.certificateCode() == null) {
             have = "직접 확인";
             result = required ? Result.CHECK : Result.INFO;
-        } else if (mine.contains(job.certificateCode())) {
+        } else if (mine != null && mine.contains(job.certificateCode())) {
             have = "있음";
             result = required ? Result.MET : Result.INFO;
         } else {

@@ -4,10 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.anthropic.models.messages.MessageCreateParams;
 import java.util.List;
-import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Layer;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.MajorMatch;
-import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.ReasonLine;
-import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Result;
 import kr.ac.skuniv.coopradar.recommend.RecommendDtos.Citation;
 import kr.ac.skuniv.coopradar.recommend.RecommendDtos.SourceType;
 import kr.ac.skuniv.coopradar.recommend.RecommendRepository.JobFacts;
@@ -105,28 +102,6 @@ class ReasonUnitTest {
                 CITES, FACTS)).contains("온라인 채널 운영을 맡아요.");
         assertThat(ReasonService.validate(draft("온라인 채널 운영을 맡아요. 포트폴리오는 확인할 것이 있어요."), CITES, FACTS))
                 .contains("온라인 채널 운영을 맡아요.");
-    }
-
-    @Test
-    void 확인할_조건은_판정_이유_글_그대로_한_문장() {
-        var lines = List.of(
-                new ReasonLine(Layer.SCHOOL_RULE, "이수 학기", "4학기 이상", "5학기", Result.MET, null, null),
-                new ReasonLine(Layer.INSTITUTION, "학년", "4학년", "3학년", Result.NOT_MET, null, null),
-                new ReasonLine(Layer.INSTITUTION, "학점", "3.0 이상", "3.4", Result.MET, null, null),
-                new ReasonLine(Layer.INSTITUTION, "포트폴리오", "필수", "직접 확인", Result.CHECK, null, null),
-                new ReasonLine(Layer.INSTITUTION, "자격증", "우대", "직접 확인", Result.INFO, null, null),
-                new ReasonLine(Layer.MAJOR, "선호 전공", "미용예술계열", "메이크업디자인학과", Result.INFO, null, null));
-        assertThat(ReasonTemplates.checkSentence(lines)).isEqualTo("확인해야 할 조건이 있어요(학년 '4학년' · 포트폴리오 '필수').");
-        assertThat(ReasonTemplates.checkSentence(lines.subList(0, 1))).isNull();
-    }
-
-    @Test
-    void 선호_전공_규칙_문장() {
-        assertThat(ReasonTemplates.majorSentence(MajorMatch.MATCH, "미용예술대학"))
-                .isEqualTo("선호 전공 '미용예술대학'에 소속 학과가 들어 있어요.");
-        assertThat(ReasonTemplates.majorSentence(MajorMatch.MATCH, null)).isEqualTo("선호 전공에 소속 학과가 들어 있어요.");
-        assertThat(ReasonTemplates.majorSentence(MajorMatch.OPEN, null)).isEqualTo("전공 무관 자리예요.");
-        assertThat(ReasonTemplates.majorSentence(MajorMatch.NOT_LISTED, "무시")).isEqualTo(ReasonTemplates.MAJOR_NOT_LISTED);
     }
 
     @Test

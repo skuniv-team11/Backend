@@ -6,8 +6,8 @@
   "summary": {
     "total": 40,
     "eligible": 12,
-    "needsCheck": 27,
-    "ineligible": 1
+    "needsCheck": 2,
+    "ineligible": 26
   },
   "jobs": [
     {
@@ -129,21 +129,21 @@
         {
           "layer": "INSTITUTION",
           "item": "학점",
-          "requirement": "3.5 이상",
+          "requirement": "3.0 이상",
           "mine": "3.4",
-          "result": "NOT_MET",
+          "result": "MET",
           "citation": {
             "sourceType": "INSTITUTION_LIST",
             "documentTitle": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
             "page": null,
-            "quote": "학점 3.5 이상"
+            "quote": "학점 3.0 이상"
           }
         },
         {
           "layer": "INSTITUTION",
           "item": "포트폴리오",
           "requirement": "필수",
-          "mine": "직접 확인",
+          "mine": "직접 준비",
           "result": "CHECK",
           "citation": {
             "sourceType": "INSTITUTION_LIST",
@@ -176,7 +176,7 @@
         "name": "가온소프트(가상)",
         "logoPath": null
       },
-      "verdict": "NEEDS_CHECK",
+      "verdict": "INELIGIBLE",
       "majorMatch": "NOT_LISTED",
       "closing": {
         "closesOn": null,

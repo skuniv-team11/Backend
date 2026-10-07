@@ -37,14 +37,15 @@ class EligibilityApiTest {
     MockMvc mvc;
 
     @Test
-    void 예시_학생은_40직무_중_22개_지원_가능_17개_확인_필요_1개_지원_불가이고_계약_모양과_같다() throws Exception {
+    void 예시_학생은_40직무_중_22개_지원_가능_1개_확인_필요_17개_지원_불가이고_계약_모양과_같다() throws Exception {
+        // ADR-0024: 학년·학점·필수 자격증을 못 맞추면 지원 불가, 확인 필요는 준비할 서류(포트폴리오)뿐
         String body = check(guestToken("STUDENT"), profile(MAKEUP, 3, 5, "3.4", false, "[]"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.round.termCode").value("2026-2"))
                 .andExpect(jsonPath("$.summary.total").value(40))
                 .andExpect(jsonPath("$.summary.eligible").value(22))
-                .andExpect(jsonPath("$.summary.needsCheck").value(17))
-                .andExpect(jsonPath("$.summary.ineligible").value(1))
+                .andExpect(jsonPath("$.summary.needsCheck").value(1))
+                .andExpect(jsonPath("$.summary.ineligible").value(17))
                 .andExpect(jsonPath("$.jobs.length()").value(40))
                 .andReturn().getResponse().getContentAsString();
         Contract.assertSameShape(body, Contract.responseExample("checkEligibility", 200, null));
@@ -52,8 +53,10 @@ class EligibilityApiTest {
         // 목록 순서: 지원 가능 → 확인 필요 → 지원 불가
         List<String> verdicts = JsonPath.read(body, "$.jobs[*].verdict");
         assertThat(verdicts.subList(0, 22)).containsOnly("ELIGIBLE");
-        assertThat(verdicts.subList(22, 39)).containsOnly("NEEDS_CHECK");
-        assertThat(verdicts.get(39)).isEqualTo("INELIGIBLE");
+        assertThat(verdicts.get(22)).isEqualTo("NEEDS_CHECK");
+        assertThat(verdicts.subList(23, 40)).containsOnly("INELIGIBLE");
+        // 확인 필요 1개는 115 영상 콘텐츠 디자인 — 3·4학년이라 학년은 맞고 포트폴리오만 준비하면 된다
+        assertThat(reason(job(body, 115), "포트폴리오")).containsEntry("mine", "직접 준비").containsEntry("result", "CHECK");
 
         // 140 미용 시술 보조: 미용 자격증 필수인데 없음 → 지원 불가, 운영계획서 근거가 붙는다(ADR-0021)
         Map<String, Object> job140 = job(body, 140);
@@ -92,15 +95,16 @@ class EligibilityApiTest {
         List<Integer> matched = JsonPath.read(body, "$.jobs[?(@.majorMatch == 'MATCH')].jobId");
         assertThat(matched).containsExactlyInAnyOrder(120, 122, 123, 134);
 
-        // 101: 4학년 요건 + 포트폴리오 필수 → 확인 필요
+        // 101: 4학년 요건을 못 맞춤 → 지원 불가(포트폴리오 필수 줄은 그대로 남는다)
         Map<String, Object> job101 = job(body, 101);
-        assertThat(job101.get("verdict")).isEqualTo("NEEDS_CHECK");
+        assertThat(job101.get("verdict")).isEqualTo("INELIGIBLE");
         assertThat(reason(job101, "학년")).containsEntry("requirement", "4학년").containsEntry("mine", "3학년")
                 .containsEntry("result", "NOT_MET");
         assertThat(reason(job101, "포트폴리오")).containsEntry("result", "CHECK");
 
-        // 117: 졸업예정자 요건 + 학점 3.5 이상
+        // 117: 졸업예정자 요건 + 학점 3.5 이상 → 둘 다 못 맞춰 지원 불가
         Map<String, Object> job117 = job(body, 117);
+        assertThat(job117.get("verdict")).isEqualTo("INELIGIBLE");
         assertThat(reason(job117, "학년")).containsEntry("requirement", "졸업예정자").containsEntry("result", "NOT_MET");
         assertThat(reason(job117, "학점")).containsEntry("requirement", "3.5 이상").containsEntry("mine", "3.4");
 
@@ -144,15 +148,16 @@ class EligibilityApiTest {
     }
 
     @Test
-    void 자격증을_답하지_않으면_필수_자격증_직무는_직접_확인으로_남는다() throws Exception {
-        // 프론트가 certificates를 아직 보내지 않아도(빠짐 = null) 이 결정 전과 같다 — 지원 불가로 단정하지 않는다
+    void 자격증을_답하지_않으면_없음으로_보고_필수_자격증_직무는_지원_불가() throws Exception {
+        // ADR-0024: 프로필에 없으면(certificates 빠짐 = null 포함) 없음이다 — []와 같은 결과
         String body = check(memberToken(), profile(MAKEUP, 3, 5, "3.4", false))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.summary.eligible").value(22))
-                .andExpect(jsonPath("$.summary.needsCheck").value(18))
-                .andExpect(jsonPath("$.summary.ineligible").value(0))
+                .andExpect(jsonPath("$.summary.needsCheck").value(1))
+                .andExpect(jsonPath("$.summary.ineligible").value(17))
                 .andReturn().getResponse().getContentAsString();
-        assertThat(reason(job(body, 140), "자격증")).containsEntry("mine", "직접 확인").containsEntry("result", "CHECK");
+        assertThat(job(body, 140).get("verdict")).isEqualTo("INELIGIBLE");
+        assertThat(reason(job(body, 140), "자격증")).containsEntry("mine", "없음").containsEntry("result", "NOT_MET");
         // 미용 자격증이 있으면 지원 가능
         String has = check(memberToken(), profile(MAKEUP, 3, 5, "3.4", false, "[\"BEAUTY\"]"))
                 .andExpect(jsonPath("$.summary.eligible").value(23))

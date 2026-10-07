@@ -6,7 +6,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.MajorMatch;
 import kr.ac.skuniv.coopradar.eligibility.JobRequirement;
 import kr.ac.skuniv.coopradar.job.InstitutionRef;
 import kr.ac.skuniv.coopradar.job.JobDetail.Closing;
@@ -148,24 +147,22 @@ class EvidenceTest {
     }
 
     @Test
-    void 기본_문장은_겹친_원문과_선호_전공_표기를_따옴표로_짚는다() {
+    void 기본_문장은_판정_한_줄과_전공_뒤에_겹친_원문을_따옴표로_짚는다() {
+        String lead = "3학년이라 지원 조건(3·4학년)을 모두 갖췄어요.";
+        String major = "메이크업디자인학과는 회사가 선호하는 전공('미용예술대학')에 들어가요.";
         Segment comp = new Segment(Kind.COMPETENCY, "뷰티 SNS를 운영해 본 경험이 있는 자", 4);
-        assertThat(ReasonTemplates.build(MajorMatch.MATCH, "미용예술대학", true, comp, false, true, null))
-                .isEqualTo("관심 분야가 요구 역량 '뷰티 SNS를 운영해 본 경험이 있는 자'와 겹치고, "
-                        + "선호 전공 '미용예술대학'에 소속 학과가 들어 있어요.");
+        assertThat(ReasonTemplates.build(lead, major, true, comp, false, null))
+                .isEqualTo(lead + " " + major + " 관심 분야가 요구 역량 '뷰티 SNS를 운영해 본 경험이 있는 자'와 겹쳐요.");
         Segment overview = new Segment(Kind.OVERVIEW, "자사 SNS 채널 콘텐츠 운영 및 홍보 마케팅 업무 지원", 4);
-        assertThat(ReasonTemplates.build(MajorMatch.MATCH, "미용예술대학", true, overview, false, true, null))
-                .startsWith("관심 분야가 직무 개요 '자사 SNS 채널 콘텐츠 운영 및 홍보 마케팅 업무 지원'과 겹치고");
-        // 관심이 가깝지 않으면(적합도 기준) 관심 문구를 넣지 않는다
-        assertThat(ReasonTemplates.build(MajorMatch.MATCH, null, false, overview, true, true, null))
-                .isEqualTo("선호 전공에 소속 학과가 들어 있고, 채용연계형이에요.");
-        // 선호 전공 밖이면 그 사실을 꼭 붙인다
-        assertThat(ReasonTemplates.build(MajorMatch.NOT_LISTED, null, true, null, false, true, null))
-                .isEqualTo("관심 분야와 직무 내용이 가까워요. " + ReasonTemplates.MAJOR_NOT_LISTED);
-        assertThat(ReasonTemplates.build(MajorMatch.OPEN, null, false, null, false, false, "같은 팀의 A와 달리 'B' 요건이 있어요."))
-                .isEqualTo("전공 무관 자리예요. 같은 팀의 A와 달리 'B' 요건이 있어요.");
-        assertThat(ReasonTemplates.build(MajorMatch.NOT_LISTED, null, false, null, false, true, null))
-                .isEqualTo("지원 조건을 모두 통과한 자리예요. " + ReasonTemplates.MAJOR_NOT_LISTED);
+        assertThat(ReasonTemplates.build(lead, major, true, overview, false, null))
+                .endsWith("관심 분야가 직무 개요 '자사 SNS 채널 콘텐츠 운영 및 홍보 마케팅 업무 지원'과 겹쳐요.");
+        // 관심이 가깝지 않으면(적합도 기준) 관심 문구를 넣지 않는다. 채용연계형은 뜻을 풀어 붙인다
+        assertThat(ReasonTemplates.build(lead, major, false, overview, true, null))
+                .isEqualTo(lead + " " + major + " " + ReasonTemplates.HIRING);
+        // 40자 넘는 원문은 문장에 넣지 않는다(인용 칸에만)
+        Segment longText = new Segment(Kind.OVERVIEW, "가".repeat(41), 4);
+        assertThat(ReasonTemplates.build(lead, null, true, longText, false, "같은 팀의 A와 달리 'B' 요건이 있어요."))
+                .isEqualTo(lead + " 관심 분야와 직무 내용이 가까워요. 같은 팀의 A와 달리 'B' 요건이 있어요.");
     }
 
     @Test

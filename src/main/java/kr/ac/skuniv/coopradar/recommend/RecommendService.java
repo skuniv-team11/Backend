@@ -57,11 +57,11 @@ public class RecommendService {
      *
      * @param matched  관심 문장과 겹쳐 고른 계획서 조각(없으면 null). 이유 문장 프롬프트에도 알려 준다
      * @param contrast 추천 안의 같은 팀 다른 직무와 요건이 다른 점(없으면 null). 기본 문장 끝에 이미 들어 있다
-     * @param majorSentence 선호 전공에 소속 학과가 있는지 한 문장. 이유 문장(#16) LLM 문장 뒤에 붙는다
-     * @param checkSentence '확인 필요'로 만든 기관 조건 한 문장(없으면 null). 기본 문장 끝에 이미 들어 있고, LLM 문장 뒤에도 붙는다
+     * @param lead     판정 한 줄(내 값으로 갖춘 조건·챙길 것, ADR-0024). 기본 문장의 맨 앞이고 LLM 문장 앞에도 붙는다
+     * @param major    내 학과와 선호 전공 한 문장. 기본 문장의 두 번째이고 LLM 문장 앞에도 붙는다
      */
     record Explained(Scored scored, List<Citation> citations, String template, EvidenceText.Segment matched,
-                     String contrast, String majorSentence, String checkSentence) {
+                     String contrast, String lead, String major) {
     }
 
     @Transactional(readOnly = true)
@@ -122,16 +122,15 @@ public class RecommendService {
         return closesOn != null && !closesOn.isAfter(asOf);
     }
 
-    /** 지원 불가가 아닌 직무 전부의 점수(높은 순). 지망 점검이 빈 자리 적합도에 쓴다. */
+    /** 지원 불가가 아닌 직무 전부의 점수(높은 순). 지망 점검이 빈 자리 적합도에 쓴다. 관심 유사도는 회차 직무 전부로 잰다. */
     @Transactional(readOnly = true)
     public List<Scored> score(int roundId, List<Judged> judged, ProfileInput profile) {
-        List<Judged> candidates = judged.stream().filter(j -> j.result().verdict() != Verdict.INELIGIBLE).toList();
-        return FitScorer.score(candidates, repository.features(roundId), profile.interestText());
+        return FitScorer.score(judged, repository.features(roundId), profile.interestText());
     }
 
     /** 근거를 고르는 데 필요한 것을 한 번에 읽는다(요청마다 — 직무 40개라 가볍다). */
     private record Context(Map<Integer, JobText> texts, Map<Integer, List<Testimonial>> testimonials,
-                           Map<Integer, String> majorLabels, EvidencePicker picker) {
+                           Map<Integer, String> majorLabels, Map<String, String> certificateLabels, EvidencePicker picker) {
     }
 
     private Context context(int roundId, ProfileInput profile) {
@@ -140,7 +139,7 @@ public class RecommendService {
         Map<Integer, List<Testimonial>> testimonials = repository.testimonials(roundId);
         List<Testimonial> allTestimonials = testimonials.values().stream().flatMap(List::stream).toList();
         return new Context(texts, testimonials, repository.majorLabels(roundId, profile.departmentId()),
-                new EvidencePicker(texts.values(), allTestimonials, profile.interestText()));
+                repository.certificateLabels(), new EvidencePicker(texts.values(), allTestimonials, profile.interestText()));
     }
 
     private static Explained explain(Context ctx, Scored s, List<Scored> top) {
@@ -151,15 +150,11 @@ public class RecommendService {
         String contrast = contrast(ctx, s, top);
         boolean hiring = "HIRING".equals(s.features().jobType());
         String majorLabel = r.majorMatch() == MajorMatch.MATCH ? ctx.majorLabels().get(r.jobId()) : null;
-        String template = ReasonTemplates.build(r.majorMatch(), majorLabel,
-                FitScorer.interestClose(s.interest()), picked.matched(), hiring, r.verdict() == Verdict.ELIGIBLE,
-                contrast);
-        String check = ReasonTemplates.checkSentence(r.reasons());
-        if (check != null) {
-            template += " " + check;
-        }
-        return new Explained(s, picked.citations(), template, picked.matched(), contrast,
-                ReasonTemplates.majorSentence(r.majorMatch(), majorLabel), check);
+        String lead = FitSentences.lead(s.judged(), ctx.certificateLabels());
+        String major = FitSentences.major(r.verdict(), r.majorMatch(), FitSentences.department(r), majorLabel);
+        String template = ReasonTemplates.build(lead, major, FitScorer.interestClose(s.interest()), picked.matched(),
+                hiring, contrast);
+        return new Explained(s, picked.citations(), template, picked.matched(), contrast, lead, major);
     }
 
     /** 추천 안에서 같은 기관·같은 팀인 다른 직무(순위가 앞선 것 먼저)와 요건이 다른 점. */

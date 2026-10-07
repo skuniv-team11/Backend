@@ -21,7 +21,7 @@ import kr.ac.skuniv.coopradar.job.InstitutionRef;
 import kr.ac.skuniv.coopradar.job.JobDetail.Closing;
 import org.junit.jupiter.api.Test;
 
-/** 3층 판정 규칙(docs/api/README.md '판정', ADR-0012). DB 없이 규칙만 본다. */
+/** 3층 판정 규칙(docs/api/README.md '판정', ADR-0012·0024). DB 없이 규칙만 본다. */
 class EligibilityRulesTest {
 
     private static final int DEPT = 43;
@@ -69,13 +69,15 @@ class EligibilityRulesTest {
     }
 
     @Test
-    void 기관_학년_조건은_미충족이어도_확인_필요() {
+    void 기관_학년_조건을_못_맞추면_지원_불가() {
+        // ADR-0024: 학년·학점·필수 자격증을 못 맞추면 지원 불가(전에는 확인 필요)
         EligibilityJob y34 = judge(job(), me(2, 4, "3.4", false));
-        assertThat(y34.verdict()).isEqualTo(Verdict.NEEDS_CHECK);
+        assertThat(y34.verdict()).isEqualTo(Verdict.INELIGIBLE);
         assertThat(line(y34, "학년").result()).isEqualTo(Result.NOT_MET);
 
         JobRequirement y4 = job(b -> b.gradeRule = "Y4");
         assertThat(line(judge(y4, me(3, 5, "3.4", false)), "학년").result()).isEqualTo(Result.NOT_MET);
+        assertThat(judge(y4, me(3, 5, "3.4", false)).verdict()).isEqualTo(Verdict.INELIGIBLE);
         assertThat(line(judge(y4, me(4, 7, "3.4", false)), "학년").requirement()).isEqualTo("4학년");
         assertThat(judge(y4, me(4, 7, "3.4", false)).verdict()).isEqualTo(Verdict.ELIGIBLE);
 
@@ -84,6 +86,7 @@ class EligibilityRulesTest {
         assertThat(notGraduating.requirement()).isEqualTo("졸업예정자");
         assertThat(notGraduating.mine()).isEqualTo("졸업예정 아님");
         assertThat(notGraduating.result()).isEqualTo(Result.NOT_MET);
+        assertThat(EligibilityRules.blocks(notGraduating)).isTrue();
         assertThat(judge(graduating, me(4, 7, "3.4", true)).verdict()).isEqualTo(Verdict.ELIGIBLE);
     }
 
@@ -93,7 +96,7 @@ class EligibilityRulesTest {
         EligibilityJob below = judge(job(b -> b.gpaMin = new BigDecimal("3.5")), me(3, 5, "3.4", false));
         assertThat(line(below, "학점").result()).isEqualTo(Result.NOT_MET);
         assertThat(line(below, "학점").requirement()).isEqualTo("3.5 이상");
-        assertThat(below.verdict()).isEqualTo(Verdict.NEEDS_CHECK);
+        assertThat(below.verdict()).isEqualTo(Verdict.INELIGIBLE);
 
         EligibilityJob none = judge(job(b -> b.gpaMin = null), me(3, 5, "0.0", false));
         assertThat(none.reasons()).noneMatch(l -> l.item().equals("학점"));
@@ -101,26 +104,28 @@ class EligibilityRulesTest {
     }
 
     @Test
-    void 포트폴리오_자격증은_필수면_확인_필요_우대면_참고() {
-        EligibilityJob required = judge(job(b -> {
-            b.portfolio = "REQUIRED";
-            b.certificate = "REQUIRED";
-            b.certificateCode = "IT";
-            b.certificateText = "정보처리기사";
-        }), me(3, 5, "3.4", false));
+    void 포트폴리오는_필수면_준비할_서류라_확인_필요_우대면_참고() {
+        // ADR-0024: 확인 필요는 준비해서 낼 서류(포트폴리오)와 문서끼리 엇갈린 항목만
+        EligibilityJob required = judge(job(b -> b.portfolio = "REQUIRED"), me(3, 5, "3.4", false));
         assertThat(required.verdict()).isEqualTo(Verdict.NEEDS_CHECK);
-        assertThat(line(required, "포트폴리오").result()).isEqualTo(Result.CHECK);
-        assertThat(line(required, "포트폴리오").mine()).isEqualTo("직접 확인");
-        assertThat(line(required, "자격증").requirement()).isEqualTo("필수 (정보처리기사)");
+        assertThat(line(required, "포트폴리오")).extracting(ReasonLine::requirement, ReasonLine::mine, ReasonLine::result)
+                .containsExactly("필수", "직접 준비", Result.CHECK);
 
         EligibilityJob preferred = judge(job(b -> b.portfolio = "PREFERRED"), me(3, 5, "3.4", false));
         assertThat(line(preferred, "포트폴리오").result()).isEqualTo(Result.INFO);
         assertThat(preferred.verdict()).isEqualTo(Verdict.ELIGIBLE);
+
+        // 포트폴리오를 준비해도 학년을 못 맞추면 지원 불가
+        EligibilityJob both = judge(job(b -> {
+            b.portfolio = "REQUIRED";
+            b.gradeRule = "Y4";
+        }), me(3, 5, "3.4", false));
+        assertThat(both.verdict()).isEqualTo(Verdict.INELIGIBLE);
     }
 
     @Test
-    void 필수_자격증이_없으면_지원_불가_있으면_충족_답하지_않으면_직접_확인이고_근거가_붙는다() {
-        // ADR-0021: 기관 조건 중 지원 불가로 가는 것은 필수 자격증뿐
+    void 필수_자격증이_없으면_지원_불가_있으면_충족이고_프로필에_없으면_없음으로_본다() {
+        // ADR-0021·0024: 필수 자격증이 프로필에 없으면(답하지 않음 포함) 지원 불가
         ReasonCitation plan = new ReasonCitation("OPERATION_PLAN", "(가상)기관 운영계획서", 2, "미용 자격증 소지자");
         Consumer<Builder> beauty = b -> {
             b.certificate = "REQUIRED";
@@ -143,13 +148,13 @@ class EligibilityRulesTest {
         assertThat(line(has, "자격증")).extracting(ReasonLine::mine, ReasonLine::result).containsExactly("있음", Result.MET);
 
         EligibilityJob unanswered = judge(job(beauty), me(3, 5, "3.4", false));
-        assertThat(unanswered.verdict()).isEqualTo(Verdict.NEEDS_CHECK);
+        assertThat(unanswered.verdict()).isEqualTo(Verdict.INELIGIBLE);
         assertThat(line(unanswered, "자격증")).extracting(ReasonLine::mine, ReasonLine::result, ReasonLine::citation)
-                .containsExactly("직접 확인", Result.CHECK, plan);
+                .containsExactly("없음", Result.NOT_MET, plan);
     }
 
     @Test
-    void 우대_자격증은_있든_없든_참고이고_학년_학점_미충족은_지원_불가가_아니다() {
+    void 우대_자격증은_있든_없든_참고이고_학년_학점_미충족은_지원_불가() {
         Consumer<Builder> accounting = b -> {
             b.certificate = "PREFERRED";
             b.certificateCode = "ACCOUNTING";
@@ -161,11 +166,12 @@ class EligibilityRulesTest {
                 .containsExactly("우대 (회계관련 자격증)", "없음", Result.INFO);
         assertThat(line(judge(job(accounting), me(3, 5, "3.4", false, List.of("ACCOUNTING"))), "자격증").mine())
                 .isEqualTo("있음");
-        assertThat(line(judge(job(accounting), me(3, 5, "3.4", false)), "자격증").mine()).isEqualTo("직접 확인");
+        assertThat(line(judge(job(accounting), me(3, 5, "3.4", false)), "자격증").mine()).isEqualTo("없음");
 
         EligibilityJob lowGpa = judge(job(b -> b.gradeRule = "Y4"), me(3, 5, "2.0", false, List.of()));
-        assertThat(lowGpa.verdict()).isEqualTo(Verdict.NEEDS_CHECK);
-        assertThat(lowGpa.reasons()).noneMatch(EligibilityRules::blocks);
+        assertThat(lowGpa.verdict()).isEqualTo(Verdict.INELIGIBLE);
+        assertThat(lowGpa.reasons()).filteredOn(EligibilityRules::blocks).extracting(ReasonLine::item)
+                .containsExactly("학년", "학점");
     }
 
     @Test

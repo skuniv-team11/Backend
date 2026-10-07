@@ -38,6 +38,7 @@ class ReasonApiTest {
     static final AtomicReference<Optional<ReasonDraft>> NEXT = new AtomicReference<>(Optional.empty());
     static final AtomicInteger CALLS = new AtomicInteger();
     static final AtomicReference<String> LAST_MESSAGE = new AtomicReference<>();
+    static final String NOT_LISTED = "메이크업디자인학과는 회사가 선호하는 전공에는 없지만, 선호 전공은 지원 자격과는 상관없어요.";
 
     @TestConfiguration
     static class StubConfig {
@@ -74,10 +75,12 @@ class ReasonApiTest {
                 .andExpect(jsonPath("$.citations[0].sourceType").value("TESTIMONIAL"))
                 .andReturn().getResponse().getContentAsString();
         Contract.assertSameShape(body, Contract.responseExample("getRecommendationReason", 200, null));
-        // LLM 문장 뒤에 규칙 문장: 선호 전공에 소속 학과가 있는지(늘) → 추천 안 같은 팀 직무(123 해외 마케팅)와의 차이(ADR-0020)
+        // LLM 문장(하는 일) 앞에 '왜 나에게 맞는지' 규칙 문장: 판정 한 줄(내 학년·학점) → 내 학과와 선호 전공,
+        // 뒤에 추천 안 같은 팀 직무(123 해외 마케팅)와의 차이(ADR-0020·0024)
         assertThat(JsonPath.<String>read(body, "$.text")).isEqualTo(
-                "뷰티 브랜드 SNS 마케팅에 관심이 있다면, 선배가 맡았던 'SNS 계정 관리 및 업로드'와 바로 이어지는 자리예요. "
-                        + "선호 전공 '미용예술대학'에 소속 학과가 들어 있어요. "
+                "3학년·학점 3.4라 지원 조건(3·4학년, 학점 3.0 이상)을 모두 갖췄어요. "
+                        + "메이크업디자인학과는 회사가 선호하는 전공('미용예술대학')에 들어가요. "
+                        + "뷰티 브랜드 SNS 마케팅에 관심이 있다면, 선배가 맡았던 'SNS 계정 관리 및 업로드'와 바로 이어지는 자리예요. "
                         + "같은 팀의 해외 마케팅과 달리 '영어 가능자' 요건은 없어요.");
         // 근거 인용은 추천(#15)과 같다
         assertThat(JsonPath.<String>read(body, "$.citations[0].quote")).isEqualTo("SNS 계정 관리 및 업로드");
@@ -115,8 +118,9 @@ class ReasonApiTest {
         NEXT.set(Optional.of(new ReasonDraft("'SNS 매거진 채널' 콘텐츠 기획을 거들어요.", List.of(1L))));
         reason(token, 102, "\"뷰티 브랜드 SNS 마케팅\"")
                 .andExpect(jsonPath("$.source").value("LLM"))
-                .andExpect(jsonPath("$.text").value("'SNS 매거진 채널' 콘텐츠 기획을 거들어요. " + ReasonTemplates.MAJOR_NOT_LISTED));
-        assertThat(LAST_MESSAGE.get()).contains("이 사실은 문장 뒤에 따로 붙으니 쓰지 않음");
+                .andExpect(jsonPath("$.text").value("3학년이라 지원 조건(3·4학년)을 모두 갖췄어요. " + NOT_LISTED
+                        + " 'SNS 매거진 채널' 콘텐츠 기획을 거들어요."));
+        assertThat(LAST_MESSAGE.get()).contains("이 사실은 문장 앞에 따로 붙으니 쓰지 않음");
         NEXT.set(Optional.of(new ReasonDraft("SNS 매거진 채널에서 뷰티 브랜드의 마케팅 전략을 배워요.", List.of())));
         reason(token, 102, "\"뷰티 브랜드 SNS 콘텐츠\"").andExpect(jsonPath("$.source").value("TEMPLATE"));
         NEXT.set(Optional.of(new ReasonDraft("메이크업 디자인 지식을 바탕으로 콘텐츠 제작을 익혀요.", List.of())));
@@ -126,7 +130,7 @@ class ReasonApiTest {
         NEXT.set(Optional.of(new ReasonDraft("선호 전공은 참고 사항이지만 SNS 매거진 채널 콘텐츠를 만들어요.", List.of())));
         reason(guestToken("STUDENT"), 102, "\"SNS 콘텐츠 제작\"")
                 .andExpect(jsonPath("$.source").value("TEMPLATE"))
-                .andExpect(jsonPath("$.text").value(org.hamcrest.Matchers.endsWith(ReasonTemplates.MAJOR_NOT_LISTED)));
+                .andExpect(jsonPath("$.text").value(org.hamcrest.Matchers.containsString(NOT_LISTED)));
         assertThat(CALLS.get()).isEqualTo(4);
     }
 
@@ -142,7 +146,7 @@ class ReasonApiTest {
     }
 
     @Test
-    void 지원_불가_직무는_LLM_없이_TEMPLATE_없는_직무는_404_센터는_403() throws Exception {
+    void 지원_불가_직무는_LLM_없이_못_맞춘_조건을_말하고_없는_직무는_404_센터는_403() throws Exception {
         String token = guestToken("STUDENT");
         mvc.perform(post("/api/recommendations/122/reason").header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -150,7 +154,12 @@ class ReasonApiTest {
                                 + " \"graduationExpected\": false}}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.source").value("TEMPLATE"))
-                .andExpect(jsonPath("$.text").value(ReasonService.INELIGIBLE_TEXT));
+                .andExpect(jsonPath("$.text").value(
+                        "지금은 지원할 수 없어요. 현장실습은 4학기 이상 마쳐야 지원할 수 있는데 지금 3학기를 마쳤어요."));
+        // 비욘드(134)는 4학년만 받는다 — 학교 규정이 아니라 기관 조건이어도 못 맞추면 지원 불가(ADR-0024)
+        reason(token, 134, "null")
+                .andExpect(jsonPath("$.source").value("TEMPLATE"))
+                .andExpect(jsonPath("$.text").value("지금은 지원할 수 없어요. 4학년만 지원할 수 있는데 지금 3학년이에요."));
         reason(token, 999999, "null")
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("JOB_NOT_FOUND"));

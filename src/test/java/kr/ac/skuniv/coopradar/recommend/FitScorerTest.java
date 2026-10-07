@@ -85,14 +85,29 @@ class FitScorerTest {
     @Test
     void 같은_조건이면_지원_가능_지원비_채용연계_순으로_가점() {
         var jobs = List.of(
-                job(1, 1, Set.of(), "Y4"),      // 3학년이라 확인 필요
-                job(2, 2, Set.of(), "Y3_4"),    // 지원 가능
-                job(3, 3, Set.of(), "Y3_4"));   // 지원 가능 + 지원비 100%
+                job(1, 1, Set.of(), "Y3_4", "REQUIRED"),  // 포트폴리오 필수라 확인 필요
+                job(2, 2, Set.of(), "Y3_4"),              // 지원 가능
+                job(3, 3, Set.of(), "Y3_4"));             // 지원 가능 + 지원비 100%
         Map<Integer, Features> f = Map.of(
                 1, features("가", "HIRING", 2_156_880),
                 2, features("가", "EXPERIENCE", 1_617_660),
                 3, features("가", "EXPERIENCE", 2_156_880));
         assertThat(FitScorer.score(judge(jobs), f, null)).extracting(Scored::jobId).containsExactly(3, 1, 2);
+    }
+
+    @Test
+    void 지원_불가는_빼되_관심_유사도의_기준은_회차_직무_전부다() {
+        // ADR-0024: 가장 많이 겹친 직무(1)가 학년 때문에 지원 불가여도, 조금 겹친 직무(2)가 '가장 가까운 직무'가 되지 않는다
+        var jobs = List.of(
+                job(1, 1, Set.of(), "Y4"),      // 3학년이라 지원 불가
+                job(2, 2, Set.of(), "Y3_4"));
+        Map<Integer, Features> f = Map.of(
+                1, features("백엔드 서버 개발과 데이터베이스 설계", "EXPERIENCE", 1_617_660),
+                2, features("브랜드 마케팅 콘텐츠 개발 지원과 매장 운영", "EXPERIENCE", 1_617_660));
+        List<Scored> s = FitScorer.score(judge(jobs), f, "백엔드 개발자");
+        assertThat(s).extracting(Scored::jobId).containsExactly(2);
+        assertThat(s.getFirst().interest()).isLessThan(FitScorer.HIGH_INTEREST);
+        assertThat(s.getFirst().relevant()).isFalse();
     }
 
     @Test
@@ -112,8 +127,12 @@ class FitScorerTest {
     }
 
     private static JobRequirement job(int id, int seq, Set<Integer> majorDepartments, String gradeRule) {
+        return job(id, seq, majorDepartments, gradeRule, "NONE");
+    }
+
+    private static JobRequirement job(int id, int seq, Set<Integer> majorDepartments, String gradeRule, String portfolio) {
         return new JobRequirement(id, seq, "(가상)직무" + id, "(가상)팀", new InstitutionRef(id, "(가상)기관" + id), "SEMESTER",
-                gradeRule, null, "NONE", "NONE", null, null, Map.of(), "(가상)전공", false, majorDepartments, List.of(),
+                gradeRule, null, portfolio, "NONE", null, null, Map.of(), "(가상)전공", false, majorDepartments, List.of(),
                 new Closing(null, null, false), 0);
     }
 

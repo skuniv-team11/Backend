@@ -64,21 +64,24 @@ public final class FitScorer {
         }
     }
 
-    /** 후보(INELIGIBLE이 아닌 직무)를 점수 순으로. */
-    public static List<Scored> score(List<Judged> candidates, Map<Integer, Features> features, String interestText) {
+    /**
+     * 지원 불가가 아닌 직무를 점수 순으로. 관심 유사도(IDF·최댓값)는 지원 불가를 포함한 회차 직무 전부로 잰다 — 판정에 따라
+     * 기준이 흔들려 가장 많이 겹친 직무가 지원 불가로 빠졌다고 덜 겹친 직무가 '가장 가깝다'가 되지 않게(ADR-0024).
+     */
+    public static List<Scored> score(List<Judged> judged, Map<Integer, Features> features, String interestText) {
         boolean hasInterest = interestText != null && !interestText.isBlank();
-        double[] sims = new double[candidates.size()];
-        double[] raw = new double[candidates.size()];
+        double[] sims = new double[judged.size()];
+        double[] raw = new double[judged.size()];
         if (hasInterest) {
             List<String> corpus = new ArrayList<>();
-            for (Judged j : candidates) {
+            for (Judged j : judged) {
                 corpus.add(features.get(j.requirement().jobId()).text());
             }
             corpus.add(interestText);
             KeywordSimilarity model = new KeywordSimilarity(corpus);
             var query = model.vector(interestText);
             double max = 0;
-            for (int i = 0; i < candidates.size(); i++) {
+            for (int i = 0; i < judged.size(); i++) {
                 raw[i] = KeywordSimilarity.cosine(query, model.vector(corpus.get(i)));
                 sims[i] = raw[i];
                 max = Math.max(max, sims[i]);
@@ -88,8 +91,11 @@ public final class FitScorer {
             }
         }
         List<Scored> out = new ArrayList<>();
-        for (int i = 0; i < candidates.size(); i++) {
-            Judged j = candidates.get(i);
+        for (int i = 0; i < judged.size(); i++) {
+            Judged j = judged.get(i);
+            if (j.result().verdict() == Verdict.INELIGIBLE) {
+                continue;
+            }
             Features f = features.get(j.requirement().jobId());
             MajorMatch major = j.result().majorMatch();
             boolean majorFit = major == MajorMatch.MATCH || major == MajorMatch.OPEN;

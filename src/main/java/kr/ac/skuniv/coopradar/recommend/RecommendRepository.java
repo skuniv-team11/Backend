@@ -111,6 +111,15 @@ public class RecommendRepository {
         return out;
     }
 
+    /** 자격증 코드 → 이름(코드표). 이유 문장이 '미용 자격증·면허증이 있어야 하는데'처럼 쓴다(ADR-0024). */
+    Map<String, String> certificateLabels() {
+        Map<String, String> out = new HashMap<>();
+        db.sql("SELECT code, label FROM certificate").query(rs -> {
+            out.put(rs.getString("code"), rs.getString("label"));
+        });
+        return out;
+    }
+
     /** 이유 문장 프롬프트에 넣는 직무 사실. 원문 그대로(검증에서 인용 대조에도 쓴다). */
     record JobFacts(String institution, String businessType, String businessItem, String title, String team,
                     String jobType, String overview, String competencies, String educationGoal, String weeklyPlan,
