@@ -20,7 +20,8 @@ import kr.ac.skuniv.coopradar.recommend.FitScorer.MajorTier;
  * <ul>
  *   <li>{@link #lead}: 판정 한 줄. 지원 가능이면 갖춘 조건을 내 값과 함께, 확인 필요면 챙길 것(포트폴리오·엇갈린 문서),
  *       지원 불가면 못 맞춘 조건을 하나씩</li>
- *   <li>{@link #major}: 내 학과가 회사가 선호하는 전공에 드는지. 선호 전공은 지원 자격이 아니라는 것까지 한 문장에</li>
+ *   <li>{@link #major}: 내 학과가 회사가 선호하는 전공에 드는지 · 가까운지 · 먼지(ADR-0026·0028). 가깝거나 먼 전공은 지난
+ *       매칭 집계({@link MatchingHistory})를 근거로 붙인다</li>
  * </ul>
  */
 public final class FitSentences {
@@ -47,11 +48,16 @@ public final class FitSentences {
     }
 
     /**
-     * 내 학과와 회사가 선호하는 전공(ADR-0026). 지원 불가 직무에는 쓰지 않는다(null).
-     * 학과를 콕 집은 표기면 "…선호하는 전공이에요"/"…전공('무대패션디자인전공')에 들어가요", 계열·단과대 표기면
-     * "…선호하는 전공 범위('미용예술대학')에 들어가요".
+     * 내 학과와 회사가 선호하는 전공(ADR-0026·0028). 지원 불가 직무에는 쓰지 않는다(null).
+     * <ul>
+     *   <li>학과 지명: "…선호하는 전공이에요" / "…전공('무대패션디자인전공')에 들어가요"</li>
+     *   <li>계열: "…선호하는 전공 범위('미용예술대학')에 들어가요"</li>
+     *   <li>가까운 전공: "…선호하는 전공('소프트웨어학과')과 가까운 전공이에요." + 지난 매칭 근거</li>
+     *   <li>먼 전공: "…선호하는 전공(광고홍보콘텐츠학과·경영학부 등)과는 거리가 있는 전공이에요." + 지난 매칭 근거</li>
+     * </ul>
      *
-     * @param majorLabel 내 학과가 들어 있는 가장 좁은 선호 전공 표기(예: 미용예술대학). 학과 이름과 같으면 표기를 다시 말하지 않는다
+     * @param majorLabel 학과 지명·계열이면 내 학과가 든 가장 좁은 선호 전공 표기(학과 이름과 같으면 다시 말하지 않는다),
+     *                   가까운 전공이면 가까운 학과가 든 가장 좁은 표기, 먼 전공이면 선호 전공 표기 요약(예: 'A·B 등')
      */
     public static String major(Verdict verdict, MajorTier tier, String department, String majorLabel) {
         if (verdict == Verdict.INELIGIBLE) {
@@ -65,8 +71,32 @@ public final class FitSentences {
                     : Josa.eunNeun(me) + " 회사가 선호하는 전공('" + label + "')에 들어가요.";
             case GROUP -> Josa.eunNeun(me) + " 회사가 선호하는 전공 범위" + (label == null ? "" : "('" + label + "')")
                     + "에 들어가요.";
-            case NONE -> Josa.eunNeun(me) + " 회사가 선호하는 전공에는 없지만, 선호 전공은 지원 자격과는 상관없어요.";
+            case NEAR -> {
+                String preferred = "회사가 선호하는 전공" + (label == null ? "" : "('" + label + "')");
+                yield Josa.eunNeun(me) + " " + preferred + Josa.gwaWa(preferred) + " 가까운 전공이에요. "
+                        + MatchingHistory.nearEvidence();
+            }
+            case NONE -> {
+                String preferred = "회사가 선호하는 전공" + (label == null ? "" : "(" + label + ")");
+                yield Josa.eunNeun(me) + " " + preferred + Josa.gwaWa(preferred) + "는 거리가 있는 전공이에요. "
+                        + MatchingHistory.farEvidence();
+            }
         };
+    }
+
+    /** 먼 전공 문장의 선호 전공 요약: 표기 둘까지 '·'로 잇고 더 있으면 ' 등'. 표기가 없으면 null. */
+    public static String labelSummary(List<String> labels) {
+        if (labels == null || labels.isEmpty()) {
+            return null;
+        }
+        String head = String.join("·", labels.subList(0, Math.min(2, labels.size())));
+        return labels.size() > 2 ? head + " 등" : head;
+    }
+
+    /** 선호 전공 원문: 판정의 선호 전공 줄의 '필요 조건'(전공 무관이면 '전공 무관'). */
+    public static String majorText(EligibilityJob job) {
+        return job.reasons().stream().filter(r -> r.layer() == Layer.MAJOR).map(ReasonLine::requirement).findFirst()
+                .orElse(null);
     }
 
     /** 학과 이름: 판정의 선호 전공 줄의 '내 조건'. */
@@ -206,6 +236,11 @@ public final class FitSentences {
 
         static String iGa(String w) {
             return w + (batchim(w) ? "이" : "가");
+        }
+
+        /** '전공과' · '학과와'(조사만). */
+        static String gwaWa(String w) {
+            return batchim(w) ? "과" : "와";
         }
 
         static String eulReul(String w) {

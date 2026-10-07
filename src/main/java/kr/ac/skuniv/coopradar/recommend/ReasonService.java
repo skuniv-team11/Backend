@@ -301,6 +301,7 @@ public class ReasonService {
         b.append("선호 전공: ").append(facts.majorText() == null ? "—" : facts.majorText())
                 .append(" (내 학과 ").append(switch (job.majorMatch()) {
                     case MATCH -> "포함";
+                    case NEAR -> "미포함이지만 같은 분야의 가까운 전공";
                     case OPEN -> "— 전공 무관";
                     case NOT_LISTED -> "미포함 — 선호 전공은 지원 자격이 아니라 지원은 할 수 있음";
                 }).append(") — 이 사실은 문장 앞에 따로 붙으니 쓰지 않음\n");

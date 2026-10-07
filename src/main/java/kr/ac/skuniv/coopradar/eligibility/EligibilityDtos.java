@@ -14,7 +14,8 @@ public final class EligibilityDtos {
 
     public enum Verdict { ELIGIBLE, NEEDS_CHECK, INELIGIBLE }
 
-    public enum MajorMatch { MATCH, NOT_LISTED, OPEN }
+    /** 선호 전공: 포함 · 가까운 전공(같은 묶음 학과가 선호 전공, ADR-0028) · 밖 · 전공 무관. 판정에는 넣지 않는다. */
+    public enum MajorMatch { MATCH, NEAR, NOT_LISTED, OPEN }
 
     public enum Layer { SCHOOL_RULE, INSTITUTION, MAJOR }
 

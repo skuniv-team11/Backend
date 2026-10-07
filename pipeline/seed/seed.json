@@ -3522,6 +3522,210 @@
    "department_id": 44
   }
  ],
+ "department_cluster": [
+  {
+   "id": 1,
+   "label": "컴퓨터·소프트웨어"
+  },
+  {
+   "id": 2,
+   "label": "경영·금융"
+  },
+  {
+   "id": 3,
+   "label": "경영·물류"
+  },
+  {
+   "id": 4,
+   "label": "마케팅·광고"
+  },
+  {
+   "id": 5,
+   "label": "광고·영상"
+  },
+  {
+   "id": 6,
+   "label": "미용"
+  },
+  {
+   "id": 7,
+   "label": "디자인"
+  },
+  {
+   "id": 8,
+   "label": "어학"
+  },
+  {
+   "id": 9,
+   "label": "공공·인재"
+  },
+  {
+   "id": 10,
+   "label": "화학·생명"
+  },
+  {
+   "id": 11,
+   "label": "건설·도시"
+  }
+ ],
+ "department_cluster_member": [
+  {
+   "cluster_id": 1,
+   "department_id": 23
+  },
+  {
+   "cluster_id": 1,
+   "department_id": 24
+  },
+  {
+   "cluster_id": 1,
+   "department_id": 26
+  },
+  {
+   "cluster_id": 1,
+   "department_id": 27
+  },
+  {
+   "cluster_id": 1,
+   "department_id": 28
+  },
+  {
+   "cluster_id": 2,
+   "department_id": 5
+  },
+  {
+   "cluster_id": 2,
+   "department_id": 6
+  },
+  {
+   "cluster_id": 2,
+   "department_id": 33
+  },
+  {
+   "cluster_id": 3,
+   "department_id": 5
+  },
+  {
+   "cluster_id": 3,
+   "department_id": 30
+  },
+  {
+   "cluster_id": 3,
+   "department_id": 11
+  },
+  {
+   "cluster_id": 4,
+   "department_id": 5
+  },
+  {
+   "cluster_id": 4,
+   "department_id": 10
+  },
+  {
+   "cluster_id": 4,
+   "department_id": 9
+  },
+  {
+   "cluster_id": 5,
+   "department_id": 10
+  },
+  {
+   "cluster_id": 5,
+   "department_id": 9
+  },
+  {
+   "cluster_id": 5,
+   "department_id": 42
+  },
+  {
+   "cluster_id": 6,
+   "department_id": 41
+  },
+  {
+   "cluster_id": 6,
+   "department_id": 43
+  },
+  {
+   "cluster_id": 6,
+   "department_id": 44
+  },
+  {
+   "cluster_id": 6,
+   "department_id": 45
+  },
+  {
+   "cluster_id": 6,
+   "department_id": 48
+  },
+  {
+   "cluster_id": 6,
+   "department_id": 49
+  },
+  {
+   "cluster_id": 6,
+   "department_id": 50
+  },
+  {
+   "cluster_id": 6,
+   "department_id": 51
+  },
+  {
+   "cluster_id": 7,
+   "department_id": 35
+  },
+  {
+   "cluster_id": 7,
+   "department_id": 36
+  },
+  {
+   "cluster_id": 7,
+   "department_id": 37
+  },
+  {
+   "cluster_id": 7,
+   "department_id": 38
+  },
+  {
+   "cluster_id": 7,
+   "department_id": 39
+  },
+  {
+   "cluster_id": 8,
+   "department_id": 1
+  },
+  {
+   "cluster_id": 8,
+   "department_id": 2
+  },
+  {
+   "cluster_id": 9,
+   "department_id": 19
+  },
+  {
+   "cluster_id": 9,
+   "department_id": 12
+  },
+  {
+   "cluster_id": 9,
+   "department_id": 18
+  },
+  {
+   "cluster_id": 10,
+   "department_id": 32
+  },
+  {
+   "cluster_id": 10,
+   "department_id": 31
+  },
+  {
+   "cluster_id": 11,
+   "department_id": 21
+  },
+  {
+   "cluster_id": 11,
+   "department_id": 22
+  }
+ ],
  "job_major_alias": [
   {
    "job_id": 101,

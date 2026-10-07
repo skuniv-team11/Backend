@@ -75,10 +75,25 @@ class FitSentencesTest {
                 .isEqualTo("광고홍보콘텐츠학과는 회사가 선호하는 전공이에요.");
         assertThat(FitSentences.major(Verdict.ELIGIBLE, MajorTier.DIRECT, "무대패션전공", "무대패션디자인전공"))
                 .isEqualTo("무대패션전공은 회사가 선호하는 전공('무대패션디자인전공')에 들어가요.");
+        // ADR-0028: 가까운 전공(같은 묶음 학과를 콕 집은 표기) · 먼 전공은 지난 매칭 집계를 근거로 붙인다
+        assertThat(FitSentences.major(Verdict.ELIGIBLE, MajorTier.NEAR, "컴퓨터공학과", "소프트웨어학과"))
+                .isEqualTo("컴퓨터공학과는 회사가 선호하는 전공('소프트웨어학과')과 가까운 전공이에요. "
+                        + "지난 매칭(2025-2~2026-2)에서 선호 전공 밖 학생 18명 중 11명이 이런 가까운 전공이었어요.");
+        assertThat(FitSentences.major(Verdict.NEEDS_CHECK, MajorTier.NONE, "군사학과", "광고홍보콘텐츠학과·경영학부 등"))
+                .isEqualTo("군사학과는 회사가 선호하는 전공(광고홍보콘텐츠학과·경영학부 등)과는 거리가 있는 전공이에요. "
+                        + "지난 매칭(2025-2~2026-2)에서 이렇게 먼 전공으로 매칭된 학생은 73명 중 7명이었어요.");
         assertThat(FitSentences.major(Verdict.NEEDS_CHECK, MajorTier.NONE, "무대패션전공", null))
-                .isEqualTo("무대패션전공은 회사가 선호하는 전공에는 없지만, 선호 전공은 지원 자격과는 상관없어요.");
+                .startsWith("무대패션전공은 회사가 선호하는 전공과는 거리가 있는 전공이에요.");
         assertThat(FitSentences.major(Verdict.ELIGIBLE, MajorTier.OPEN, "군사학과", null)).isEqualTo(FitSentences.OPEN);
         assertThat(FitSentences.major(Verdict.INELIGIBLE, MajorTier.GROUP, "군사학과", "사회계열")).isNull();
+    }
+
+    @Test
+    void 먼_전공의_선호_전공_요약은_둘까지() {
+        assertThat(FitSentences.labelSummary(List.of("A학과"))).isEqualTo("A학과");
+        assertThat(FitSentences.labelSummary(List.of("A학과", "B학부"))).isEqualTo("A학과·B학부");
+        assertThat(FitSentences.labelSummary(List.of("A학과", "B학부", "C계열"))).isEqualTo("A학과·B학부 등");
+        assertThat(FitSentences.labelSummary(List.of())).isNull();
     }
 
     @Test

@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.EligibilityJob;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Layer;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.MajorMatch;
@@ -56,14 +57,29 @@ public final class EligibilityRules {
             "LIST_MISMATCH", "참여기관 리스트와 운영계획서가 다르게 적혀 있음",
             "RULE_CHECK", "규정 점검이 필요함");
 
+    /**
+     * 선호 전공 표기가 가리키는 학과가 이 수 이하면 '학과를 콕 집은 표기'(예: 광고홍보콘텐츠학과 → 새·옛 이름 2개), 넘으면
+     * 계열·단과대 표기(ADR-0026). 가까운 전공은 콕 집은 표기를 통해서만 따진다(ADR-0028).
+     */
+    public static final int NAMED_MAX_DEPARTMENTS = 2;
+
     private EligibilityRules() {
     }
 
     public static EligibilityJob judge(JobRequirement job, ProfileInput me, String departmentName) {
+        return judge(job, me, departmentName, Set.of());
+    }
+
+    /**
+     * @param nearDepartments 내 학과와 같은 묶음의 학과 중 이 직무가 학과를 콕 집어 적은 학과(ADR-0028). 선호 전공 표시에만
+     *                        쓴다
+     */
+    public static EligibilityJob judge(JobRequirement job, ProfileInput me, String departmentName,
+                                       Set<Integer> nearDepartments) {
         List<ReasonLine> reasons = new ArrayList<>();
         schoolRules(job, me, reasons);
         institutionConditions(job, me, reasons);
-        MajorMatch match = majorMatch(job, me.departmentId());
+        MajorMatch match = majorMatch(job, me.departmentId(), nearDepartments);
         reasons.add(ReasonLine.of(Layer.MAJOR, "선호 전공",
                 job.majorOpen() ? "전공 무관" : orDash(job.majorText()), departmentName, Result.INFO,
                 job.sources().get("MAJOR")));
@@ -87,11 +103,19 @@ public final class EligibilityRules {
         return r.result() == Result.NOT_MET && (r.layer() == Layer.SCHOOL_RULE || r.layer() == Layer.INSTITUTION);
     }
 
-    static MajorMatch majorMatch(JobRequirement job, int departmentId) {
+    /**
+     * 선호 전공: 전공 무관 → 내 학과가 선호 전공 학과에 있음(MATCH) → 선호 전공 학과 중 하나가 내 학과와 같은 묶음(NEAR,
+     * ADR-0028) → 밖(NOT_LISTED).
+     */
+    static MajorMatch majorMatch(JobRequirement job, int departmentId, Set<Integer> nearDepartments) {
         if (job.majorOpen()) {
             return MajorMatch.OPEN;
         }
-        return job.majorDepartmentIds().contains(departmentId) ? MajorMatch.MATCH : MajorMatch.NOT_LISTED;
+        if (job.majorDepartmentIds().contains(departmentId)) {
+            return MajorMatch.MATCH;
+        }
+        boolean near = nearDepartments != null && job.majorDepartmentIds().stream().anyMatch(nearDepartments::contains);
+        return near ? MajorMatch.NEAR : MajorMatch.NOT_LISTED;
     }
 
     private static void schoolRules(JobRequirement job, ProfileInput me, List<ReasonLine> out) {

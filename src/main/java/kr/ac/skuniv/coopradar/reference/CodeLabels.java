@@ -15,7 +15,7 @@ public final class CodeLabels {
             group("verdict", "ELIGIBLE", "지원 가능", "NEEDS_CHECK", "확인 필요", "INELIGIBLE", "지원 불가"),
             group("reasonLayer", "SCHOOL_RULE", "학교 규정", "INSTITUTION", "기관 조건", "MAJOR", "선호 전공"),
             group("reasonResult", "MET", "충족", "NOT_MET", "미충족", "CHECK", "확인 필요", "INFO", "참고"),
-            group("majorMatch", "MATCH", "선호 전공", "NOT_LISTED", "선호 전공 밖", "OPEN", "전공 무관"),
+            group("majorMatch", "MATCH", "선호 전공", "NEAR", "가까운 전공", "NOT_LISTED", "선호 전공 밖", "OPEN", "전공 무관"),
             group("fit", "HIGH", "높음", "MEDIUM", "보통"),
             group("signalStatus", "OPEN", "모집 중", "CLOSED", "마감"),
             group("signalSource", "REPLAY", "모집기간 리플레이(가상) + 실제 담은 수", "LIVE", "실제 신호"),

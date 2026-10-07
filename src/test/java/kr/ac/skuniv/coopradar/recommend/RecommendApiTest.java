@@ -65,7 +65,8 @@ class RecommendApiTest {
                 .andExpect(jsonPath("$.items[3].fit").value("MEDIUM"))
                 .andExpect(jsonPath("$.items[3].reasonTemplate").value(
                         "3학년이라 지원 조건(3·4학년)을 모두 갖췄어요. "
-                                + "메이크업디자인학과는 회사가 선호하는 전공에는 없지만, 선호 전공은 지원 자격과는 상관없어요. "
+                                + "메이크업디자인학과는 회사가 선호하는 전공(무대패션디자인전공·광고홍보콘텐츠학과 등)과는 거리가 있는 전공이에요. "
+                                + "지난 매칭(2025-2~2026-2)에서 이렇게 먼 전공으로 매칭된 학생은 73명 중 7명이었어요. "
                                 + "관심 분야와 직무 내용이 가까워요."))
                 .andExpect(jsonPath("$.items[4].jobId").value(103))
                 .andExpect(jsonPath("$.blockedBy").isEmpty())
@@ -127,8 +128,9 @@ class RecommendApiTest {
 
     @Test
     void 선호_전공도_관심도_맞지_않는_직무는_추천하지_않아_5개보다_적을_수_있다() throws Exception {
-        // ADR-0022·0026: 컴퓨터공학과(26)는 선호 전공 범위('이공계열')에 드는 직무가 미디어 코퍼스(136)뿐이고,
+        // ADR-0022·0026·0028: 컴퓨터공학과(26)는 선호 전공 범위('이공계열')에 드는 직무가 미디어 코퍼스(136)뿐이고,
         // '백엔드 개발자'는 선도소프트 소프트웨어 개발(119, 학점 3.5 이상, 선호 전공 소프트웨어학과)과 가장 많이 겹친다.
+        // 컴퓨터공학과는 소프트웨어학과와 같은 묶음이라 119는 가까운 전공 + 관심 많이 겹침 → 높음.
         // 전공 무관 자리(116 강의제작)·미용 시술 보조 등은 이유가 없어 채우지 않는다
         String body = recommend(guestToken("STUDENT"), """
                 {"profile": {"departmentId": 26, "grade": 3, "completedSemesters": 5, "gpa": 4.0,
@@ -136,11 +138,12 @@ class RecommendApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items.length()").value(2))
                 .andExpect(jsonPath("$.blockedBy").isEmpty())
-                // 둘 다 '보통': 119는 선호 전공 밖, 136은 관심과 겹치는 내용이 적다 — 문장이 그 이유를 말한다
+                // 119는 가까운 전공 + 관심 많이 겹침이라 높음, 136은 관심과 겹치는 내용이 적어 보통 — 문장이 그 이유를 말한다
                 .andExpect(jsonPath("$.items[0].jobId").value(119))
-                .andExpect(jsonPath("$.items[0].fit").value("MEDIUM"))
+                .andExpect(jsonPath("$.items[0].fit").value("HIGH"))
                 .andExpect(jsonPath("$.items[0].reasonTemplate").value(org.hamcrest.Matchers.containsString(
-                        "컴퓨터공학과는 회사가 선호하는 전공에는 없지만, 선호 전공은 지원 자격과는 상관없어요.")))
+                        "컴퓨터공학과는 회사가 선호하는 전공('소프트웨어학과')과 가까운 전공이에요. "
+                                + "지난 매칭(2025-2~2026-2)에서 선호 전공 밖 학생 18명 중 11명이 이런 가까운 전공이었어요.")))
                 .andExpect(jsonPath("$.items[1].jobId").value(136))
                 .andExpect(jsonPath("$.items[1].fit").value("MEDIUM"))
                 .andExpect(jsonPath("$.items[1].reasonTemplate").value(org.hamcrest.Matchers.endsWith(

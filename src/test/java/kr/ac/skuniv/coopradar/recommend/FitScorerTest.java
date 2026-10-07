@@ -73,6 +73,28 @@ class FitScorerTest {
     }
 
     @Test
+    void 가까운_전공은_계열과_전공_무관_사이이고_관심이_많이_겹칠_때만_높음() {
+        // ADR-0028: 선호 전공 학과(1)가 내 가까운 학과면 NEAR. 추천 이유는 되지만 회사가 직접 적은 전공은 아니라서
+        // 관심을 안 적으면 보통, 관심이 많이 겹치면 높음
+        var jobs = List.of(
+                job(1, 1, GROUP, false, "Y3_4", "NONE"),          // 계열
+                job(2, 2, Set.of(1), false, "Y3_4", "NONE"),      // 가까운 전공
+                job(3, 3, Set.of(), true, "Y3_4", "NONE"));       // 전공 무관
+        Map<Integer, Features> far = Map.of(1, features(FAR, Set.of()), 2, features(FAR, Set.of(1)), 3, features(FAR, Set.of()));
+        List<Scored> none = FitScorer.score(judgeNear(jobs, Set.of(1)), far, null, DEPT);
+        assertThat(none).extracting(Scored::jobId).containsExactly(1, 2, 3);
+        assertThat(none).extracting(Scored::major).containsExactly(MajorTier.GROUP, MajorTier.NEAR, MajorTier.OPEN);
+        assertThat(none).extracting(Scored::fit).containsExactly(Fit.HIGH, Fit.MEDIUM, Fit.MEDIUM);
+        assertThat(none).allMatch(Scored::relevant);
+
+        Map<Integer, Features> close = Map.of(1, features(FAR, Set.of()), 2, features(CLOSE, Set.of(1)), 3, features(FAR, Set.of()));
+        Scored near = FitScorer.score(judgeNear(jobs, Set.of(1)), close, ASKED, DEPT).stream()
+                .filter(s -> s.jobId() == 2).findFirst().orElseThrow();
+        assertThat(near.interestFit()).isEqualTo(Interest.CLOSE);
+        assertThat(near.fit()).isEqualTo(Fit.HIGH);
+    }
+
+    @Test
     void 학과_지명만_맞는_직무와_관심만_딱_맞는_직무는_같은_무게다() {
         // 회사가 내 학과를 콕 집은 것(3)과 내가 적은 관심과 가장 많이 겹치는 것(3 × 1.0)을 같게 본다 — 같으면 리스트 순번
         var jobs = List.of(job(1, 1, Set.of(1), false, "Y3_4", "NONE"), job(2, 2, Set.of(DEPT), false, "Y3_4", "NONE"));
@@ -131,6 +153,11 @@ class FitScorerTest {
     private static List<Judged> judge(List<JobRequirement> jobs) {
         ProfileInput me = new ProfileInput(DEPT, 3, 5, new BigDecimal("3.4"), false, null, null, null);
         return jobs.stream().map(r -> new Judged(r, EligibilityRules.judge(r, me, "메이크업디자인학과"))).toList();
+    }
+
+    private static List<Judged> judgeNear(List<JobRequirement> jobs, Set<Integer> near) {
+        ProfileInput me = new ProfileInput(DEPT, 3, 5, new BigDecimal("3.4"), false, null, null, null);
+        return jobs.stream().map(r -> new Judged(r, EligibilityRules.judge(r, me, "메이크업디자인학과", near))).toList();
     }
 
     private static JobRequirement job(int id, int seq, Set<Integer> majorDepartments, boolean majorOpen, String gradeRule,
