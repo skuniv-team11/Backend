@@ -59,9 +59,12 @@ class RecommendApiTest {
                 .andExpect(jsonPath("$.items[2].jobId").value(120))
                 .andExpect(jsonPath("$.items[2].citations.length()").value(1))
                 .andExpect(jsonPath("$.items[2].citations[0].sourceType").value("OPERATION_PLAN"))
+                // 강의제작(116)은 운영계획서가 '전공무관'이라 전공 무관 자리다(ADR-0025)
+                .andExpect(jsonPath("$.items[3].jobId").value(116))
+                .andExpect(jsonPath("$.items[3].reasonTemplate").value("3학년이라 지원 조건(3·4학년)을 모두 갖췄어요. 전공을 따지지 않는 자리예요."))
                 // 선호 전공 밖인 세정 SNS·영상은 내 학과 이름으로 그 사실을 말한다
-                .andExpect(jsonPath("$.items[3].jobId").value(102))
-                .andExpect(jsonPath("$.items[3].reasonTemplate").value(
+                .andExpect(jsonPath("$.items[4].jobId").value(102))
+                .andExpect(jsonPath("$.items[4].reasonTemplate").value(
                         "3학년이라 지원 조건(3·4학년)을 모두 갖췄어요. "
                                 + "메이크업디자인학과는 회사가 선호하는 전공에는 없지만, 선호 전공은 지원 자격과는 상관없어요. "
                                 + "관심 분야와 직무 내용이 가까워요."))
@@ -121,16 +124,16 @@ class RecommendApiTest {
 
     @Test
     void 선호_전공도_관심도_맞지_않는_직무는_추천하지_않아_5개보다_적을_수_있다() throws Exception {
-        // ADR-0022: 컴퓨터공학과(26)는 선호 전공이 맞는 직무가 미디어 코퍼스 하나(136)이고,
+        // ADR-0022: 컴퓨터공학과(26)는 선호 전공이 맞는 직무가 미디어 코퍼스(136)와 전공 무관인 강의제작(116, ADR-0025)이고,
         // '백엔드 개발자'는 선도소프트 소프트웨어 개발(119, 학점 3.5 이상)과만 겹친다. 미용 시술 보조 등은 더 채우지 않는다
         String body = recommend(guestToken("STUDENT"), """
                 {"profile": {"departmentId": 26, "grade": 3, "completedSemesters": 5, "gpa": 4.0,
                  "graduationExpected": false, "interestText": "백엔드 개발자", "homeAreaCode": null}}""")
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.items.length()").value(3))
                 .andExpect(jsonPath("$.blockedBy").isEmpty())
                 .andReturn().getResponse().getContentAsString();
-        assertThat(JsonPath.<List<Integer>>read(body, "$.items[*].jobId")).containsExactlyInAnyOrder(119, 136);
+        assertThat(JsonPath.<List<Integer>>read(body, "$.items[*].jobId")).containsExactlyInAnyOrder(116, 119, 136);
 
         // 학점이 하한(3.5)보다 낮으면 119는 지원 불가라 빠지고, 가장 많이 겹친 직무가 빠졌다고 덜 겹친 마케팅 직무가
         // 관심 분야 이유로 들어오지도 않는다(관심 유사도는 회차 직무 전부로 잰다, ADR-0024)
@@ -139,17 +142,17 @@ class RecommendApiTest {
                  "graduationExpected": false, "interestText": "백엔드 개발자", "homeAreaCode": null}}""")
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        assertThat(JsonPath.<List<Integer>>read(lowGpa, "$.items[*].jobId")).containsExactly(136);
+        assertThat(JsonPath.<List<Integer>>read(lowGpa, "$.items[*].jobId")).containsExactly(136, 116);
 
-        // 선호 전공이 맞는 직무가 없는 학과(무용예술학부 53)가 관심 분야를 비우면 0개, 막은 것은 '관심 분야'
+        // 선호 전공이 맞는 직무가 없는 학과(무용예술학부 53)가 관심 분야를 비우면 전공 무관 자리(116 강의제작)만 — ADR-0025.
+        // 2026-2에서 '관심 분야'로 막혀 0개가 되는 학생은 없다(전공 무관 자리가 3·4학년이면 늘 지원 가능이라서)
         String none = recommend(guestToken("STUDENT"), """
                 {"profile": {"departmentId": 53, "grade": 3, "completedSemesters": 5, "gpa": 4.5,
                  "graduationExpected": false, "interestText": null, "homeAreaCode": null, "certificates": []}}""")
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.items").isEmpty())
+                .andExpect(jsonPath("$.blockedBy").isEmpty())
                 .andReturn().getResponse().getContentAsString();
-        List<String> items = JsonPath.read(none, "$.blockedBy[*].item");
-        assertThat(items).contains("관심 분야").doesNotContain("이수 학기");
+        assertThat(JsonPath.<List<Integer>>read(none, "$.items[*].jobId")).containsExactly(116);
     }
 
     @Test

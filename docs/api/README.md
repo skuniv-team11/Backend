@@ -97,7 +97,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   | 학년 · 학점 · 포트폴리오 · 선호 전공 | `INSTITUTION_LIST` | 2026학년도 2학기 표준 현장실습학기제 참여기관 리스트 | null(엑셀) | 학년 : 3, 4학년 · 학점 3.5 이상 · 포트폴리오 필수 제출 · 전공 : 헤어디자인학과 |
   | 자격증 | `OPERATION_PLAN` | <기관> 운영계획서 | 쪽 | 미용 자격증 or 미용 면허증 소지자 |
 
-  - 판정이 리스트 값을 쓰는 항목(학년·학점·선호 전공·리스트의 포트폴리오 필수)은 리스트 칸, 계획서 값을 쓰는 항목(자격증, 리스트에 없는 포트폴리오 요건)은 계획서 쪽·인용이다.
+  - 판정이 리스트 값을 쓰는 항목(학년·학점·선호 전공·리스트의 포트폴리오 필수)은 리스트 칸, 계획서 값을 쓰는 항목(자격증, 리스트에 없는 포트폴리오 요건, 계획서가 '전공 무관'이라 전공 무관으로 본 선호 전공 — [ADR-0025](../decisions/0025-major-open-by-plan-and-renamed-department.md))은 계획서 쪽·인용이다.
   - 검토 알림으로 새로 만든 행(`alertId`, 원래 행이 없던 항목)에는 없다 — 알림 자체가 두 원문을 갖고 있다(직무 상세·현황판 `alerts`). 원래 행이 알림으로 `CHECK`가 된 경우는 원래 출처가 남는다. 출처를 못 찾은 행에도 필드가 없다.
 - 검토 알림(M2)의 `fieldKey`가 판정 항목(`gradeRequirement`·`gpaRequirement`·`portfolio`·`certificate`)이면 그 항목 행이 `CHECK`가 되고 `alertId`가 붙는다. 그 밖의 알림(선호 전공·기간·지원비·기관 현황 등)은 판정을 바꾸지 않는다 — 학생 목록은 `alertCount`로 '문서 검토' 꼬리표만 단다([ADR-0016](../decisions/0016-demo-profile-and-screen-rules.md)). 알림 행은 `item` '<필드 표기> 표기'(예: '학점 요건 표기'), `requirement`는 알림 종류별 문장, `mine` '—'. `alertId`가 없는 행에는 필드 자체가 없다.
 - `majorMatch`는 `MATCH` · `NOT_LISTED` · `OPEN`(전공 무관). `MATCH`는 직무의 선호 전공 표기가 사람이 확정한 학과 매핑(M3)에 내 학과가 있을 때다 — 확정 전 표기(`DRAFT`, 2026-2는 없음)는 누구에게도 `MATCH`가 아니다. `MAJOR` 행은 직무마다 하나, `INFO`.
@@ -208,7 +208,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - `summary`: `jobs` 직무 수 · `seats` 정원 합 · `interestTotal` asOf까지 관심 합(가상 + 실제) · `liveInterestTotal` 그중 실제 사용자가 담은 수 · `zeroSignalJobs` 관심이 0인 직무 수 · `closedJobs` `CLOSED` 직무 수.
 - `eligiblePool`(적격 학생 풀): 직무의 선호 전공 표기에서 사람이 확정한 학과(중복 없이)의 재학생 수 합. 전공 무관이면 전체 재학생. 확정 전 표기(`DRAFT`, 2026-2는 없음)는 0으로 센다.
 - `risks[].code`(이 순서): `NARROW_POOL` · `PORTFOLIO_REQUIRED` · `CERTIFICATE_REQUIRED`(`detail`은 자격증 원문) · `WEEKEND`(토·일 실습, `detail` '토'·'토·일') · `DOC_ALERT`. `label`은 `codes`의 `risk` 표기.
-  - `NARROW_POOL`: 적격 학생 풀(`eligiblePool`)이 200명 미만, `detail` '선호 전공 재학생 N명'. 2026-2 시드 분포(98·102·102·102·102·115·115·198명 …)에서 하위 직무를 가르는 값이다(10/2 결정, [ADR-0016](../decisions/0016-demo-profile-and-screen-rules.md)). 설정 `app.center.narrow-pool-below`(환경변수 `CENTER_NARROW_POOL_BELOW`).
+  - `NARROW_POOL`: 적격 학생 풀(`eligiblePool`)이 200명 미만, `detail` '선호 전공 재학생 N명'. 2026-2 시드 분포(98·102·102·102·102·195·195·198명 … — 10/7 ADR-0025 전에는 195 자리가 115)에서 하위 직무를 가르는 값이다(10/2 결정, [ADR-0016](../decisions/0016-demo-profile-and-screen-rules.md)). 설정 `app.center.narrow-pool-below`(환경변수 `CENTER_NARROW_POOL_BELOW`).
   - `DOC_ALERT`: 그 직무 또는 그 기관에 검토 알림이 있음, `detail` '검토 알림 N건'.
 - `alertCount`·`alerts`: 그 직무에 걸린 알림 + 기관 전체(`jobId` null)에 걸린 알림(판정 행의 `alertCount`와 달리 기관 단위도 센다 — `DOC_ALERT`와 같은 범위). `alerts`는 회차 기관들의 알림 전부, id 순.
 - `historyAvailable`이 false면 `pastZeroRounds` 열을 숨긴다. 지난 회차 결과는 센터 동의 뒤에만 적재하고 원소 모양도 그때 정한다 — 그 전까지는 항상 false · `[]`.

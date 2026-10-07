@@ -75,10 +75,10 @@ class JobApiTest {
         assertThat(labels).doesNotContainAnyElementsOf(keys);
         assertThat((String) JsonPath.read(body, "$.evidence[0].documentTitle")).isEqualTo("더에스엠씨 운영계획서");
 
-        // 선호 전공 표기 → 확정 학과(ADR-0016): 101은 광고홍보콘텐츠학과 하나
+        // 선호 전공 표기 → 확정 학과(ADR-0016): 101은 광고홍보콘텐츠학과 — 옛 이름 광고홍보영상학과도 같은 학과(ADR-0025)
         assertThat(JsonPath.<List<String>>read(body, "$.requirements.majorAliases[*].label")).containsExactly("광고홍보콘텐츠학과");
         assertThat(JsonPath.<List<String>>read(body, "$.requirements.majorAliases[0].departments[*].name"))
-                .containsExactly("광고홍보콘텐츠학과");
+                .containsExactly("광고홍보영상학과", "광고홍보콘텐츠학과");
 
         List<Integer> weeks = JsonPath.read(body, "$.weeklyPlan[*].seq");
         assertThat(weeks).hasSize(count("SELECT count(*) FROM job_weekly_plan WHERE job_id = 101")).isSorted();
@@ -110,6 +110,15 @@ class JobApiTest {
         List<Object> jobIds = JsonPath.read(body, "$.alerts[?(@.id == 1)].jobId");
         assertThat(jobIds).containsOnlyNulls();
         Contract.assertSameShape(body, Contract.responseExample("getJob", 200, null));
+    }
+
+    @Test
+    void 운영계획서가_전공_무관이면_전공_무관이고_표기_대응은_주지_않는다() throws Exception {
+        // ADR-0025: 강의제작(116) — 리스트는 '인문, 사회계열', 운영계획서는 '전공무관 3명'
+        String body = detail(guestToken("STUDENT"), "116").andExpect(status().isOk()).andReturn().getResponse()
+                .getContentAsString();
+        assertThat(JsonPath.<Boolean>read(body, "$.requirements.majorOpen")).isTrue();
+        assertThat(JsonPath.<List<Object>>read(body, "$.requirements.majorAliases")).isEmpty();
     }
 
     @Test
