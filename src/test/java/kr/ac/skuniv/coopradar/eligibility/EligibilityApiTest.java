@@ -55,6 +55,8 @@ class EligibilityApiTest {
         assertThat(verdicts.subList(0, 22)).containsOnly("ELIGIBLE");
         assertThat(verdicts.get(22)).isEqualTo("NEEDS_CHECK");
         assertThat(verdicts.subList(23, 40)).containsOnly("INELIGIBLE");
+        // 같은 판정 안에서는 적합도 순(ADR-0027) — 맨 위 5개가 추천 카드와 같은 순서다(RecommendApiTest)
+        assertThat(JsonPath.<List<Integer>>read(body, "$.jobs[0:5].jobId")).containsExactly(122, 123, 120, 102, 103);
         // 확인 필요 1개는 115 영상 콘텐츠 디자인 — 3·4학년이라 학년은 맞고 포트폴리오만 준비하면 된다
         assertThat(reason(job(body, 115), "포트폴리오")).containsEntry("mine", "직접 준비").containsEntry("result", "CHECK");
 
@@ -126,6 +128,19 @@ class EligibilityApiTest {
                 .containsExactly("2026-07-18");
         assertThat(JsonPath.<List<String>>read(body, "$.jobs[?(@.jobId == 101)].closing.closeReason"))
                 .containsExactly("CENTER_CLOSED");
+    }
+
+    @Test
+    void 기준일에_마감된_직무는_같은_판정의_맨_아래로() throws Exception {
+        // ADR-0027: 광고홍보콘텐츠학과(10) 4학년 — 101 AE는 리스트 1번이지만 7/18 마감이라 같은 판정 묶음의 맨 끝
+        String body = check(guestToken("STUDENT"), profile(10, 4, 7, "4.0", false, "[]"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String verdict = JsonPath.<List<String>>read(body, "$.jobs[?(@.jobId == 101)].verdict").getFirst();
+        assertThat(verdict).isNotEqualTo("INELIGIBLE");
+        List<Integer> group = JsonPath.read(body, "$.jobs[?(@.verdict == '" + verdict + "')].jobId");
+        assertThat(group.size()).isGreaterThan(1);
+        assertThat(group.getLast()).isEqualTo(101);
     }
 
     @Test

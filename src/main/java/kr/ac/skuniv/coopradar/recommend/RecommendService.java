@@ -119,8 +119,7 @@ public class RecommendService {
 
     /** 기준일에 마감됐는지(closesOn ≤ 기준일, closesOn = 이 날부터 지원 불가). */
     static boolean closedOn(Judged judged, LocalDate asOf) {
-        LocalDate closesOn = judged.requirement().closing().closesOn();
-        return closesOn != null && !closesOn.isAfter(asOf);
+        return EligibilityService.closedOn(judged, asOf);
     }
 
     /** 지원 불가가 아닌 직무 전부의 점수(높은 순). 지망 점검이 빈 자리 적합도에 쓴다. 관심 유사도는 회차 직무 전부로 잰다. */
