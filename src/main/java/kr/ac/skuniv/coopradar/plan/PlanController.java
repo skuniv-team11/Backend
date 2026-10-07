@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import kr.ac.skuniv.coopradar.auth.AuthUser;
 import kr.ac.skuniv.coopradar.auth.RequireRole;
 import kr.ac.skuniv.coopradar.auth.Role;
+import kr.ac.skuniv.coopradar.plan.PlanDtos.ItemAlternatives;
 import kr.ac.skuniv.coopradar.plan.PlanDtos.Plan;
 import kr.ac.skuniv.coopradar.plan.PlanDtos.PlanAddRequest;
 import kr.ac.skuniv.coopradar.plan.PlanDtos.PlanCheck;
@@ -22,7 +23,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * docs/api #19 담은 직무 · #20 담기 · #21 담기 취소 · #22 1~3지망 순위 · #23 지망 점검. 학생만(체험 계정 포함).
+ * docs/api #19 담은 직무 · #20 담기 · #21 담기 취소 · #22 1~3지망 순위 · #23 지망 점검 · #27 담은 직무 기준 빈 자리.
+ * 학생만(체험 계정 포함).
  * 담은 목록은 계정에 저장되고 탈퇴하면 같이 지워진다(DB cascade).
  */
 @RestController
@@ -65,5 +67,15 @@ public class PlanController {
     @PostMapping("/check")
     public PlanCheck check(AuthUser user, @Valid @RequestBody PlanCheckRequest body) {
         return checks.check(user, body.profile(), body.asOf());
+    }
+
+    /**
+     * #27 담은 직무의 신호 + 그 직무 기준 빈 자리([담기] 바로 뒤, ADR-0029). 본문은 지망 점검과 같다.
+     * 이번 회차에서 담지 않은 직무면 404 PLAN_ITEM_NOT_FOUND.
+     */
+    @PostMapping("/items/{jobId}/alternatives")
+    public ItemAlternatives itemAlternatives(AuthUser user, @PathVariable long jobId,
+                                             @Valid @RequestBody PlanCheckRequest body) {
+        return checks.forItem(user, jobId, body.profile(), body.asOf());
     }
 }

@@ -54,4 +54,13 @@ public final class PlanDtos {
     public record PlanCheck(LocalDate asOf, boolean isVirtual, Signal.Source signalSource, List<CheckedItem> items,
                             List<Alternative> alternatives) {
     }
+
+    /** #27 기준이 된 담은 직무. rank는 순위를 안 정했으면 null. signal의 관심은 본인을 뺀 수(지망 점검과 같다). */
+    public record ItemSignal(int jobId, String title, InstitutionRef institution, Integer rank, Signal signal) {
+    }
+
+    /** #27 담은 직무 하나의 신호 + 그 직무 기준 빈 자리(ADR-0029). 대안 모양·규칙은 지망 점검과 같다. */
+    public record ItemAlternatives(LocalDate asOf, boolean isVirtual, Signal.Source signalSource, ItemSignal item,
+                                   List<Alternative> alternatives) {
+    }
 }

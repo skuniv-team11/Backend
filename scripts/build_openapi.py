@@ -89,6 +89,9 @@ S["NtsStatus"] = d(S["NtsStatus"], "국세청 사업자 상태(오프라인 조�
 S["EvidenceFieldKey"] = {"type": "string", "enum": ddl_field_keys(),
                          "description": "근거를 보여 줄 수 있는 추출 필드명(V1 field_evidence 허용 목록). 사업자번호·매출액 등은 없다"}
 
+ALTERNATIVES_TEXT = ("verdict ELIGIBLE · CLOSED 아님 · 남은 자리(headcount − interest) > 0 · 이미 담은 직무 아님. "
+                     "적합도 점수 → 남은 자리 순 최대 5개")
+
 AREA_CODE = {"type": "string", "pattern": r"^(11|28|41)\d{3}$",
              "description": "시·군·구 5자리(서울 11·인천 28·경기 41). `GET /api/areas`의 code"}
 
@@ -382,17 +385,31 @@ S.update({
             "institution": R("InstitutionRef"),
             "signal": R("Signal"),
         })),
-        "alternatives": d(arr(obj({
+        "alternatives": d(arr(R("Alternative"), maxItems=5), ALTERNATIVES_TEXT),
+    }),
+    "Alternative": obj({
+        "jobId": ID, "title": STR,
+        "institution": R("InstitutionRef"),
+        "verdict": R("Verdict"),
+        "fit": R("Fit"),
+        "remaining": {"type": "integer", "minimum": 1},
+        "signal": R("Signal"),
+        "why": d(STR, "규칙 문장. 기준 직무와 같은 기관이면 지망 점검은 '1지망과 같은 기관의 직무이고', 담은 직무 기준(#27)은 "
+                      "'방금 담은 직무와 같은 기관의 직무이고', 관심 문장과 겹치면 '관심 분야와 가깝고', 둘 다 아니면 "
+                      "'지원 조건을 모두 통과했고' + 관심 0이면 '지금 담은 사람이 0명이에요.', 아니면 '남은 자리가 N개예요.'"),
+    }, desc="요건이 맞는 빈 자리(ADR-0016). 지망 점검(#23)과 담은 직무 기준 빈 자리(#27)가 같은 모양을 쓴다"),
+    "PlanItemAlternatives": obj({
+        "asOf": DATE,
+        "isVirtual": BOOL,
+        "signalSource": R("SignalSource"),
+        "item": d(obj({
             "jobId": ID, "title": STR,
             "institution": R("InstitutionRef"),
-            "verdict": R("Verdict"),
-            "fit": R("Fit"),
-            "remaining": {"type": "integer", "minimum": 1},
-            "signal": R("Signal"),
-            "why": d(STR, "규칙 문장. 1지망과 같은 기관이면 '1지망과 같은 기관의 직무이고', 관심 문장과 겹치면 '관심 분야와 가깝고', "
-                          "둘 다 아니면 '지원 조건을 모두 통과했고' + 관심 0이면 '지금 담은 사람이 0명이에요.', 아니면 '남은 자리가 N개예요.'"),
-        }), maxItems=5), "verdict ELIGIBLE · CLOSED 아님 · 남은 자리(headcount − interest) > 0 · 이미 담은 직무 아님. 적합도 점수 → 남은 자리 순 최대 5개"),
-    }),
+            "rank": d(nul({"type": "integer", "minimum": 1, "maximum": 3}), "1~3지망. 순위를 안 정했으면 null"),
+            "signal": d(R("Signal"), "관심은 본인을 뺀 다른 사람 수(지망 점검과 같다)"),
+        }), "기준이 된 담은 직무"),
+        "alternatives": d(arr(R("Alternative"), maxItems=5), ALTERNATIVES_TEXT + ". 기준 직무도 빠진다"),
+    }, desc="[담기] 바로 뒤에 부른다(ADR-0029). 제안을 띄울지는 화면이 item.signal.interest ≥ headcount로 정한다 — 몰림 상태는 없다(ADR-0015)"),
     "CenterBoard": obj({
         "asOf": DATE,
         "isVirtual": BOOL,
@@ -477,6 +494,10 @@ ENDPOINTS = {
     "GET /api/jobs/{jobId}/views": dict(op="getJobViews", ok={200: ("JobViews", ["job-views.json"])},
                                         errors=["JOB_NOT_FOUND"]),
     "GET /api/certificates": dict(op="getCertificates", ok={200: ("Certificates", ["certificates.json"])}),
+    "POST /api/me/plan/items/{jobId}/alternatives": dict(
+        op="getPlanItemAlternatives", req=("PlanCheckRequest", ["me-plan-check.request.json"]),
+        ok={200: ("PlanItemAlternatives", ["me-plan-item-alternatives.json"])},
+        errors=["PLAN_ITEM_NOT_FOUND", "AS_OF_OUT_OF_RANGE"]),
 }
 OK_TEXT = {200: "성공", 201: "만들었음", 204: "본문 없음"}
 STATUS_TEXT = {200: "이미 담겨 있음(그대로)", 201: "새로 담음"}  # POST /api/me/plan/items

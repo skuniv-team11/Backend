@@ -1,0 +1,52 @@
+{
+  "asOf": "2026-07-23",
+  "isVirtual": true,
+  "signalSource": "REPLAY",
+  "item": {
+    "jobId": 101,
+    "title": "국내 마케팅",
+    "institution": {
+      "id": 3,
+      "name": "누리뷰티(가상)",
+      "logoPath": "/logos/3.png"
+    },
+    "rank": null,
+    "signal": {
+      "interest": 3,
+      "liveInterest": 1,
+      "headcount": 2,
+      "ratio": 1.5,
+      "status": "OPEN",
+      "closesOn": null,
+      "closeReason": null,
+      "closesOnIsVirtual": false,
+      "expectedFullOn": null
+    }
+  },
+  "alternatives": [
+    {
+      "jobId": 102,
+      "title": "해외 마케팅",
+      "institution": {
+        "id": 3,
+        "name": "누리뷰티(가상)",
+        "logoPath": "/logos/3.png"
+      },
+      "verdict": "ELIGIBLE",
+      "fit": "HIGH",
+      "remaining": 2,
+      "signal": {
+        "interest": 0,
+        "liveInterest": 0,
+        "headcount": 2,
+        "ratio": 0.0,
+        "status": "OPEN",
+        "closesOn": null,
+        "closeReason": null,
+        "closesOnIsVirtual": false,
+        "expectedFullOn": null
+      },
+      "why": "방금 담은 직무와 같은 기관의 직무이고, 지금 담은 사람이 0명이에요."
+    }
+  ]
+}
