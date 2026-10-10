@@ -63,7 +63,7 @@ class CenterApiTest {
                 .andExpect(jsonPath("$.summary.closedJobs").value(1))
                 .andExpect(jsonPath("$.historyAvailable").value(false))
                 .andExpect(jsonPath("$.rows.length()").value(40))
-                .andExpect(jsonPath("$.alerts.length()").value(12))
+                .andExpect(jsonPath("$.alerts.length()").value(6)) // 표기 차이·오타 6건은 알림이 아니다(ADR-0030)
                 .andReturn().getResponse().getContentAsString();
         Contract.assertSameShape(body, Contract.responseExample("getCenterBoard", 200, null));
 
@@ -85,10 +85,11 @@ class CenterApiTest {
         assertThat(JsonPath.<Integer>read(on18, "$.summary.interestTotal")).isEqualTo(11);
         // 140: 토요일 실습
         assertThat(JsonPath.<List<String>>read(row(body, 140), "$.risks[*].code")).contains("WEEKEND");
-        // 116: 직무 알림 2건 / 102: 세정 기관 전체 알림 1건
-        assertThat(JsonPath.<Integer>read(row(body, 116), "$.alertCount")).isEqualTo(2);
-        assertThat(JsonPath.<String>read(row(body, 116), "$.risks[-1].detail")).isEqualTo("검토 알림 2건");
-        assertThat(JsonPath.<Integer>read(row(body, 102), "$.alertCount")).isEqualTo(1);
+        // 116: 직무 알림 1건 / 119: 선도소프트 기관 전체 알림 1건 / 102: 세정은 알림 없음(사람 판단, ADR-0030)
+        assertThat(JsonPath.<Integer>read(row(body, 116), "$.alertCount")).isEqualTo(1); // 실습기간 오타는 빠짐(ADR-0030)
+        assertThat(JsonPath.<String>read(row(body, 116), "$.risks[-1].detail")).isEqualTo("검토 알림 1건");
+        assertThat(JsonPath.<Integer>read(row(body, 119), "$.alertCount")).isEqualTo(1);
+        assertThat(JsonPath.<Integer>read(row(body, 102), "$.alertCount")).isEqualTo(0);
 
         List<String> narrow = JsonPath.read(body, "$.rows[?(@.eligiblePool < 200)].jobId");
         assertThat(narrow).hasSize(8);

@@ -11,8 +11,13 @@
   지급 기준, 복리, 자격증, 접수마감일, 근거(쪽·인용문), 문서 내부 불일치
 - curated/: 학과(교육통계 2025-10-01), 전공 표기 → 학과 매핑(EXACT·CONFIRMED만 적재), 시드 id, 화면용 고침(overrides),
   자격증 코드표(certificates.csv). 자격증 요건은 사람이 overrides.json에 코드와 함께 적는다(ADR-0021)
+- curated/intro_photos.csv: 실습기관 소개서의 '회사 전경 및 활동사진'(e8_intro_photos/place_photos.py가 만든다, ADR-0030)
+- curated/alert_dismissals.json: 검토 알림 중 사람이 '알릴 필요 없음'으로 본 것과 이유(ADR-0030)
 
-넣지 않는 것(ADR-0004): 사업자번호·대표자명·매출액·기타사항, 학과×직무 매칭 집계, 수기의 이름·학과·학년·사진.
+검토 알림은 학생·센터가 챙길 차이만 남긴다(ADR-0030): 띄어쓰기·문장부호·끝의 '외/등'·한쪽이 다른 쪽을 품는 표기·글자 한두 개
+오타처럼 표기만 다른 문서 내부 불일치와, 계획서 값이 스스로 말이 안 되는 오타(종료일이 시작일보다 앞)는 알림을 만들지 않는다.
+
+넣지 않는 것(ADR-0004): 사업자번호·대표자명·매출액·기타사항, 학과×직무 매칭 집계, 수기의 이름·사진.
 """
 import argparse, csv, datetime as dt, glob, itertools, json, pathlib, re, sys
 
@@ -58,6 +63,7 @@ LIMITS = {("institution", "name"): 100, ("institution", "business_type"): 100, (
           ("job", "title"): 200, ("job", "work_hours_text"): 100, ("job", "certificate_text"): 200,
           ("job", "major_text"): 300, ("job_weekly_plan", "weeks_label"): 30, ("field_evidence", "quote"): 200,
           ("review_alert", "quote_a"): 200, ("review_alert", "quote_b"): 200, ("testimonial", "team_text"): 100,
+          ("testimonial", "major_text"): 100, ("testimonial", "grade_text"): 20, ("institution_photo", "caption"): 100,
           ("source_document", "title"): 200, ("department", "name"): 50, ("major_alias", "label"): 100,
           ("department_cluster", "label"): 50,
           ("area", "sido"): 10, ("area", "name"): 20, ("certificate", "label"): 100,
@@ -78,6 +84,33 @@ def text(v):
 def display_name(name):
     """참여기관 리스트 표기에서 법인 형태(주식회사·(주)·㈜)를 뺀다. '(주) 세정' → '세정'."""
     return re.sub(r"\s+", " ", re.sub(r"\(\s*주\s*\)|㈜|주식회사", " ", name)).strip()
+
+
+def notation(s):
+    """표기 비교용: 띄어쓰기·문장부호·괄호를 지우고 끝의 '외'·'등'을 뗀다."""
+    s = re.sub(r"[\s·,.\-_()\[\]<>/'\"“”‘’*]", "", s or "")
+    return re.sub(r"(외|등)$", "", s)
+
+
+def edit_distance(a, b):
+    prev = list(range(len(b) + 1))
+    for i, x in enumerate(a, 1):
+        cur = [i]
+        for j, y in enumerate(b, 1):
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (x != y)))
+        prev = cur
+    return prev[-1]
+
+
+def trivial_difference(a, b):
+    """두 원문이 표기만 다른가(ADR-0030). 띄어쓰기·문장부호·끝의 '외/등'만 다름, 한쪽이 다른 쪽을 품음,
+    글자 한두 개 차이(짧은 쪽 길이의 15% 이하)면 True. 숫자가 하나라도 다르면 False(날짜·금액·코드는 표기 차이가 아니다)."""
+    x, y = notation(a), notation(b)
+    if not x or not y or re.findall(r"\d+", x) != re.findall(r"\d+", y):
+        return False
+    if x == y or x in y or y in x:
+        return True
+    return edit_distance(x, y) <= max(1, min(2, int(min(len(x), len(y)) * 0.15)))
 
 
 def check_allowed_keys():
@@ -211,6 +244,31 @@ def load_curated():
     ids_path = CURATED / "ids.json"
     ids = json.loads(ids_path.read_text(encoding="utf-8")) if ids_path.exists() else {}
     return rnd, deps, aliases, clusters, areas, certs, overrides, ids, ids_path
+
+
+def load_dismissals():
+    """curated/alert_dismissals.json — 사람이 '알릴 필요 없음'으로 본 검토 알림. 쓰이지 않는 항목이 있으면 멈춘다."""
+    data = json.loads((CURATED / "alert_dismissals.json").read_text(encoding="utf-8"))
+    for d in data["alerts"]:
+        if not (d.get("institution") and d.get("kind") and d.get("quote_a") and d.get("why")):
+            fail(f"alert_dismissals.json: institution·kind·quote_a·why를 모두 적으세요 — {d}")
+    return data["alerts"]
+
+
+SCENE = {"근무환경": "OFFICE", "활동행사": "EVENT", "건물전경": "BUILDING", "제품": "PRODUCT", "인물": "PERSON", "기타": "OTHER"}
+PHOTO_DIR = ROOT / "src" / "main" / "resources" / "static" / "photos"
+
+
+def load_photos():
+    """curated/intro_photos.csv — 소개서 사진(ADR-0030). 파일이 정적 폴더에 있어야 한다."""
+    rows = list(csv.DictReader((CURATED / "intro_photos.csv").open(encoding="utf-8")))
+    for r in rows:
+        f = PHOTO_DIR / r["institution_id"] / f"{r['seq']}.jpg"
+        if not f.exists():
+            fail(f"intro_photos.csv {r['institution_id']}-{r['seq']}: {f.relative_to(ROOT)} 파일이 없습니다 — e8_intro_photos/place_photos.py를 다시 돌리세요")
+        if r["scene"] not in SCENE or r["caption_source"] not in ("", "TEXT", "VISION", "MANUAL"):
+            fail(f"intro_photos.csv {r['institution_id']}-{r['seq']}: scene·caption_source 값이 허용 목록 밖")
+    return rows
 
 
 def cluster_rows(clusters, dep_id, live):
@@ -354,7 +412,7 @@ def build(a):
                             "job", "major_alias", "major_alias_department", "department_cluster", "department_cluster_member",
                             "job_major_alias", "job_weekly_plan",
                             "source_document", "field_evidence", "review_alert", "requirement_source", "testimonial",
-                            "replay_signal"]}
+                            "institution_photo", "replay_signal"]}
     # 판정 이유 줄 출처의 문서명: 리스트 파일 이름에서 끝의 괄호(상시 업데이트 진행중 등)를 뗀다(ADR-0023)
     list_title = re.sub(r"\s*\([^)]*\)\s*$", "", pathlib.Path(a.list).stem).strip()
     seed["program"].append(rnd["program"])
@@ -436,12 +494,25 @@ def build(a):
         row[subject[0]] = subject[1]
         seed["field_evidence"].append(row)
 
+    dismissals = load_dismissals()
+    used_dismissals = set()
+    dropped_alerts = []
+
     def alert(inst_id, job_id, kind, key, desc, doc_id, f=None, page_b=None, quote_b=None):
         page_a = f["page"] if f and f["page"] > 0 else None
+        quote_a = text(f["quote"]) if page_a else None
+        if kind == "DOC_INCONSISTENCY" and quote_a and quote_b and trivial_difference(quote_a, quote_b):
+            dropped_alerts.append({"기관": inst_key, "kind": kind, "why": "표기만 다름(자동)", "a": quote_a, "b": quote_b})
+            return
+        for i, d in enumerate(dismissals):
+            if d["institution"] == inst_key and d["kind"] == kind and quote_a and d["quote_a"] in quote_a:
+                used_dismissals.add(i)
+                dropped_alerts.append({"기관": inst_key, "kind": kind, "why": d["why"], "a": quote_a, "b": quote_b})
+                return
         seed["review_alert"].append({
             "id": next(alert_seq), "institution_id": inst_id, "job_id": job_id, "kind": kind, "field_key": key,
             "description": desc, "source_document_id": doc_id, "page_a": page_a,
-            "quote_a": text(f["quote"]) if page_a else None, "page_b": page_b, "quote_b": quote_b})
+            "quote_a": quote_a, "page_b": page_b, "quote_b": quote_b})
 
     doc_seq = itertools.count(1)
     for inst_key in sorted(by_inst, key=lambda k: by_inst[k][0]["seq"]):
@@ -622,7 +693,11 @@ def build(a):
             if p_st and p_st != stipend:
                 mismatch("stipendAmount", "stipend_amount", "실습지원비", f"{stipend:,}원", f"{p_st:,}원")
             p_start, p_end = plan_period(g("period"))
-            if p_start and (p_start, p_end) != (l_start, l_end):
+            if p_start and p_end and p_end < p_start:
+                # 계획서 값이 스스로 말이 안 되는 오타(종료일이 시작일보다 앞). 리스트 값을 쓰고 알림은 만들지 않는다(ADR-0030)
+                dropped_alerts.append({"기관": inst_key, "kind": "LIST_MISMATCH", "why": "계획서 실습기간 오타(종료일 < 시작일)",
+                                       "a": text(pj["period"]["quote"]), "b": f"{l_start}~{l_end}"})
+            elif p_start and (p_start, p_end) != (l_start, l_end):
                 mismatch("period", "period", "실습기간", f"{l_start}~{l_end}", f"{p_start}~{p_end}")
             p_days = [DAYS[d] for d in g("weekdays")]
             if p_days and set(p_days) != set(l_days):
@@ -659,13 +734,16 @@ def build(a):
     unused = set(assigned) - used_assigned
     if unused:
         fail(f"배정 수를 붙일 직무를 못 찾음: {sorted(unused)} — 매칭 결과의 직무 표기와 리스트 첫 줄을 맞추세요")
+    if set(range(len(dismissals))) - used_dismissals:
+        fail(f"alert_dismissals.json에 쓰이지 않은 항목: {[dismissals[i]['quote_a'] for i in sorted(set(range(len(dismissals))) - used_dismissals)]}")
     if set(job_overrides) - used_overrides:
         fail(f"overrides.json에 쓰이지 않은 키: {sorted(set(job_overrides) - used_overrides)}")
     if cert_codes - used_certs:
         fail(f"certificates.csv에 어느 직무도 쓰지 않는 코드: {sorted(cert_codes - used_certs)} — 선택지에서 빼세요(최소 수집)")
 
-    # 수기(E2): 2026-2 참여기관에 연결되는 것만. 이름·학과·학년·사진·소감은 넣지 않는다.
-    # 실습 결과는 extract_outcomes.py가 원문에서 고른 사실 구절만 넣는다(감상·배운 점·개인 진로는 버림, ADR-0020)
+    # 수기(E2): 2026-2 참여기관에 연결되는 것만. 이름·사진은 넣지 않는다(이름은 추출하지 않는다).
+    # 수기 전문(한 줄 소개·회사 소개·실습 결과·소감)과 학과·학년도 넣는다(10/10 결정, ADR-0030) — '우수' 수기라 긍정 쪽으로
+    # 치우쳐 있다는 표시는 화면이 한다. 실습 결과 사실 구절(outcomes, ADR-0020)은 추천 근거용으로 그대로 둔다
     outcomes = load_outcomes(a.outcomes)
     inst_ids = ids.data["institution"]
     by_term = {}
@@ -696,7 +774,27 @@ def build(a):
             seed["testimonial"].append({"id": next(t_seq), "source_document_id": doc_id,
                                         "institution_id": inst_ids[canon(t["institution"], t["department"])],
                                         "team_text": text(t["department"]), "activities": acts,
-                                        "outcomes": outcomes[(src, t["text_page"])], "page": t["text_page"]})
+                                        "outcomes": outcomes[(src, t["text_page"])], "page": t["text_page"],
+                                        "one_line": text(t["one_line"]), "company_intro": text(t["company_intro"]),
+                                        "results": text(t["results"]), "reflection": text(t["reflection"]),
+                                        "major_text": text(t["major"]), "grade_text": text(t["grade"])})
+
+    # 소개서 사진(ADR-0030): 기관마다 소개서 문서 하나와 사진 행
+    inst_names = {i["id"]: i["name"] for i in seed["institution"]}
+    photo_doc = {}
+    for r in load_photos():
+        inst = int(r["institution_id"])
+        if inst not in inst_names:
+            fail(f"intro_photos.csv: 시드에 없는 기관 id {inst}")
+        if inst not in photo_doc:
+            photo_doc[inst] = next(doc_seq)
+            seed["source_document"].append({"id": photo_doc[inst], "kind": "INTRODUCTION",
+                                            "title": f"{inst_names[inst]} 실습기관 소개서", "term_code": round_["term_code"],
+                                            "institution_id": inst, "page_count": int(r["doc_pages"])})
+        seed["institution_photo"].append({
+            "id": len(seed["institution_photo"]) + 1, "institution_id": inst, "source_document_id": photo_doc[inst],
+            "seq": int(r["seq"]), "page": int(r["page"]), "scene": SCENE[r["scene"]], "caption": text(r["caption"]),
+            "caption_source": r["caption_source"] or None, "width": int(r["width"]), "height": int(r["height"])})
 
     # 리플레이(가상 신호)
     signals, virtual = replay.generate(jobs_for_replay, start, end, rnd["replay_seed"])
@@ -706,7 +804,7 @@ def build(a):
     seed["replay_signal"] = signals
 
     validate(seed)
-    return seed, review, ids, ids_path
+    return seed, review, ids, ids_path, dropped_alerts
 
 
 def validate(seed):
@@ -714,7 +812,8 @@ def validate(seed):
         for r in seed[t]:
             if r[c] is not None and len(r[c]) > n:
                 fail(f"{t}.{c} {len(r[c])}자 > {n}자: {r[c][:50]!r}")
-    for t in ("institution", "workplace", "job", "source_document", "field_evidence", "review_alert", "testimonial"):
+    for t in ("institution", "workplace", "job", "source_document", "field_evidence", "review_alert", "testimonial",
+              "institution_photo"):
         idv = [r["id"] for r in seed[t]]
         if len(idv) != len(set(idv)):
             fail(f"{t}: id 중복")
@@ -740,7 +839,7 @@ def main():
     ap.add_argument("--out", default=str(HERE / "seed.json"))
     ap.add_argument("--review", default=str(HERE / "out" / "review_seed.csv"))
     a = ap.parse_args()
-    seed, review, ids, ids_path = build(a)
+    seed, review, ids, ids_path, dropped_alerts = build(a)
 
     pathlib.Path(a.out).write_text(json.dumps(seed, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
     if ids.new:
@@ -752,12 +851,20 @@ def main():
         w = csv.DictWriter(f, fieldnames=list(review[0]))
         w.writeheader()
         w.writerows(review)
+    if dropped_alerts:
+        dp = rp.with_name("review_alerts_dropped.csv")
+        with dp.open("w", encoding="utf-8-sig", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=list(dropped_alerts[0]))
+            w.writeheader()
+            w.writerows(dropped_alerts)
+        print(f"검토 알림 {len(dropped_alerts)}건은 만들지 않았습니다(표기 차이·오타·사람 판단) → {dp}")
     c = {t: len(v) for t, v in seed.items()}
     draft = sum(1 for al in csv.DictReader((CURATED / "major_aliases.csv").open(encoding="utf-8")) if al["status"] == "DRAFT")
     print(f"기관 {c['institution']} · 직무 {c['job']} · 정원 {sum(j['headcount'] for j in seed['job'])} · "
           f"배정 {sum(j['final_assigned'] for j in seed['job'])} · 학과 {c['department']} · 전공 표기 {c['major_alias']}"
           f"(학과 연결 {len({m['alias_id'] for m in seed['major_alias_department']})}, 확정 대기 {draft}) · 근거 {c['field_evidence']} · "
           f"알림 {c['review_alert']} · 수기 {c['testimonial']}(실습 결과 구절 {sum(len(t['outcomes']) for t in seed['testimonial'])}) · "
+          f"소개서 사진 {c['institution_photo']} · "
           f"신호 {c['replay_signal']}행")
     print(f"→ {a.out}\n→ {rp} (사람 검토용, 커밋하지 않음)\n다음: python to_sql.py")
 

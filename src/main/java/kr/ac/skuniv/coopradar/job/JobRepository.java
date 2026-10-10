@@ -17,6 +17,7 @@ import kr.ac.skuniv.coopradar.job.JobDetail.Evidence;
 import kr.ac.skuniv.coopradar.job.JobDetail.Institution;
 import kr.ac.skuniv.coopradar.job.JobDetail.MajorAlias;
 import kr.ac.skuniv.coopradar.job.JobDetail.Period;
+import kr.ac.skuniv.coopradar.job.JobDetail.Photo;
 import kr.ac.skuniv.coopradar.job.JobDetail.Requirements;
 import kr.ac.skuniv.coopradar.job.JobDetail.SeniorNote;
 import kr.ac.skuniv.coopradar.job.JobDetail.WeeklyPlan;
@@ -24,7 +25,7 @@ import kr.ac.skuniv.coopradar.job.JobDetail.Workplace;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-/** 직무 상세에 쓰는 시드 읽기(job·institution·workplace·근거·검토 알림·수기). 시드 테이블은 읽기만 한다(V1 원칙). */
+/** 직무 상세에 쓰는 시드 읽기(job·institution·workplace·근거·검토 알림·수기·소개서 사진). 시드 테이블은 읽기만 한다(V1 원칙). */
 @Repository
 public class JobRepository {
 
@@ -159,17 +160,35 @@ public class JobRepository {
         return out;
     }
 
-    /** 같은 기관의 선배 수기. 최근 학기 먼저, 같은 학기는 쪽 순. */
+    /** 같은 기관의 선배 수기 전문. 최근 학기 먼저, 같은 학기는 쪽 순. */
     List<SeniorNote> seniorNotes(int institutionId) {
         return db.sql("""
-                        SELECT d.term_code, t.team_text, d.title, t.page, t.activities, t.outcomes
+                        SELECT d.term_code, t.team_text, d.title, t.page, t.major_text, t.grade_text, t.one_line,
+                               t.company_intro, t.activities, t.outcomes, t.results, t.reflection
                         FROM testimonial t
                         JOIN source_document d ON d.id = t.source_document_id
                         WHERE t.institution_id = :institution
                         ORDER BY d.term_code DESC, t.page, t.id""")
                 .param("institution", institutionId)
                 .query((rs, n) -> new SeniorNote(rs.getString("term_code"), rs.getString("team_text"),
-                        rs.getString("title"), rs.getInt("page"), strings(rs, "activities"), strings(rs, "outcomes")))
+                        rs.getString("title"), rs.getInt("page"), rs.getString("major_text"), rs.getString("grade_text"),
+                        rs.getString("one_line"), rs.getString("company_intro"), strings(rs, "activities"),
+                        strings(rs, "outcomes"), rs.getString("results"), rs.getString("reflection")))
+                .list();
+    }
+
+    /** 그 기관 소개서의 사진(순번 순). 파일은 static/photos/{기관 id}/{순번}.jpg(ADR-0030). */
+    List<Photo> photos(int institutionId) {
+        return db.sql("""
+                        SELECT p.seq, p.caption, p.page, p.width, p.height, d.title
+                        FROM institution_photo p
+                        JOIN source_document d ON d.id = p.source_document_id
+                        WHERE p.institution_id = :institution
+                        ORDER BY p.seq""")
+                .param("institution", institutionId)
+                .query((rs, n) -> new Photo(rs.getInt("seq"), "/photos/" + institutionId + "/" + rs.getInt("seq") + ".jpg",
+                        rs.getString("caption"), rs.getString("title"), rs.getInt("page"), rs.getInt("width"),
+                        rs.getInt("height")))
                 .list();
     }
 

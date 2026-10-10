@@ -124,6 +124,10 @@
       "teamText": "마케팅팀",
       "documentTitle": "2025-1 우수 참여수기",
       "page": 7,
+      "major": "(가상) 광고홍보콘텐츠학과",
+      "grade": "4학년",
+      "oneLine": "(가상) 실무를 처음 배운 15주",
+      "companyIntro": "(가상) 화장품 브랜드를 운영하는 회사입니다. 마케팅팀은 SNS 콘텐츠와 브랜드 캠페인을 맡습니다.",
       "activities": [
         "(가상) SNS 콘텐츠 기획",
         "(가상) 주간 성과 정리"
@@ -131,7 +135,29 @@
       "outcomes": [
         "(가상) 신제품 SNS 캠페인 기획안 작성",
         "(가상) 팝업 이벤트 기획에 참여"
-      ]
+      ],
+      "results": "(가상) 신제품 SNS 캠페인 기획안을 작성했고 팝업 이벤트 기획에 참여했습니다.",
+      "reflection": "(가상) 직접 기획한 콘텐츠가 올라가는 과정을 보며 직무를 구체적으로 알게 됐습니다."
+    }
+  ],
+  "photos": [
+    {
+      "seq": 1,
+      "path": "/photos/1/1.jpg",
+      "caption": "(가상) 사무실 내부",
+      "documentTitle": "(가상) 회사 실습기관 소개서",
+      "page": 2,
+      "width": 1000,
+      "height": 640
+    },
+    {
+      "seq": 2,
+      "path": "/photos/1/2.jpg",
+      "caption": null,
+      "documentTitle": "(가상) 회사 실습기관 소개서",
+      "page": 2,
+      "width": 1000,
+      "height": 700
     }
   ]
 }

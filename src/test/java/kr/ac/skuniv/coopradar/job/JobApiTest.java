@@ -83,32 +83,63 @@ class JobApiTest {
         List<Integer> weeks = JsonPath.read(body, "$.weeklyPlan[*].seq");
         assertThat(weeks).hasSize(count("SELECT count(*) FROM job_weekly_plan WHERE job_id = 101")).isSorted();
 
-        // 수기에는 이름·학과·학년·소감이 없다. 실습 결과는 원문에서 자른 사실 구절만(ADR-0020)
+        // 수기 전문(ADR-0030): 학과·학년·한 줄 소개·회사 소개·실습 결과·소감까지. 이름은 없다.
+        // 실습 결과 사실 구절(outcomes)은 추천 근거용으로 그대로(ADR-0020)
         Map<String, Object> note = JsonPath.read(body, "$.seniorNotes[0]");
-        assertThat(note).containsOnlyKeys("termCode", "teamText", "documentTitle", "page", "activities", "outcomes");
+        assertThat(note).containsOnlyKeys("termCode", "teamText", "documentTitle", "page", "major", "grade", "oneLine",
+                "companyIntro", "activities", "outcomes", "results", "reflection");
         assertThat((String) note.get("documentTitle")).contains("참여수기");
+        assertThat((String) note.get("companyIntro")).startsWith("더에스엠씨는");
+        assertThat((String) note.get("results")).isNotBlank();
+        assertThat((String) note.get("reflection")).isNotBlank();
         assertThat(JsonPath.<List<String>>read(body, "$.seniorNotes[0].outcomes"))
                 .contains("엘리베이터 광고와 홍대입구역 OOH 광고 소재를 직접 기획");
+
+        // 더에스엠씨는 서식 대신 회사 소개 책자를 내 사진 칸이 없다 → 사진 없음(ADR-0030)
+        assertThat(JsonPath.<List<Object>>read(body, "$.photos")).isEmpty();
+    }
+
+    @Test
+    void 소개서_사진을_순번대로_캡션과_함께_준다() throws Exception {
+        // 소서(기관 7) 소개서 2쪽 '회사 전경 및 활동사진' 4장(ADR-0030)
+        String body = detail(guestToken("STUDENT"), "122")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.photos.length()").value(4))
+                .andExpect(jsonPath("$.photos[0].seq").value(1))
+                .andExpect(jsonPath("$.photos[0].path").value("/photos/7/1.jpg"))
+                .andExpect(jsonPath("$.photos[0].caption").value("브랜드 원오세븐 제품 사진"))
+                .andExpect(jsonPath("$.photos[0].documentTitle").value("소서 실습기관 소개서"))
+                .andExpect(jsonPath("$.photos[0].page").value(2))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<List<Integer>>read(body, "$.photos[*].seq")).containsExactly(1, 2, 3, 4);
+        assertThat(JsonPath.<List<Integer>>read(body, "$.photos[*].width")).allMatch(w -> w > 0);
+        assertThat(JsonPath.<List<String>>read(body, "$.seniorNotes[*].major")).contains("헤어메이크업디자인학과");
+        Contract.assertSameShape(body, Contract.responseExample("getJob", 200, null));
     }
 
     @Test
     void 직무에_걸린_알림과_기관_전체에_걸린_알림을_같이_준다() throws Exception {
         String token = guestToken("STUDENT");
+        // 116: 선호 전공 불일치(알림 1)만. 계획서 실습기간 오타(종료 연도 2025)는 알림을 만들지 않는다(ADR-0030)
         detail(token, "116")
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.alerts[*].id").value(contains(3, 4)))
-                .andExpect(jsonPath("$.alerts[1].kind").value("LIST_MISMATCH"))
-                .andExpect(jsonPath("$.alerts[1].fieldKey").value("majorRequirement"))
-                .andExpect(jsonPath("$.alerts[1].jobId").value(116))
-                .andExpect(jsonPath("$.alerts[1].pageA").value(4))
-                .andExpect(jsonPath("$.alerts[1].pageB").isEmpty());
+                .andExpect(jsonPath("$.alerts[*].id").value(contains(1)))
+                .andExpect(jsonPath("$.alerts[0].kind").value("LIST_MISMATCH"))
+                .andExpect(jsonPath("$.alerts[0].fieldKey").value("majorRequirement"))
+                .andExpect(jsonPath("$.alerts[0].jobId").value(116))
+                .andExpect(jsonPath("$.alerts[0].pageA").value(4))
+                .andExpect(jsonPath("$.alerts[0].pageB").isEmpty());
 
-        // 세정(기관 2)의 문서 내부 불일치(알림 1)는 기관 전체에 걸려 있어 그 기관 직무마다 보인다
-        String body = detail(token, "102").andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        // 선도소프트(기관 6)의 문서 내부 불일치(알림 2)는 기관 전체에 걸려 있어 그 기관 직무마다 보인다
+        String body = detail(token, "119").andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         List<Integer> ids = JsonPath.read(body, "$.alerts[*].id");
-        assertThat(ids).contains(1);
-        List<Object> jobIds = JsonPath.read(body, "$.alerts[?(@.id == 1)].jobId");
+        assertThat(ids).contains(2);
+        List<Object> jobIds = JsonPath.read(body, "$.alerts[?(@.id == 2)].jobId");
         assertThat(jobIds).containsOnlyNulls();
+
+        // 세정(기관 2)은 '서로 다른 직무의 전공'이라 알림이 없다(사람 판단, ADR-0030)
+        String sejung = detail(token, "102").andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<List<Object>>read(sejung, "$.alerts")).isEmpty();
         Contract.assertSameShape(body, Contract.responseExample("getJob", 200, null));
     }
 

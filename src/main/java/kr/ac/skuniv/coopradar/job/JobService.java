@@ -30,6 +30,6 @@ public class JobService {
                 row.educationGoal(), row.competencies(), jobs.weeklyPlan(row.id()), row.conditions(),
                 row.requirements().withMajorAliases(jobs.majorAliases(row.id())),
                 row.workplace(), row.closing(), evidence, jobs.alerts(row.id(), institutionId),
-                jobs.seniorNotes(institutionId));
+                jobs.seniorNotes(institutionId), jobs.photos(institutionId));
     }
 }

@@ -2137,6 +2137,10 @@
                           "teamText": "마케팅팀",
                           "documentTitle": "2025-1 우수 참여수기",
                           "page": 7,
+                          "major": "(가상) 광고홍보콘텐츠학과",
+                          "grade": "4학년",
+                          "oneLine": "(가상) 실무를 처음 배운 15주",
+                          "companyIntro": "(가상) 화장품 브랜드를 운영하는 회사입니다. 마케팅팀은 SNS 콘텐츠와 브랜드 캠페인을 맡습니다.",
                           "activities": [
                             "(가상) SNS 콘텐츠 기획",
                             "(가상) 주간 성과 정리"
@@ -2144,7 +2148,29 @@
                           "outcomes": [
                             "(가상) 신제품 SNS 캠페인 기획안 작성",
                             "(가상) 팝업 이벤트 기획에 참여"
-                          ]
+                          ],
+                          "results": "(가상) 신제품 SNS 캠페인 기획안을 작성했고 팝업 이벤트 기획에 참여했습니다.",
+                          "reflection": "(가상) 직접 기획한 콘텐츠가 올라가는 과정을 보며 직무를 구체적으로 알게 됐습니다."
+                        }
+                      ],
+                      "photos": [
+                        {
+                          "seq": 1,
+                          "path": "/photos/1/1.jpg",
+                          "caption": "(가상) 사무실 내부",
+                          "documentTitle": "(가상) 회사 실습기관 소개서",
+                          "page": 2,
+                          "width": 1000,
+                          "height": 640
+                        },
+                        {
+                          "seq": 2,
+                          "path": "/photos/1/2.jpg",
+                          "caption": null,
+                          "documentTitle": "(가상) 회사 실습기관 소개서",
+                          "page": 2,
+                          "width": 1000,
+                          "height": 700
                         }
                       ]
                     }
@@ -5106,6 +5132,34 @@
                   "type": "integer",
                   "minimum": 1
                 },
+                "major": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "수기에 적힌 학과(전공) 원문"
+                },
+                "grade": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "수기에 적힌 학년 원문(예: 4학년)"
+                },
+                "oneLine": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "한 줄 소개(수기 제목)"
+                },
+                "companyIntro": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "수기의 기관·부서 소개 문단"
+                },
                 "activities": {
                   "type": "array",
                   "items": {
@@ -5119,7 +5173,21 @@
                     "type": "string"
                   },
                   "maxItems": 3,
-                  "description": "실습 결과 중 원문 그대로 자른 사실 구절 0~3개(감상·평가·개인 진로 제외, ADR-0020)"
+                  "description": "실습 결과 중 원문 그대로 자른 사실 구절 0~3개(추천 근거용, ADR-0020)"
+                },
+                "results": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "실습 결과 문단 전문"
+                },
+                "reflection": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "소감 문단 전문"
                 }
               },
               "required": [
@@ -5127,11 +5195,66 @@
                 "teamText",
                 "documentTitle",
                 "page",
+                "major",
+                "grade",
+                "oneLine",
+                "companyIntro",
                 "activities",
-                "outcomes"
+                "outcomes",
+                "results",
+                "reflection"
               ]
             },
-            "description": "같은 기관의 선배 수기(이름·학과·학년·소감 없음)"
+            "description": "같은 기관의 선배 수기 전문(ADR-0030). 이름·사진은 없다. 전부 '우수' 수기라 화면에 그 점을 밝힌다"
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "seq": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "path": {
+                  "type": "string",
+                  "description": "사진 경로(API 서버 기준, 예: /photos/7/1.jpg). API 기본 주소 뒤에 붙여 <img>로 띄운다"
+                },
+                "caption": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "사진 아래에 인쇄된 설명 원문. 없으면 null"
+                },
+                "documentTitle": {
+                  "type": "string",
+                  "description": "사진이 실린 문서(예: 소서 실습기관 소개서)"
+                },
+                "page": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "width": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "height": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "seq",
+                "path",
+                "caption",
+                "documentTitle",
+                "page",
+                "width",
+                "height"
+              ]
+            },
+            "description": "그 기관 실습기관 소개서의 '회사 전경 및 활동사진'(ADR-0030). 순번 순. 소개서에 사진 칸이 없으면 []"
           }
         },
         "required": [
@@ -5150,7 +5273,8 @@
           "closing",
           "evidence",
           "alerts",
-          "seniorNotes"
+          "seniorNotes",
+          "photos"
         ],
         "description": "통근 시간은 이 응답에 없다(통근 조회를 따로 부른다)"
       },
