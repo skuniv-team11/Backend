@@ -1,8 +1,8 @@
 -- R__seed.sql — 시드 데이터(Flyway 반복 마이그레이션, ADR-0014). 손으로 고치지 않는다.
 -- 만드는 법: python pipeline/seed/build_seed.py ... · ncs_seed.py ... → python pipeline/seed/to_sql.py (pipeline/seed/README.md)
--- seed.json sha256: d190a220eb8624a070beb62bd0ab488c1a496a6079d2fd93996ce57e01c01f61
+-- seed.json sha256: 672cae91044564c1987ef0637057f64993f19c3097e56aaea1ef85a6255cb105
 -- ncs.json sha256: d9ce3779ce9fd49e53a1c777ec145ebb5af78acc731f2f36e1442dd600f02147
--- body sha256: 13d16c8ea5ea9995d02a3a16183f459e3749a407c625eb4363fe44caecb95e8e
+-- body sha256: 8ef6f2af15ddbae8a1af36fbd26645de064c5e23d9d94f6d6fffefabb3b81dff
 
 -- 1. 자식 테이블은 통째로 지운다(다시 넣는다)
 DELETE FROM round_stage;
@@ -10,7 +10,6 @@ DELETE FROM ncs_unit_link;
 DELETE FROM ncs_expand;
 DELETE FROM job_ncs;
 DELETE FROM ncs_occupation;
-DELETE FROM replay_signal;
 DELETE FROM institution_photo;
 DELETE FROM testimonial;
 DELETE FROM requirement_source;
@@ -3303,30 +3302,6 @@ INSERT INTO institution_photo (id, institution_id, source_document_id, seq, page
   (53, 18, 36, 2, 2, 'OFFICE', '매장 대기석', 'VISION', 1001, 748),
   (54, 18, 36, 3, 2, 'PRODUCT', '대표원장 매출갱신', 'VISION', 1001, 676),
   (55, 18, 36, 4, 2, 'EVENT', '대표원장 2026년 준오대상', 'VISION', 1001, 683);
-
--- replay_signal 21행
-INSERT INTO replay_signal (job_id, signal_date, interest_count) VALUES
-  (101, DATE '2026-07-15', 1),
-  (101, DATE '2026-07-17', 1),
-  (117, DATE '2026-07-24', 1),
-  (118, DATE '2026-07-19', 1),
-  (120, DATE '2026-07-17', 1),
-  (120, DATE '2026-07-20', 1),
-  (122, DATE '2026-07-16', 1),
-  (122, DATE '2026-07-17', 1),
-  (122, DATE '2026-07-24', 1),
-  (124, DATE '2026-07-15', 1),
-  (124, DATE '2026-07-17', 1),
-  (124, DATE '2026-07-20', 1),
-  (124, DATE '2026-07-24', 1),
-  (125, DATE '2026-07-20', 1),
-  (131, DATE '2026-07-14', 1),
-  (132, DATE '2026-07-18', 1),
-  (132, DATE '2026-07-20', 1),
-  (133, DATE '2026-07-17', 1),
-  (133, DATE '2026-07-23', 1),
-  (136, DATE '2026-07-15', 1),
-  (136, DATE '2026-07-22', 1);
 
 -- round_stage 11행
 INSERT INTO round_stage (round_id, seq, code, phase, starts_on, ends_on, confirmed, source) VALUES

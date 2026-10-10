@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 직무 상세 조회수(ADR-0019). 학생이 직무 상세(#17)를 열면 계정마다 직무별로 하루(한국 시간) 한 번만 센다.
- * 센터 담당자가 연 것은 세지 않는다. 실제 값만 둔다(가상 조회수 없음). 조회수는 #25로 따로 준다.
+ * 센터 담당자가 연 것은 세지 않는다. 실제 값만 둔다(가상 조회수 없음). 조회 수는 직무 상세(#17)에 들어간다.
  */
 @Service
 public class JobViewService {
@@ -50,7 +50,7 @@ public class JobViewService {
         }
     }
 
-    /** docs/api #25. 없는 직무는 404 JOB_NOT_FOUND. */
+    /** 직무 하나의 조회 수(#17). 없는 직무는 404 JOB_NOT_FOUND. */
     @Transactional(readOnly = true)
     public JobViews views(long jobId) {
         boolean exists = db.sql("SELECT EXISTS (SELECT 1 FROM job WHERE id = :job)")

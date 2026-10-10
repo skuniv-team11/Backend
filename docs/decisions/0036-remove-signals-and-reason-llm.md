@@ -1,0 +1,48 @@
+# ADR-0036 추천은 직무 탐색 하나로, 모집 신호와 이유 문장 LLM을 걷어낸다
+
+- 상태: 제안 (2026-10-10 — 박경원 요청: 백엔드 설계 재검토 A·B·F를 "여기서 진행해줘". **프론트가 v2 화면으로 옮긴 뒤 병합한다** — 지금 v1 화면은 #15·#16·#23·#25·#27을 부른다)
+- 대체: [ADR-0015](0015-no-crowded-status.md)(지망 점검 신호)·[0019](0019-interest-signal-and-job-views.md)(관심 = 담은 사람, 리플레이)·[0029](0029-alternatives-on-add.md)(담은 직무 기준 빈 자리)의 모집 신호 부분. 조회수(0019)는 남는다.
+- 문제
+  - 추천이 두 벌이다.
+    - 규칙 추천(#15) + Haiku 이유 문장(#16)과, 직무 탐색(#29, Sonnet) + '왜 맞나요'(#32)가 같은 일을 한다.
+    - v2 화면은 탐색 전에는 추천을 띄우지 않고, 이유는 '왜 맞나요'를 쓴다.
+    - 규칙 추천은 탐색이 AI 대신 쓸 때(#29 `source: RULE`)에만 필요하다.
+  - 기획에서 뺀 모집 신호가 남아 있다.
+    - 남은 것: 관심(담은 사람 수)·리플레이 가상 값·빈 자리 제안(#23, 같은 규칙을 한 번 더 둔 #27)·현황판 관심 열.
+    - v2 화면은 "관심(찜)은 지원이 아니라서 세지 않아요"라고 하고, 이 값을 보여 주지 않는다.
+  - 조회수 #25는 #14·#17·#24 응답에 함께 들어가 따로 부를 일이 없다(ADR-0035).
+  - 빈 테이블이 셋이다: `job_embedding`(E5 뒤 비어 있음), `round_result`(센터 동의 전), `replay_signal`(위 신호).
+- 결정
+  - **A 추천 한 벌로**
+    - #15·#16 API를 지운다. 이유 문장 LLM 쪽(`ReasonService`·`ClaudeReasonWriter`·제한기·설정 `app.reason`·환경변수 `REASON_MODEL`·프롬프트)도 지운다.
+    - 규칙 적합도(`RecommendService`)는 API 없이 남긴다. 판정 목록 순서(#14)와 #29 `source: RULE`이 쓴다.
+    - 실행 중 AI 모델은 Sonnet 하나다.
+  - **B 모집 신호 걷어내기**
+    - #23·#27을 지운다. `signal` 패키지와 `PlanCheckService`도 지운다.
+    - 현황판(#24)에서 지우는 것: `asOf` 쿼리·`isVirtual`·`signalSource`·`historyAvailable`, `summary.interestTotal`·`liveInterestTotal`·`zeroSignalJobs`, `rows[].signal`·`pastZeroRounds`.
+    - 현황판(#24)에 더하는 것: `rows[].closing`·`closed`(모집 판정 기준일의 마감, ADR-0035). `asOf`는 마감을 본 날로 남긴다.
+    - #13 `replay`는 `defaultAsOf`(시연 기준일)만 남긴다. `minDate`·`maxDate`·`signalsAreVirtual`은 지운다.
+    - 오류 코드 `AS_OF_OUT_OF_RANGE`와 코드표 `fit`·`signalStatus`·`signalSource`·`reasonSource`를 지운다.
+    - 담기·순위(#19~#22)는 지원서 1~3지망에 쓰여 그대로 둔다.
+  - **#25 지우기**: 조회 기록·세는 규칙(학생 계정마다 직무별 하루 한 번)은 그대로다. 값은 #14·#17·#24가 준다.
+  - **F 빈 테이블**: V12에서 `replay_signal`·`job_embedding`·`round_result`를 지운다(테이블 45 → 42).
+    - 시드(`seed.json`·`R__seed.sql`)에서 `replay_signal`을 뺀다. `replay.py`는 날짜 없는 센터 모집마감의 가상 마감일만 정한다.
+      - 마감일 난수는 같은 값이 나오게 그대로 두었다. 그래서 `seed.json`의 다른 값은 바뀌지 않는다.
+    - `job.final_assigned`(배정 수)는 컬럼째 남긴다(스키마 변경을 줄이려고).
+  - **API 번호는 다시 쓰지 않는다**: 코드·문서·Notion API LIST가 번호로 가리키므로 #15·#16·#23·#25·#27은 빈 번호로 둔다. README '목록' 아래에 적고 `check_api_docs.py`가 그 목록과 맞춰 본다.
+- 이유
+  - 한 화면이 같은 일을 하는 두 API를 부르지 않게 된다. 키·한도·모델 설정이 하나 준다(512MB Render에서 OkHttp 클라이언트도 하나 준다).
+  - 관심(담은 수)을 보여 주면 '지원이 아닌 숫자'가 경쟁률처럼 읽힌다. v2 기획이 그래서 뺐다.
+  - 쓰지 않는 코드·테이블이 남아 있으면 리뷰와 개인정보 점검 범위만 넓어진다.
+- 확인
+  - `MigrationTest`: 테이블 42개, V12 뒤 세 테이블이 없다.
+  - `SeedTest`: 가상 마감일이 회차 안에 있다.
+  - `CenterApiTest`: 현황판 `closed`·`closing`, 관심·신호 필드가 없다.
+  - `JobViewApiTest`: 조회 수를 #17로 본다. #25는 404다.
+  - `RecommendServiceTest`: #15 테스트를 서비스 직접 호출로 옮겼다. 규칙 추천 순서·`blockedBy`·근거 인용은 그대로다.
+  - `ReferenceApiTest`: `replay`에 `defaultAsOf`만 있다.
+  - `check_api_docs.py`: 예시에 신호 필드가 없다. 현황판 `closed` 규칙과 빈 번호 목록을 맞춰 본다.
+  - 계약 53개.
+- 다시 볼 때
+  - 지난 회차 결과(센터 동의)를 받게 되면, 그때 모양을 정해 새 테이블을 만든다.
+  - 모집이 실제로 열려 실제 지원 수를 모으게 되면, 신호를 다시 볼지 정한다(가상 값 없이 실제 값으로).

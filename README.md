@@ -1,6 +1,6 @@
 # 현장뛰자 — 백엔드
 
-현장실습 공고 문서(운영계획서·수기)를 AI로 구조화해서, 학생에게는 지원할 수 있는 자리와 이유·1~3지망 빈 자리 제안을, 현장실습지원센터에는 모집 중 현황판을 보여주는 서비스의 백엔드와 데이터 파이프라인입니다. 2026 소웨X전컴 공모전 11조 '나중에 고치조'. 프론트: [skuniv-team11/Frontend](https://github.com/skuniv-team11/Frontend)
+현장실습 공고 문서(운영계획서·수기)를 AI로 구조화해서, 학생에게는 지원할 수 있는 자리와 경험에 맞는 자리·현장실습 진행·실습 뒤 커리어를, 현장실습지원센터에는 현황판과 접수·매칭·선발·마무리를 보여주는 서비스의 백엔드와 데이터 파이프라인입니다. 2026 소웨X전컴 공모전 11조 '나중에 고치조'. 프론트: [skuniv-team11/Frontend](https://github.com/skuniv-team11/Frontend)
 
 ```
 src/                Spring Boot 4.1.1 · Java 21 → Render (Docker, Singapore)
@@ -79,7 +79,7 @@ ANTHROPIC_API_KEY=... java -jar build/libs/coop-radar-backend-0.0.1.jar --spring
 
 ## DB
 - **스키마·접근:** 스키마는 Flyway(`src/main/resources/db/migration/`), 접근은 `JdbcClient`입니다(ADR-0010). 테스트는 CI가 Testcontainers로 Postgres 18을 띄워 돌립니다.
-- **시드:** 앱이 뜰 때 Flyway가 `R__seed.sql`(2026-2 실제 자료: 18기관·40직무·학과 60·근거·수기 17·리플레이 신호)을 넣습니다. 바꾸면 다음 기동 때 다시 적용됩니다. 만드는 법은 [pipeline/seed/README.md](pipeline/seed/README.md)(ADR-0014).
+- **시드:** 앱이 뜰 때 Flyway가 `R__seed.sql`(2026-2 실제 자료: 18기관·40직무·학과 60·근거·수기 17·NCS)을 넣습니다. 바꾸면 다음 기동 때 다시 적용됩니다. 만드는 법은 [pipeline/seed/README.md](pipeline/seed/README.md)(ADR-0014).
 - **Render:** 무료 Postgres(singapore, 18). DB 페이지 Connections의 **Internal Database URL** `postgresql://USER:PASSWORD@HOST/DB`를 나눠 환경변수 3개에 넣습니다.
     - `DB_URL=jdbc:postgresql://HOST/DB` (`@` 뒤 부분 앞에 `jdbc:postgresql://`. 포트가 없으면 5432)
     - `DB_USER=USER`

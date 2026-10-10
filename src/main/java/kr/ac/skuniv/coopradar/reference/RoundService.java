@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-/** 현재 모집 회차와 리플레이 날짜 범위(#13). 지망 점검·현황판도 asOf 기본값과 범위를 여기서 가져간다. */
+/** 현재 모집 회차와 시연 기준일·일정(#13). 모집 판정 기준일(ReferenceDates.recruit)도 여기서 가져간다. */
 @Service
 public class RoundService {
 
@@ -31,7 +31,7 @@ public class RoundService {
         });
         LocalDate defaultAsOf = clamp(replay.defaultAsOf(), row.recruitStart(), row.recruitEnd());
         return new CurrentRound(row.id(), row.programName(), row.termCode(), row.roundNo(), row.recruitStart(),
-                row.recruitEnd(), new Replay(defaultAsOf, row.recruitStart(), row.recruitEnd(), true),
+                row.recruitEnd(), new Replay(defaultAsOf),
                 repository.stages(row.id()));
     }
 

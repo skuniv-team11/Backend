@@ -21,18 +21,6 @@
     "NOT_LISTED": "선호 전공 밖",
     "OPEN": "전공 무관"
   },
-  "fit": {
-    "HIGH": "높음",
-    "MEDIUM": "보통"
-  },
-  "signalStatus": {
-    "OPEN": "모집 중",
-    "CLOSED": "마감"
-  },
-  "signalSource": {
-    "REPLAY": "모집기간 리플레이(가상) + 실제 담은 수",
-    "LIVE": "실제 신호"
-  },
   "closeReason": {
     "APPLICATION_DEADLINE": "기관 접수마감",
     "CENTER_CLOSED": "센터 모집마감"
@@ -120,11 +108,6 @@
     "TESTIMONIAL": "선배 수기",
     "INSTITUTION_LIST": "참여기관 리스트",
     "SCHOOL_NOTICE": "학생 모집안내"
-  },
-  "reasonSource": {
-    "LLM": "AI 생성",
-    "CACHE": "AI 생성(저장본)",
-    "TEMPLATE": "기본 문장"
   },
   "role": {
     "STUDENT": "학생",

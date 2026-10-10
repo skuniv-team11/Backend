@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import kr.ac.skuniv.coopradar.job.Stipend;
 import kr.ac.skuniv.coopradar.recommend.EvidencePicker.Testimonial;
@@ -137,28 +136,6 @@ public class RecommendRepository {
             out.put(rs.getString("code"), rs.getString("label"));
         });
         return out;
-    }
-
-    /** 이유 문장 프롬프트에 넣는 직무 사실. 원문 그대로(검증에서 인용 대조에도 쓴다). */
-    record JobFacts(String institution, String businessType, String businessItem, String title, String team,
-                    String jobType, String overview, String competencies, String educationGoal, String weeklyPlan,
-                    String majorText) {
-    }
-
-    Optional<JobFacts> facts(int jobId) {
-        return db.sql("""
-                        SELECT i.name AS institution, i.business_type, i.business_item, j.title, j.team, j.job_type,
-                               j.overview, j.competencies, j.education_goal, j.major_text,
-                               (SELECT string_agg(p.content, ' / ' ORDER BY p.seq) FROM job_weekly_plan p
-                                WHERE p.job_id = j.id) AS weekly
-                        FROM job j JOIN institution i ON i.id = j.institution_id
-                        WHERE j.id = :job""")
-                .param("job", jobId)
-                .query((rs, n) -> new JobFacts(rs.getString("institution"), rs.getString("business_type"),
-                        rs.getString("business_item"), rs.getString("title"), rs.getString("team"),
-                        rs.getString("job_type"), rs.getString("overview"), rs.getString("competencies"),
-                        rs.getString("education_goal"), rs.getString("weekly"), rs.getString("major_text")))
-                .optional();
     }
 
     private static Integer page(ResultSet rs, String column) throws SQLException {

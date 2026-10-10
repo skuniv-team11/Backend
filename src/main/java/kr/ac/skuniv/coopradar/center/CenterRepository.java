@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import kr.ac.skuniv.coopradar.job.Alert;
 import kr.ac.skuniv.coopradar.job.InstitutionRef;
+import kr.ac.skuniv.coopradar.job.JobDetail.Closing;
 import kr.ac.skuniv.coopradar.job.JobRepository;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
@@ -23,13 +24,14 @@ public class CenterRepository {
      * 전공 무관이면 전체 재학생 수다. 확정 안 된 표기(DRAFT)는 0으로 센다.
      */
     record JobRow(int id, InstitutionRef institution, String title, int headcount, int eligiblePool, String portfolio,
-                  String certificate, String certificateText, List<String> weekdays, int views) {
+                  String certificate, String certificateText, List<String> weekdays, int views, Closing closing) {
     }
 
     List<JobRow> jobs(int roundId) {
         return db.sql("""
                         SELECT j.id, j.institution_id, i.name AS institution_name, j.title, j.headcount,
                                j.portfolio, j.certificate, j.certificate_text, j.weekdays,
+                               j.closes_on, j.close_reason, j.closes_on_is_virtual,
                                CASE WHEN j.major_open THEN (SELECT COALESCE(sum(enrolled_count), 0) FROM department)
                                     ELSE (SELECT COALESCE(sum(d.enrolled_count), 0)
                                           FROM department d
@@ -53,7 +55,9 @@ public class CenterRepository {
                             new InstitutionRef(rs.getInt("institution_id"), rs.getString("institution_name")),
                             rs.getString("title"), rs.getInt("headcount"), rs.getInt("eligible_pool"),
                             rs.getString("portfolio"), rs.getString("certificate"), rs.getString("certificate_text"),
-                            List.copyOf(weekdays), rs.getInt("views"));
+                            List.copyOf(weekdays), rs.getInt("views"),
+                            new Closing(rs.getObject("closes_on", java.time.LocalDate.class), rs.getString("close_reason"),
+                                    rs.getBoolean("closes_on_is_virtual")));
                 })
                 .list();
     }

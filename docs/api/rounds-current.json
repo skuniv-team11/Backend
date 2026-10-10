@@ -6,10 +6,7 @@
   "recruitStart": "2026-07-13",
   "recruitEnd": "2026-07-24",
   "replay": {
-    "defaultAsOf": "2026-07-23",
-    "minDate": "2026-07-13",
-    "maxDate": "2026-07-24",
-    "signalsAreVirtual": true
+    "defaultAsOf": "2026-07-23"
   },
   "stages": [
     {

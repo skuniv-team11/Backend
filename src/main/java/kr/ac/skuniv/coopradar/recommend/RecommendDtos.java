@@ -6,7 +6,10 @@ import kr.ac.skuniv.coopradar.job.InstitutionRef;
 import kr.ac.skuniv.coopradar.job.RoundRef;
 import kr.ac.skuniv.coopradar.job.Stipend;
 
-/** 추천 응답 모양(docs/api #15·#16: recommendations.json, recommendation-reason.json). 필드 이름이 JSON 이름이다. */
+/**
+ * 규칙 적합도 추천의 값. API로 따로 내보내지 않고(#15·#16은 ADR-0036에서 지움), 직무 탐색이 AI 대신 규칙 추천으로 갈 때
+ * (#29 source RULE)와 판정 목록 순서(#14)에 쓴다.
+ */
 public final class RecommendDtos {
 
     private RecommendDtos() {
@@ -21,10 +24,10 @@ public final class RecommendDtos {
     public record Citation(SourceType sourceType, String documentTitle, int page, String quote) {
     }
 
-    /** @param reasonStatus PENDING이면 프론트가 카드마다 #16(이유 문장)을 부른다 */
+    /** @param reasonTemplate 규칙 문장(학년·평점·학과가 들어 있어 저장하지 않는다 — ADR-0034) */
     public record Recommendation(int rank, int jobId, String title, InstitutionRef institution, Verdict verdict,
                                  Fit fit, String jobType, Stipend stipend, String reasonTemplate,
-                                 String reasonStatus, List<Citation> citations) {
+                                 List<Citation> citations) {
     }
 
     /** 추천이 0개일 때 막은 요건별 직무 수. */
@@ -32,11 +35,5 @@ public final class RecommendDtos {
     }
 
     public record Recommendations(RoundRef round, List<Recommendation> items, List<Blocked> blockedBy) {
-    }
-
-    /** 이유 문장의 출처. LLM 실패·5초 초과·호출 제한이어도 200 + TEMPLATE. */
-    public enum ReasonSource { LLM, CACHE, TEMPLATE }
-
-    public record RecommendationReason(int jobId, ReasonSource source, String text, List<Citation> citations) {
     }
 }

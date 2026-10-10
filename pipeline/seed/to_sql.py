@@ -58,7 +58,6 @@ CHILDREN = {
                     "one_line", "company_intro", "results", "reflection"],
     "institution_photo": ["id", "institution_id", "source_document_id", "seq", "page", "scene", "caption",
                           "caption_source", "width", "height"],
-    "replay_signal": ["job_id", "signal_date", "interest_count"],
     "round_stage": ["round_id", "seq", "code", "phase", "starts_on", "ends_on", "confirmed", "source"],
     "ncs_occupation": ["subcategory_code", "occupation_code", "source"],
     "job_ncs": ["job_id", "subcategory_code", "note"],
@@ -71,10 +70,10 @@ ARRAYS = {("job", "weekdays"): "varchar(3)[]", ("job", "benefits"): "varchar(20)
           ("testimonial", "activities"): "text[]", ("testimonial", "outcomes"): "text[]"}
 DATES = {("recruit_round", "recruit_start"), ("recruit_round", "recruit_end"),
          ("department", "enrolled_as_of"), ("institution", "nts_checked_on"), ("job", "period_start"),
-         ("job", "period_end"), ("job", "closes_on"), ("replay_signal", "signal_date"),
+         ("job", "period_end"), ("job", "closes_on"),
          ("round_stage", "starts_on"), ("round_stage", "ends_on")}
 # 지울 때는 FK를 거꾸로 따라간다
-DELETE_CHILDREN = ["round_stage", "ncs_unit_link", "ncs_expand", "job_ncs", "ncs_occupation", "replay_signal", "institution_photo", "testimonial", "requirement_source", "review_alert", "field_evidence", "source_document",
+DELETE_CHILDREN = ["round_stage", "ncs_unit_link", "ncs_expand", "job_ncs", "ncs_occupation", "institution_photo", "testimonial", "requirement_source", "review_alert", "field_evidence", "source_document",
                    "job_weekly_plan", "job_major_alias", "major_alias_department", "major_alias",
                    "department_cluster_member", "department_cluster"]
 CHUNK = 200
