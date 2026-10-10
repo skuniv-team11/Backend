@@ -142,5 +142,25 @@
   },
   "commuteProvider": {
     "KAKAO_MAP": "카카오맵"
+  },
+  "exploreSource": {
+    "AI": "AI 탐색",
+    "RULE": "규칙 추천(AI 대신)"
+  },
+  "exploreFallback": {
+    "NO_KEY": "AI 설정 없음",
+    "LIMITED": "탐색 한도 초과",
+    "AI_ERROR": "AI 응답 없음",
+    "VERIFY_FAILED": "AI 근거 확인 실패",
+    "NO_CANDIDATES": "지원할 수 있는 자리 없음"
+  },
+  "exploreFit": {
+    "STRONG": "잘 맞음",
+    "GOOD": "맞음",
+    "WEAK": "덜 맞음"
+  },
+  "exploreJudgedWith": {
+    "SAVED_PROFILE": "저장한 프로필로 다시 판정",
+    "RUN_PROFILE": "탐색 때 보낸 프로필"
   }
 }

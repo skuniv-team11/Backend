@@ -111,6 +111,7 @@ PROFILE_PROPS = {
                       "판정의 자격증 줄에만 쓴다"),
 }
 PROFILE_OPTIONAL = ("interestText", "homeAreaCode", "certificates")
+CARD_ID = {"type": "string", "pattern": r"^\d+-\d+$", "description": "카드 id `{jobId}-{순번}`"}
 PROFILE_VIEW_PROPS = {
     **PROFILE_PROPS,
     "department": R("DepartmentRef"),
@@ -453,6 +454,66 @@ S.update({
         "views": d({"type": "integer", "minimum": 0}, "지금까지 조회 수. 학생 계정마다 직무별로 하루(한국 시간) 한 번 센다"),
         "todayViews": d({"type": "integer", "minimum": 0}, "오늘(한국 시간) 조회 수"),
     }, desc="직무 조회수(ADR-0019). 실제 값만(가상 값 없음). 조회는 직무 상세(GET /api/jobs/{jobId})를 학생이 열 때만 센다"),
+    # ── 직무 탐색(ADR-0031) ──
+    "ExploreCandidates": obj({
+        "total": d({"type": "integer", "minimum": 0}, "후보 수 = eligible + needsCheck"),
+        "eligible": {"type": "integer", "minimum": 0},
+        "needsCheck": {"type": "integer", "minimum": 0},
+    }, desc="후보 = 판정이 ELIGIBLE·NEEDS_CHECK이고 기준일에 마감되지 않은 직무. INELIGIBLE·마감 직무는 AI에 보내지 않는다"),
+    "ExploreCards": obj({
+        "round": R("RoundRef"),
+        "candidates": R("ExploreCandidates"),
+        "cards": d(arr(obj({"id": CARD_ID, "text": d(STR, "직무 개요(또는 주차 계획) 항목 원문, 기관 이름은 '회사'로 가림")}),
+                       maxItems=60), "후보 직무를 번갈아 놓은 순서. 거의 같은 글은 하나로 합친다"),
+    }),
+    "ExploreRequest": obj({
+        "profile": R("Profile"),
+        "experiences": d(arr({"type": "string", "minLength": 20, "maxLength": 200}, maxItems=3),
+                         "해 본 일 0~3개. 경험 1개 이상 또는 카드 3개 이상이어야 한다"),
+        "cardIds": d(arr(CARD_ID, maxItems=5), "POST /api/explore/cards의 id, 중복 불가"),
+        "consent": d(BOOL, "경험 글을 AI에 보내고 결과와 함께 저장하는 데 동의. true가 아니면 400 CONSENT_REQUIRED"),
+    }),
+    "ExploreWhyText": obj({
+        "summary": STR,
+        "points": arr(obj({"text": STR, "studentQuote": STR, "jobQuote": STR}), minItems=1, maxItems=3),
+        "tryNew": arr(obj({"text": STR, "jobQuote": STR}), maxItems=2),
+        "prepare": nul(obj({"text": STR, "jobQuote": STR})),
+    }, desc="'왜 맞나요'. 구절은 서버가 원문과 대조해 통과한 것만 남긴다"),
+    "ExploreItem": obj({
+        "rank": {"type": "integer", "minimum": 1, "maximum": 5},
+        "jobId": ID, "title": STR, "team": STR,
+        "institution": R("InstitutionRef"),
+        "verdict": d(R("Verdict"), "ELIGIBLE 또는 NEEDS_CHECK(지원 불가는 나오지 않는다)"),
+        "fit": d(R("ExploreFit"), "1~2위 STRONG, 3~5위 GOOD(RULE이면 추천 적합도 HIGH → STRONG, MEDIUM → GOOD)"),
+        "evidence": obj({
+            "studentQuote": d(nul(STR), "학생 글에서 그대로 옮긴 구절. RULE이면 null"),
+            "jobQuote": d(nul(STR), "직무 원문에서 그대로 옮긴 구절"),
+            "documentTitle": nul(STR),
+            "page": d(nul(PAGE), "jobQuote가 든 운영계획서 쪽. 부서·직무명이면 null, 주차 계획은 직무 개요와 같은 쪽일 때만"),
+            "reason": d(STR, "해요체 한 문장. RULE이면 reasonTemplate"),
+        }),
+        "why": d(nul(R("ExploreWhyText")), "1~3위는 탐색 때 함께 만든다. null이면 GET /api/me/explore/jobs/{jobId}/why"),
+    }),
+    "Explore": obj({
+        "runId": ID,
+        "createdAt": DATETIME,
+        "round": R("RoundRef"),
+        "source": R("ExploreSource"),
+        "fallbackReason": d(nul(R("ExploreFallback")), "source가 AI면 null"),
+        "judgedWith": R("ExploreJudgedWith"),
+        "hiddenCount": d({"type": "integer", "minimum": 0}, "저장한 프로필로 다시 판정해 후보에서 빠져 숨긴 직무 수"),
+        "input": obj({"experiences": arr(STR, maxItems=3), "cards": arr(STR, maxItems=5), "interestText": nul(STR)},
+                     desc="저장한 경험 글(전화·이메일·긴 숫자는 [가림])·고른 카드 글·관심 분야"),
+        "candidates": R("ExploreCandidates"),
+        "items": arr(R("ExploreItem"), maxItems=5),
+        "blockedBy": d(arr(obj({"item": STR, "count": INT})), "items가 비었을 때만(#15와 같은 규칙)"),
+    }),
+    "ExploreJobWhy": obj({
+        "jobId": ID,
+        "fit": d(R("ExploreFit"), "탐색 결과 안이면 그 값, 밖이면 WEAK"),
+        "why": nul(R("ExploreWhyText")),
+        "fallbackReason": d(nul(R("ExploreFallback")), "why가 null인 까닭(NO_KEY·LIMITED·AI_ERROR·VERIFY_FAILED)"),
+    }),
 })
 
 # 오류 코드 표(README) → ErrorCode enum과 HTTP 상태
@@ -513,6 +574,13 @@ ENDPOINTS = {
         op="getPlanItemAlternatives", req=("PlanCheckRequest", ["me-plan-check.request.json"]),
         ok={200: ("PlanItemAlternatives", ["me-plan-item-alternatives.json"])},
         errors=["PLAN_ITEM_NOT_FOUND", "AS_OF_OUT_OF_RANGE"]),
+    "POST /api/explore/cards": dict(op="getExploreCards", req=PB, ok={200: ("ExploreCards", ["explore-cards.json"])}),
+    "POST /api/explore": dict(op="explore", req=("ExploreRequest", ["explore.request.json"]),
+                              ok={200: ("Explore", ["explore.json"])}, errors=["CONSENT_REQUIRED"]),
+    "GET /api/me/explore": dict(op="getMyExplore", ok={200: ("Explore", ["explore.json"])}, errors=["EXPLORE_NOT_FOUND"]),
+    "DELETE /api/me/explore": dict(op="deleteMyExplore", ok={204: (None, [])}),
+    "GET /api/me/explore/jobs/{jobId}/why": dict(op="getExploreWhy", ok={200: ("ExploreJobWhy", ["explore-why.json"])},
+                                                 errors=["EXPLORE_NOT_FOUND", "JOB_NOT_FOUND", "EXPLORE_NOT_CANDIDATE"]),
 }
 OK_TEXT = {200: "성공", 201: "만들었음", 204: "본문 없음"}
 STATUS_TEXT = {200: "이미 담겨 있음(그대로)", 201: "새로 담음"}  # POST /api/me/plan/items

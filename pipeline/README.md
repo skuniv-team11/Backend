@@ -13,6 +13,8 @@ pip install -r requirements.txt
 | (저장소 루트, `spike` 프로필) | E3 Java SDK 연동 | `ANTHROPIC_API_KEY` | — | 1건 약 $0.05 |
 | `e5_embedding/` | E5 한국어 임베딩 품질 — **완료(10/1), 임베딩 불합격**(ADR-0018). 보관 — 다시 돌리지 않는다 | — | E2 결과 | — |
 | `e6_external/` | E6 국세청·NCS | 공공데이터포털 Decoding 키 | — | 0원 |
+| `e7_explore/` | E7 경험 글로 자리 찾기 — AI가 필요한가(ADR-0031) | `ANTHROPIC_API_KEY` | 시드(`seed/seed.json`) | 약 $1.2 |
+| `e8_intro_photos/` | E8 실습기관 소개서 사진(ADR-0030) | `ANTHROPIC_API_KEY` | 원본 소개서 PDF | 약 $0.84 |
 | `seed/` | 시드 만들기 → `R__seed.sql`(ADR-0014) | — | E1 본 추출·E2·E6 결과, 원본 리스트·매칭 결과 | 0원 |
 | `common/` | 참여기관 리스트 xlsx 파서(병합 셀 처리) | — | — | — |
 

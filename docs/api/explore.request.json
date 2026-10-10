@@ -1,0 +1,22 @@
+{
+  "profile": {
+    "departmentId": 31,
+    "grade": 3,
+    "completedSemesters": 5,
+    "gpa": 3.4,
+    "graduationExpected": false,
+    "interestText": "뷰티 브랜드 SNS 마케팅",
+    "homeAreaCode": "11350",
+    "certificates": []
+  },
+  "experiences": [
+    "학과 졸업작품 홍보용 인스타그램 계정을 1년 동안 운영하면서, 게시 시간과 첫 문장을 바꿔 가며 저장 수를 비교했어요.",
+    "화장품 매장 아르바이트에서 손님이 자주 묻는 질문을 메모해 두고 진열을 바꿔 봤어요."
+  ],
+  "cardIds": [
+    "101-4",
+    "102-2",
+    "103-1"
+  ],
+  "consent": true
+}

@@ -58,6 +58,18 @@ app:
     per-user-per-hour: 30
     per-ip-per-hour: 60
     cache-size: 2000
+  explore:
+    # 직무 탐색(docs/api #28~#32, ADR-0031). 키가 비면 AI를 부르지 않고 규칙 추천(source RULE, NO_KEY)으로 답한다.
+    # 모델은 sonnet급이어야 한다(E7: haiku는 키워드보다 Hit@1이 낮음)
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${EXPLORE_MODEL:claude-sonnet-5-5}
+    # AI 호출 하나(탐색 순서, '왜 맞나요' 한 곳)의 제한 시간. E7 실측 5~7초
+    timeout: 30s
+    # 탐색 1번(순서 + 상위 3곳 설명)과 '왜 맞나요' 1곳이 각각 1회. 넘으면 규칙 추천·why null(LIMITED)
+    per-user-per-hour: ${EXPLORE_PER_USER_PER_HOUR:10}
+    per-ip-per-hour: ${EXPLORE_PER_IP_PER_HOUR:60}
+    # 서버 전체 하루(한국 시간 자정에 새로 셈). 0이면 끔
+    per-day: ${EXPLORE_PER_DAY:300}
   center:
     # 현황판 위험 요인 NARROW_POOL: 선호 전공 재학생 수가 이 값보다 적으면 표시(2026-2 시드 분포로 정함, ADR-0016)
     narrow-pool-below: ${CENTER_NARROW_POOL_BELOW:200}
