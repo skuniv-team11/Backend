@@ -26,7 +26,7 @@ import kr.ac.skuniv.coopradar.explore.ExploreText.Student;
  *   <li>문장: 해요체로 끝남, '습니다'·'당신'·'선호 전공' 없음, 별표는 지움. 탐색 이유 10~150자, '왜 맞나요' 문장 10~150자</li>
  * </ul>
  */
-final class ExploreVerifier {
+public final class ExploreVerifier {
 
     static final int LIMIT = 5;
     static final int QUOTE_MIN = 4;
@@ -109,7 +109,7 @@ final class ExploreVerifier {
     }
 
     /** 화면에 낼 문장(공백 정리·별표 제거). 규칙을 어기면 빈 값. */
-    static Optional<String> sentence(String s) {
+    public static Optional<String> sentence(String s) {
         if (s == null) {
             return Optional.empty();
         }

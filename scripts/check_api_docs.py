@@ -67,6 +67,9 @@ FIELD_CODE = {"verdict": "verdict", "layer": "reasonLayer", "result": "reasonRes
 # 직무 탐색(ADR-0031)은 같은 필드 이름에 다른 코드 묶음을 쓴다
 FILE_FIELD_CODE = {name: {"fit": "exploreFit", "source": "exploreSource", "fallbackReason": "exploreFallback",
                           "judgedWith": "exploreJudgedWith"} for name in ("explore.json", "explore-why.json")}
+FILE_FIELD_CODE["job-career.json"] = {"relation": "ncsRelation", "origin": "occupationOrigin"}
+FILE_FIELD_CODE["career-report.json"] = {"relation": "ncsRelation", "origin": "occupationOrigin", "source": "careerSource",
+                                         "fallbackReason": "exploreFallback"}
 def walk(o, path, fn):
     if isinstance(o, dict):
         for k, v in o.items():
@@ -191,6 +194,27 @@ check(er["consent"] is True and len(er["experiences"]) <= 3 and len(er["cardIds"
 check(all(c in card_ids for c in er["cardIds"]), "탐색 요청 cardIds가 카드 예시에 없음")
 w = docs["explore-why.json"]
 check((w["why"] is None) == (w["fallbackReason"] is not None), "'왜 맞나요' why ↔ fallbackReason")
+
+# 커리어(ADR-0032): 단위 개수 = 다룬 것 + 못 다룬 것, 겹치지 않음, 번호 순, AI면 대신 사유 없음, 넓혀 갈 직무 순위·관계
+cr = docs["career-report.json"]
+cov, notc = [u["code"] for u in cr["covered"]], [u["code"] for u in cr["notCovered"]]
+check(cr["ncs"]["unitCount"] == len(cov) + len(notc) and not set(cov) & set(notc), "커리어 리포트 단위 수")
+check(cov == sorted(cov) and notc == sorted(notc), "커리어 리포트 단위는 번호 순")
+check(all(c[:8] == cr["ncs"]["code"] for c in cov + notc), "커리어 리포트 단위가 그 세분류 것")
+check((cr["source"] == "AI") == (cr["fallbackReason"] is None), "커리어 리포트 source ↔ fallbackReason")
+check(cr["source"] == "AI" or cov == [], "AI 정리 없이는 covered가 비어야 함")
+check(all(q["studentQuote"] in cr["input"]["practiceText"] for q in cr["covered"]), "커리어 리포트 학생 구절이 실습 내용에 있음")
+for name in ("job-career.json", "career-report.json"):
+    ex_ = docs[name]["expand"]
+    check([e["rank"] for e in ex_] == list(range(1, len(ex_) + 1)), f"{name} 넓혀 갈 직무 순위")
+    base = docs[name]["ncs"]["code"]
+    for e in ex_:
+        want = "SAME_SMALL" if e["code"][:6] == base[:6] else "SAME_MIDDLE" if e["code"][:4] == base[:4] else "OTHER"
+        check(e["relation"] == want and e["code"] != base, f"{name} {e['code']} relation {e['relation']} ≠ {want}")
+jc = docs["job-career.json"]
+check(all(u["code"][:8] == jc["ncs"]["code"] for u in jc["ncs"]["units"]), "직무 커리어 단위가 그 세분류 것")
+crq = docs["career-report.request.json"]
+check(crq["consent"] is True and 100 <= len(crq["practiceText"]) <= 3000, "커리어 리포트 요청 규칙")
 
 # 지망 순위: 1~3, 중복 없음
 ranks = [i["rank"] for i in docs["me-plan.json"]["items"] if i["rank"] is not None]

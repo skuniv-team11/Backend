@@ -50,7 +50,10 @@ public final class CodeLabels {
             group("exploreFallback", "NO_KEY", "AI 설정 없음", "LIMITED", "탐색 한도 초과", "AI_ERROR", "AI 응답 없음",
                     "VERIFY_FAILED", "AI 근거 확인 실패", "NO_CANDIDATES", "지원할 수 있는 자리 없음"),
             group("exploreFit", "STRONG", "잘 맞음", "GOOD", "맞음", "WEAK", "덜 맞음"),
-            group("exploreJudgedWith", "SAVED_PROFILE", "저장한 프로필로 다시 판정", "RUN_PROFILE", "탐색 때 보낸 프로필"));
+            group("exploreJudgedWith", "SAVED_PROFILE", "저장한 프로필로 다시 판정", "RUN_PROFILE", "탐색 때 보낸 프로필"),
+            group("careerSource", "AI", "AI가 능력단위를 고름", "NONE", "AI 정리 없음(능력단위 목록만)"),
+            group("ncsRelation", "SAME_SMALL", "같은 분야(소분류)", "SAME_MIDDLE", "가까운 분야(중분류)", "OTHER", "다른 분야"),
+            group("occupationOrigin", "KEIS", "한국고용정보원 연계표", "CURATED", "연계표에 없어 팀이 고름"));
 
     private CodeLabels() {
     }

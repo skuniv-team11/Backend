@@ -112,6 +112,9 @@ PROFILE_PROPS = {
 }
 PROFILE_OPTIONAL = ("interestText", "homeAreaCode", "certificates")
 CARD_ID = {"type": "string", "pattern": r"^\d+-\d+$", "description": "카드 id `{jobId}-{순번}`"}
+NCS_CODE = {"type": "string", "pattern": r"^\d{8}$", "description": "NCS 세분류 코드(대2·중2·소2·세2)"}
+NCS_LEVEL = d(nul({"type": "integer", "minimum": 1, "maximum": 8}), "NCS 수준 1~8. 원본에 없으면 null")
+NCS_UNIT_CODE = {"type": "string", "pattern": r"^\d{10}_\d{2}v\d+$", "description": "NCS 능력단위 코드(예: 0201030102_21v5)"}
 PROFILE_VIEW_PROPS = {
     **PROFILE_PROPS,
     "department": R("DepartmentRef"),
@@ -508,6 +511,45 @@ S.update({
         "items": arr(R("ExploreItem"), maxItems=5),
         "blockedBy": d(arr(obj({"item": STR, "count": INT})), "items가 비었을 때만(#15와 같은 규칙)"),
     }),
+    # ── 커리어(ADR-0032) ──
+    "NcsPath": d(arr(STR, minItems=3, maxItems=3), "[대분류, 중분류, 소분류]"),
+    "NcsUnit": obj({"code": NCS_UNIT_CODE, "name": STR, "level": NCS_LEVEL,
+                    "definition": nul(STR)}),
+    "NcsExpand": obj({
+        "rank": {"type": "integer", "minimum": 1, "maximum": 3},
+        "code": NCS_CODE, "name": STR, "path": R("NcsPath"),
+        "relation": R("NcsRelation"),
+        "unitCount": {"type": "integer", "minimum": 0},
+        "sampleUnits": d(arr(STR, maxItems=5), "능력단위 이름 앞 5개"),
+    }, desc="실습 뒤 넓혀 갈 세분류(사람이 고름). relation은 코드로 정한다"),
+    "Occupation": obj({"code": {"type": "string", "pattern": r"^\d{4}$"}, "name": STR, "origin": R("OccupationOrigin")},
+                      desc="한국고용직업분류(KECO) 직업. origin KEIS 공식 연계표 · CURATED 연계표에 없어 팀이 같은 표에서 고름"),
+    "JobCareer": obj({
+        "jobId": ID,
+        "ncs": nul(obj({"code": NCS_CODE, "name": STR, "path": R("NcsPath"), "note": nul(STR),
+                        "units": arr(R("NcsUnit"))})),
+        "expand": arr(R("NcsExpand"), maxItems=3),
+        "occupations": arr(R("Occupation")),
+    }, desc="직무의 NCS 세분류·능력단위, 넓혀 갈 직무, 이어지는 직업. 시드 값만(실행 중 공공 API 호출 없음)"),
+    "CareerReportRequest": obj({
+        "jobId": ID,
+        "practiceText": d({"type": "string", "minLength": 100, "maxLength": 3000}, "수행결과보고서 '실습 내용'"),
+        "consent": d(BOOL, "실습 내용을 AI에 보내고 리포트와 함께 저장하는 데 동의. true가 아니면 400 CONSENT_REQUIRED"),
+    }),
+    "CareerReport": obj({
+        "reportId": ID, "createdAt": DATETIME,
+        "jobId": ID, "title": STR, "team": STR, "institution": R("InstitutionRef"),
+        "source": R("CareerSource"),
+        "fallbackReason": d(nul(R("ExploreFallback")), "source가 AI면 null(NO_KEY·LIMITED·AI_ERROR·VERIFY_FAILED)"),
+        "input": obj({"practiceText": STR}, desc="저장한 실습 내용(전화·이메일·긴 숫자는 [가림])"),
+        "ncs": obj({"code": NCS_CODE, "name": STR, "path": R("NcsPath"), "unitCount": {"type": "integer", "minimum": 0}}),
+        "covered": d(arr(obj({"code": NCS_UNIT_CODE, "name": STR, "level": NCS_LEVEL,
+                              "studentQuote": STR, "reason": STR})), "실습에서 다룬 능력단위(구절 대조 통과분), 번호 순"),
+        "notCovered": d(arr(obj({"code": NCS_UNIT_CODE, "name": STR,
+                                 "level": NCS_LEVEL})), "다음에 채울 능력단위, 번호 순"),
+        "expand": arr(R("NcsExpand"), maxItems=3),
+        "occupations": arr(R("Occupation")),
+    }),
     "ExploreJobWhy": obj({
         "jobId": ID,
         "fit": d(R("ExploreFit"), "탐색 결과 안이면 그 값, 밖이면 WEAK"),
@@ -579,6 +621,14 @@ ENDPOINTS = {
                               ok={200: ("Explore", ["explore.json"])}, errors=["CONSENT_REQUIRED"]),
     "GET /api/me/explore": dict(op="getMyExplore", ok={200: ("Explore", ["explore.json"])}, errors=["EXPLORE_NOT_FOUND"]),
     "DELETE /api/me/explore": dict(op="deleteMyExplore", ok={204: (None, [])}),
+    "GET /api/jobs/{jobId}/career": dict(op="getJobCareer", ok={200: ("JobCareer", ["job-career.json"])},
+                                         errors=["JOB_NOT_FOUND"]),
+    "POST /api/me/career-report": dict(op="createCareerReport", req=("CareerReportRequest", ["career-report.request.json"]),
+                                       ok={200: ("CareerReport", ["career-report.json"])},
+                                       errors=["CONSENT_REQUIRED", "JOB_NOT_FOUND"]),
+    "GET /api/me/career-report": dict(op="getMyCareerReport", ok={200: ("CareerReport", ["career-report.json"])},
+                                      errors=["CAREER_REPORT_NOT_FOUND"]),
+    "DELETE /api/me/career-report": dict(op="deleteMyCareerReport", ok={204: (None, [])}),
     "GET /api/me/explore/jobs/{jobId}/why": dict(op="getExploreWhy", ok={200: ("ExploreJobWhy", ["explore-why.json"])},
                                                  errors=["EXPLORE_NOT_FOUND", "JOB_NOT_FOUND", "EXPLORE_NOT_CANDIDATE"]),
 }
