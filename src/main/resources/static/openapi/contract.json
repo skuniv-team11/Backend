@@ -3,7 +3,7 @@
   "info": {
     "title": "현장뛰자 API — 계약",
     "version": "0.0.1",
-    "description": "**계약 스펙** — 아직 구현되지 않은 엔드포인트도 보인다. 지금 코드에 있는 것만 보려면 위 드롭다운에서 '구현'을 고른다.\n\n`scripts/build_openapi.py`가 `docs/api`(README 목록 표·예시 JSON)로 만든다. 손으로 고치지 않는다. 원본은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md).\n\n인증이 필요한 API는 오른쪽 **Authorize**에 `POST /api/auth/guest` 응답의 accessToken을 넣는다.\n\n## 공통 규칙 (README에서 옮김)\n\n- 기본 경로 `/api`, JSON, 필드는 camelCase, 날짜는 ISO 8601(`2026-07-18`, `2026-09-30T14:00:00+09:00`).\n- **인증**: `Authorization: Bearer <accessToken>`. 쿠키는 쓰지 않는다 — 프론트(Cloudflare Pages, `pages.dev`)와 Render(`onrender.com`)는 사이트가 달라 서드파티 쿠키 차단에 걸린다.\n  - 토큰은 JWT(HS256, 서명 키는 환경변수 `JWT_SECRET`). 만료는 가입 계정 7일, 체험 계정 24시간(계정도 그때 지운다).\n  - 로그아웃은 프론트가 토큰을 버리는 것으로 끝난다(서버 호출 없음).\n- **권한**: `공개` / `로그인`(역할 무관) / `STUDENT` / `CENTER`. 아래 목록의 '권한' 열.\n- **오류**: HTTP 상태 코드 + `{\"code\": \"...\", \"message\": \"사람이 읽는 설명\"}`. 입력 검증 실패(`INVALID_INPUT`)만 `fields`를 더 준다. 코드 표는 맨 아래.\n- **개인정보**\n  - 프로필(학과·학년·평점 등)은 요청 **본문**으로만 보낸다. URL·쿼리에 넣지 않는다 — 그래서 판정·추천·지망 점검·통근 조회가 GET이 아니라 POST다.\n  - 서버에 저장하는 건 `PUT /api/me/profile`에 `consent: true`로 보냈을 때뿐이다. 탈퇴하면 즉시 지운다.\n  - 사는 곳은 시·군·구까지만 받는다(`homeAreaCode`). 정확한 주소는 받지 않는다.\n  - 요청·응답 본문을 로그에 남기지 않는다.\n  - 직무 탐색(#29)의 경험 글은 `consent: true`일 때만 받아 결과와 함께 저장한다(계정당 마지막 1건, 지우기·탈퇴 때 바로 삭제). AI에는 학과·학년·평점을 보내지 않는다([ADR-0031](../decisions/0031-explore-ai.md)).\n- **모집 신호 = 관심**: 관심은 **내 지망에 담은 사람 수**다(순위와 상관없이 [담기]한 사람, 1인 1표). 모집기간 리플레이 가상 값에 실제 사용자가 담은 수를 더해 보여 준다(ADR-0019). 신호를 주는 응답에는 `isVirtual`과 `signalSource`를 반드시 넣는다.\n- **호출 제한**(초기값, 설정으로 조정): 체험 계정 만들기 IP당 1시간 300회(환경변수 `GUEST_PER_IP_PER_HOUR`, 0이면 끔 — 시연장·학교 와이파이는 여럿이 한 IP) → 넘으면 429 + `Retry-After`(초). 이유 문장(LLM) 계정당 1시간 30회·IP당 60회 → 넘으면 **200 + 기본 문장**(화면이 깨지지 않게). 직무 탐색 AI(탐색 1번·'왜 맞나요' 1곳이 각 1회) 계정당 1시간 10회·IP당 60회·서버 전체 하루 300회 → 넘으면 **200 + 규칙 추천**(`source: RULE`, `fallbackReason: LIMITED`). 통근 조회 계정당 1시간 30회·서버 전체 하루 900회(카카오 무료 하루 1,000건 안에서 멈춤) → 넘으면 **200 + `available: false`**.\n- **실행 중 외부 호출**은 Claude(이유 문장·직무 탐색)·카카오(통근 조회 — 주소 검색과 대중교통) 둘뿐이다(ADR-0002, ADR-0007, ADR-0031). 임베딩은 쓰지 않는다(E5 결과, ADR-0018). 둘 다 실패해도 200으로 화면을 유지한다.\n- **코드값**은 영문 대문자이고 DB CHECK와 같은 집합이다(`V1__init.sql`). 화면 표기는 `GET /api/codes`에서 가져간다.\n- **예시 값**: 기관·직무·인용문은 전부 가상이다(`(가상)` 표시). 실제 값은 시드에서 나온다. 목록 응답의 예시는 일부 행만 보여 준다.\n- CORS: `CorsConfig`가 `GET`·`POST`·`PUT`·`DELETE`·`OPTIONS`와 모든 헤더(`Authorization` 포함)를 허용한다(Backend#16). 통근 조회에는 환경변수 `KAKAO_REST_API_KEY`(카카오 디벨로퍼스 REST API 키)가 필요하다."
+    "description": "**계약 스펙** — 아직 구현되지 않은 엔드포인트도 보인다. 지금 코드에 있는 것만 보려면 위 드롭다운에서 '구현'을 고른다.\n\n`scripts/build_openapi.py`가 `docs/api`(README 목록 표·예시 JSON)로 만든다. 손으로 고치지 않는다. 원본은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md).\n\n인증이 필요한 API는 오른쪽 **Authorize**에 `POST /api/auth/guest` 응답의 accessToken을 넣는다.\n\n## 공통 규칙 (README에서 옮김)\n\n- 기본 경로 `/api`, JSON, 필드는 camelCase, 날짜는 ISO 8601(`2026-07-18`, `2026-09-30T14:00:00+09:00`).\n- **인증**: `Authorization: Bearer <accessToken>`. 쿠키는 쓰지 않는다 — 프론트(Cloudflare Pages, `pages.dev`)와 Render(`onrender.com`)는 사이트가 달라 서드파티 쿠키 차단에 걸린다.\n  - 토큰은 JWT(HS256, 서명 키는 환경변수 `JWT_SECRET`). 만료는 가입 계정 7일, 체험 계정 24시간(계정도 그때 지운다).\n  - 로그아웃은 프론트가 토큰을 버리는 것으로 끝난다(서버 호출 없음).\n- **권한**: `공개` / `로그인`(역할 무관) / `STUDENT` / `CENTER`. 아래 목록의 '권한' 열.\n- **오류**: HTTP 상태 코드 + `{\"code\": \"...\", \"message\": \"사람이 읽는 설명\"}`. 입력 검증 실패(`INVALID_INPUT`)만 `fields`를 더 준다. 코드 표는 맨 아래.\n- **개인정보**\n  - 프로필(학과·학년·평점 등)은 요청 **본문**으로만 보낸다. URL·쿼리에 넣지 않는다 — 그래서 판정·추천·지망 점검·통근 조회가 GET이 아니라 POST다.\n  - 서버에 저장하는 건 `PUT /api/me/profile`에 `consent: true`로 보냈을 때뿐이다. 탈퇴하면 즉시 지운다.\n  - 사는 곳은 시·군·구까지만 받는다(`homeAreaCode`). 정확한 주소는 받지 않는다.\n  - 요청·응답 본문을 로그에 남기지 않는다.\n  - 직무 탐색(#29)의 경험 글과 커리어 리포트(#34)의 실습 내용은 `consent: true`일 때만 받아 결과와 함께 저장한다(계정당 마지막 1건, 지우기·탈퇴 때 바로 삭제). AI에는 학과·학년·평점을 보내지 않는다([ADR-0031](../decisions/0031-explore-ai.md)·[0032](../decisions/0032-ncs-career.md)).\n- **모집 신호 = 관심**: 관심은 **내 지망에 담은 사람 수**다(순위와 상관없이 [담기]한 사람, 1인 1표). 모집기간 리플레이 가상 값에 실제 사용자가 담은 수를 더해 보여 준다(ADR-0019). 신호를 주는 응답에는 `isVirtual`과 `signalSource`를 반드시 넣는다.\n- **호출 제한**(초기값, 설정으로 조정): 체험 계정 만들기 IP당 1시간 300회(환경변수 `GUEST_PER_IP_PER_HOUR`, 0이면 끔 — 시연장·학교 와이파이는 여럿이 한 IP) → 넘으면 429 + `Retry-After`(초). 이유 문장(LLM) 계정당 1시간 30회·IP당 60회 → 넘으면 **200 + 기본 문장**(화면이 깨지지 않게). 직무 탐색 AI(탐색 1번·'왜 맞나요' 1곳이 각 1회) 계정당 1시간 10회·IP당 60회·서버 전체 하루 300회 → 넘으면 **200 + 규칙 추천**(`source: RULE`, `fallbackReason: LIMITED`). 커리어 리포트(#34)도 같은 한도를 1회씩 쓰고, 넘으면 200 + AI 정리 없이(`source: NONE`). 통근 조회 계정당 1시간 30회·서버 전체 하루 900회(카카오 무료 하루 1,000건 안에서 멈춤) → 넘으면 **200 + `available: false`**.\n- **실행 중 외부 호출**은 Claude(이유 문장·직무 탐색)·카카오(통근 조회 — 주소 검색과 대중교통) 둘뿐이다(ADR-0002, ADR-0007, ADR-0031). 임베딩은 쓰지 않는다(E5 결과, ADR-0018). 둘 다 실패해도 200으로 화면을 유지한다.\n- **코드값**은 영문 대문자이고 DB CHECK와 같은 집합이다(`V1__init.sql`). 화면 표기는 `GET /api/codes`에서 가져간다.\n- **예시 값**: 기관·직무·인용문은 전부 가상이다(`(가상)` 표시). 실제 값은 시드에서 나온다. 목록 응답의 예시는 일부 행만 보여 준다.\n- CORS: `CorsConfig`가 `GET`·`POST`·`PUT`·`DELETE`·`OPTIONS`와 모든 헤더(`Authorization` 포함)를 허용한다(Backend#16). 통근 조회에는 환경변수 `KAKAO_REST_API_KEY`(카카오 디벨로퍼스 REST API 키)가 필요하다."
   },
   "externalDocs": {
     "description": "docs/api/README.md",
@@ -36,6 +36,9 @@
     },
     {
       "name": "탐색"
+    },
+    {
+      "name": "커리어"
     }
   ],
   "paths": {
@@ -256,6 +259,19 @@
                       "exploreJudgedWith": {
                         "SAVED_PROFILE": "저장한 프로필로 다시 판정",
                         "RUN_PROFILE": "탐색 때 보낸 프로필"
+                      },
+                      "careerSource": {
+                        "AI": "AI가 능력단위를 고름",
+                        "NONE": "AI 정리 없음(능력단위 목록만)"
+                      },
+                      "ncsRelation": {
+                        "SAME_SMALL": "같은 분야(소분류)",
+                        "SAME_MIDDLE": "가까운 분야(중분류)",
+                        "OTHER": "다른 분야"
+                      },
+                      "occupationOrigin": {
+                        "KEIS": "한국고용정보원 연계표",
+                        "CURATED": "연계표에 없어 팀이 고름"
                       }
                     }
                   }
@@ -660,7 +676,7 @@
           "내 정보"
         ],
         "operationId": "deleteMe",
-        "summary": "탈퇴(계정·프로필·담은 지망·탐색 결과 즉시 삭제)",
+        "summary": "탈퇴(계정·프로필·담은 지망·탐색 결과·커리어 리포트 즉시 삭제)",
         "x-auth": "로그인",
         "description": "권한: **로그인** · 화면: M1 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "security": [
@@ -4626,6 +4642,1239 @@
           }
         }
       }
+    },
+    "/api/jobs/{jobId}/career": {
+      "get": {
+        "tags": [
+          "커리어"
+        ],
+        "operationId": "getJobCareer",
+        "summary": "실습 뒤 길: 직무의 NCS 세분류·능력단위, 넓혀 갈 직무 3개, 이어지는 직업(ADR-0032)",
+        "x-auth": "로그인",
+        "description": "권한: **로그인** · 화면: 탐색·S4 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobCareer"
+                },
+                "examples": {
+                  "job-career.json": {
+                    "summary": "docs/api/job-career.json",
+                    "value": {
+                      "jobId": 101,
+                      "ncs": {
+                        "code": "02010301",
+                        "name": "마케팅전략기획",
+                        "path": [
+                          "경영·회계·사무",
+                          "기획사무",
+                          "마케팅"
+                        ],
+                        "note": "(가상) 상품 기획 아이디어·신제품 기획·SNS 홍보 마케팅",
+                        "units": [
+                          {
+                            "code": "0201030102_21v5",
+                            "name": "신상품 기획",
+                            "level": 5,
+                            "definition": "신상품 기획이란 신규 아이템을 발굴하고 선정된 아이템에 대한 사업 타당성 분석을 통하여 신상품 개발 전략 계획을 수립하는 능력이다."
+                          },
+                          {
+                            "code": "0201030105_16v4",
+                            "name": "신 유통경로 마케팅",
+                            "level": 3,
+                            "definition": "신유통경로 마케팅은 디지털 환경 변화에 따라 새로운 마케팅 경로를 발굴하여 고객과의 커뮤니케이션 실행 계획을 수립하고 관리하는 능력이다."
+                          },
+                          {
+                            "code": "0201030106_21v4",
+                            "name": "전략적 제휴",
+                            "level": 5,
+                            "definition": "전략적 제휴란 조직의 내부 역량 및 경쟁 기업 분석을 통해 필요한 마케팅 영역에 대한 제휴 계획을 수립하고, 제휴사를 선정하여 협업하는 능력이다."
+                          },
+                          {
+                            "code": "0201030108_21v4",
+                            "name": "마케팅 전략 계획 수립",
+                            "level": 5,
+                            "definition": "마케팅 전략 계획 수립이란 조직의 중·장기 비전과 경영 전략에 따라 마케팅 목표와 실행 방안을 수립하는 능력이다."
+                          }
+                        ]
+                      },
+                      "expand": [
+                        {
+                          "rank": 1,
+                          "code": "02010302",
+                          "name": "고객관리",
+                          "path": [
+                            "경영·회계·사무",
+                            "기획사무",
+                            "마케팅"
+                          ],
+                          "relation": "SAME_SMALL",
+                          "unitCount": 7,
+                          "sampleUnits": [
+                            "고객관리 계획 수립",
+                            "고객 필요정보 제공",
+                            "고객관리 성과 평가",
+                            "비정형 데이터 관리",
+                            "고객분석과 데이터 관리"
+                          ],
+                          "occupations": [
+                            {
+                              "code": "0221",
+                              "name": "경영 및 진단 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0241",
+                              "name": "광고 및 홍보 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0242",
+                              "name": "조사 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0243",
+                              "name": "상품 기획 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0261",
+                              "name": "경영 기획 사무원",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0292",
+                              "name": "고객 상담 및 모니터 요원",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0293",
+                              "name": "통계·데이터 관련 사무원",
+                              "origin": "KEIS"
+                            }
+                          ]
+                        },
+                        {
+                          "rank": 2,
+                          "code": "02010303",
+                          "name": "통계조사",
+                          "path": [
+                            "경영·회계·사무",
+                            "기획사무",
+                            "마케팅"
+                          ],
+                          "relation": "SAME_SMALL",
+                          "unitCount": 12,
+                          "sampleUnits": [
+                            "통계조사계획",
+                            "표본설계",
+                            "설문설계",
+                            "실사관리",
+                            "자료처리"
+                          ],
+                          "occupations": [
+                            {
+                              "code": "0221",
+                              "name": "경영 및 진단 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0242",
+                              "name": "조사 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0293",
+                              "name": "통계·데이터 관련 사무원",
+                              "origin": "KEIS"
+                            }
+                          ]
+                        },
+                        {
+                          "rank": 3,
+                          "code": "02010202",
+                          "name": "광고",
+                          "path": [
+                            "경영·회계·사무",
+                            "기획사무",
+                            "홍보·광고"
+                          ],
+                          "relation": "SAME_MIDDLE",
+                          "unitCount": 7,
+                          "sampleUnits": [
+                            "광고 전략 수립",
+                            "광고 제작",
+                            "광고 집행 관리",
+                            "광고 효과 평가",
+                            "브랜드 기획"
+                          ],
+                          "occupations": [
+                            {
+                              "code": "0241",
+                              "name": "광고 및 홍보 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0261",
+                              "name": "경영 기획 사무원",
+                              "origin": "KEIS"
+                            }
+                          ]
+                        }
+                      ],
+                      "occupations": [
+                        {
+                          "code": "0221",
+                          "name": "경영 및 진단 전문가",
+                          "origin": "KEIS"
+                        },
+                        {
+                          "code": "0241",
+                          "name": "광고 및 홍보 전문가",
+                          "origin": "KEIS"
+                        },
+                        {
+                          "code": "0242",
+                          "name": "조사 전문가",
+                          "origin": "KEIS"
+                        },
+                        {
+                          "code": "0243",
+                          "name": "상품 기획 전문가",
+                          "origin": "KEIS"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_REQUIRED · TOKEN_EXPIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "AUTH_REQUIRED": {
+                    "value": {
+                      "code": "AUTH_REQUIRED",
+                      "message": "토큰 없음·잘못된 토큰"
+                    }
+                  },
+                  "TOKEN_EXPIRED": {
+                    "value": {
+                      "code": "TOKEN_EXPIRED",
+                      "message": "토큰 만료(체험 계정은 계정도 지워짐)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "JOB_NOT_FOUND": {
+                    "value": {
+                      "code": "JOB_NOT_FOUND",
+                      "message": "없는 직무"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/career-report": {
+      "post": {
+        "tags": [
+          "커리어"
+        ],
+        "operationId": "createCareerReport",
+        "summary": "수행결과보고서 '실습 내용' → 다룬 NCS 능력단위(AI, 구절 대조)·다음에 채울 것·한 단계 위·이어진 수 순 넓혀 갈 직무·직업",
+        "x-auth": "STUDENT",
+        "description": "권한: **STUDENT** · 화면: 커리어 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CareerReportRequest"
+              },
+              "examples": {
+                "career-report.request.json": {
+                  "summary": "docs/api/career-report.request.json",
+                  "value": {
+                    "jobId": 101,
+                    "practiceText": "(가상) 1~4주차에는 회사 소개와 인스타그램 운영 방식을 배웠습니다. 5주차부터 경쟁사 신제품 30개의 가격과 구성을 표로 정리해 신제품 기획 회의에 냈고, 제안한 세트 구성 아이디어 1건이 다음 분기 기획안에 들어갔습니다. 매주 SNS 게시물 반응을 집계해 콘텐츠 기획 회의 자료를 만들었습니다.",
+                    "consent": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareerReport"
+                },
+                "examples": {
+                  "career-report.json": {
+                    "summary": "docs/api/career-report.json",
+                    "value": {
+                      "reportId": 3,
+                      "createdAt": "2026-12-20T10:00:00+09:00",
+                      "jobId": 101,
+                      "title": "국내 마케팅",
+                      "team": "마케팅팀",
+                      "institution": {
+                        "id": 3,
+                        "name": "누리뷰티(가상)",
+                        "logoPath": "/logos/3.png"
+                      },
+                      "source": "AI",
+                      "fallbackReason": null,
+                      "input": {
+                        "practiceText": "(가상) 1~4주차에는 회사 소개와 인스타그램 운영 방식을 배웠습니다. 5주차부터 경쟁사 신제품 30개의 가격과 구성을 표로 정리해 신제품 기획 회의에 냈고, 제안한 세트 구성 아이디어 1건이 다음 분기 기획안에 들어갔습니다. 매주 SNS 게시물 반응을 집계해 콘텐츠 기획 회의 자료를 만들었습니다."
+                      },
+                      "ncs": {
+                        "code": "02010301",
+                        "name": "마케팅전략기획",
+                        "path": [
+                          "경영·회계·사무",
+                          "기획사무",
+                          "마케팅"
+                        ],
+                        "unitCount": 11
+                      },
+                      "covered": [
+                        {
+                          "code": "0201030102_21v5",
+                          "name": "신상품 기획",
+                          "level": 5,
+                          "studentQuote": "경쟁사 신제품 30개의 가격과 구성을 표로 정리해 신제품 기획 회의에 냈고",
+                          "reason": "경쟁 제품을 조사해 신제품 기획 회의에 아이디어를 낸 일이 신상품 기획에 해당해요."
+                        },
+                        {
+                          "code": "0201030109_21v4",
+                          "name": "마케팅 시장 환경 분석",
+                          "level": 3,
+                          "studentQuote": "경쟁사 신제품 30개의 가격과 구성을 표로 정리해",
+                          "reason": "시장과 경쟁사 제품을 조사해 정리한 일이 마케팅 시장 환경 분석의 일부예요."
+                        },
+                        {
+                          "code": "0201030115_16v3",
+                          "name": "마케팅 성과파악",
+                          "level": 3,
+                          "studentQuote": "매주 SNS 게시물 반응을 집계해",
+                          "reason": "SNS 반응을 매주 집계해 회의 자료로 만든 일이 마케팅 성과를 파악하는 일이에요."
+                        }
+                      ],
+                      "notCovered": [
+                        {
+                          "code": "0201030105_16v4",
+                          "name": "신 유통경로 마케팅",
+                          "level": 3
+                        },
+                        {
+                          "code": "0201030106_21v4",
+                          "name": "전략적 제휴",
+                          "level": 5
+                        },
+                        {
+                          "code": "0201030108_21v4",
+                          "name": "마케팅 전략 계획 수립",
+                          "level": 5
+                        },
+                        {
+                          "code": "0201030111_16v3",
+                          "name": "STP전략 타당성 분석",
+                          "level": 3
+                        },
+                        {
+                          "code": "0201030113_16v3",
+                          "name": "마케팅믹스전략 실행계획 수립",
+                          "level": 3
+                        },
+                        {
+                          "code": "0201030116_21v4",
+                          "name": "STP 전략 수립",
+                          "level": 4
+                        },
+                        {
+                          "code": "0201030117_21v4",
+                          "name": "마케팅 믹스 전략 수립",
+                          "level": 4
+                        },
+                        {
+                          "code": "0201030118_21v4",
+                          "name": "마케팅 성과 관리",
+                          "level": 5
+                        }
+                      ],
+                      "nextLevel": {
+                        "baseLevel": 3,
+                        "units": [
+                          {
+                            "code": "0201030105_16v4",
+                            "name": "신 유통경로 마케팅",
+                            "level": 3
+                          },
+                          {
+                            "code": "0201030111_16v3",
+                            "name": "STP전략 타당성 분석",
+                            "level": 3
+                          },
+                          {
+                            "code": "0201030113_16v3",
+                            "name": "마케팅믹스전략 실행계획 수립",
+                            "level": 3
+                          }
+                        ]
+                      },
+                      "expand": [
+                        {
+                          "rank": 2,
+                          "code": "02010303",
+                          "name": "통계조사",
+                          "path": [
+                            "경영·회계·사무",
+                            "기획사무",
+                            "마케팅"
+                          ],
+                          "relation": "SAME_SMALL",
+                          "unitCount": 12,
+                          "linkedCount": 2,
+                          "linked": [
+                            {
+                              "code": "0201030301_18v2",
+                              "name": "통계조사계획",
+                              "level": 5,
+                              "from": {
+                                "code": "0201030109_21v4",
+                                "name": "마케팅 시장 환경 분석",
+                                "level": 3
+                              },
+                              "note": "시장 환경 분석 내용이 조사 범위 결정의 바탕이 됨",
+                              "checked": false
+                            },
+                            {
+                              "code": "0201030315_18v2",
+                              "name": "2차 자료 분석",
+                              "level": 4,
+                              "from": {
+                                "code": "0201030109_21v4",
+                                "name": "마케팅 시장 환경 분석",
+                                "level": 3
+                              },
+                              "note": "내·외부 자료 분석 경험을 2차 자료 분석에 씀",
+                              "checked": false
+                            }
+                          ],
+                          "more": [
+                            {
+                              "code": "0201030304_18v2",
+                              "name": "실사관리",
+                              "level": 3
+                            },
+                            {
+                              "code": "0201030305_18v2",
+                              "name": "자료처리",
+                              "level": 3
+                            },
+                            {
+                              "code": "0201030302_18v2",
+                              "name": "표본설계",
+                              "level": 4
+                            }
+                          ],
+                          "occupations": [
+                            {
+                              "code": "0221",
+                              "name": "경영 및 진단 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0242",
+                              "name": "조사 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0293",
+                              "name": "통계·데이터 관련 사무원",
+                              "origin": "KEIS"
+                            }
+                          ]
+                        },
+                        {
+                          "rank": 1,
+                          "code": "02010302",
+                          "name": "고객관리",
+                          "path": [
+                            "경영·회계·사무",
+                            "기획사무",
+                            "마케팅"
+                          ],
+                          "relation": "SAME_SMALL",
+                          "unitCount": 7,
+                          "linkedCount": 1,
+                          "linked": [
+                            {
+                              "code": "0201030209_15v3",
+                              "name": "고객분석과 데이터 관리",
+                              "level": 4,
+                              "from": {
+                                "code": "0201030109_21v4",
+                                "name": "마케팅 시장 환경 분석",
+                                "level": 3
+                              },
+                              "note": "시장 환경 분석 경험이 고객 특성 분류에 이어짐",
+                              "checked": false
+                            }
+                          ],
+                          "more": [
+                            {
+                              "code": "0201030206_21v3",
+                              "name": "고객 필요정보 제공",
+                              "level": 3
+                            },
+                            {
+                              "code": "0201030210_21v4",
+                              "name": "고객 관계 관리",
+                              "level": 4
+                            },
+                            {
+                              "code": "0201030201_21v3",
+                              "name": "고객관리 계획 수립",
+                              "level": 5
+                            }
+                          ],
+                          "occupations": [
+                            {
+                              "code": "0221",
+                              "name": "경영 및 진단 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0241",
+                              "name": "광고 및 홍보 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0242",
+                              "name": "조사 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0243",
+                              "name": "상품 기획 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0261",
+                              "name": "경영 기획 사무원",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0292",
+                              "name": "고객 상담 및 모니터 요원",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0293",
+                              "name": "통계·데이터 관련 사무원",
+                              "origin": "KEIS"
+                            }
+                          ]
+                        },
+                        {
+                          "rank": 3,
+                          "code": "02010202",
+                          "name": "광고",
+                          "path": [
+                            "경영·회계·사무",
+                            "기획사무",
+                            "홍보·광고"
+                          ],
+                          "relation": "SAME_MIDDLE",
+                          "unitCount": 7,
+                          "linkedCount": 0,
+                          "linked": [],
+                          "more": [
+                            {
+                              "code": "0201020206_24v4",
+                              "name": "광고 제작",
+                              "level": 4
+                            },
+                            {
+                              "code": "0201020207_24v4",
+                              "name": "광고 집행 관리",
+                              "level": 4
+                            },
+                            {
+                              "code": "0201020208_24v3",
+                              "name": "광고 효과 평가",
+                              "level": 4
+                            }
+                          ],
+                          "occupations": [
+                            {
+                              "code": "0241",
+                              "name": "광고 및 홍보 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0261",
+                              "name": "경영 기획 사무원",
+                              "origin": "KEIS"
+                            }
+                          ]
+                        }
+                      ],
+                      "occupations": [
+                        {
+                          "code": "0221",
+                          "name": "경영 및 진단 전문가",
+                          "origin": "KEIS"
+                        },
+                        {
+                          "code": "0241",
+                          "name": "광고 및 홍보 전문가",
+                          "origin": "KEIS"
+                        },
+                        {
+                          "code": "0242",
+                          "name": "조사 전문가",
+                          "origin": "KEIS"
+                        },
+                        {
+                          "code": "0243",
+                          "name": "상품 기획 전문가",
+                          "origin": "KEIS"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_INPUT · CONSENT_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "INVALID_INPUT": {
+                    "value": {
+                      "code": "INVALID_INPUT",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "fields": [
+                        {
+                          "field": "profile.gpa",
+                          "reason": "0.0~4.5, 소수 첫째 자리까지"
+                        }
+                      ]
+                    }
+                  },
+                  "CONSENT_REQUIRED": {
+                    "value": {
+                      "code": "CONSENT_REQUIRED",
+                      "message": "프로필 저장에 동의가 없음"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_REQUIRED · TOKEN_EXPIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "AUTH_REQUIRED": {
+                    "value": {
+                      "code": "AUTH_REQUIRED",
+                      "message": "토큰 없음·잘못된 토큰"
+                    }
+                  },
+                  "TOKEN_EXPIRED": {
+                    "value": {
+                      "code": "TOKEN_EXPIRED",
+                      "message": "토큰 만료(체험 계정은 계정도 지워짐)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN_ROLE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "FORBIDDEN_ROLE": {
+                    "value": {
+                      "code": "FORBIDDEN_ROLE",
+                      "message": "역할이 맞지 않음(학생이 현황판 등)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "JOB_NOT_FOUND": {
+                    "value": {
+                      "code": "JOB_NOT_FOUND",
+                      "message": "없는 직무"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "커리어"
+        ],
+        "operationId": "getMyCareerReport",
+        "summary": "저장된 커리어 리포트",
+        "x-auth": "STUDENT",
+        "description": "권한: **STUDENT** · 화면: 커리어 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareerReport"
+                },
+                "examples": {
+                  "career-report.json": {
+                    "summary": "docs/api/career-report.json",
+                    "value": {
+                      "reportId": 3,
+                      "createdAt": "2026-12-20T10:00:00+09:00",
+                      "jobId": 101,
+                      "title": "국내 마케팅",
+                      "team": "마케팅팀",
+                      "institution": {
+                        "id": 3,
+                        "name": "누리뷰티(가상)",
+                        "logoPath": "/logos/3.png"
+                      },
+                      "source": "AI",
+                      "fallbackReason": null,
+                      "input": {
+                        "practiceText": "(가상) 1~4주차에는 회사 소개와 인스타그램 운영 방식을 배웠습니다. 5주차부터 경쟁사 신제품 30개의 가격과 구성을 표로 정리해 신제품 기획 회의에 냈고, 제안한 세트 구성 아이디어 1건이 다음 분기 기획안에 들어갔습니다. 매주 SNS 게시물 반응을 집계해 콘텐츠 기획 회의 자료를 만들었습니다."
+                      },
+                      "ncs": {
+                        "code": "02010301",
+                        "name": "마케팅전략기획",
+                        "path": [
+                          "경영·회계·사무",
+                          "기획사무",
+                          "마케팅"
+                        ],
+                        "unitCount": 11
+                      },
+                      "covered": [
+                        {
+                          "code": "0201030102_21v5",
+                          "name": "신상품 기획",
+                          "level": 5,
+                          "studentQuote": "경쟁사 신제품 30개의 가격과 구성을 표로 정리해 신제품 기획 회의에 냈고",
+                          "reason": "경쟁 제품을 조사해 신제품 기획 회의에 아이디어를 낸 일이 신상품 기획에 해당해요."
+                        },
+                        {
+                          "code": "0201030109_21v4",
+                          "name": "마케팅 시장 환경 분석",
+                          "level": 3,
+                          "studentQuote": "경쟁사 신제품 30개의 가격과 구성을 표로 정리해",
+                          "reason": "시장과 경쟁사 제품을 조사해 정리한 일이 마케팅 시장 환경 분석의 일부예요."
+                        },
+                        {
+                          "code": "0201030115_16v3",
+                          "name": "마케팅 성과파악",
+                          "level": 3,
+                          "studentQuote": "매주 SNS 게시물 반응을 집계해",
+                          "reason": "SNS 반응을 매주 집계해 회의 자료로 만든 일이 마케팅 성과를 파악하는 일이에요."
+                        }
+                      ],
+                      "notCovered": [
+                        {
+                          "code": "0201030105_16v4",
+                          "name": "신 유통경로 마케팅",
+                          "level": 3
+                        },
+                        {
+                          "code": "0201030106_21v4",
+                          "name": "전략적 제휴",
+                          "level": 5
+                        },
+                        {
+                          "code": "0201030108_21v4",
+                          "name": "마케팅 전략 계획 수립",
+                          "level": 5
+                        },
+                        {
+                          "code": "0201030111_16v3",
+                          "name": "STP전략 타당성 분석",
+                          "level": 3
+                        },
+                        {
+                          "code": "0201030113_16v3",
+                          "name": "마케팅믹스전략 실행계획 수립",
+                          "level": 3
+                        },
+                        {
+                          "code": "0201030116_21v4",
+                          "name": "STP 전략 수립",
+                          "level": 4
+                        },
+                        {
+                          "code": "0201030117_21v4",
+                          "name": "마케팅 믹스 전략 수립",
+                          "level": 4
+                        },
+                        {
+                          "code": "0201030118_21v4",
+                          "name": "마케팅 성과 관리",
+                          "level": 5
+                        }
+                      ],
+                      "nextLevel": {
+                        "baseLevel": 3,
+                        "units": [
+                          {
+                            "code": "0201030105_16v4",
+                            "name": "신 유통경로 마케팅",
+                            "level": 3
+                          },
+                          {
+                            "code": "0201030111_16v3",
+                            "name": "STP전략 타당성 분석",
+                            "level": 3
+                          },
+                          {
+                            "code": "0201030113_16v3",
+                            "name": "마케팅믹스전략 실행계획 수립",
+                            "level": 3
+                          }
+                        ]
+                      },
+                      "expand": [
+                        {
+                          "rank": 2,
+                          "code": "02010303",
+                          "name": "통계조사",
+                          "path": [
+                            "경영·회계·사무",
+                            "기획사무",
+                            "마케팅"
+                          ],
+                          "relation": "SAME_SMALL",
+                          "unitCount": 12,
+                          "linkedCount": 2,
+                          "linked": [
+                            {
+                              "code": "0201030301_18v2",
+                              "name": "통계조사계획",
+                              "level": 5,
+                              "from": {
+                                "code": "0201030109_21v4",
+                                "name": "마케팅 시장 환경 분석",
+                                "level": 3
+                              },
+                              "note": "시장 환경 분석 내용이 조사 범위 결정의 바탕이 됨",
+                              "checked": false
+                            },
+                            {
+                              "code": "0201030315_18v2",
+                              "name": "2차 자료 분석",
+                              "level": 4,
+                              "from": {
+                                "code": "0201030109_21v4",
+                                "name": "마케팅 시장 환경 분석",
+                                "level": 3
+                              },
+                              "note": "내·외부 자료 분석 경험을 2차 자료 분석에 씀",
+                              "checked": false
+                            }
+                          ],
+                          "more": [
+                            {
+                              "code": "0201030304_18v2",
+                              "name": "실사관리",
+                              "level": 3
+                            },
+                            {
+                              "code": "0201030305_18v2",
+                              "name": "자료처리",
+                              "level": 3
+                            },
+                            {
+                              "code": "0201030302_18v2",
+                              "name": "표본설계",
+                              "level": 4
+                            }
+                          ],
+                          "occupations": [
+                            {
+                              "code": "0221",
+                              "name": "경영 및 진단 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0242",
+                              "name": "조사 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0293",
+                              "name": "통계·데이터 관련 사무원",
+                              "origin": "KEIS"
+                            }
+                          ]
+                        },
+                        {
+                          "rank": 1,
+                          "code": "02010302",
+                          "name": "고객관리",
+                          "path": [
+                            "경영·회계·사무",
+                            "기획사무",
+                            "마케팅"
+                          ],
+                          "relation": "SAME_SMALL",
+                          "unitCount": 7,
+                          "linkedCount": 1,
+                          "linked": [
+                            {
+                              "code": "0201030209_15v3",
+                              "name": "고객분석과 데이터 관리",
+                              "level": 4,
+                              "from": {
+                                "code": "0201030109_21v4",
+                                "name": "마케팅 시장 환경 분석",
+                                "level": 3
+                              },
+                              "note": "시장 환경 분석 경험이 고객 특성 분류에 이어짐",
+                              "checked": false
+                            }
+                          ],
+                          "more": [
+                            {
+                              "code": "0201030206_21v3",
+                              "name": "고객 필요정보 제공",
+                              "level": 3
+                            },
+                            {
+                              "code": "0201030210_21v4",
+                              "name": "고객 관계 관리",
+                              "level": 4
+                            },
+                            {
+                              "code": "0201030201_21v3",
+                              "name": "고객관리 계획 수립",
+                              "level": 5
+                            }
+                          ],
+                          "occupations": [
+                            {
+                              "code": "0221",
+                              "name": "경영 및 진단 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0241",
+                              "name": "광고 및 홍보 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0242",
+                              "name": "조사 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0243",
+                              "name": "상품 기획 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0261",
+                              "name": "경영 기획 사무원",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0292",
+                              "name": "고객 상담 및 모니터 요원",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0293",
+                              "name": "통계·데이터 관련 사무원",
+                              "origin": "KEIS"
+                            }
+                          ]
+                        },
+                        {
+                          "rank": 3,
+                          "code": "02010202",
+                          "name": "광고",
+                          "path": [
+                            "경영·회계·사무",
+                            "기획사무",
+                            "홍보·광고"
+                          ],
+                          "relation": "SAME_MIDDLE",
+                          "unitCount": 7,
+                          "linkedCount": 0,
+                          "linked": [],
+                          "more": [
+                            {
+                              "code": "0201020206_24v4",
+                              "name": "광고 제작",
+                              "level": 4
+                            },
+                            {
+                              "code": "0201020207_24v4",
+                              "name": "광고 집행 관리",
+                              "level": 4
+                            },
+                            {
+                              "code": "0201020208_24v3",
+                              "name": "광고 효과 평가",
+                              "level": 4
+                            }
+                          ],
+                          "occupations": [
+                            {
+                              "code": "0241",
+                              "name": "광고 및 홍보 전문가",
+                              "origin": "KEIS"
+                            },
+                            {
+                              "code": "0261",
+                              "name": "경영 기획 사무원",
+                              "origin": "KEIS"
+                            }
+                          ]
+                        }
+                      ],
+                      "occupations": [
+                        {
+                          "code": "0221",
+                          "name": "경영 및 진단 전문가",
+                          "origin": "KEIS"
+                        },
+                        {
+                          "code": "0241",
+                          "name": "광고 및 홍보 전문가",
+                          "origin": "KEIS"
+                        },
+                        {
+                          "code": "0242",
+                          "name": "조사 전문가",
+                          "origin": "KEIS"
+                        },
+                        {
+                          "code": "0243",
+                          "name": "상품 기획 전문가",
+                          "origin": "KEIS"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_REQUIRED · TOKEN_EXPIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "AUTH_REQUIRED": {
+                    "value": {
+                      "code": "AUTH_REQUIRED",
+                      "message": "토큰 없음·잘못된 토큰"
+                    }
+                  },
+                  "TOKEN_EXPIRED": {
+                    "value": {
+                      "code": "TOKEN_EXPIRED",
+                      "message": "토큰 만료(체험 계정은 계정도 지워짐)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN_ROLE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "FORBIDDEN_ROLE": {
+                    "value": {
+                      "code": "FORBIDDEN_ROLE",
+                      "message": "역할이 맞지 않음(학생이 현황판 등)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "CAREER_REPORT_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "CAREER_REPORT_NOT_FOUND": {
+                    "value": {
+                      "code": "CAREER_REPORT_NOT_FOUND",
+                      "message": "저장된 커리어 리포트 없음"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "커리어"
+        ],
+        "operationId": "deleteMyCareerReport",
+        "summary": "커리어 리포트·실습 내용 지우기",
+        "x-auth": "STUDENT",
+        "description": "권한: **STUDENT** · 화면: 커리어·M1 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "본문 없음"
+          },
+          "401": {
+            "description": "AUTH_REQUIRED · TOKEN_EXPIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "AUTH_REQUIRED": {
+                    "value": {
+                      "code": "AUTH_REQUIRED",
+                      "message": "토큰 없음·잘못된 토큰"
+                    }
+                  },
+                  "TOKEN_EXPIRED": {
+                    "value": {
+                      "code": "TOKEN_EXPIRED",
+                      "message": "토큰 만료(체험 계정은 계정도 지워짐)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN_ROLE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "FORBIDDEN_ROLE": {
+                    "value": {
+                      "code": "FORBIDDEN_ROLE",
+                      "message": "역할이 맞지 않음(학생이 현황판 등)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4840,6 +6089,330 @@
           "IN_KIND"
         ],
         "description": "`MEAL` 식사 · `TRANSPORT` 교통 · `DORM` 기숙사 · `IN_KIND` 현물"
+      },
+      "CareerPath": {
+        "type": "object",
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^\\d{8}$",
+            "description": "NCS 세분류 코드(대2·중2·소2·세2)"
+          },
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "$ref": "#/components/schemas/NcsPath"
+          },
+          "relation": {
+            "$ref": "#/components/schemas/NcsRelation"
+          },
+          "unitCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "linkedCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5,
+            "description": "채운 단위와 이어진 단위 수"
+          },
+          "linked": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "pattern": "^\\d{10}_\\d{2}v\\d+$",
+                  "description": "NCS 능력단위 코드(예: 0201030102_21v5)"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "level": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 1,
+                  "maximum": 8,
+                  "description": "NCS 수준 1~8. 원본에 없으면 null"
+                },
+                "from": {
+                  "$ref": "#/components/schemas/NcsUnitRef",
+                  "description": "이어진 채운 단위"
+                },
+                "note": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "왜 이어지는지 짧은 구"
+                },
+                "checked": {
+                  "type": "boolean",
+                  "description": "false면 AI 초안(사람 확인 전)"
+                }
+              },
+              "required": [
+                "code",
+                "name",
+                "level",
+                "from",
+                "note",
+                "checked"
+              ]
+            },
+            "maxItems": 5,
+            "description": "넓혀 갈 세분류의 단위 중 채운 단위와 이어진 것(능력단위끼리 연결표), 단위 번호 순"
+          },
+          "more": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NcsUnitRef"
+            },
+            "maxItems": 3,
+            "description": "아직 안 이어진 단위 중 수준이 낮은 것(더 채울 것)"
+          },
+          "occupations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Occupation"
+            },
+            "description": "그 세분류와 이어진 직업"
+          }
+        },
+        "required": [
+          "rank",
+          "code",
+          "name",
+          "path",
+          "relation",
+          "unitCount",
+          "linkedCount",
+          "linked",
+          "more",
+          "occupations"
+        ],
+        "description": "리포트의 넓혀 갈 세분류. linkedCount가 많은 순, 같으면 rank 순"
+      },
+      "CareerReport": {
+        "type": "object",
+        "properties": {
+          "reportId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "jobId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "title": {
+            "type": "string"
+          },
+          "team": {
+            "type": "string"
+          },
+          "institution": {
+            "$ref": "#/components/schemas/InstitutionRef"
+          },
+          "source": {
+            "$ref": "#/components/schemas/CareerSource"
+          },
+          "fallbackReason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExploreFallback"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "source가 AI면 null(NO_KEY·LIMITED·AI_ERROR·VERIFY_FAILED)"
+          },
+          "input": {
+            "type": "object",
+            "properties": {
+              "practiceText": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "practiceText"
+            ],
+            "description": "저장한 실습 내용(전화·이메일·긴 숫자는 [가림])"
+          },
+          "ncs": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "pattern": "^\\d{8}$",
+                "description": "NCS 세분류 코드(대2·중2·소2·세2)"
+              },
+              "name": {
+                "type": "string"
+              },
+              "path": {
+                "$ref": "#/components/schemas/NcsPath"
+              },
+              "unitCount": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "code",
+              "name",
+              "path",
+              "unitCount"
+            ]
+          },
+          "covered": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "pattern": "^\\d{10}_\\d{2}v\\d+$",
+                  "description": "NCS 능력단위 코드(예: 0201030102_21v5)"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "level": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 1,
+                  "maximum": 8,
+                  "description": "NCS 수준 1~8. 원본에 없으면 null"
+                },
+                "studentQuote": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "code",
+                "name",
+                "level",
+                "studentQuote",
+                "reason"
+              ]
+            },
+            "description": "실습에서 다룬 능력단위(구절 대조 통과분), 번호 순"
+          },
+          "notCovered": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NcsUnitRef"
+            },
+            "description": "다음에 채울 능력단위, 번호 순"
+          },
+          "nextLevel": {
+            "type": "object",
+            "properties": {
+              "baseLevel": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 1,
+                "maximum": 8,
+                "description": "채운 단위에 가장 많은 수준(같으면 낮은 쪽). 채운 게 없으면 가장 낮은 수준"
+              },
+              "units": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/NcsUnitRef"
+                },
+                "maxItems": 3
+              }
+            },
+            "required": [
+              "baseLevel",
+              "units"
+            ],
+            "description": "같은 세분류 한 단계 위: 안 채운 단위 중 baseLevel 것, 그다음 baseLevel+1 것"
+          },
+          "expand": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CareerPath"
+            },
+            "maxItems": 3
+          },
+          "occupations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Occupation"
+            }
+          }
+        },
+        "required": [
+          "reportId",
+          "createdAt",
+          "jobId",
+          "title",
+          "team",
+          "institution",
+          "source",
+          "fallbackReason",
+          "input",
+          "ncs",
+          "covered",
+          "notCovered",
+          "nextLevel",
+          "expand",
+          "occupations"
+        ]
+      },
+      "CareerReportRequest": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "practiceText": {
+            "type": "string",
+            "minLength": 100,
+            "maxLength": 3000,
+            "description": "수행결과보고서 '실습 내용'"
+          },
+          "consent": {
+            "type": "boolean",
+            "description": "실습 내용을 AI에 보내고 리포트와 함께 저장하는 데 동의. true가 아니면 400 CONSENT_REQUIRED"
+          }
+        },
+        "required": [
+          "jobId",
+          "practiceText",
+          "consent"
+        ]
+      },
+      "CareerSource": {
+        "type": "string",
+        "enum": [
+          "AI",
+          "NONE"
+        ],
+        "description": "`AI` AI가 능력단위를 고름 · `NONE` AI 정리 없음(능력단위 목록만)"
       },
       "CenterBoard": {
         "type": "object",
@@ -5519,12 +7092,13 @@
           "JOB_NOT_FOUND",
           "PLAN_ITEM_NOT_FOUND",
           "EXPLORE_NOT_FOUND",
+          "CAREER_REPORT_NOT_FOUND",
           "EMAIL_TAKEN",
           "EXPLORE_NOT_CANDIDATE",
           "RATE_LIMITED",
           "INTERNAL"
         ],
-        "description": "`INVALID_INPUT` 400 · `CONSENT_REQUIRED` 400 · `RANK_INVALID` 400 · `AS_OF_OUT_OF_RANGE` 400 · `AUTH_REQUIRED` 401 · `TOKEN_EXPIRED` 401 · `LOGIN_FAILED` 401 · `FORBIDDEN_ROLE` 403 · `PROFILE_NOT_FOUND` 404 · `JOB_NOT_FOUND` 404 · `PLAN_ITEM_NOT_FOUND` 404 · `EXPLORE_NOT_FOUND` 404 · `EMAIL_TAKEN` 409 · `EXPLORE_NOT_CANDIDATE` 409 · `RATE_LIMITED` 429 · `INTERNAL` 500",
+        "description": "`INVALID_INPUT` 400 · `CONSENT_REQUIRED` 400 · `RANK_INVALID` 400 · `AS_OF_OUT_OF_RANGE` 400 · `AUTH_REQUIRED` 401 · `TOKEN_EXPIRED` 401 · `LOGIN_FAILED` 401 · `FORBIDDEN_ROLE` 403 · `PROFILE_NOT_FOUND` 404 · `JOB_NOT_FOUND` 404 · `PLAN_ITEM_NOT_FOUND` 404 · `EXPLORE_NOT_FOUND` 404 · `CAREER_REPORT_NOT_FOUND` 404 · `EMAIL_TAKEN` 409 · `EXPLORE_NOT_CANDIDATE` 409 · `RATE_LIMITED` 429 · `INTERNAL` 500",
         "x-status": {
           "INVALID_INPUT": 400,
           "CONSENT_REQUIRED": 400,
@@ -5538,6 +7112,7 @@
           "JOB_NOT_FOUND": 404,
           "PLAN_ITEM_NOT_FOUND": 404,
           "EXPLORE_NOT_FOUND": 404,
+          "CAREER_REPORT_NOT_FOUND": 404,
           "EMAIL_TAKEN": 409,
           "EXPLORE_NOT_CANDIDATE": 409,
           "RATE_LIMITED": 429,
@@ -6131,6 +7706,73 @@
           "name",
           "logoPath"
         ]
+      },
+      "JobCareer": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "ncs": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "pattern": "^\\d{8}$",
+                "description": "NCS 세분류 코드(대2·중2·소2·세2)"
+              },
+              "name": {
+                "type": "string"
+              },
+              "path": {
+                "$ref": "#/components/schemas/NcsPath"
+              },
+              "note": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "units": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/NcsUnit"
+                }
+              }
+            },
+            "required": [
+              "code",
+              "name",
+              "path",
+              "note",
+              "units"
+            ]
+          },
+          "expand": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NcsExpand"
+            },
+            "maxItems": 3
+          },
+          "occupations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Occupation"
+            }
+          }
+        },
+        "required": [
+          "jobId",
+          "ncs",
+          "expand",
+          "occupations"
+        ],
+        "description": "직무의 NCS 세분류·능력단위, 넓혀 갈 직무, 이어지는 직업. 시드 값만(실행 중 공공 API 호출 없음)"
       },
       "JobDetail": {
         "type": "object",
@@ -6740,6 +8382,139 @@
         ],
         "description": "`MATCH` 선호 전공 · `NEAR` 가까운 전공 · `NOT_LISTED` 선호 전공 밖 · `OPEN` 전공 무관"
       },
+      "NcsExpand": {
+        "type": "object",
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^\\d{8}$",
+            "description": "NCS 세분류 코드(대2·중2·소2·세2)"
+          },
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "$ref": "#/components/schemas/NcsPath"
+          },
+          "relation": {
+            "$ref": "#/components/schemas/NcsRelation"
+          },
+          "unitCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sampleUnits": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5,
+            "description": "능력단위 이름 앞 5개"
+          },
+          "occupations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Occupation"
+            },
+            "description": "그 세분류와 이어진 직업"
+          }
+        },
+        "required": [
+          "rank",
+          "code",
+          "name",
+          "path",
+          "relation",
+          "unitCount",
+          "sampleUnits",
+          "occupations"
+        ],
+        "description": "실습 뒤 넓혀 갈 세분류(사람이 고름). relation은 코드로 정한다"
+      },
+      "NcsPath": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 3,
+        "maxItems": 3,
+        "description": "[대분류, 중분류, 소분류]"
+      },
+      "NcsRelation": {
+        "type": "string",
+        "enum": [
+          "SAME_SMALL",
+          "SAME_MIDDLE",
+          "OTHER"
+        ],
+        "description": "`SAME_SMALL` 같은 분야(소분류) · `SAME_MIDDLE` 가까운 분야(중분류) · `OTHER` 다른 분야"
+      },
+      "NcsUnit": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^\\d{10}_\\d{2}v\\d+$",
+            "description": "NCS 능력단위 코드(예: 0201030102_21v5)"
+          },
+          "name": {
+            "type": "string"
+          },
+          "level": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 8,
+            "description": "NCS 수준 1~8. 원본에 없으면 null"
+          },
+          "definition": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "level",
+          "definition"
+        ]
+      },
+      "NcsUnitRef": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^\\d{10}_\\d{2}v\\d+$",
+            "description": "NCS 능력단위 코드(예: 0201030102_21v5)"
+          },
+          "name": {
+            "type": "string"
+          },
+          "level": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 8,
+            "description": "NCS 수준 1~8. 원본에 없으면 null"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "level"
+        ]
+      },
       "NtsStatus": {
         "type": "string",
         "enum": [
@@ -6748,6 +8523,35 @@
           "CLOSED"
         ],
         "description": "국세청 사업자 상태(오프라인 조회 결과). `ACTIVE` 계속사업자 · `SUSPENDED` 휴업자 · `CLOSED` 폐업자"
+      },
+      "Occupation": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^\\d{4}$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/OccupationOrigin"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "origin"
+        ],
+        "description": "한국고용직업분류(KECO) 직업. origin KEIS 공식 연계표 · CURATED 연계표에 없어 팀이 같은 표에서 고름"
+      },
+      "OccupationOrigin": {
+        "type": "string",
+        "enum": [
+          "KEIS",
+          "CURATED"
+        ],
+        "description": "`KEIS` 한국고용정보원 연계표 · `CURATED` 연계표에 없어 팀이 고름"
       },
       "Overtime": {
         "type": "string",

@@ -7,7 +7,7 @@
 | 스크립트 | 키 발급 | 결과 | 쓰임 |
 |---|---|---|---|
 | `nts_status.py` | 공공데이터포털 → '국세청_사업자등록정보 진위확인 및 상태조회 서비스' 활용신청(자동승인) → **Decoding 키** | `nts_status.csv` (18곳 상태) | M2 휴·폐업 탐지 |
-| `ncs_load.py` | 공공데이터포털 → '한국산업인력공단_NCS 관련 정보' 활용신청(자동승인) → **Decoding 키** | `ncs_units.csv` (능력단위 약 15,520건) | M3 직무 풀이(P1) |
+| `ncs_load.py` | 공공데이터포털 → '한국산업인력공단_NCS 관련 정보' 활용신청(자동승인) → **Decoding 키** | `ncs_units.csv` (능력단위 약 15,520건) | 커리어(직무 → NCS 세분류·능력단위, ADR-0032 — `seed/ncs_seed.py`) |
 
 ```
 pip install requests openpyxl

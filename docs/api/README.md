@@ -3,7 +3,7 @@
 프론트는 이 문서의 응답 예시로 목업을 만들고, 백엔드는 이 형태를 지킨다. 형태를 바꾸려면 이 문서를 먼저 고친다.
 Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 맞다.
 
-**Swagger**: https://coop-radar-api.onrender.com/swagger-ui.html (배포 서버). 드롭다운 '계약'은 이 문서와 예시 JSON으로 만든 32개 전부, '구현'은 지금 코드에 있는 것만 보여 준다(ADR-0011).
+**Swagger**: https://coop-radar-api.onrender.com/swagger-ui.html (배포 서버). 드롭다운 '계약'은 이 문서와 예시 JSON으로 만든 36개 전부, '구현'은 지금 코드에 있는 것만 보여 준다(ADR-0011).
 - '계약' 스펙은 `python scripts/build_openapi.py`가 이 폴더로 만든다(`src/main/resources/static/openapi/contract.json`). 이 문서나 예시 JSON을 고쳤으면 다시 돌려 같은 PR에 넣는다. 예시가 스키마(타입·null·코드값·범위)에 안 맞으면 여기서 실패한다.
 - 새 엔드포인트는 스크립트의 `ENDPOINTS`(요청·응답 스키마와 예시 파일)와 `S`(스키마)에도 넣는다.
 
@@ -19,9 +19,9 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - 서버에 저장하는 건 `PUT /api/me/profile`에 `consent: true`로 보냈을 때뿐이다. 탈퇴하면 즉시 지운다.
   - 사는 곳은 시·군·구까지만 받는다(`homeAreaCode`). 정확한 주소는 받지 않는다.
   - 요청·응답 본문을 로그에 남기지 않는다.
-  - 직무 탐색(#29)의 경험 글은 `consent: true`일 때만 받아 결과와 함께 저장한다(계정당 마지막 1건, 지우기·탈퇴 때 바로 삭제). AI에는 학과·학년·평점을 보내지 않는다([ADR-0031](../decisions/0031-explore-ai.md)).
+  - 직무 탐색(#29)의 경험 글과 커리어 리포트(#34)의 실습 내용은 `consent: true`일 때만 받아 결과와 함께 저장한다(계정당 마지막 1건, 지우기·탈퇴 때 바로 삭제). AI에는 학과·학년·평점을 보내지 않는다([ADR-0031](../decisions/0031-explore-ai.md)·[0032](../decisions/0032-ncs-career.md)).
 - **모집 신호 = 관심**: 관심은 **내 지망에 담은 사람 수**다(순위와 상관없이 [담기]한 사람, 1인 1표). 모집기간 리플레이 가상 값에 실제 사용자가 담은 수를 더해 보여 준다(ADR-0019). 신호를 주는 응답에는 `isVirtual`과 `signalSource`를 반드시 넣는다.
-- **호출 제한**(초기값, 설정으로 조정): 체험 계정 만들기 IP당 1시간 300회(환경변수 `GUEST_PER_IP_PER_HOUR`, 0이면 끔 — 시연장·학교 와이파이는 여럿이 한 IP) → 넘으면 429 + `Retry-After`(초). 이유 문장(LLM) 계정당 1시간 30회·IP당 60회 → 넘으면 **200 + 기본 문장**(화면이 깨지지 않게). 직무 탐색 AI(탐색 1번·'왜 맞나요' 1곳이 각 1회) 계정당 1시간 10회·IP당 60회·서버 전체 하루 300회 → 넘으면 **200 + 규칙 추천**(`source: RULE`, `fallbackReason: LIMITED`). 통근 조회 계정당 1시간 30회·서버 전체 하루 900회(카카오 무료 하루 1,000건 안에서 멈춤) → 넘으면 **200 + `available: false`**.
+- **호출 제한**(초기값, 설정으로 조정): 체험 계정 만들기 IP당 1시간 300회(환경변수 `GUEST_PER_IP_PER_HOUR`, 0이면 끔 — 시연장·학교 와이파이는 여럿이 한 IP) → 넘으면 429 + `Retry-After`(초). 이유 문장(LLM) 계정당 1시간 30회·IP당 60회 → 넘으면 **200 + 기본 문장**(화면이 깨지지 않게). 직무 탐색 AI(탐색 1번·'왜 맞나요' 1곳이 각 1회) 계정당 1시간 10회·IP당 60회·서버 전체 하루 300회 → 넘으면 **200 + 규칙 추천**(`source: RULE`, `fallbackReason: LIMITED`). 커리어 리포트(#34)도 같은 한도를 1회씩 쓰고, 넘으면 200 + AI 정리 없이(`source: NONE`). 통근 조회 계정당 1시간 30회·서버 전체 하루 900회(카카오 무료 하루 1,000건 안에서 멈춤) → 넘으면 **200 + `available: false`**.
 - **실행 중 외부 호출**은 Claude(이유 문장·직무 탐색)·카카오(통근 조회 — 주소 검색과 대중교통) 둘뿐이다(ADR-0002, ADR-0007, ADR-0031). 임베딩은 쓰지 않는다(E5 결과, ADR-0018). 둘 다 실패해도 200으로 화면을 유지한다.
 - **코드값**은 영문 대문자이고 DB CHECK와 같은 집합이다(`V1__init.sql`). 화면 표기는 `GET /api/codes`에서 가져간다.
 - **예시 값**: 기관·직무·인용문은 전부 가상이다(`(가상)` 표시). 실제 값은 시드에서 나온다. 목록 응답의 예시는 일부 행만 보여 준다.
@@ -36,7 +36,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | 4 | 인증 | POST | `/api/auth/login` | 공개 | 로그인 | 이메일 로그인 | [요청](auth-login.request.json) · [응답](auth-token.json) |
 | 5 | 인증 | POST | `/api/auth/guest` | 공개 | 시작 | 체험 계정 만들기([예시 프로필로 시작]·[센터 담당자로 보기]) | [요청](auth-guest.request.json) · [응답](auth-guest.json) |
 | 6 | 내 정보 | GET | `/api/me` | 로그인 | M1·공통 | 내 계정 | [응답](me.json) |
-| 7 | 내 정보 | DELETE | `/api/me` | 로그인 | M1 | 탈퇴(계정·프로필·담은 지망·탐색 결과 즉시 삭제) | 204 |
+| 7 | 내 정보 | DELETE | `/api/me` | 로그인 | M1 | 탈퇴(계정·프로필·담은 지망·탐색 결과·커리어 리포트 즉시 삭제) | 204 |
 | 8 | 내 정보 | GET | `/api/me/profile` | STUDENT | S1 | 저장한 프로필 | [응답](me-profile.json) |
 | 9 | 내 정보 | PUT | `/api/me/profile` | STUDENT | S1 | 프로필 저장(동의 필수) | [요청](me-profile.request.json) · [응답](me-profile.json) |
 | 10 | 내 정보 | DELETE | `/api/me/profile` | STUDENT | M1 | 저장한 프로필만 삭제 | 204 |
@@ -62,6 +62,10 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | 30 | 탐색 | GET | `/api/me/explore` | STUDENT | 탐색·S3 | 저장된 탐색 결과(저장한 프로필로 다시 판정) | [응답](explore.json) |
 | 31 | 탐색 | DELETE | `/api/me/explore` | STUDENT | 탐색·M1 | 탐색 결과·경험 글 지우기 | 204 |
 | 32 | 탐색 | GET | `/api/me/explore/jobs/{jobId}/why` | STUDENT | S4 | 직무 상세 '왜 맞나요'(없으면 이때 만든다) | [응답](explore-why.json) |
+| 33 | 커리어 | GET | `/api/jobs/{jobId}/career` | 로그인 | 탐색·S4 | 실습 뒤 길: 직무의 NCS 세분류·능력단위, 넓혀 갈 직무 3개, 이어지는 직업(ADR-0032) | [응답](job-career.json) |
+| 34 | 커리어 | POST | `/api/me/career-report` | STUDENT | 커리어 | 수행결과보고서 '실습 내용' → 다룬 NCS 능력단위(AI, 구절 대조)·다음에 채울 것·한 단계 위·이어진 수 순 넓혀 갈 직무·직업 | [요청](career-report.request.json) · [응답](career-report.json) |
+| 35 | 커리어 | GET | `/api/me/career-report` | STUDENT | 커리어 | 저장된 커리어 리포트 | [응답](career-report.json) |
+| 36 | 커리어 | DELETE | `/api/me/career-report` | STUDENT | 커리어·M1 | 커리어 리포트·실습 내용 지우기 | 204 |
 
 ## 공통 객체
 **Profile** (요청 본문의 `profile`, `PUT /api/me/profile`)
@@ -150,7 +154,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - 토큰: 역할·체험 여부는 토큰이 아니라 매 요청 DB에서 읽는다. 탈퇴했거나 정리된 계정의 토큰은 401 `AUTH_REQUIRED`.
 
 **내 정보**
-- `DELETE /api/me` → 204. 계정·프로필·담은 지망·탐색 결과가 함께 지워진다(DB cascade). 직무 조회 기록은 조회수로 남고 계정 연결만 끊긴다(`job_view.user_id` NULL).
+- `DELETE /api/me` → 204. 계정·프로필·담은 지망·탐색 결과·커리어 리포트가 함께 지워진다(DB cascade). 직무 조회 기록은 조회수로 남고 계정 연결만 끊긴다(`job_view.user_id` NULL).
 - `PUT /api/me/profile`: `consent`가 true가 아니면 400 `CONSENT_REQUIRED`. `GET`에 저장한 게 없으면 404 `PROFILE_NOT_FOUND`. `certificates`는 보낸 그대로(null·`[]`·코드 목록) 저장하고 돌려준다 — 코드는 중복을 빼고 `GET /api/certificates` 순서로 맞춘다.
 - `hasProfile`(`/api/me`)이 false여도 판정·추천은 된다 — 프론트가 입력받은 프로필을 본문에 넣어 보내면 된다.
 
@@ -246,6 +250,23 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - 탐색 결과가 없으면 404 `EXPLORE_NOT_FOUND`, 없는 직무 404 `JOB_NOT_FOUND`, 지금 후보가 아닌 직무(위 다시 판정과 같은 기준)는 409 `EXPLORE_NOT_CANDIDATE`.
 - 응답 시간: AI 탐색 약 5초 + '왜 맞나요' 3곳 동시 약 6초(E7 실측). 화면은 '분석 중'을 보여 준다.
 
+**커리어**([ADR-0032](../decisions/0032-ncs-career.md)) — 실습이 다음 진로로 이어지게 직무를 NCS(국가직무능력표준)로 풀어 준다. NCS 값은 시드로 미리 넣고 실행 중에 공공 API를 부르지 않는다.
+- **직무 ↔ NCS**: 직무마다 세분류 하나(사람이 직무 원문과 능력단위를 보고 고름, `pipeline/seed/curated/job_ncs.csv`). `ncs`는 `{code, name, path, note, units}` — `path`는 `[대분류, 중분류, 소분류]`, `note`는 고른 까닭, `units`는 그 세분류의 능력단위 `{code, name, level, definition}`(능력단위 번호 순, `level`은 NCS 수준 1~8 — 원본에 없으면 null). 구버전 단위는 빼고 이름이 같은 단위는 최신 개정 하나만 둔다. 세분류가 없는 직무면 `ncs: null`·`expand: []`·`occupations: []`(2026-2는 40개 모두 있다).
+- **넓혀 갈 직무**(`expand`): 세분류마다 3개(사람이 고름, `curated/ncs_expand.csv`), `{rank, code, name, path, relation, unitCount, sampleUnits, occupations}`. `relation`은 코드로 정한다 — `SAME_SMALL` 같은 소분류 · `SAME_MIDDLE` 같은 중분류 · `OTHER` 다른 분야. `sampleUnits`는 능력단위 이름 앞 5개, `occupations`는 그 세분류와 이어진 직업(아래와 같은 규칙).
+- **이어지는 직업**(`occupations`): 한국고용정보원 '직업능력 코드매핑정보'(2025-11-26, NCS ↔ 한국고용직업분류)에서 그 세분류와 그 소분류에 이어진 직업 `{code, name, origin}`, 코드 순. 연계표에 없는 세분류(소셜미디어방송서비스·전자상거래 등)는 같은 표의 직업에서 사람이 골라 더했고(`origin: CURATED`), 소분류 전체에 붙어 엉뚱한 직업(디자인 세분류의 건축가 등)은 뺐다(`curated/ncs_occupations.csv`, 직무 세분류와 넓혀 갈 세분류 모두). 맞는 직업이 표에 없으면 `[]`(미용 4개·이러닝과정운영).
+- **능력단위끼리 연결**(리포트에서 씀): 직무 세분류의 단위 → 넓혀 갈 세분류의 단위, 넓힘마다 최대 5개·넓혀 갈 단위 하나에 하나. AI(Sonnet)가 단위 이름·정의만 보고 초안을 만들고(`pipeline/seed/ncs_links.py`, 2026-10-10 305개) 사람이 보고 `checked`를 켠다. 응답의 `checked: false`는 'AI 초안 · 확인 전'으로 표시한다.
+- 화면에는 출처를 적는다: 'NCS 능력단위(한국산업인력공단, 2026-09-30 적재)', '직업 연계: 한국고용정보원 직업능력 코드매핑정보(2025-11-26)'.
+- `GET /api/jobs/{jobId}/career`(#33): 로그인(역할 무관). 없는 직무 404 `JOB_NOT_FOUND`. 지원 불가 직무도 준다(길을 보는 것이라서).
+- **커리어 리포트**(#34): 본문 `{jobId, practiceText, consent}`.
+  - `practiceText`: 수행결과보고서(별지 제9호)의 '실습 내용'을 붙여 넣은 글, 100~3,000자. `consent`가 true가 아니면 400 `CONSENT_REQUIRED`. 전화번호·이메일·8~10자리 숫자는 `[가림]`으로 바꾼 뒤 AI에 보내고 저장한다. 없는 직무 404 `JOB_NOT_FOUND`, NCS 세분류가 없는 직무는 400 `INVALID_INPUT`(`jobId`).
+  - AI(Sonnet)가 실습 내용과 그 직무 세분류의 능력단위(이름·정의)만 읽고 실습에서 해 본 단위를 고른다 — 단위마다 `studentQuote`(실습 내용 한 문장 안의 구절)와 `reason`(해요체 한 문장). 서버가 확인해 통과한 것만 `covered`에 둔다: 그 세분류의 단위(코드의 개정 표기 `_21v4`만 틀리면 앞 10자리 단위 번호로 찾는다) · 한 번만 · 구절이 실습 내용 한 문장(줄) 안에 그대로 · 문장 규칙(#29와 같다). 학과·학년·평점은 보내지 않는다.
+  - `covered`·`notCovered`(다음에 채울 것)는 능력단위 번호 순. `ncs.unitCount` = 둘의 합.
+  - `nextLevel`(같은 세분류 한 단계 위): `baseLevel`은 채운 단위에 가장 많은 수준(같으면 낮은 쪽, 채운 게 없으면 그 세분류의 가장 낮은 수준), `units`는 안 채운 단위 중 `baseLevel` 것 → `baseLevel+1` 것 순으로 최대 3개.
+  - `expand`(넓혀 갈 직무 3개): `{rank, code, name, path, relation, unitCount, linkedCount, linked, more, occupations}`. `linked`는 넓혀 갈 세분류의 단위 중 채운 단위와 이어진 것 `{code, name, level, from, note, checked}`(`from`은 이어진 채운 단위), `linkedCount`는 그 수, `more`는 안 이어진 단위 중 수준이 낮은 것 최대 3개(더 채울 것). **이어진 수가 많은 순, 같으면 `rank` 순**으로 준다(화면 '이어짐 2 / 12' = `linkedCount` / `unitCount`).
+  - AI 키 없음·한도·실패·확인 통과 0개면 200 + `source: NONE`, `fallbackReason`, `covered: []`, `notCovered`는 단위 전부(목록은 그대로 보여 준다). 이때 `expand`는 `linked: []`로 `rank` 순, `nextLevel`은 가장 낮은 수준부터.
+  - 계정당 마지막 1건만 둔다(새로 만들면 바꾼다). `GET`(#35)은 저장본(없으면 404 `CAREER_REPORT_NOT_FOUND`), `DELETE`(#36)은 204(없어도).
+  - 실습한 직무를 고르는 것은 학생이다(지원·선발 기록과 아직 잇지 않는다 — 매칭·선발 기능이 들어오면 잇는다).
+
 **센터** — CENTER만(아니면 403 `FORBIDDEN_ROLE`). 회차 직무 전부를 리스트 순번대로 행으로 준다. `asOf` 규칙은 지망 점검과 같다(생략하면 `replay.defaultAsOf`, 모집기간 밖이면 400 `AS_OF_OUT_OF_RANGE`, 날짜 형식이 아니면 400 `INVALID_INPUT`). 세부 정의는 [ADR-0017](../decisions/0017-center-board-details.md).
 - `summary`: `jobs` 직무 수 · `seats` 정원 합 · `interestTotal` asOf까지 관심 합(가상 + 실제) · `liveInterestTotal` 그중 실제 사용자가 담은 수 · `zeroSignalJobs` 관심이 0인 직무 수 · `closedJobs` `CLOSED` 직무 수.
 - `eligiblePool`(적격 학생 풀): 직무의 선호 전공 표기에서 사람이 확정한 학과(중복 없이)의 재학생 수 합. 전공 무관이면 전체 재학생. 확정 전 표기(`DRAFT`, 2026-2는 없음)는 0으로 센다.
@@ -270,6 +291,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | `JOB_NOT_FOUND` | 404 | 없는 직무 |
 | `PLAN_ITEM_NOT_FOUND` | 404 | 담지 않은 직무를 취소하거나 그 직무 기준 빈 자리를 물음 |
 | `EXPLORE_NOT_FOUND` | 404 | 저장된 탐색 결과 없음 |
+| `CAREER_REPORT_NOT_FOUND` | 404 | 저장된 커리어 리포트 없음 |
 | `EMAIL_TAKEN` | 409 | 이미 가입한 이메일 |
 | `EXPLORE_NOT_CANDIDATE` | 409 | 지원할 수 없거나 마감된 직무라 '왜 맞나요'를 만들지 않음 |
 | `RATE_LIMITED` | 429 | 체험 계정 만들기 호출 제한 |

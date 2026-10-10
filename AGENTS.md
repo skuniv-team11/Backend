@@ -8,7 +8,7 @@
 ## 저장소 지도
 | 경로 | 내용 |
 |---|---|
-| `src/` | Spring Boot 4.1 · Java 21. 패키지 루트 `kr.ac.skuniv.coopradar` (`auth/` 로그인·체험 계정, `me/` 내 정보, `eligibility/` 자격 판정(3층 규칙), `job/` 직무 상세·조회수, `plan/` 담은 직무·지망 순위, `recommend/` 적합도 추천·이유 문장(규칙+키워드, Haiku), `explore/` 직무 탐색(경험 글 → AI가 후보 중 5곳·근거, 서버 대조, ADR-0031), `signal/` 모집 신호(관심 = 담은 사람, 리플레이 + 실제 담은 수) 계산, `center/` 센터 현황판, `commute/` 통근 조회(카카오, 저장 안 함), `reference/` 기준 정보(코드값·학과·사는 곳·현재 회차), `common/` 오류 코드·시간, `web/` 공통 컨트롤러, `config/` 설정, `spike/` 추출 실험) |
+| `src/` | Spring Boot 4.1 · Java 21. 패키지 루트 `kr.ac.skuniv.coopradar` (`auth/` 로그인·체험 계정, `me/` 내 정보, `eligibility/` 자격 판정(3층 규칙), `job/` 직무 상세·조회수, `plan/` 담은 직무·지망 순위, `recommend/` 적합도 추천·이유 문장(규칙+키워드, Haiku), `explore/` 직무 탐색(경험 글 → AI가 후보 중 5곳·근거, 서버 대조, ADR-0031), `career/` 실습 뒤 커리어(NCS 세분류·능력단위·넓혀 갈 직무·직업, 커리어 리포트, ADR-0032), `signal/` 모집 신호(관심 = 담은 사람, 리플레이 + 실제 담은 수) 계산, `center/` 센터 현황판, `commute/` 통근 조회(카카오, 저장 안 함), `reference/` 기준 정보(코드값·학과·사는 곳·현재 회차), `common/` 오류 코드·시간, `web/` 공통 컨트롤러, `config/` 설정, `spike/` 추출 실험) |
 | `src/main/resources/prompts/` | LLM 시스템 프롬프트(코드와 같이 버전 관리) |
 | `pipeline/` | 오프라인 작업(문서 추출·외부 데이터 적재·실험), Python → `pipeline/AGENTS.md` |
 | `docs/` | 아키텍처, 결정 기록(ADR), **API 계약(`docs/api/`, 프론트와 공유)**, 협업 규칙, 하네스 설명 |

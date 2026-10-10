@@ -162,5 +162,18 @@
   "exploreJudgedWith": {
     "SAVED_PROFILE": "저장한 프로필로 다시 판정",
     "RUN_PROFILE": "탐색 때 보낸 프로필"
+  },
+  "careerSource": {
+    "AI": "AI가 능력단위를 고름",
+    "NONE": "AI 정리 없음(능력단위 목록만)"
+  },
+  "ncsRelation": {
+    "SAME_SMALL": "같은 분야(소분류)",
+    "SAME_MIDDLE": "가까운 분야(중분류)",
+    "OTHER": "다른 분야"
+  },
+  "occupationOrigin": {
+    "KEIS": "한국고용정보원 연계표",
+    "CURATED": "연계표에 없어 팀이 고름"
   }
 }

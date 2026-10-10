@@ -24,7 +24,7 @@ git config user.email "<숫자>+<아이디>@users.noreply.github.com"   # GitHub
 
 로컬에서 서버를 띄우지 않습니다(10/2). 배포 서버 하나만 씁니다.
 - API: https://coop-radar-api.onrender.com (`/api/ping`, `/actuator/health`)
-- API 문서(Swagger): https://coop-radar-api.onrender.com/swagger-ui.html — 드롭다운 '계약'은 `docs/api` 32개 전부, '구현'은 지금 서버에 있는 것만 보입니다(ADR-0011).
+- API 문서(Swagger): https://coop-radar-api.onrender.com/swagger-ui.html — 드롭다운 '계약'은 `docs/api` 36개 전부, '구현'은 지금 서버에 있는 것만 보입니다(ADR-0011).
 - 테스트는 PR을 올리면 CI가 돌립니다(`./gradlew test`가 Testcontainers로 Postgres 18을 띄움).
 
 | 환경변수 | 기본값 | 설명 |

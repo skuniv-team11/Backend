@@ -30,9 +30,15 @@ python build_seed.py --list "<원본>/2026학년도 2학기 ... 참여기관 리
   --nts ../e6_external/nts_status.csv --nts-checked-on 2026-10-01 \
   --assigned out/final_assigned.csv --outcomes ../e2_reviews/out/outcomes.json --pages out/pages.csv
 
-# 3) SQL
+# 3) NCS(ADR-0032) — 직무 ↔ 세분류·능력단위·넓혀 갈 세분류·직업·능력단위끼리 연결. 직무 원문이 바뀌거나 curated/*.csv를 고쳤을 때만
+python ncs_seed.py --units ../e6_external/ncs_units.csv --keco "<한국고용정보원_직업능력_코드매핑정보_20251126.csv>"
+python ncs_links.py                 # 연결 현황만. 넓힘을 새로 고르면 --draft(ANTHROPIC_API_KEY, 연결이 없는 넓힘만 AI 초안) 뒤 ncs_seed.py 다시
+
+# 4) SQL — seed.json + ncs.json
 python to_sql.py
 ```
+
+- NCS 입력: e6 `ncs_units.csv`(능력단위 전체), 공공데이터포털 15154290 CSV(원본은 저장소 밖), 사람이 고른 `curated/job_ncs.csv`(직무 → 세분류, 고른 까닭)·`curated/ncs_expand.csv`(세분류 → 넓혀 갈 세분류 3개)·`curated/ncs_occupations.csv`(연계표에 없는 세분류 직업 추가·엉뚱한 직업 빼기, 넓혀 갈 세분류 포함)·`curated/ncs_unit_links.csv`(능력단위끼리 연결 — AI 초안, 사람이 보고 `checked`에 Y). 이름이 틀리거나 순위가 1·2·3이 아니거나 표에 없는 직업 코드면 멈춘다. 결과 `ncs.json`은 커밋한다.
 
 - `--pages`: 원본 PDF 쪽수 CSV(`file,pages`). 운영계획서 추출 JSON에 `source_pages`가 있으면(10/1 이후 `run_extract.py`) 필요 없다. 수기 PDF는 이 CSV로 준다.
 - 끝나면 `out/review_seed.csv`를 열어 직무 40행을 훑는다(기관·부서·직무명·정원·배정·학년·학점·선호 전공·마감).

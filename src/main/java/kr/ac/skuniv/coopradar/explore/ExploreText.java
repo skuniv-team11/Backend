@@ -21,7 +21,7 @@ import kr.ac.skuniv.coopradar.recommend.EvidenceText;
  */
 public final class ExploreText {
 
-    static final String MASK = "[가림]";
+    public static final String MASK = "[가림]";
     private static final Pattern EMAIL = Pattern.compile("[\\w.+-]+@[\\w-]+(?:\\.[\\w-]+)+");
     private static final Pattern PHONE = Pattern.compile("(?<!\\d)0\\d{1,2}[-.\\s]?\\d{3,4}[-.\\s]?\\d{4}(?!\\d)");
     private static final Pattern LONG_NUMBER = Pattern.compile("(?<!\\d)\\d{8,10}(?!\\d)");
@@ -46,7 +46,7 @@ public final class ExploreText {
     }
 
     /** 학생 글 하나를 가리고 앞뒤·가운데 공백을 정리한다. */
-    static String mask(String s) {
+    public static String mask(String s) {
         if (s == null) {
             return null;
         }
@@ -57,11 +57,11 @@ public final class ExploreText {
     }
 
     /** 대조용: 무시하는 글자를 지운다. 구절이면 끝 문장부호도 뗀다. */
-    static String squash(String s) {
+    public static String squash(String s) {
         return s == null ? "" : NOISE.matcher(s).replaceAll("");
     }
 
-    static String squashQuote(String q) {
+    public static String squashQuote(String q) {
         return squash(TRAILING_PUNCT.matcher(q == null ? "" : q.strip()).replaceFirst(""));
     }
 

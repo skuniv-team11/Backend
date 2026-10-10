@@ -112,11 +112,17 @@ class ToSqlTest(unittest.TestCase):
         self.assertIn("NOT EXISTS (SELECT 1 FROM student_profile sp WHERE c.code = ANY (sp.certificates));", sql)
         self.assertLess(sql.index("-- 4. 부모 테이블 upsert"), sql.index("DELETE FROM certificate"))
 
-    def test_해더의_해시는_seed와_본문을_따른다(self):
+    def test_해더의_해시는_seed와_ncs와_본문을_따른다(self):
         text = json.dumps({"program": [{"id": 1, "code": "X", "name": "n"}]})
-        a, c = to_sql.build(text), to_sql.build(text.replace('"n"', '"m"'))
+        ncs = json.dumps({"occupation": [{"code": "0241", "name": "광고 및 홍보 전문가"}]}, ensure_ascii=False)
+        a, c = to_sql.build(text, ncs), to_sql.build(text.replace('"n"', '"m"'), ncs)
         self.assertNotEqual(a.splitlines()[2], c.splitlines()[2])
-        self.assertNotEqual(a.splitlines()[3], c.splitlines()[3])
+        self.assertEqual(a.splitlines()[3], c.splitlines()[3])
+        self.assertNotEqual(a.splitlines()[4], c.splitlines()[4])
+        d = to_sql.build(text, ncs.replace("광고", "홍보"))
+        self.assertNotEqual(a.splitlines()[3], d.splitlines()[3])
+        with self.assertRaises(ValueError):
+            to_sql.build(text, text)   # 같은 테이블이 두 파일에 있으면 실패
 
 
 class NormalizeTest(unittest.TestCase):
@@ -207,6 +213,39 @@ class AlertNotationTest(unittest.TestCase):
         self.assertFalse(b.trivial_difference("컴퓨터공학 전공 학생들이 실제 산업 현장에서", "소프트웨어학과"))
         self.assertFalse(b.trivial_difference("무대패션전공, 광고홍보콘텐츠학과, 영화영상학과, 경영학부",
                                               "무대패션전공, 광고홍보콘텐츠학과, 경영학부"))
+
+
+class NcsSeedTest(unittest.TestCase):
+    def test_구버전을_빼고_같은_이름은_최신_개정만(self):
+        import csv, tempfile, ncs_seed
+        rows = [("0201030101_14v2", "마케팅전략 계획수립(구버전)", "6"), ("0201030110_16v3", "STP전략 수립", "5"),
+                ("0201030116_21v4", "STP 전략 수립", "4"), ("0201030102_21v5", "신상품 기획", "0")]
+        with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8-sig", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["ncsClCd", "ncsLclasCdnm", "ncsMclasCdnm", "ncsSclasCdnm", "ncsSubdCdnm", "compeUnitName",
+                        "compeUnitLevel", "compeUnitDef"])
+            for code, name, level in rows:
+                w.writerow([code, "경영·회계·사무", "기획사무", "마케팅", "마케팅전략기획", name, level, "정의"])
+        subs, units = ncs_seed.read_units(f.name)
+        got = [(u["code"], u["level"]) for u in units["02010301"]]
+        self.assertEqual(got, [("0201030102_21v5", None), ("0201030116_21v4", 4)])
+        self.assertEqual(subs["02010301"]["small_code"], "020103")
+
+    def test_능력단위_연결_초안은_목록_안_단위만_넓힘마다_5개_넓혀_갈_단위마다_하나(self):
+        import ncs_links
+        ncs = {"ncs_unit": [{"code": f"1111111{i:03d}_21v1", "subcategory_code": "11111111"} for i in range(1, 4)]
+               + [{"code": f"2222222{i:03d}_21v1", "subcategory_code": "22222222"} for i in range(1, 9)],
+               "ncs_expand": [{"from_code": "11111111", "rank": 1, "to_code": "22222222"}]}
+        link = lambda f, t, note="이유": {"fromUnit": f"1111111{f:03d}_21v1", "toUnit": f"2222222{t:03d}_21v1", "note": note}
+        draft = {"paths": [
+            {"toCode": "22222222", "links": [link(1, 1), link(2, 1), link(9, 2), link(1, 2, " "), link(1, 3), link(2, 4),
+                                             link(3, 5), link(3, 6), link(3, 7), link(3, 8)]},
+            {"toCode": "33333333", "links": [link(1, 1)]}]}
+        rows, dropped = ncs_links.accept(ncs, "11111111", draft)
+        # 같은 넓혀 갈 단위 두 번(2→1)·목록 밖 단위(9)·빈 이유·5개 넘침(3→7·8)·고르지 않은 넓힘(333…)은 버린다
+        self.assertEqual([r["to_unit"][7:10] for r in rows], ["001", "003", "004", "005", "006"])
+        self.assertEqual(dropped, 6)
+        self.assertTrue(all(r["checked"] == "" for r in rows))
 
 
 if __name__ == "__main__":
