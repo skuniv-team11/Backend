@@ -4,9 +4,11 @@ import java.time.Clock;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import kr.ac.skuniv.coopradar.auth.AuthUser;
 import kr.ac.skuniv.coopradar.common.ApiException;
 import kr.ac.skuniv.coopradar.common.ErrorCode;
+import kr.ac.skuniv.coopradar.eligibility.ProfileInput;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,14 @@ public class ProfileService {
     public SavedProfile get(AuthUser user) {
         return profiles.findSaved(user.id(), user.guest())
                 .orElseThrow(() -> new ApiException(ErrorCode.PROFILE_NOT_FOUND, "저장한 프로필이 없어요"));
+    }
+
+    /** 저장한 프로필을 판정 입력 모양으로(직무 탐색 결과를 다시 판정할 때, ADR-0031). 없으면 빈 값. */
+    @Transactional(readOnly = true)
+    public Optional<ProfileInput> savedInput(AuthUser user) {
+        return profiles.findSaved(user.id(), user.guest()).map(p -> new ProfileInput(p.departmentId(), p.grade(),
+                p.completedSemesters(), p.gpa(), p.graduationExpected(), p.interestText(), p.homeAreaCode(),
+                p.certificates()));
     }
 
     @Transactional

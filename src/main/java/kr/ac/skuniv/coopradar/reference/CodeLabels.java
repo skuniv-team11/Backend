@@ -45,7 +45,12 @@ public final class CodeLabels {
             group("commuteOrigin", "HOME_AREA", "사는 곳", "SCHOOL", "서경대"),
             group("commuteUnavailable", "NO_WORKPLACE", "근무지 위치 없음", "NO_ROUTE", "대중교통 경로 없음",
                     "LIMITED", "조회 한도 초과", "PROVIDER_ERROR", "카카오맵 응답 없음"),
-            group("commuteProvider", "KAKAO_MAP", "카카오맵"));
+            group("commuteProvider", "KAKAO_MAP", "카카오맵"),
+            group("exploreSource", "AI", "AI 탐색", "RULE", "규칙 추천(AI 대신)"),
+            group("exploreFallback", "NO_KEY", "AI 설정 없음", "LIMITED", "탐색 한도 초과", "AI_ERROR", "AI 응답 없음",
+                    "VERIFY_FAILED", "AI 근거 확인 실패", "NO_CANDIDATES", "지원할 수 있는 자리 없음"),
+            group("exploreFit", "STRONG", "잘 맞음", "GOOD", "맞음", "WEAK", "덜 맞음"),
+            group("exploreJudgedWith", "SAVED_PROFILE", "저장한 프로필로 다시 판정", "RUN_PROFILE", "탐색 때 보낸 프로필"));
 
     private CodeLabels() {
     }

@@ -3,7 +3,7 @@
 프론트는 이 문서의 응답 예시로 목업을 만들고, 백엔드는 이 형태를 지킨다. 형태를 바꾸려면 이 문서를 먼저 고친다.
 Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 맞다.
 
-**Swagger**: https://coop-radar-api.onrender.com/swagger-ui.html (배포 서버). 드롭다운 '계약'은 이 문서와 예시 JSON으로 만든 27개 전부, '구현'은 지금 코드에 있는 것만 보여 준다(ADR-0011).
+**Swagger**: https://coop-radar-api.onrender.com/swagger-ui.html (배포 서버). 드롭다운 '계약'은 이 문서와 예시 JSON으로 만든 32개 전부, '구현'은 지금 코드에 있는 것만 보여 준다(ADR-0011).
 - '계약' 스펙은 `python scripts/build_openapi.py`가 이 폴더로 만든다(`src/main/resources/static/openapi/contract.json`). 이 문서나 예시 JSON을 고쳤으면 다시 돌려 같은 PR에 넣는다. 예시가 스키마(타입·null·코드값·범위)에 안 맞으면 여기서 실패한다.
 - 새 엔드포인트는 스크립트의 `ENDPOINTS`(요청·응답 스키마와 예시 파일)와 `S`(스키마)에도 넣는다.
 
@@ -19,9 +19,10 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - 서버에 저장하는 건 `PUT /api/me/profile`에 `consent: true`로 보냈을 때뿐이다. 탈퇴하면 즉시 지운다.
   - 사는 곳은 시·군·구까지만 받는다(`homeAreaCode`). 정확한 주소는 받지 않는다.
   - 요청·응답 본문을 로그에 남기지 않는다.
+  - 직무 탐색(#29)의 경험 글은 `consent: true`일 때만 받아 결과와 함께 저장한다(계정당 마지막 1건, 지우기·탈퇴 때 바로 삭제). AI에는 학과·학년·평점을 보내지 않는다([ADR-0031](../decisions/0031-explore-ai.md)).
 - **모집 신호 = 관심**: 관심은 **내 지망에 담은 사람 수**다(순위와 상관없이 [담기]한 사람, 1인 1표). 모집기간 리플레이 가상 값에 실제 사용자가 담은 수를 더해 보여 준다(ADR-0019). 신호를 주는 응답에는 `isVirtual`과 `signalSource`를 반드시 넣는다.
-- **호출 제한**(초기값, 설정으로 조정): 체험 계정 만들기 IP당 1시간 300회(환경변수 `GUEST_PER_IP_PER_HOUR`, 0이면 끔 — 시연장·학교 와이파이는 여럿이 한 IP) → 넘으면 429 + `Retry-After`(초). 이유 문장(LLM) 계정당 1시간 30회·IP당 60회 → 넘으면 **200 + 기본 문장**(화면이 깨지지 않게). 통근 조회 계정당 1시간 30회·서버 전체 하루 900회(카카오 무료 하루 1,000건 안에서 멈춤) → 넘으면 **200 + `available: false`**.
-- **실행 중 외부 호출**은 Claude(이유 문장)·카카오(통근 조회 — 주소 검색과 대중교통) 둘뿐이다(ADR-0002, ADR-0007). 임베딩은 쓰지 않는다(E5 결과, ADR-0018). 둘 다 실패해도 200으로 화면을 유지한다.
+- **호출 제한**(초기값, 설정으로 조정): 체험 계정 만들기 IP당 1시간 300회(환경변수 `GUEST_PER_IP_PER_HOUR`, 0이면 끔 — 시연장·학교 와이파이는 여럿이 한 IP) → 넘으면 429 + `Retry-After`(초). 이유 문장(LLM) 계정당 1시간 30회·IP당 60회 → 넘으면 **200 + 기본 문장**(화면이 깨지지 않게). 직무 탐색 AI(탐색 1번·'왜 맞나요' 1곳이 각 1회) 계정당 1시간 10회·IP당 60회·서버 전체 하루 300회 → 넘으면 **200 + 규칙 추천**(`source: RULE`, `fallbackReason: LIMITED`). 통근 조회 계정당 1시간 30회·서버 전체 하루 900회(카카오 무료 하루 1,000건 안에서 멈춤) → 넘으면 **200 + `available: false`**.
+- **실행 중 외부 호출**은 Claude(이유 문장·직무 탐색)·카카오(통근 조회 — 주소 검색과 대중교통) 둘뿐이다(ADR-0002, ADR-0007, ADR-0031). 임베딩은 쓰지 않는다(E5 결과, ADR-0018). 둘 다 실패해도 200으로 화면을 유지한다.
 - **코드값**은 영문 대문자이고 DB CHECK와 같은 집합이다(`V1__init.sql`). 화면 표기는 `GET /api/codes`에서 가져간다.
 - **예시 값**: 기관·직무·인용문은 전부 가상이다(`(가상)` 표시). 실제 값은 시드에서 나온다. 목록 응답의 예시는 일부 행만 보여 준다.
 - CORS: `CorsConfig`가 `GET`·`POST`·`PUT`·`DELETE`·`OPTIONS`와 모든 헤더(`Authorization` 포함)를 허용한다(Backend#16). 통근 조회에는 환경변수 `KAKAO_REST_API_KEY`(카카오 디벨로퍼스 REST API 키)가 필요하다.
@@ -35,7 +36,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | 4 | 인증 | POST | `/api/auth/login` | 공개 | 로그인 | 이메일 로그인 | [요청](auth-login.request.json) · [응답](auth-token.json) |
 | 5 | 인증 | POST | `/api/auth/guest` | 공개 | 시작 | 체험 계정 만들기([예시 프로필로 시작]·[센터 담당자로 보기]) | [요청](auth-guest.request.json) · [응답](auth-guest.json) |
 | 6 | 내 정보 | GET | `/api/me` | 로그인 | M1·공통 | 내 계정 | [응답](me.json) |
-| 7 | 내 정보 | DELETE | `/api/me` | 로그인 | M1 | 탈퇴(계정·프로필·담은 지망 즉시 삭제) | 204 |
+| 7 | 내 정보 | DELETE | `/api/me` | 로그인 | M1 | 탈퇴(계정·프로필·담은 지망·탐색 결과 즉시 삭제) | 204 |
 | 8 | 내 정보 | GET | `/api/me/profile` | STUDENT | S1 | 저장한 프로필 | [응답](me-profile.json) |
 | 9 | 내 정보 | PUT | `/api/me/profile` | STUDENT | S1 | 프로필 저장(동의 필수) | [요청](me-profile.request.json) · [응답](me-profile.json) |
 | 10 | 내 정보 | DELETE | `/api/me/profile` | STUDENT | M1 | 저장한 프로필만 삭제 | 204 |
@@ -56,6 +57,11 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | 25 | 직무 | GET | `/api/jobs/{jobId}/views` | 로그인 | S4·C4 | 직무 조회수(학생 계정마다 직무별 하루 1번) | [응답](job-views.json) |
 | 26 | 기준 정보 | GET | `/api/certificates` | 공개 | S1 | 자격증 선택지(이번 회차 직무가 요구·우대하는 것만, ADR-0021) | [응답](certificates.json) |
 | 27 | 지망 | POST | `/api/me/plan/items/{jobId}/alternatives` | STUDENT | S3·S4 | 담은 직무의 모집 신호 + 그 직무 기준 빈 자리 제안([담기] 바로 뒤, ADR-0029) | [요청](me-plan-check.request.json) · [응답](me-plan-item-alternatives.json) |
+| 28 | 탐색 | POST | `/api/explore/cards` | STUDENT | 탐색 | '하고 싶은 일' 카드(지원할 수 있는 직무의 하는 일, 기관 이름 가림, ADR-0031) | [요청](profile-body.request.json) · [응답](explore-cards.json) |
+| 29 | 탐색 | POST | `/api/explore` | STUDENT | 탐색 | 경험 글·카드로 직무 탐색(AI 순서·근거 + 상위 3곳 '왜 맞나요', 실패하면 규칙 추천) | [요청](explore.request.json) · [응답](explore.json) |
+| 30 | 탐색 | GET | `/api/me/explore` | STUDENT | 탐색·S3 | 저장된 탐색 결과(저장한 프로필로 다시 판정) | [응답](explore.json) |
+| 31 | 탐색 | DELETE | `/api/me/explore` | STUDENT | 탐색·M1 | 탐색 결과·경험 글 지우기 | 204 |
+| 32 | 탐색 | GET | `/api/me/explore/jobs/{jobId}/why` | STUDENT | S4 | 직무 상세 '왜 맞나요'(없으면 이때 만든다) | [응답](explore-why.json) |
 
 ## 공통 객체
 **Profile** (요청 본문의 `profile`, `PUT /api/me/profile`)
@@ -144,7 +150,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - 토큰: 역할·체험 여부는 토큰이 아니라 매 요청 DB에서 읽는다. 탈퇴했거나 정리된 계정의 토큰은 401 `AUTH_REQUIRED`.
 
 **내 정보**
-- `DELETE /api/me` → 204. 계정·프로필·담은 지망이 함께 지워진다(DB cascade). 직무 조회 기록은 조회수로 남고 계정 연결만 끊긴다(`job_view.user_id` NULL).
+- `DELETE /api/me` → 204. 계정·프로필·담은 지망·탐색 결과가 함께 지워진다(DB cascade). 직무 조회 기록은 조회수로 남고 계정 연결만 끊긴다(`job_view.user_id` NULL).
 - `PUT /api/me/profile`: `consent`가 true가 아니면 400 `CONSENT_REQUIRED`. `GET`에 저장한 게 없으면 404 `PROFILE_NOT_FOUND`. `certificates`는 보낸 그대로(null·`[]`·코드 목록) 저장하고 돌려준다 — 코드는 중복을 빼고 `GET /api/certificates` 순서로 맞춘다.
 - `hasProfile`(`/api/me`)이 false여도 판정·추천은 된다 — 프론트가 입력받은 프로필을 본문에 넣어 보내면 된다.
 
@@ -218,6 +224,28 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - 이번 회차에서 담지 않은 직무면 404 `PLAN_ITEM_NOT_FOUND`.
 - `asOf`는 회차 기간 안이어야 한다(아니면 400 `AS_OF_OUT_OF_RANGE`). 생략하면 `rounds/current`의 `replay.defaultAsOf`.
 
+**직무 탐색**([ADR-0031](../decisions/0031-explore-ai.md)) — 학생이 쓴 경험 글과 고른 '하고 싶은 일' 카드를 AI(Claude Sonnet)가 공고와 함께 읽고, 지원할 수 있는 자리 중 이어지는 곳을 순서대로 고른다. 지원 조건은 규칙이 먼저 거른다(AI는 판정하지 않는다).
+- **후보** = 판정(#14)이 `ELIGIBLE`·`NEEDS_CHECK`이고 기준일(#15와 같다)에 마감되지 않은 직무. `INELIGIBLE`·마감 직무는 카드·AI 입력·결과·'왜 맞나요' 어디에도 나오지 않는다. `candidates` = `{total, eligible, needsCheck}`(total = 후보 수).
+- `cards`(#28): 후보 직무의 직무 개요 항목(없거나 2개 미만이면 주차 계획 항목)을 원문 그대로 짧게(6~50자, 직무당 4개까지) 준다. 기관 이름은 '회사'로 가리고, 거의 같은 글(글자 2-gram 자카드 0.8 이상)은 하나로 합친다. 직무를 번갈아 가며 놓아 앞쪽이 한 회사로 몰리지 않는다(최대 60개). `id`는 `{jobId}-{순번}`이고 #29 `cardIds`로 보낸다. 카드는 학생이 고르는 재료일 뿐 어느 직무인지 알려 주지 않는다.
+- 요청(#29): `{profile, experiences, cardIds, consent}`.
+  - `experiences`: 해 본 일 0~3개, 하나에 20~200자. `cardIds`: 0~5개(중복 불가, 카드 목록의 id). 경험을 하나 이상 쓰거나 카드를 3개 이상 골라야 한다 — 아니면 400 `INVALID_INPUT`(`experiences`). 없는 카드 id는 400 `INVALID_INPUT`(`cardIds`).
+  - `consent`가 true가 아니면 400 `CONSENT_REQUIRED`(경험 글을 AI에 보내고 결과와 함께 저장하는 데 동의).
+  - 경험 글의 전화번호·이메일·8~10자리 숫자(학번 등)는 `[가림]`으로 바꾼 뒤 AI에 보내고 저장한다. 화면은 이름을 쓰지 말라고 안내한다.
+  - AI에는 경험 글·고른 카드 글·`interestText`와 후보 직무의 원문(부서·직무명·직무 개요·교육 목표·요구 역량·주차 계획)만 보낸다. 학과·학년·평점·자격증·사는 곳은 보내지 않는다.
+- **순서**: AI가 후보 중 5곳을 고르고 자리마다 `studentQuote`(학생 글 한 줄 안의 구절) · `jobQuote`(그 직무 원문 한 칸 안의 구절) · `reason`(해요체 한 문장)을 단다. 서버가 확인해 통과한 것만 쓴다 — 후보 안의 직무 · 두 구절이 원문에 그대로 있음(띄어쓰기·따옴표·글머리표 무시, 한 줄·한 칸 안) · `reason` 10~150자 해요체('습니다'·'당신'·'선호 전공' 없음). 같은 직무가 두 번 나오면 앞의 것만.
+  - `fit`: 1~2위 `STRONG`, 3~5위 `GOOD`. 맞는 정도는 AI 점수가 아니라 순위로 정한다(E7 — AI가 덜 맞는 자리에도 이유를 붙여서).
+  - `evidence.documentTitle`·`page`: `jobQuote`가 든 칸의 운영계획서와 쪽(직무 개요·요구 역량·교육 목표). 부서·직무명이면 `page` null, 주차 계획은 #15 인용과 같이 직무 개요와 전공 요건이 같은 쪽일 때만 그 쪽이다.
+  - 1~3위는 같은 요청에서 '왜 맞나요'(`why`, 아래)를 함께 만들어 둔다. 실패한 곳과 4~5위는 null — 직무 상세에서 #32를 부르면 그때 만든다.
+- **규칙 추천으로 대신**(`source: RULE`): AI 키 없음(`NO_KEY`) · 호출 한도(`LIMITED`) · AI 실패·30초 초과(`AI_ERROR`) · 확인을 통과한 자리가 0곳(`VERIFY_FAILED`)이면 적합도 추천(#15)과 같은 직무·순서를 준다 — `fit`은 `HIGH` → `STRONG`, `MEDIUM` → `GOOD`, `evidence`는 `studentQuote` null · `jobQuote`는 운영계획서 근거 인용(없으면 첫 인용) · `reason`은 `reasonTemplate`, `why`는 null. 후보가 0곳이면 AI를 부르지 않고 `NO_CANDIDATES`, `items: []`, `blockedBy`는 #15와 같다. 그 밖에는 `blockedBy: []`.
+- **저장**: 결과는 계정당 마지막 1건만 둔다(새로 탐색하면 바꾼다, 탈퇴·체험 계정 정리 때 함께 지운다). AI는 실행마다 순서가 조금 달라서 다시 계산하지 않는다. `input`은 저장한 경험 글(가린 뒤)·카드 글·관심 분야다.
+- `GET /api/me/explore`(#30): 없으면 404 `EXPLORE_NOT_FOUND`. 저장한 프로필(#8)이 있으면 그 프로필로 다시 판정해(`judgedWith: SAVED_PROFILE`) 후보에서 빠진 직무를 숨기고(`hiddenCount`) 판정을 지금 값으로 바꾼다. 순위·`fit`은 저장한 그대로다. 저장한 프로필이 없으면 탐색 때 판정 그대로(`RUN_PROFILE`, #29 응답도 이것). 프로필을 바꿨으면 화면이 다시 탐색을 권한다.
+- 화면 연결: 직무 찾기(S3)의 맨 위 추천은 탐색 결과가 있으면 `items`를, 없으면 #15를 쓴다(#15는 그대로).
+- `DELETE /api/me/explore`(#31): 저장한 결과·경험 글·'왜 맞나요'를 지운다. 없어도 204.
+- **'왜 맞나요'**(`why`, #32 `GET /api/me/explore/jobs/{jobId}/why`): `{summary, points, tryNew, prepare}` — `summary` 한 문장, `points` 1~3개 `{text, studentQuote, jobQuote}`(학생이 한 일 → 이 자리의 어떤 일 → 왜 도움), `tryNew` 0~2개 `{text, jobQuote}`(이 실습에서 새로 해 볼 일), `prepare` `{text, jobQuote}` 또는 null(지원 전에 채우면 좋은 것). 문장은 해요체 120자 안쪽이고 구절은 순서와 같은 방식으로 확인해 통과한 것만 남긴다. `summary`가 통과하지 못하거나 `points`가 0개면 실패다.
+  - #32 응답 `{jobId, fit, why, fallbackReason}`. `fit`은 탐색 결과 안이면 그 값, 밖이면 `WEAK` — 결과 밖 자리는 덜 이어지는 까닭도 함께 쓰게 한다. 한 번 만든 것은 저장해 다시 준다. 만들지 못하면(키 없음·한도·실패·확인 실패) 200 + `why: null`과 `fallbackReason`.
+  - 탐색 결과가 없으면 404 `EXPLORE_NOT_FOUND`, 없는 직무 404 `JOB_NOT_FOUND`, 지금 후보가 아닌 직무(위 다시 판정과 같은 기준)는 409 `EXPLORE_NOT_CANDIDATE`.
+- 응답 시간: AI 탐색 약 5초 + '왜 맞나요' 3곳 동시 약 6초(E7 실측). 화면은 '분석 중'을 보여 준다.
+
 **센터** — CENTER만(아니면 403 `FORBIDDEN_ROLE`). 회차 직무 전부를 리스트 순번대로 행으로 준다. `asOf` 규칙은 지망 점검과 같다(생략하면 `replay.defaultAsOf`, 모집기간 밖이면 400 `AS_OF_OUT_OF_RANGE`, 날짜 형식이 아니면 400 `INVALID_INPUT`). 세부 정의는 [ADR-0017](../decisions/0017-center-board-details.md).
 - `summary`: `jobs` 직무 수 · `seats` 정원 합 · `interestTotal` asOf까지 관심 합(가상 + 실제) · `liveInterestTotal` 그중 실제 사용자가 담은 수 · `zeroSignalJobs` 관심이 0인 직무 수 · `closedJobs` `CLOSED` 직무 수.
 - `eligiblePool`(적격 학생 풀): 직무의 선호 전공 표기에서 사람이 확정한 학과(중복 없이)의 재학생 수 합. 전공 무관이면 전체 재학생. 확정 전 표기(`DRAFT`, 2026-2는 없음)는 0으로 센다.
@@ -241,7 +269,9 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | `PROFILE_NOT_FOUND` | 404 | 저장한 프로필 없음 |
 | `JOB_NOT_FOUND` | 404 | 없는 직무 |
 | `PLAN_ITEM_NOT_FOUND` | 404 | 담지 않은 직무를 취소하거나 그 직무 기준 빈 자리를 물음 |
+| `EXPLORE_NOT_FOUND` | 404 | 저장된 탐색 결과 없음 |
 | `EMAIL_TAKEN` | 409 | 이미 가입한 이메일 |
+| `EXPLORE_NOT_CANDIDATE` | 409 | 지원할 수 없거나 마감된 직무라 '왜 맞나요'를 만들지 않음 |
 | `RATE_LIMITED` | 429 | 체험 계정 만들기 호출 제한 |
 | `INTERNAL` | 500 | 그 밖의 서버 오류 |
 

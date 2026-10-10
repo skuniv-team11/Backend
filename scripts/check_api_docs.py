@@ -64,6 +64,9 @@ FIELD_CODE = {"verdict": "verdict", "layer": "reasonLayer", "result": "reasonRes
               "portfolio": "requirement", "certificate": "requirement", "sourceType": "sourceType",
               "source": "reasonSource", "role": "role",
               "provider": "commuteProvider", "unavailableReason": "commuteUnavailable"}
+# 직무 탐색(ADR-0031)은 같은 필드 이름에 다른 코드 묶음을 쓴다
+FILE_FIELD_CODE = {name: {"fit": "exploreFit", "source": "exploreSource", "fallbackReason": "exploreFallback",
+                          "judgedWith": "exploreJudgedWith"} for name in ("explore.json", "explore-why.json")}
 def walk(o, path, fn):
     if isinstance(o, dict):
         for k, v in o.items():
@@ -78,9 +81,10 @@ def code_check(fname):
         if fname == "codes.json":
             return
         check(re.fullmatch(r"[a-z][A-Za-z0-9]*", k) is not None, f"{fname}{path}.{k}: camelCase 아님")
-        if k in FIELD_CODE and isinstance(v, str) and v.isupper() and fname != "certificates.json":
+        field_code = {**FIELD_CODE, **FILE_FIELD_CODE.get(fname, {})}
+        if k in field_code and isinstance(v, str) and v.isupper() and fname != "certificates.json":
             # 자격증 code는 코드표(codes.json)가 아니라 시드의 자격증 코드표(certificate)에서 온다(ADR-0021)
-            check(v in codes[FIELD_CODE[k]], f"{fname}{path}.{k}={v} 코드표에 없음")
+            check(v in codes[field_code[k]], f"{fname}{path}.{k}={v} 코드표에 없음")
         if k in ("weekdays",):
             check(all(x in codes["weekday"] for x in v), f"{fname}{path} 요일 코드")
         if k == "benefits":
@@ -163,6 +167,31 @@ check(len(items) <= 5 and [i["rank"] for i in items] == list(range(1, len(items)
 check(all(i["verdict"] != "INELIGIBLE" for i in items), "추천에 지원 불가 포함")
 check(all("score" not in i for i in items), "추천에 점수 노출")
 
+# 직무 탐색(ADR-0031): 후보 합계, 순위 연속, 지원 불가 없음, fit = 순위(AI), why는 1~3위만, AI면 대신 사유 없음
+ex = docs["explore.json"]
+for name in ("explore.json", "explore-cards.json"):
+    c = docs[name]["candidates"]
+    check(c["total"] == c["eligible"] + c["needsCheck"], f"{name} 후보 합계")
+xs = ex["items"]
+check(len(xs) <= 5 and [i["rank"] for i in xs] == list(range(1, len(xs) + 1)), "탐색 순위")
+check(all(i["verdict"] in ("ELIGIBLE", "NEEDS_CHECK") for i in xs), "탐색에 지원 불가 포함")
+check(len({i["jobId"] for i in xs}) == len(xs), "탐색 직무 중복")
+check((ex["source"] == "AI") == (ex["fallbackReason"] is None), "탐색 source ↔ fallbackReason")
+if ex["source"] == "AI":
+    check(all(i["fit"] == ("STRONG" if i["rank"] <= 2 else "GOOD") for i in xs), "탐색 fit은 순위(1~2 STRONG, 3~5 GOOD)")
+    check(all(i["evidence"]["studentQuote"] for i in xs), "AI 탐색 근거에 학생 구절")
+check(all(i["why"] is None or i["rank"] <= 3 for i in xs), "탐색 때 만드는 '왜 맞나요'는 1~3위만")
+check(ex["blockedBy"] == [] or xs == [], "탐색 blockedBy는 items가 비었을 때만")
+card_ids = [c["id"] for c in docs["explore-cards.json"]["cards"]]
+check(len(set(card_ids)) == len(card_ids) and all(re.fullmatch(r"\d+-\d+", c) for c in card_ids), "탐색 카드 id")
+er = docs["explore.request.json"]
+check(er["consent"] is True and len(er["experiences"]) <= 3 and len(er["cardIds"]) <= 5
+      and all(20 <= len(e) <= 200 for e in er["experiences"]) and len(set(er["cardIds"])) == len(er["cardIds"])
+      and (len(er["experiences"]) >= 1 or len(er["cardIds"]) >= 3), "탐색 요청 규칙")
+check(all(c in card_ids for c in er["cardIds"]), "탐색 요청 cardIds가 카드 예시에 없음")
+w = docs["explore-why.json"]
+check((w["why"] is None) == (w["fallbackReason"] is not None), "'왜 맞나요' why ↔ fallbackReason")
+
 # 지망 순위: 1~3, 중복 없음
 ranks = [i["rank"] for i in docs["me-plan.json"]["items"] if i["rank"] is not None]
 check(len(ranks) == len(set(ranks)) and all(1 <= r <= 3 for r in ranks), "지망 순위")
@@ -173,10 +202,10 @@ check(len({r["rank"] for r in req}) == len(req), "순위 요청 중복")
 cert_codes = [c["code"] for c in docs["certificates.json"]["certificates"]]
 check(len(set(cert_codes)) == len(cert_codes), "certificates 코드 중복")
 for name in ("profile-body.request.json", "me-plan-check.request.json", "me-profile.request.json", "me-profile.json",
-             "auth-guest.json"):
+             "auth-guest.json", "explore.request.json"):
     d = docs[name]; certs = (d.get("profile") or d).get("certificates")
     check(certs is None or all(c in cert_codes for c in certs), f"{name} certificates가 자격증 선택지 예시에 없음")
-for name in ("profile-body.request.json", "me-plan-check.request.json"):
+for name in ("profile-body.request.json", "me-plan-check.request.json", "explore.request.json"):
     p = docs[name]["profile"]
     check(1 <= p["grade"] <= 4 and 0 <= p["completedSemesters"] <= 8 and 0 <= p["gpa"] <= 4.5
           and round(p["gpa"], 1) == p["gpa"], f"{name} 프로필 범위")
@@ -189,7 +218,8 @@ for name, d in docs.items():
     walk(d, "", lambda k, v, path, name=name: check(not k.lower().startswith("commute"), f"{name}{path}.{k}: 통근 값은 통근 조회에서만"))
 area_codes = [a["code"] for a in docs["areas.json"]["areas"]]
 check(all(re.fullmatch(r"(11|28|41)\d{3}", c) for c in area_codes) and len(set(area_codes)) == len(area_codes), "areas 코드 형식·중복")
-for name in ("profile-body.request.json", "me-plan-check.request.json", "me-profile.request.json", "commute.request.json"):
+for name in ("profile-body.request.json", "me-plan-check.request.json", "me-profile.request.json", "commute.request.json",
+             "explore.request.json"):
     d = docs[name]; hc = (d.get("profile") or d).get("homeAreaCode")
     check(hc is None or hc in area_codes, f"{name} homeAreaCode가 areas 예시에 없음")
 for name in ("commute.json", "commute-unavailable.json"):

@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  *       같은 쪽일 때만 그 쪽으로 인용한다</li>
  * </ul>
  */
-final class EvidenceText {
+public final class EvidenceText {
 
     static final int MIN_LENGTH = 4;
     static final int MAX_LENGTH = 150;
@@ -134,7 +134,7 @@ final class EvidenceText {
     }
 
     /** 앞의 글머리표·번호·[머리말]을 떼고 앞뒤 공백을 지운다. 가운데 글자는 그대로다. */
-    static String clean(String s) {
+    public static String clean(String s) {
         String t = s == null ? "" : s.strip();
         var whole = WHOLE_BRACKET.matcher(t);
         if (whole.matches()) {
