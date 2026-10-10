@@ -23,10 +23,10 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - 직무 탐색(#29)의 경험 글과 커리어 리포트(#34)의 실습 내용은 `consent: true`일 때만 받아 결과와 함께 저장한다(계정당 마지막 1건, 지우기·탈퇴 때 바로 삭제). AI에는 학과·학년·평점을 보내지 않는다([ADR-0031](../decisions/0031-explore-ai.md)·[0032](../decisions/0032-ncs-career.md)).
 - **모집 신호 = 관심**: 관심은 **내 지망에 담은 사람 수**다(순위와 상관없이 [담기]한 사람, 1인 1표). 모집기간 리플레이 가상 값에 실제 사용자가 담은 수를 더해 보여 준다(ADR-0019). 신호를 주는 응답에는 `isVirtual`과 `signalSource`를 반드시 넣는다.
 - **호출 제한**(초기값, 설정으로 조정): 체험 계정 만들기 IP당 1시간 300회(환경변수 `GUEST_PER_IP_PER_HOUR`, 0이면 끔 — 시연장·학교 와이파이는 여럿이 한 IP) → 넘으면 429 + `Retry-After`(초). 이유 문장(LLM) 계정당 1시간 30회·IP당 60회 → 넘으면 **200 + 기본 문장**(화면이 깨지지 않게). 직무 탐색 AI(탐색 1번·'왜 맞나요' 1곳이 각 1회) 계정당 1시간 10회·IP당 60회·서버 전체 하루 300회 → 넘으면 **200 + 규칙 추천**(`source: RULE`, `fallbackReason: LIMITED`). 커리어 리포트(#34)도 같은 한도를 1회씩 쓰고, 넘으면 200 + AI 정리 없이(`source: NONE`). 통근 조회 계정당 1시간 30회·서버 전체 하루 900회(카카오 무료 하루 1,000건 안에서 멈춤) → 넘으면 **200 + `available: false`**.
-- **실행 중 외부 호출**은 Claude(이유 문장·직무 탐색)·카카오(통근 조회 — 주소 검색과 대중교통) 둘뿐이다(ADR-0002, ADR-0007, ADR-0031). 임베딩은 쓰지 않는다(E5 결과, ADR-0018). 둘 다 실패해도 200으로 화면을 유지한다.
+- **실행 중 외부 호출**은 Claude(이유 문장·직무 탐색·커리어 리포트)·카카오(통근 조회 — 주소 검색과 대중교통) 둘뿐이다(ADR-0002, ADR-0007, ADR-0031). 임베딩은 쓰지 않는다(E5 결과, ADR-0018). 둘 다 실패해도 200으로 화면을 유지한다.
 - **코드값**은 영문 대문자이고 DB CHECK와 같은 집합이다(`V1__init.sql`). 화면 표기는 `GET /api/codes`에서 가져간다.
 - **예시 값**: 기관·직무·인용문은 전부 가상이다(`(가상)` 표시). 실제 값은 시드에서 나온다. 목록 응답의 예시는 일부 행만 보여 준다.
-- CORS: `CorsConfig`가 `GET`·`POST`·`PUT`·`DELETE`·`OPTIONS`와 모든 헤더(`Authorization` 포함)를 허용한다(Backend#16). 통근 조회에는 환경변수 `KAKAO_REST_API_KEY`(카카오 디벨로퍼스 REST API 키)가 필요하다.
+- CORS: `CorsConfig`가 `GET`·`POST`·`PUT`·`DELETE`·`OPTIONS`와 모든 헤더(`Authorization` 포함)를 허용한다(Backend#16). 응답 헤더 `Retry-After`(429)·`Content-Disposition`(CSV 파일 이름)은 프론트 JS가 읽을 수 있게 노출한다. 통근 조회에는 환경변수 `KAKAO_REST_API_KEY`(카카오 디벨로퍼스 REST API 키)가 필요하다.
 
 ## 목록
 | # | 구분 | 메서드 | 경로 | 권한 | 화면 | 설명 | 예시 |
@@ -254,23 +254,23 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - `asOf`는 회차 기간 안이어야 한다(아니면 400 `AS_OF_OUT_OF_RANGE`). 생략하면 `rounds/current`의 `replay.defaultAsOf`.
 
 **직무 탐색**([ADR-0031](../decisions/0031-explore-ai.md)) — 학생이 쓴 경험 글과 고른 '하고 싶은 일' 카드를 AI(Claude Sonnet)가 공고와 함께 읽고, 지원할 수 있는 자리 중 이어지는 곳을 순서대로 고른다. 지원 조건은 규칙이 먼저 거른다(AI는 판정하지 않는다).
-- **후보** = 판정(#14)이 `ELIGIBLE`·`NEEDS_CHECK`이고 기준일(#15와 같다)에 마감되지 않은 직무. `INELIGIBLE`·마감 직무는 카드·AI 입력·결과·'왜 맞나요' 어디에도 나오지 않는다. `candidates` = `{total, eligible, needsCheck}`(total = 후보 수).
+- **후보** = 판정(#14)이 `ELIGIBLE`·`NEEDS_CHECK`이고 기준일(#15와 같다)에 마감되지 않은 직무. `INELIGIBLE`·마감 직무는 카드 목록(#28)·AI에 보내는 직무 원문·결과·'왜 맞나요' 어디에도 나오지 않는다(#29에 낸 `cardIds`는 회차 직무 전부의 카드에서 찾는다 — 프로필이 바뀌어도 이미 고른 카드는 찾게. 카드 글은 학생이 고른 '하고 싶은 일'로만 AI에 간다). `candidates` = `{total, eligible, needsCheck}`(total = 후보 수).
 - `cards`(#28): 후보 직무의 직무 개요 항목(없거나 2개 미만이면 주차 계획 항목)을 원문 그대로 짧게(6~50자, 직무당 4개까지) 준다. 기관 이름은 '회사'로 가리고, 거의 같은 글(글자 2-gram 자카드 0.8 이상)은 하나로 합친다. 직무를 번갈아 가며 놓아 앞쪽이 한 회사로 몰리지 않는다(최대 60개). `id`는 `{jobId}-{순번}`이고 #29 `cardIds`로 보낸다. 카드는 학생이 고르는 재료일 뿐 어느 직무인지 알려 주지 않는다.
 - 요청(#29): `{profile, experiences, cardIds, consent}`.
   - `experiences`: 해 본 일 0~3개, 하나에 20~200자. `cardIds`: 0~5개(중복 불가, 카드 목록의 id). 경험을 하나 이상 쓰거나 카드를 3개 이상 골라야 한다 — 아니면 400 `INVALID_INPUT`(`experiences`). 없는 카드 id는 400 `INVALID_INPUT`(`cardIds`).
   - `consent`가 true가 아니면 400 `CONSENT_REQUIRED`(경험 글을 AI에 보내고 결과와 함께 저장하는 데 동의).
-  - 경험 글의 전화번호·이메일·8~10자리 숫자(학번 등)는 `[가림]`으로 바꾼 뒤 AI에 보내고 저장한다. 화면은 이름을 쓰지 말라고 안내한다.
+  - 경험 글의 전화번호(+82·띄어 쓴 번호 포함)·이메일·주민등록번호 모양·8~10자리 숫자(학번 등, `2023-12345`처럼 나눈 것 포함)는 `[가림]`으로 바꾼 뒤 AI에 보내고 저장한다. 화면은 이름을 쓰지 말라고 안내한다.
   - AI에는 경험 글·고른 카드 글·`interestText`와 후보 직무의 원문(부서·직무명·직무 개요·교육 목표·요구 역량·주차 계획)만 보낸다. 학과·학년·평점·자격증·사는 곳은 보내지 않는다.
 - **순서**: AI가 후보 중 5곳을 고르고 자리마다 `studentQuote`(학생 글 한 줄 안의 구절) · `jobQuote`(그 직무 원문 한 칸 안의 구절) · `reason`(해요체 한 문장)을 단다. 서버가 확인해 통과한 것만 쓴다 — 후보 안의 직무 · 두 구절이 원문에 그대로 있음(띄어쓰기·따옴표·글머리표 무시, 한 줄·한 칸 안) · `reason` 10~150자 해요체('습니다'·'당신'·'선호 전공' 없음). 같은 직무가 두 번 나오면 앞의 것만.
   - `fit`: 1~2위 `STRONG`, 3~5위 `GOOD`. 맞는 정도는 AI 점수가 아니라 순위로 정한다(E7 — AI가 덜 맞는 자리에도 이유를 붙여서).
   - `evidence.documentTitle`·`page`: `jobQuote`가 든 칸의 운영계획서와 쪽(직무 개요·요구 역량·교육 목표). 부서·직무명이면 `page` null, 주차 계획은 #15 인용과 같이 직무 개요와 전공 요건이 같은 쪽일 때만 그 쪽이다.
   - 1~3위는 같은 요청에서 '왜 맞나요'(`why`, 아래)를 함께 만들어 둔다. 실패한 곳과 4~5위는 null — 직무 상세에서 #32를 부르면 그때 만든다.
-- **규칙 추천으로 대신**(`source: RULE`): AI 키 없음(`NO_KEY`) · 호출 한도(`LIMITED`) · AI 실패·30초 초과(`AI_ERROR`) · 확인을 통과한 자리가 0곳(`VERIFY_FAILED`)이면 적합도 추천(#15)과 같은 직무·순서를 준다 — `fit`은 `HIGH` → `STRONG`, `MEDIUM` → `GOOD`, `evidence`는 `studentQuote` null · `jobQuote`는 운영계획서 근거 인용(없으면 첫 인용) · `reason`은 `reasonTemplate`, `why`는 null. 후보가 0곳이면 AI를 부르지 않고 `NO_CANDIDATES`, `items: []`, `blockedBy`는 #15와 같다. 그 밖에는 `blockedBy: []`.
+- **규칙 추천으로 대신**(`source: RULE`): AI 키 없음(`NO_KEY`) · 호출 한도(`LIMITED`) · AI 실패·30초 초과(`AI_ERROR`) · 확인을 통과한 자리가 0곳(`VERIFY_FAILED`)이면 적합도 추천(#15)과 같은 직무·순서를 준다 — `fit`은 `HIGH` → `STRONG`, `MEDIUM` → `GOOD`, `evidence`는 `studentQuote` null · `jobQuote`는 운영계획서 근거 인용(없으면 첫 인용) · `reason`은 기본 문장 "지원 조건과 적합도 점수로 고른 자리예요."(#15의 `reasonTemplate`에는 학년·평점·학과가 들어가 저장하지 않는다), `why`는 null. 후보가 0곳이면 AI를 부르지 않고 `NO_CANDIDATES`, `items: []`, `blockedBy`는 #15와 같다. 규칙 추천으로 대신했는데 #15 추천이 0개여도 `items: []`·`blockedBy`는 #15와 같다. 그 밖에는 `blockedBy: []`.
 - **저장**: 결과는 계정당 마지막 1건만 둔다(새로 탐색하면 바꾼다, 탈퇴·체험 계정 정리 때 함께 지운다). AI는 실행마다 순서가 조금 달라서 다시 계산하지 않는다. `input`은 저장한 경험 글(가린 뒤)·카드 글·관심 분야다.
-- `GET /api/me/explore`(#30): 없으면 404 `EXPLORE_NOT_FOUND`. 저장한 프로필(#8)이 있으면 그 프로필로 다시 판정해(`judgedWith: SAVED_PROFILE`) 후보에서 빠진 직무를 숨기고(`hiddenCount`) 판정을 지금 값으로 바꾼다. 순위·`fit`은 저장한 그대로다. 저장한 프로필이 없으면 탐색 때 판정 그대로(`RUN_PROFILE`, #29 응답도 이것). 프로필을 바꿨으면 화면이 다시 탐색을 권한다.
+- `GET /api/me/explore`(#30): 없으면 404 `EXPLORE_NOT_FOUND`. 저장한 프로필(#8)이 있으면 그 프로필로 다시 판정해(`judgedWith: SAVED_PROFILE`) 후보에서 빠진 직무를 숨기고(`hiddenCount`) 판정을 지금 값으로 바꾼다. `rank`는 남은 자리끼리 1부터 다시 매기고(저장한 순서는 그대로), `fit`은 저장한 그대로다. 저장한 프로필이 없으면 탐색 때 판정 그대로(`RUN_PROFILE`, #29 응답도 이것). 프로필을 바꿨으면 화면이 다시 탐색을 권한다.
 - 화면 연결: 직무 찾기(S3)의 맨 위 추천은 탐색 결과가 있으면 `items`를, 없으면 #15를 쓴다(#15는 그대로).
 - `DELETE /api/me/explore`(#31): 저장한 결과·경험 글·'왜 맞나요'를 지운다. 없어도 204.
-- **'왜 맞나요'**(`why`, #32 `GET /api/me/explore/jobs/{jobId}/why`): `{summary, points, tryNew, prepare}` — `summary` 한 문장, `points` 1~3개 `{text, studentQuote, jobQuote}`(학생이 한 일 → 이 자리의 어떤 일 → 왜 도움), `tryNew` 0~2개 `{text, jobQuote}`(이 실습에서 새로 해 볼 일), `prepare` `{text, jobQuote}` 또는 null(지원 전에 채우면 좋은 것). 문장은 해요체 120자 안쪽이고 구절은 순서와 같은 방식으로 확인해 통과한 것만 남긴다. `summary`가 통과하지 못하거나 `points`가 0개면 실패다.
+- **'왜 맞나요'**(`why`, #32 `GET /api/me/explore/jobs/{jobId}/why`): `{summary, points, tryNew, prepare}` — `summary` 한 문장, `points` 1~3개 `{text, studentQuote, jobQuote}`(학생이 한 일 → 이 자리의 어떤 일 → 왜 도움), `tryNew` 0~2개 `{text, jobQuote}`(이 실습에서 새로 해 볼 일), `prepare` `{text, jobQuote}` 또는 null(지원 전에 채우면 좋은 것). 문장은 해요체 10~150자이고 구절은 순서와 같은 방식으로 확인해 통과한 것만 남긴다. `summary`가 통과하지 못하거나 `points`가 0개면 실패다.
   - #32 응답 `{jobId, fit, why, fallbackReason}`. `fit`은 탐색 결과 안이면 그 값, 밖이면 `WEAK` — 결과 밖 자리는 덜 이어지는 까닭도 함께 쓰게 한다. 한 번 만든 것은 저장해 다시 준다. 만들지 못하면(키 없음·한도·실패·확인 실패) 200 + `why: null`과 `fallbackReason`.
   - 탐색 결과가 없으면 404 `EXPLORE_NOT_FOUND`, 없는 직무 404 `JOB_NOT_FOUND`, 지금 후보가 아닌 직무(위 다시 판정과 같은 기준)는 409 `EXPLORE_NOT_CANDIDATE`.
 - 응답 시간: AI 탐색 약 5초 + '왜 맞나요' 3곳 동시 약 6초(E7 실측). 화면은 '분석 중'을 보여 준다.
@@ -286,7 +286,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - `practiceText`: 수행결과보고서(별지 제9호)의 '실습 내용'을 붙여 넣은 글, 100~3,000자. `consent`가 true가 아니면 400 `CONSENT_REQUIRED`. 전화번호·이메일·8~10자리 숫자는 `[가림]`으로 바꾼 뒤 AI에 보내고 저장한다. 없는 직무 404 `JOB_NOT_FOUND`, NCS 세분류가 없는 직무는 400 `INVALID_INPUT`(`jobId`).
   - AI(Sonnet)가 실습 내용과 그 직무 세분류의 능력단위(이름·정의)만 읽고 실습에서 해 본 단위를 고른다 — 단위마다 `studentQuote`(실습 내용 한 문장 안의 구절)와 `reason`(해요체 한 문장). 서버가 확인해 통과한 것만 `covered`에 둔다: 그 세분류의 단위(코드의 개정 표기 `_21v4`만 틀리면 앞 10자리 단위 번호로 찾는다) · 한 번만 · 구절이 실습 내용 한 문장(줄) 안에 그대로 · 문장 규칙(#29와 같다). 학과·학년·평점은 보내지 않는다.
   - `covered`·`notCovered`(다음에 채울 것)는 능력단위 번호 순. `ncs.unitCount` = 둘의 합.
-  - `nextLevel`(같은 세분류 한 단계 위): `baseLevel`은 채운 단위에 가장 많은 수준(같으면 낮은 쪽, 채운 게 없으면 그 세분류의 가장 낮은 수준), `units`는 안 채운 단위 중 `baseLevel` 것 → `baseLevel+1` 것 순으로 최대 3개.
+  - `nextLevel`(같은 세분류 한 단계 위): `baseLevel`은 채운 단위에 가장 많은 수준(같으면 낮은 쪽, 채운 게 없으면 그 세분류의 가장 낮은 수준), `units`는 안 채운 단위 중 `baseLevel` 것 → 그보다 높은 수준 중 그 세분류에 실제로 있는 가장 낮은 수준(수준이 건너뛰면 4 대신 5처럼) 것 순으로 최대 3개.
   - `expand`(넓혀 갈 직무 3개): `{rank, code, name, path, relation, unitCount, linkedCount, linked, more, occupations}`. `linked`는 넓혀 갈 세분류의 단위 중 채운 단위와 이어진 것 `{code, name, level, from, note, checked}`(`from`은 이어진 채운 단위), `linkedCount`는 그 수, `more`는 안 이어진 단위 중 수준이 낮은 것 최대 3개(더 채울 것). **이어진 수가 많은 순, 같으면 `rank` 순**으로 준다(화면 '이어짐 2 / 12' = `linkedCount` / `unitCount`).
   - AI 키 없음·한도·실패·확인 통과 0개면 200 + `source: NONE`, `fallbackReason`, `covered: []`, `notCovered`는 단위 전부(목록은 그대로 보여 준다). 이때 `expand`는 `linked: []`로 `rank` 순, `nextLevel`은 가장 낮은 수준부터.
   - 계정당 마지막 1건만 둔다(새로 만들면 바꾼다). `GET`(#35)은 저장본(없으면 404 `CAREER_REPORT_NOT_FOUND`), `DELETE`(#36)은 204(없어도).
@@ -294,16 +294,16 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 
 **현장실습 진행**([ADR-0033](../decisions/0033-internship-flow.md)) — 지원서(별지 제5호)를 플랫폼에서 쓰고 학과(부)장 승인 링크를 받아 내면, 센터가 접수 → 1~3지망 중 하나로 매칭 → 기관이 알려 준 면접·결과를 넣고 알림 → 마무리 서류를 모아 학점 인정 명단을 만든다. 기관 계정은 없다(기관 값은 센터가 넣는다). 메일·문자 알림은 보내지 않고 학생 화면(#44)에 바로 보인다.
 - **일정**(`rounds/current`의 `stages`, 11단계 `PICK`→`CREDIT`): 진로취업처 2026-2 학생 모집안내 날짜(`confirmed: true`). 중간점검(8주차 10/19~10/23)·학점 인정은 공지에 날짜가 없어 `confirmed: false`(센터 확인 전).
-- **지원서 상태**: `NONE`(저장 전, 응답에서만) → `DRAFT` → 내기 → `SUBMITTED`(센터 '새로 들어옴') → `RECEIVED`(접수 완료) 또는 `FIX_REQUESTED`(보완 요청, `fixReason`) → 매칭 확정 → `MATCHED`. 보완 요청을 받으면 고쳐서 다시 낸다(접수번호는 그대로).
-- **지원서 저장(#38)**: `consents.collect`가 true가 아니면 400 `CONSENT_REQUIRED`(아무것도 저장하지 않음). 칸은 비워도 된다. 낸 뒤(`SUBMITTED`·`RECEIVED`·`MATCHED`)에는 409 `APPLICATION_LOCKED`. 1~3지망은 본문이 아니라 담은 직무 순위(#22)에서 온다 — 내기 전에는 저장한 프로필로 다시 판정해 `verdict`를 보여 주고(프로필이 없으면 null), 낼 때 그 값과 학적(`academic`)을 고정한다.
+- **지원서 상태**: `NONE`(저장 전, 응답에서만) → `DRAFT` → 내기 → `SUBMITTED`(센터 '새로 들어옴') → `RECEIVED`(접수 완료) 또는 `FIX_REQUESTED`(보완 요청, `fixReason`) → 매칭 확정 → `MATCHED`. 보완 요청을 받으면 고쳐서 다시 낸다(접수번호는 그대로, 신청 기간이 끝났어도 된다).
+- **지원서 저장(#38)**: `consents.collect`가 true가 아니면 400 `CONSENT_REQUIRED`(아무것도 저장하지 않음). 칸은 비워도 된다. 낸 뒤(`SUBMITTED`·`RECEIVED`·`MATCHED`)에는 409 `APPLICATION_LOCKED`. 1~3지망은 본문이 아니라 담은 직무 순위(#22)에서 순위 값 그대로 온다(2·3지망만 정했으면 `rank` 2·3 — 1지망이 없으면 `PICKS`가 false) — 내기 전에는 저장한 프로필로 다시 판정해 `verdict`를 보여 주고(프로필이 없으면 null), 낼 때 그 값과 학적(`academic`)을 고정한다.
 - **자기소개서**: 4문항(지원동기 · 성격 및 장단점 · 경력사항 및 단체활동 · 기타 자유 기술), 각 300자 이상(서식). `essayWarnings`는 글에 1~3지망 기관 이름(‘주식회사’·‘(주)’·괄호 안을 뺀 2자 이상)이 있는 문항 — 한 부가 세 기관에 같이 간다.
-- **학과(부)장 승인(#40·#42·#43)**: #40은 지금 내용(신청서·이력서·자기소개서·서약·동의·서명·1~3지망)의 해시로 링크(`approval.token`, 16진 32자)를 만든다. 다시 부르면 새 링크로 바뀐다. 승인 뒤 내용이나 지망이 바뀌면 `STALE` → 다시 요청. 링크는 학생이 학과 사무실에 전한다(프론트 경로 `/approvals/{token}`). #42는 공개, 없는 토큰 404 `APPROVAL_NOT_FOUND`, `STALE` 링크를 승인하면 409 `STATE_CONFLICT`. 학점 인정 승인(`kind: CREDIT`)은 센터가 평가표·출근부를 모두 받으면 생기고 링크는 센터 마무리 화면(#54)에 있다.
-- **내기(#41)**: 저장한 지원서가 없으면 404 `APPLICATION_NOT_FOUND`. 기준일(체험 학생은 `demoToday`, 아니면 오늘)이 신청 기간(7/13~7/24) 밖이면 409 `APPLICATION_CLOSED`. `checklist`에 false가 있으면 400 `APPLICATION_INCOMPLETE`, `fields[].field`에 빠진 항목 코드(`applicationItem`) — `PROFILE` 저장한 프로필 · `PICKS` 1지망이 있고 지원 불가·마감이 없음 · `APPLICANT` 성명(한·영)·생년월일·성별·연락처·주소·학번 · `PLEDGE` · `ESSAYS` · `CONSENTS` 두 동의 · `SIGNATURE` 2자 이상 · `APPROVAL` 승인됨.
+- **학과(부)장 승인(#40·#42·#43)**: #40은 지금 내용(신청서·이력서·자기소개서·서약·동의·서명·1~3지망의 순위와 직무·학적 — 학과·학년·이수 학기·평점·졸업예정)의 해시로 링크(`approval.token`, 16진 32자)를 만든다. 학적은 내기 전이면 저장한 프로필, 낸 뒤면 고정한 값이고 승인 화면(#42)도 같은 값을 보여 준다. 다시 부르면 새 링크로 바뀐다. 승인 뒤 내용·지망·프로필이 바뀌면 `STALE` → 다시 요청. 링크는 학생이 학과 사무실에 전한다(프론트 경로 `/approvals/{token}`). #42는 공개, 없는 토큰 404 `APPROVAL_NOT_FOUND`(지원서 링크는 매칭이 확정되면 닫혀 404 — 링크로 이름·학번이 계속 열리지 않게), `STALE` 링크를 승인하면 409 `STATE_CONFLICT`. 학점 인정 승인(`kind: CREDIT`)은 센터가 평가표·출근부를 모두 받으면 생기고 링크는 센터 마무리 화면(#54)에 있다.
+- **내기(#41)**: 저장한 지원서가 없으면 404 `APPLICATION_NOT_FOUND`. 기준일(체험 학생은 `demoToday`, 아니면 오늘)이 신청 기간(7/13~7/24) 밖이면 409 `APPLICATION_CLOSED` — 보완 요청을 받아 다시 내는 것은 기간 밖이어도 된다. 체험 학생의 `submittedAt`은 기준일 날짜로 남는다. 낸 뒤 `picks[].closed`는 낸 날 기준이다(낸 뒤에 마감돼도 낸 지망은 유효). 보완 요청 중이면 처음 낸 날에 열려 있던 지망은 그대로 다시 낼 수 있다. `checklist`에 false가 있으면 400 `APPLICATION_INCOMPLETE`, `fields[].field`에 빠진 항목 코드(`applicationItem`) — `PROFILE` 저장한 프로필 · `PICKS` 1지망이 있고 지원 불가·마감이 없음 · `APPLICANT` 성명(한·영)·생년월일·성별·연락처·주소·학번 · `PLEDGE` · `ESSAYS` · `CONSENTS` 두 동의 · `SIGNATURE` 2자 이상 · `APPROVAL` 승인됨.
 - **내 현장실습(#44)**: 기준일 = `asOf` → 체험 학생의 `demoToday` → 오늘. `stages[].state`: 지난 단계(끝일 전, 끝일이 없으면 뒤 단계가 시작됨)와 지금보다 앞은 `DONE`, 지금(진행 중인 단계 중 가장 뒤, 없으면 다음에 올 단계)은 `NOW`, 나머지 `NEXT`. `next`는 지금 단계의 끝일과 뒤 단계 시작일 중 가장 가까운 것(D-day). `placement`는 매칭 확정 뒤, `placement.result`·`practice`·`documents`는 합격을 알린 뒤에만. `practice`는 직무 실습 기간으로 센 날·주(9/1~12/12 = 103일·15주)와 운영계획서 주차 계획('7~8주차' 등) 중 이번 주·다음 것.
 - **마무리 서류(#45)**: `kind`는 `REPORT`(수행결과보고서 제9호) · `CREDIT`(학점인정신청서 제7호) · `SURVEY`(설문조사서 제8호). 냄 표시만 하고 파일은 받지 않는다(서식 원본은 후기 간담회 때). 합격 알림 전이면 409 `STATE_CONFLICT`, `REPORT`는 그 자리의 커리어 리포트(#34, 보고서 '실습 내용')가 없으면 409 `CAREER_REPORT_REQUIRED`.
 - **센터 범위**: 체험 센터는 자기 묶음(가상 지원자 + 같은 묶음 체험 학생), 가입 센터는 묶음 없는 실제 지원서. `DRAFT`는 보이지 않는다. 범위 밖 id는 404 `APPLICATION_NOT_FOUND`.
-- **접수(#48)**: `status`는 `RECEIVED` 또는 `FIX_REQUESTED`(`reason` 5~300자 필수, 아니면 400 `INVALID_INPUT`). `MATCHED`는 409 `STATE_CONFLICT`. 보완 요청은 고른 매칭을 지운다.
-- **매칭(#49~#51)**: 접수 완료(`RECEIVED`)마다 그 지원서의 지망 중 하나(`rank`)를 고른다 — 화면은 판정과 상담 이수만 옆에 보여 주고 순위를 매기지 않는다. 정원을 넘어도 고를 수 있다(기관이 면접으로 뽑는다, `jobs[].matched`/`headcount`). 확정(#51)은 접수 완료가 모두 골라졌을 때만(아니면 409, 보완 요청 중인 사람은 빼고), 확정 뒤에는 상태·매칭을 못 바꾼다.
+- **접수(#48)**: `status`는 `RECEIVED` 또는 `FIX_REQUESTED`(`reason` 5~300자 필수, 아니면 400 `INVALID_INPUT`). `RECEIVED`는 새로 들어온(`SUBMITTED`) 지원서만 — 보완 요청 중(`FIX_REQUESTED`)이면 409 `STATE_CONFLICT`(학생이 다시 내야 접수), 이미 접수 완료면 그대로. `MATCHED`는 409 `STATE_CONFLICT`. 보완 요청은 고른 매칭을 지운다.
+- **매칭(#49~#51)**: 접수 완료(`RECEIVED`)마다 그 지원서의 지망 중 하나(`rank`, 그 지원서에 있는 지망 순위 값 — 없으면 400 `INVALID_INPUT`)를 고른다 — 화면은 판정과 상담 이수만 옆에 보여 주고 순위를 매기지 않는다. 정원을 넘어도 고를 수 있다(기관이 면접으로 뽑는다, `jobs[].matched`/`headcount`). 확정(#51)은 접수 완료가 모두 골라졌을 때만(아니면 409, 보완 요청 중인 사람은 빼고), 확정 뒤에는 상태·매칭을 못 바꾼다.
 - **선발(#52·#53)**: 매칭된 학생의 면접 일정(`interviewAt`·`interviewMode`)과 `result`(`WAIT`·`PASS`·`FAIL`). 알림(#53)은 알리지 않은 학생 중 `WAIT`가 없을 때만(아니면 409). 알린 뒤에는 못 바꾼다. 2026-2는 2차 모집이 없어 불합격 학생에게는 상담·다음 학기 일정을 안내한다(화면).
 - **마무리(#54~#57)**: 합격을 알린 학생만. `missing`(`closeItem`, 이 순서) — `REPORT`·`CREDIT`·`SURVEY`(학생) · `EVALUATION`·`ATTENDANCE`(기관이 메일로 보낸 평가표·출근부를 센터가 받음 표시, #55) · `APPROVAL`(학점 인정 학과(부)장 승인). `ready`면 학점 인정·장학금 명단(#57)에 들어간다. #56은 학생 서류가 빠진 학생에게 `remindedAt`을 남긴다(학생 #44 `documents.remindedAt`).
 - **명단 CSV(#57)**: UTF-8(BOM), 열 `접수번호,학번,성명,학과,학년,실습기관,부서,직무,교과목,학점,실습 시작,실습 끝,대학 지원금 월액(원),지원금 최대 개월,가상`. 교과목 '표준 현장실습 D' · 12학점 · 월 200,000원 × 최대 3개월은 학생 모집안내 값(설정 `app.internship`). `=`·`+`·`-`·`@`로 시작하는 칸은 `'`를 붙인다.
@@ -325,7 +325,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 ## 오류 코드
 | code | HTTP | 언제 |
 |---|---|---|
-| `INVALID_INPUT` | 400 | 형식·범위 위반. `fields: [{field, reason}]`를 준다 |
+| `INVALID_INPUT` | 400 | 형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\u0000`)가 있어도 이것(`fields` 없음) |
 | `CONSENT_REQUIRED` | 400 | 프로필 저장에 동의가 없음 |
 | `RANK_INVALID` | 400 | 순위가 1~3이 아니거나 중복이거나 담지 않은 직무 |
 | `AS_OF_OUT_OF_RANGE` | 400 | asOf가 회차 모집기간 밖 |

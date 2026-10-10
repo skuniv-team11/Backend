@@ -180,6 +180,11 @@ class InternshipFlowApiTest {
         assertThat(JsonPath.<List<String>>read(confirmed, "$.jobs[*].title")).contains("국내 마케팅");
         perform(put("/api/center/applications/" + mine + "/status"), center, "{\"status\": \"RECEIVED\"}")
                 .andExpect(status().isConflict());
+        // 매칭이 확정되면 지원서 승인 링크는 닫힌다(이름·학번이 링크로 계속 열리지 않게)
+        String lastToken = JsonPath.read(perform(get("/api/me/application"), student, null).andReturn().getResponse()
+                .getContentAsString(), "$.approval.token");
+        mvc.perform(get("/api/approvals/" + lastToken)).andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("APPROVAL_NOT_FOUND"));
         perform(get("/api/me/internship"), student, null)
                 .andExpect(jsonPath("$.placement.jobId").value(122))
                 .andExpect(jsonPath("$.placement.result").isEmpty());
@@ -309,7 +314,9 @@ class InternshipFlowApiTest {
 
         long id = db.sql("INSERT INTO app_user (email, password_hash, role) VALUES (:e, 'x', 'CENTER') RETURNING id")
                 .param("e", "center." + UUID.randomUUID() + "@example.com").query(Long.class).single();
-        String member = jwt.issue(id, Role.CENTER, false, Instant.now().plusSeconds(600));
+        long stamp = db.sql("SELECT (extract(epoch FROM created_at) * 1000000)::bigint FROM app_user WHERE id = :id")
+                .param("id", id).query(Long.class).single();
+        String member = jwt.issue(id, Role.CENTER, false, Instant.now().plusSeconds(600), stamp);
         mvc.perform(post("/api/center/demo/advance").header("Authorization", "Bearer " + member)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"to\": \"MATCHED\"}"))
                 .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("DEMO_ONLY"));
@@ -358,7 +365,191 @@ class InternshipFlowApiTest {
         perform(get("/api/me/application"), guest("CENTER", null, null), null).andExpect(status().isForbidden());
     }
 
+    @Test
+    void 지망_순위는_담은_순위_값_그대로이고_1지망이_없으면_낼_수_없다() throws Exception {
+        Guest student = guest("STUDENT", "APPLYING", null);
+        for (int job : new int[] {122, 120}) {
+            perform(post("/api/me/plan/items"), student, "{\"jobId\": " + job + "}").andExpect(status().is2xxSuccessful());
+        }
+        perform(put("/api/me/plan/ranks"), student, "{\"ranks\": [{\"jobId\": 122, \"rank\": 2}, {\"jobId\": 120, \"rank\": 3}]}")
+                .andExpect(status().isOk());
+        String body = perform(put("/api/me/application"), student, form(ESSAY)).andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<List<Integer>>read(body, "$.picks[*].rank")).containsExactly(2, 3);
+        assertThat(JsonPath.<List<Boolean>>read(body, "$.checklist[?(@.item == 'PICKS')].done")).containsExactly(false);
+        String token = JsonPath.read(perform(post("/api/me/application/approval"), student, null).andReturn().getResponse()
+                .getContentAsString(), "$.approval.token");
+        String view = mvc.perform(get("/api/approvals/" + token)).andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<List<Integer>>read(view, "$.picks[*].rank")).containsExactly(2, 3);
+        mvc.perform(post("/api/approvals/" + token)).andExpect(status().isOk());
+        perform(post("/api/me/application/submit"), student, null).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields[0].field").value("PICKS"));
+        // 같은 직무라도 순위 값이 바뀌면(3지망 → 1지망) 승인을 다시 받아야 한다
+        perform(put("/api/me/plan/ranks"), student, "{\"ranks\": [{\"jobId\": 122, \"rank\": 2}, {\"jobId\": 120, \"rank\": 1}]}")
+                .andExpect(status().isOk());
+        perform(get("/api/me/application"), student, null)
+                .andExpect(jsonPath("$.approval.status").value("STALE"))
+                .andExpect(jsonPath("$.picks[0].rank").value(1)).andExpect(jsonPath("$.picks[0].jobId").value(120));
+        approve(student);
+        String submitted = perform(post("/api/me/application/submit"), student, null).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<List<Integer>>read(submitted, "$.picks[*].rank")).containsExactly(1, 2);
+        // 낸 뒤에도 승인은 그대로(낸 지망·학적이 승인한 값과 같다), 체험 학생은 기준일에 낸 것으로 남는다
+        assertThat(JsonPath.<String>read(submitted, "$.approval.status")).isEqualTo("APPROVED");
+        assertThat(JsonPath.<String>read(submitted, "$.submittedAt")).startsWith("2026-07-23T");
+        assertThat(JsonPath.<List<Boolean>>read(submitted, "$.picks[*].closed")).containsOnly(false);
+        // 센터 화면도 같은 승인 상태, 매칭은 그 지원서에 있는 순위만
+        Guest center = guest("CENTER", null, student.group());
+        long id = ((Number) JsonPath.read(submitted, "$.applicationId")).longValue();
+        perform(get("/api/center/applications/" + id), center, null)
+                .andExpect(jsonPath("$.approval.status").value("APPROVED"))
+                .andExpect(jsonPath("$.picks[1].closed").value(false));
+        perform(put("/api/center/applications/" + id + "/status"), center, "{\"status\": \"RECEIVED\"}")
+                .andExpect(status().isOk());
+        perform(put("/api/center/applications/" + id + "/match"), center, "{\"rank\": 3}").andExpect(status().isBadRequest());
+        perform(put("/api/center/applications/" + id + "/match"), center, "{\"rank\": 2}").andExpect(status().isOk());
+    }
+
+    @Test
+    void 승인_뒤_프로필의_학년을_바꾸면_승인을_다시_받아야_한다() throws Exception {
+        Guest student = guest("STUDENT", "APPLYING", null);
+        perform(post("/api/me/plan/items"), student, "{\"jobId\": 122}").andExpect(status().is2xxSuccessful());
+        perform(put("/api/me/plan/ranks"), student, "{\"ranks\": [{\"jobId\": 122, \"rank\": 1}]}").andExpect(status().isOk());
+        perform(put("/api/me/application"), student, form(ESSAY)).andExpect(status().isOk());
+        String token = JsonPath.read(perform(post("/api/me/application/approval"), student, null).andReturn().getResponse()
+                .getContentAsString(), "$.approval.token");
+        mvc.perform(get("/api/approvals/" + token)).andExpect(jsonPath("$.student.grade").value(3));
+        mvc.perform(post("/api/approvals/" + token)).andExpect(status().isOk());
+        String saved = perform(get("/api/me/profile"), student, null).andReturn().getResponse().getContentAsString();
+        String changed = profileInput(saved).replaceFirst("\"grade\": 3", "\"grade\": 4")
+                .replaceFirst("\"completedSemesters\": \\d+", "\"completedSemesters\": 6");
+        perform(put("/api/me/profile"), student, changed.substring(0, changed.length() - 1) + ", \"consent\": true}")
+                .andExpect(status().isOk()).andExpect(jsonPath("$.grade").value(4));
+        perform(get("/api/me/application"), student, null)
+                .andExpect(jsonPath("$.approval.status").value("STALE"))
+                .andExpect(jsonPath("$.academic.grade").value(4));
+        // 승인 화면은 해시와 같은 학적(지금 프로필)을 보여 주고, 바뀐 내용은 승인하지 않는다
+        mvc.perform(get("/api/approvals/" + token)).andExpect(jsonPath("$.student.grade").value(4))
+                .andExpect(jsonPath("$.status").value("STALE"));
+        mvc.perform(post("/api/approvals/" + token)).andExpect(status().isConflict());
+    }
+
+    @Test
+    void 보완_요청_중인_지원서는_바로_접수하지_못하고_신청_기간이_지나도_다시_낸다() throws Exception {
+        Guest student = guest("STUDENT", "APPLYING", null);
+        Guest center = guest("CENTER", null, student.group());
+        perform(post("/api/me/plan/items"), student, "{\"jobId\": 122}").andExpect(status().is2xxSuccessful());
+        perform(put("/api/me/plan/ranks"), student, "{\"ranks\": [{\"jobId\": 122, \"rank\": 1}]}").andExpect(status().isOk());
+        perform(put("/api/me/application"), student, form(ESSAY)).andExpect(status().isOk());
+        approve(student);
+        String submitted = perform(post("/api/me/application/submit"), student, null).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        long id = ((Number) JsonPath.read(submitted, "$.applicationId")).longValue();
+        perform(put("/api/center/applications/" + id + "/status"), center,
+                "{\"status\": \"FIX_REQUESTED\", \"reason\": \"연락처를 다시 확인해 주세요.\"}").andExpect(status().isOk());
+        // 학생이 고치는 중인 지원서를 센터가 접수로 잠그지 않는다
+        perform(put("/api/center/applications/" + id + "/status"), center, "{\"status\": \"RECEIVED\"}")
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("STATE_CONFLICT"));
+        // 기준일이 신청 기간 뒤(7/30)여도 보완 요청을 받은 지원서는 다시 낸다(처음 낸 날 열려 있던 지망 그대로)
+        db.sql("UPDATE app_user SET demo_today = DATE '2026-07-30' WHERE demo_group_id = CAST(:g AS uuid) AND role = 'STUDENT'")
+                .param("g", student.group()).update();
+        perform(get("/api/me/application"), student, null)
+                .andExpect(jsonPath("$.period.open").value(false))
+                .andExpect(jsonPath("$.picks[0].closed").value(false));
+        perform(post("/api/me/application/submit"), student, null)
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SUBMITTED"));
+        perform(put("/api/center/applications/" + id + "/status"), center, "{\"status\": \"RECEIVED\"}")
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("RECEIVED"));
+        // 이미 접수 완료면 그대로
+        perform(put("/api/center/applications/" + id + "/status"), center, "{\"status\": \"RECEIVED\"}")
+                .andExpect(status().isOk());
+        // 다른 묶음 센터는 상태·매칭·선발·마무리를 바꾸지 못한다(404)
+        Guest other = guest("CENTER", null, null);
+        perform(put("/api/center/applications/" + id + "/status"), other, "{\"status\": \"RECEIVED\"}")
+                .andExpect(status().isNotFound());
+        perform(put("/api/center/applications/" + id + "/match"), other, "{\"rank\": 1}").andExpect(status().isNotFound());
+        perform(put("/api/center/applications/" + id + "/selection"), other, "{\"result\": \"PASS\"}")
+                .andExpect(status().isNotFound());
+        perform(put("/api/center/close/" + id), other, "{\"evaluation\": true}").andExpect(status().isNotFound());
+    }
+
+    @Test
+    void 만료됐지만_정리_전인_묶음으로_체험을_시작하면_새_묶음처럼_만든다() throws Exception {
+        Guest first = guest("STUDENT", "APPLYING", null);
+        // 정리 작업(10분 간격)이 돌기 전: 묶음과 그 계정이 만료됐지만 아직 남아 있다
+        db.sql("UPDATE app_user SET expires_at = now() - interval '1 minute' WHERE demo_group_id = CAST(:g AS uuid)")
+                .param("g", first.group()).update();
+        db.sql("UPDATE demo_group SET expires_at = now() - interval '1 minute' WHERE id = CAST(:g AS uuid)")
+                .param("g", first.group()).update();
+        Guest center = guest("CENTER", null, first.group());
+        assertThat(center.group()).isEqualTo(first.group());
+        // 가상 지원자 6명을 새로 넣었고(옛 것은 지워짐), 만료된 계정도 지워졌다
+        perform(get("/api/center/applications"), center, null).andExpect(jsonPath("$.counts.all").value(6));
+        assertThat(db.sql("SELECT count(*) FROM app_user WHERE demo_group_id = CAST(:g AS uuid)").param("g", first.group())
+                .query(Long.class).single()).isEqualTo(1);
+    }
+
+    @Test
+    void 탈퇴하면_지원서_승인_탐색_커리어_리포트가_함께_지워진다() throws Exception {
+        Guest student = guest("STUDENT", "APPLYING", null);
+        perform(post("/api/me/plan/items"), student, "{\"jobId\": 122}").andExpect(status().is2xxSuccessful());
+        perform(put("/api/me/plan/ranks"), student, "{\"ranks\": [{\"jobId\": 122, \"rank\": 1}]}").andExpect(status().isOk());
+        perform(put("/api/me/application"), student, form(ESSAY)).andExpect(status().isOk());
+        approve(student);
+        perform(post("/api/me/application/submit"), student, null).andExpect(status().isOk());
+        String profile = perform(get("/api/me/profile"), student, null).andReturn().getResponse().getContentAsString();
+        perform(post("/api/explore"), student, "{\"experiences\": [\"학과 홍보 계정을 운영하며 게시 시간을 바꿔 저장 수를 비교했어요.\"],"
+                + " \"cardIds\": [], \"consent\": true, \"profile\": " + profileInput(profile) + "}").andExpect(status().isOk());
+        perform(post("/api/me/career-report"), student, "{\"jobId\": 122, \"consent\": true, \"practiceText\": \""
+                + "인스타그램 계정의 주간 게시물 성과를 표로 정리해 팀 회의에서 공유했습니다. ".repeat(4) + "\"}")
+                .andExpect(status().isOk());
+        long userId = ((Number) JsonPath.read(perform(get("/api/me"), student, null).andReturn().getResponse()
+                .getContentAsString(), "$.id")).longValue();
+        long app = db.sql("SELECT id FROM application WHERE user_id = :u").param("u", userId).query(Long.class).single();
+        assertThat(count("SELECT count(*) FROM explore_run WHERE user_id = " + userId)).isEqualTo(1);
+        assertThat(count("SELECT count(*) FROM career_report WHERE user_id = " + userId)).isEqualTo(1);
+
+        perform(delete("/api/me"), student, null).andExpect(status().isNoContent());
+        for (String sql : List.of("SELECT count(*) FROM application WHERE id = " + app,
+                "SELECT count(*) FROM application_pick WHERE application_id = " + app,
+                "SELECT count(*) FROM dept_approval WHERE application_id = " + app,
+                "SELECT count(*) FROM explore_run WHERE user_id = " + userId,
+                "SELECT count(*) FROM career_report WHERE user_id = " + userId,
+                "SELECT count(*) FROM student_profile WHERE user_id = " + userId,
+                "SELECT count(*) FROM plan_item WHERE user_id = " + userId)) {
+            assertThat(count(sql)).as(sql).isZero();
+        }
+    }
+
+    @Test
+    void 처음_저장을_동시에_두_번_보내도_지원서는_하나고_NUL_문자는_400() throws Exception {
+        Guest student = guest("STUDENT", "APPLYING", null);
+        var pool = java.util.concurrent.Executors.newFixedThreadPool(2);
+        try {
+            var a = pool.submit(() -> perform(put("/api/me/application"), student, form(ESSAY)).andReturn().getResponse().getStatus());
+            var b = pool.submit(() -> perform(put("/api/me/application"), student, form(ESSAY)).andReturn().getResponse().getStatus());
+            assertThat(List.of(a.get(), b.get())).containsOnly(200);
+        } finally {
+            pool.shutdown();
+        }
+        assertThat(count("SELECT count(*) FROM application a JOIN app_user u ON u.id = a.user_id"
+                + " WHERE u.demo_group_id = '" + student.group() + "'")).isEqualTo(1);
+        perform(put("/api/me/application"), student, form(ESSAY + "\\u0000"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_INPUT"));
+    }
+
     // ───────── 도우미 ─────────
+
+    private long count(String sql) {
+        return db.sql(sql).query(Long.class).single();
+    }
+
+    /** 저장한 프로필 응답(#8) → 판정 입력(#14·#29의 profile). */
+    private static String profileInput(String profile) {
+        int dep = JsonPath.read(profile, "$.departmentId");
+        return "{\"departmentId\": %d, \"grade\": %d, \"completedSemesters\": %d, \"gpa\": %s, \"graduationExpected\": %s}"
+                .formatted(dep, JsonPath.<Integer>read(profile, "$.grade"), JsonPath.<Integer>read(profile, "$.completedSemesters"),
+                        JsonPath.read(profile, "$.gpa").toString(), JsonPath.read(profile, "$.graduationExpected").toString());
+    }
 
     record Guest(String token, String group, String today) {
     }

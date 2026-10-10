@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 public class ClaudeCareerWriter implements CareerWriter {
 
     private static final Logger log = LoggerFactory.getLogger(ClaudeCareerWriter.class);
-    private static final long MAX_TOKENS = 2000;
+    private static final long MAX_TOKENS = 4000; // 단위가 50개 넘는 세분류에 3,000자 글이면 2,000은 잘릴 수 있다
 
     private final ExploreProperties props;
     private volatile AnthropicClient client;

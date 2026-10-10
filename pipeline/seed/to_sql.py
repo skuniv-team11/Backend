@@ -137,12 +137,13 @@ def render(seed):
     s = []
     s.append("-- 1. 자식 테이블은 통째로 지운다(다시 넣는다)")
     s += [f"DELETE FROM {t};" for t in DELETE_CHILDREN]
-    s.append("\n-- 2. 부모 테이블: seed에 없는 행을 지운다(job → plan_item cascade). 학생 프로필이 쓰는 학과는 남긴다")
+    s.append("\n-- 2. 부모 테이블: seed에 없는 행을 지운다(job → plan_item cascade). 학생 프로필·지원서(가상 지원자 포함)가 쓰는 학과는 남긴다")
     s.append(f"DELETE FROM job WHERE id NOT IN ({ids(p['job'])});")
     s.append(f"DELETE FROM workplace WHERE id NOT IN ({ids(p['workplace'])});")
     s.append(f"DELETE FROM institution WHERE id NOT IN ({ids(p['institution'])});")
     s.append(f"DELETE FROM department d WHERE d.id NOT IN ({ids(p['department'])})\n"
-             f"  AND NOT EXISTS (SELECT 1 FROM student_profile sp WHERE sp.department_id = d.id);")
+             f"  AND NOT EXISTS (SELECT 1 FROM student_profile sp WHERE sp.department_id = d.id)\n"
+             f"  AND NOT EXISTS (SELECT 1 FROM application ap WHERE ap.department_id = d.id);")
     s.append(f"DELETE FROM area a WHERE a.code NOT IN ({codes(p['area'])})\n"
              f"  AND NOT EXISTS (SELECT 1 FROM student_profile sp WHERE sp.home_area_code = a.code);")
     s.append("-- NCS: seed에 없는 능력단위·세분류·직업(커리어 리포트의 그 단위 줄은 cascade로 빠진다)")
@@ -183,6 +184,12 @@ def build(seed_text, ncs_text):
     overlap = set(seed) & set(ncs)
     if overlap:
         raise ValueError(f"seed.json과 ncs.json에 같은 테이블이 있음: {sorted(overlap)}")
+    # 직무마다 NCS 세분류가 하나씩 있어야 한다(없으면 직무 커리어가 ncs: null, 리포트가 400이 된다 — 10/10 리뷰)
+    jobs = {j["id"] for j in seed.get("job", [])}
+    mapped = [r["job_id"] for r in ncs.get("job_ncs", [])]
+    if jobs and (set(mapped) != jobs or len(mapped) != len(set(mapped))):
+        raise ValueError(f"ncs.json job_ncs가 seed.json 직무와 맞지 않음 — 빠짐 {sorted(jobs - set(mapped))}, "
+                         f"남음 {sorted(set(mapped) - jobs)}. ncs_seed.py를 다시 돌리세요")
     body = render({**seed, **ncs})
     head = ("-- R__seed.sql — 시드 데이터(Flyway 반복 마이그레이션, ADR-0014). 손으로 고치지 않는다.\n"
             "-- 만드는 법: python pipeline/seed/build_seed.py ... · ncs_seed.py ... → python pipeline/seed/to_sql.py (pipeline/seed/README.md)\n"

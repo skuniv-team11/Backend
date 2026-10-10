@@ -92,15 +92,19 @@ public class EligibilityRepository {
                     majors.computeIfAbsent(rs.getInt("job_id"), k -> new HashSet<>()).add(rs.getInt("department_id"));
                 });
 
-        // 직무에 걸린 알림 + 기관 전체(job_id NULL)에 걸린 알림. 판정 항목 필드(ADR-0016)만
+        // 직무에 걸린 알림 + 기관 전체(job_id NULL)에 걸린 알림. 판정 항목 필드(ADR-0016)만, 이 회차 것만
+        // (현황판 CenterRepository.alerts와 같은 조건 — 같은 기관이 다음 회차에 또 나와도 지난 알림이 판정을 바꾸지 않게)
         Map<Integer, List<AlertRef>> byJob = new HashMap<>();
         Map<Integer, List<AlertRef>> byInstitution = new HashMap<>();
         db.sql("""
                         SELECT id, institution_id, job_id, kind, field_key
                         FROM review_alert
                         WHERE field_key IN (:fields)
+                          AND institution_id IN (SELECT institution_id FROM job WHERE round_id = :round)
+                          AND (job_id IS NULL OR job_id IN (SELECT id FROM job WHERE round_id = :round))
                         ORDER BY id""")
                 .param("fields", EligibilityRules.JUDGED_FIELDS.keySet())
+                .param("round", roundId)
                 .query(rs -> {
                     AlertRef ref = new AlertRef(rs.getInt("id"), rs.getString("kind"), rs.getString("field_key"));
                     Integer jobId = (Integer) rs.getObject("job_id");

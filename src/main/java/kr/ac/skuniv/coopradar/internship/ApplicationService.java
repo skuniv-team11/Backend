@@ -3,6 +3,7 @@ package kr.ac.skuniv.coopradar.internship;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,7 +21,9 @@ import kr.ac.skuniv.coopradar.internship.ApplicationRepository.ApprovalRow;
 import kr.ac.skuniv.coopradar.internship.ApplicationRepository.Demo;
 import kr.ac.skuniv.coopradar.internship.ApplicationRepository.JobInfo;
 import kr.ac.skuniv.coopradar.internship.ApplicationRepository.PickRow;
+import kr.ac.skuniv.coopradar.internship.ApplicationRepository.RankedJob;
 import kr.ac.skuniv.coopradar.internship.ApplicationRepository.Row;
+import kr.ac.skuniv.coopradar.internship.ApplicationViews.Basis;
 import kr.ac.skuniv.coopradar.internship.InternshipDtos.Academic;
 import kr.ac.skuniv.coopradar.internship.InternshipDtos.Applicant;
 import kr.ac.skuniv.coopradar.internship.InternshipDtos.Application;
@@ -48,10 +51,13 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 학생 지원서(#37~#41, ADR-0033). 별지 제5호 한 부가 1~3지망에 같이 간다.
  * <ul>
- *   <li>1~3지망은 담은 직무 순위(#22)에서 온다. 내기 전에는 저장한 프로필로 다시 판정해 보여 주고, 낼 때 그 값을 고정한다</li>
+ *   <li>1~3지망은 담은 직무 순위(#22)에서 순위 값 그대로 온다(2·3지망만 정했으면 2·3, 1지망이 없으면 낼 수 없다).
+ *       내기 전에는 저장한 프로필로 다시 판정해 보여 주고, 낼 때 그 값을 고정한다</li>
  *   <li>저장은 개인정보 수집·이용 동의 뒤에만(동의가 없으면 아무것도 저장하지 않는다)</li>
- *   <li>학과(부)장 승인은 지금 내용의 해시로 묶는다. 승인 뒤 내용·지망이 바뀌면 STALE → 다시 요청</li>
- *   <li>내기: 신청 기간(체험 학생은 기준일) · 빠진 칸 없음 · 승인됨. 보완 요청을 받으면 고쳐서 다시 낸다(같은 접수번호)</li>
+ *   <li>학과(부)장 승인은 지금 내용·지망·학적의 해시로 묶는다({@link Basis}). 승인 뒤 바뀌면 STALE → 다시 요청</li>
+ *   <li>내기: 신청 기간(체험 학생은 기준일) · 빠진 칸 없음 · 승인됨. 보완 요청을 받으면 고쳐서 다시 낸다(같은 접수번호,
+ *       신청 기간이 끝났어도 된다)</li>
+ *   <li>학생이 바꾸는 요청은 지원서 행을 잠근다(두 번 누름·자동 저장과 겹쳐도 500이 나지 않게)</li>
  * </ul>
  */
 @Service
@@ -91,20 +97,22 @@ public class ApplicationService {
         }
         CurrentRound round = rounds.current();
         Demo demo = repo.demo(user.id());
-        Row row = repo.byUser(user.id(), round.id()).orElse(null);
-        if (row != null && !ApplicationViews.editable(row.status())) {
+        Row row = repo.byUserForUpdate(user.id(), round.id())
+                .orElseGet(() -> repo.insertDraft(user.id(), round.id(), demo.group()));
+        if (!ApplicationViews.editable(row.status())) {
             throw new ApiException(ErrorCode.APPLICATION_LOCKED, "낸 지원서는 센터가 보완을 요청했을 때만 고칠 수 있어요");
         }
-        long id = row != null ? row.id() : repo.insertDraft(user.id(), round.id(), demo.group());
-        repo.saveForm(id, applicant(req), resume(req), essays(req), Boolean.TRUE.equals(req.pledge()), true,
-                Boolean.TRUE.equals(req.consents().thirdParty()), blankToNull(req.signature()), clock.instant());
-        return view(user, repo.byId(id).orElseThrow());
+        if (repo.saveForm(row.id(), applicant(req), resume(req), essays(req), Boolean.TRUE.equals(req.pledge()), true,
+                Boolean.TRUE.equals(req.consents().thirdParty()), blankToNull(req.signature()), clock.instant()) != 1) {
+            throw new ApiException(ErrorCode.APPLICATION_LOCKED, "낸 지원서는 센터가 보완을 요청했을 때만 고칠 수 있어요");
+        }
+        return view(user, repo.byId(row.id()).orElseThrow());
     }
 
     /** 지원서 지우기(매칭 확정 전까지). 없어도 204. */
     @Transactional
     public void delete(AuthUser user) {
-        repo.byUser(user.id(), rounds.current().id()).ifPresent(r -> {
+        repo.byUserForUpdate(user.id(), rounds.current().id()).ifPresent(r -> {
             if (r.status() == Status.MATCHED) {
                 throw new ApiException(ErrorCode.APPLICATION_LOCKED, "매칭이 확정된 지원서는 지울 수 없어요. 센터에 문의해 주세요");
             }
@@ -119,10 +127,11 @@ public class ApplicationService {
         if (!ApplicationViews.editable(row.status())) {
             throw new ApiException(ErrorCode.APPLICATION_LOCKED, "이미 낸 지원서예요");
         }
-        if (profiles.findSaved(user.id(), user.guest()).isEmpty()) {
+        Optional<SavedProfile> saved = profiles.findSaved(user.id(), user.guest());
+        if (saved.isEmpty()) {
             throw new ApiException(ErrorCode.PROFILE_NOT_FOUND, "학과를 알 수 있게 프로필을 먼저 저장해 주세요");
         }
-        String hash = ApplicationViews.contentHash(row, repo.rankedPlan(user.id()));
+        String hash = ApplicationViews.contentHash(row, liveBasis(user.id(), saved));
         repo.requestApproval(row.id(), ApprovalKind.APPLICATION, ApplicationViews.token(), hash, clock.instant());
         return view(user, row);
     }
@@ -135,7 +144,9 @@ public class ApplicationService {
         if (!ApplicationViews.editable(row.status())) {
             throw new ApiException(ErrorCode.APPLICATION_LOCKED, "이미 낸 지원서예요");
         }
-        if (!period(round, today(demo)).open()) {
+        // 보완 요청을 받은 지원서는 신청 기간이 끝났어도 다시 낸다(센터의 보완 요청에는 날짜 제한이 없어서)
+        boolean resubmit = row.status() == Status.FIX_REQUESTED && row.receiptNo() != null;
+        if (!resubmit && !period(round, today(demo)).open()) {
             throw new ApiException(ErrorCode.APPLICATION_CLOSED, "신청 기간(%s~%s)이 아니에요".formatted(
                     round.recruitStart(), round.recruitEnd()));
         }
@@ -148,10 +159,15 @@ public class ApplicationService {
         SavedProfile p = profiles.findSaved(user.id(), user.guest()).orElseThrow();
         repo.replacePicks(row.id(), view.picks().stream().map(k -> new PickRow(k.rank(), k.jobId(), k.verdict())).toList());
         Instant now = clock.instant();
+        // 체험 학생은 기준일에 낸 것으로 남긴다(낸 날로 마감 여부를 다시 보기 때문에)
+        Instant submittedAt = demo.today() == null ? now
+                : demo.today().atTime(LocalTime.now(clock.withZone(Times.KST))).atZone(Times.KST).toInstant();
         String receipt = row.receiptNo() != null ? row.receiptNo()
                 : repo.nextReceiptNo(round.id(), demo.group(), round.termCode());
-        repo.submit(row.id(), receipt, p.departmentId(), p.grade(), p.completedSemesters(), p.gpa(),
-                p.graduationExpected(), now);
+        if (repo.submit(row.id(), receipt, p.departmentId(), p.grade(), p.completedSemesters(), p.gpa(),
+                p.graduationExpected(), submittedAt, now) != 1) {
+            throw new ApiException(ErrorCode.APPLICATION_LOCKED, "이미 낸 지원서예요");
+        }
         return view(user, repo.byId(row.id()).orElseThrow());
     }
 
@@ -165,8 +181,9 @@ public class ApplicationService {
             Item.SIGNATURE, "본인 서명(이름)을 적어 주세요",
             Item.APPROVAL, "학과(부)장 승인을 받아 주세요(승인 뒤 내용을 바꾸면 다시 받아야 해요)");
 
+    /** 내 지원서(잠금). */
     private Row mine(AuthUser user) {
-        return repo.byUser(user.id(), rounds.current().id())
+        return repo.byUserForUpdate(user.id(), rounds.current().id())
                 .orElseThrow(() -> new ApiException(ErrorCode.APPLICATION_NOT_FOUND, "저장한 지원서가 없어요"));
     }
 
@@ -177,21 +194,21 @@ public class ApplicationService {
         Demo demo = repo.demo(user.id());
         LocalDate asOf = today(demo);
         Status status = row == null ? Status.NONE : row.status();
-        Optional<SavedProfile> saved = profiles.findSaved(user.id(), user.guest());
+        Basis basis;
         List<Pick> picks;
-        List<Integer> pickIds;
-        Academic academic;
         if (ApplicationViews.editable(status)) {
-            pickIds = repo.rankedPlan(user.id());
-            picks = livePicks(round, pickIds, saved, asOf);
-            academic = saved.map(p -> new Academic(p.department(), p.grade(), p.completedSemesters(), p.gpa(),
-                    p.graduationExpected())).orElse(null);
+            Optional<SavedProfile> saved = profiles.findSaved(user.id(), user.guest());
+            basis = liveBasis(user.id(), saved);
+            // 보완 요청 중이면 처음 낸 날에 열려 있던 지망은 그대로 낼 수 있다
+            LocalDate closedAsOf = row != null && row.status() == Status.FIX_REQUESTED && row.submittedAt() != null
+                    && row.submittedAt().toLocalDate().isBefore(asOf) ? row.submittedAt().toLocalDate() : asOf;
+            picks = livePicks(round, basis.picks(), saved, closedAsOf);
         } else {
             List<PickRow> rows = repo.picks(List.of(row.id())).getOrDefault(row.id(), List.of());
-            pickIds = rows.stream().map(PickRow::jobId).toList();
-            picks = ApplicationViews.snapshotPicks(rows, repo.jobs(pickIds), asOf);
-            academic = ApplicationViews.academic(row);
+            basis = ApplicationViews.submittedBasis(row, rows);
+            picks = ApplicationViews.snapshotPicks(rows, repo.jobs(basis.jobIds()), ApplicationViews.submittedOn(row, asOf));
         }
+        Academic academic = basis.academic();
         Applicant applicant = row == null ? new Applicant(null, null, null, null, null, demo.email(), null, null, null)
                 : row.applicant();
         Resume resume = row == null ? Resume.EMPTY : row.resume();
@@ -201,11 +218,10 @@ public class ApplicationService {
         boolean third = row != null && row.consentThirdParty();
         String signature = row == null ? null : row.signature();
         ApprovalRow approvalRow = row == null ? null : repo.approval(row.id(), ApprovalKind.APPLICATION).orElse(null);
-        String hash = row == null ? null : ApplicationViews.contentHash(row, pickIds);
+        String hash = row == null ? null : ApplicationViews.contentHash(row, basis);
         Approval approval = ApplicationViews.approval(approvalRow, hash, true);
-        boolean hasProfile = ApplicationViews.editable(status) ? saved.isPresent() : academic != null;
-        List<Check> checklist = ApplicationViews.checklist(hasProfile, picks, applicant, pledge, essays, collect, third,
-                signature, approval.status(), props.essayMinChars());
+        List<Check> checklist = ApplicationViews.checklist(academic != null, picks, applicant, pledge, essays, collect,
+                third, signature, approval.status(), props.essayMinChars());
         return new Application(row == null ? null : row.id(), status, row == null ? null : row.receiptNo(),
                 row != null && row.virtual(), new RoundRef(round.id(), round.termCode()), asOf, period(round, asOf),
                 applicant, academic, picks, resume, essays,
@@ -216,9 +232,29 @@ public class ApplicationService {
                 row == null ? null : row.submittedAt(), row == null ? null : row.receivedAt());
     }
 
-    /** 담은 직무 순위 → 1~3지망(저장한 프로필로 판정, 없으면 verdict null). */
-    private List<Pick> livePicks(CurrentRound round, List<Integer> jobIds, Optional<SavedProfile> saved, LocalDate asOf) {
-        if (jobIds.isEmpty()) {
+    /** 고칠 수 있는 지원서의 지망·학적: 담은 직무 순위와 저장한 프로필. */
+    private Basis liveBasis(long userId, Optional<SavedProfile> saved) {
+        return new Basis(repo.rankedPlan(userId), saved.map(ApplicationService::academic).orElse(null));
+    }
+
+    /**
+     * 승인 해시에 쓰는 지망·학적. 학생 화면·승인 화면(#42)·센터 화면·타임라인이 모두 이것을 쓴다.
+     * 고칠 수 있으면 담은 순위·저장한 프로필, 낸 뒤면 낸 지망·고정한 학적. 가상 지원자(계정 없음)는 늘 낸 뒤 값이다.
+     */
+    Basis basis(Row row) {
+        if (!ApplicationViews.editable(row.status()) || row.userId() == null) {
+            return ApplicationViews.submittedBasis(row, repo.picks(List.of(row.id())).getOrDefault(row.id(), List.of()));
+        }
+        return liveBasis(row.userId(), profiles.findSaved(row.userId(), false));
+    }
+
+    static Academic academic(SavedProfile p) {
+        return new Academic(p.department(), p.grade(), p.completedSemesters(), p.gpa(), p.graduationExpected());
+    }
+
+    /** 담은 직무 순위 → 1~3지망(순위 값 그대로, 저장한 프로필로 판정, 없으면 verdict null). */
+    private List<Pick> livePicks(CurrentRound round, List<RankedJob> ranked, Optional<SavedProfile> saved, LocalDate asOf) {
+        if (ranked.isEmpty()) {
             return List.of();
         }
         Map<Integer, Verdict> verdicts = new HashMap<>();
@@ -226,12 +262,14 @@ public class ApplicationService {
                         p.completedSemesters(), p.gpa(), p.graduationExpected(), p.interestText(), p.homeAreaCode(),
                         p.certificates()))
                 .forEach(j -> verdicts.put(j.requirement().jobId(), j.result().verdict())));
-        Map<Integer, JobInfo> jobs = repo.jobs(jobIds);
+        Map<Integer, JobInfo> jobs = repo.jobs(ranked.stream().map(RankedJob::jobId).toList());
         List<Pick> out = new ArrayList<>();
-        for (int i = 0; i < jobIds.size(); i++) {
-            JobInfo j = jobs.get(jobIds.get(i));
-            out.add(new Pick(i + 1, j.id(), j.title(), j.team(), j.institution(), verdicts.get(j.id()),
-                    ApplicationViews.closed(j, asOf)));
+        for (RankedJob r : ranked) {
+            JobInfo j = jobs.get(r.jobId());
+            if (j != null) {
+                out.add(new Pick(r.rank(), j.id(), j.title(), j.team(), j.institution(), verdicts.get(j.id()),
+                        ApplicationViews.closed(j, asOf)));
+            }
         }
         return out;
     }
@@ -283,10 +321,8 @@ public class ApplicationService {
     }
 
     /** 승인 상태만(타임라인용). */
-    ApprovalStatus approvalStatus(Row row, long userId) {
-        List<Integer> ids = ApplicationViews.editable(row.status()) ? repo.rankedPlan(userId)
-                : repo.picks(List.of(row.id())).getOrDefault(row.id(), List.of()).stream().map(PickRow::jobId).toList();
+    ApprovalStatus approvalStatus(Row row) {
         return ApplicationViews.approvalStatus(repo.approval(row.id(), ApprovalKind.APPLICATION).orElse(null),
-                ApplicationViews.contentHash(row, ids));
+                ApplicationViews.contentHash(row, basis(row)));
     }
 }

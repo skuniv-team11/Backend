@@ -2,6 +2,7 @@ package kr.ac.skuniv.coopradar.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -25,6 +26,8 @@ public class CorsConfig implements WebMvcConfigurer {
                 .allowedOriginPatterns(allowedOriginPatterns)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
+                // 다른 출처의 JS가 읽게: 429의 기다릴 초, CSV 파일 이름
+                .exposedHeaders(HttpHeaders.RETRY_AFTER, HttpHeaders.CONTENT_DISPOSITION)
                 .maxAge(3600);
     }
 }

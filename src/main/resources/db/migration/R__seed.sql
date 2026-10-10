@@ -2,7 +2,7 @@
 -- 만드는 법: python pipeline/seed/build_seed.py ... · ncs_seed.py ... → python pipeline/seed/to_sql.py (pipeline/seed/README.md)
 -- seed.json sha256: 97f945213d13dc38463dd1d9d12b62987f5c357dd2f106b229c61ca453d44807
 -- ncs.json sha256: d9ce3779ce9fd49e53a1c777ec145ebb5af78acc731f2f36e1442dd600f02147
--- body sha256: 0e550e9a8bef4b4e05ed547a70f1066b158a6d733a3cfe33698c03eeaf336640
+-- body sha256: 6213052ddd9de530efa23046353ad747abf6b9a75fabb806b60faed74eb1f29b
 
 -- 1. 자식 테이블은 통째로 지운다(다시 넣는다)
 DELETE FROM round_stage;
@@ -24,12 +24,13 @@ DELETE FROM major_alias;
 DELETE FROM department_cluster_member;
 DELETE FROM department_cluster;
 
--- 2. 부모 테이블: seed에 없는 행을 지운다(job → plan_item cascade). 학생 프로필이 쓰는 학과는 남긴다
+-- 2. 부모 테이블: seed에 없는 행을 지운다(job → plan_item cascade). 학생 프로필·지원서(가상 지원자 포함)가 쓰는 학과는 남긴다
 DELETE FROM job WHERE id NOT IN (101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140);
 DELETE FROM workplace WHERE id NOT IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18);
 DELETE FROM institution WHERE id NOT IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18);
 DELETE FROM department d WHERE d.id NOT IN (1, 2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 47, 48, 49, 50, 51, 53, 54, 56, 57, 58, 59, 60, 62, 64, 65, 66, 67, 68, 69, 70, 71)
-  AND NOT EXISTS (SELECT 1 FROM student_profile sp WHERE sp.department_id = d.id);
+  AND NOT EXISTS (SELECT 1 FROM student_profile sp WHERE sp.department_id = d.id)
+  AND NOT EXISTS (SELECT 1 FROM application ap WHERE ap.department_id = d.id);
 DELETE FROM area a WHERE a.code NOT IN ('11110', '11140', '11170', '11200', '11215', '11230', '11260', '11290', '11305', '11320', '11350', '11380', '11410', '11440', '11470', '11500', '11530', '11545', '11560', '11590', '11620', '11650', '11680', '11710', '11740', '28125', '28155', '28177', '28185', '28200', '28237', '28245', '28275', '28290', '28710', '28720', '41111', '41113', '41115', '41117', '41131', '41133', '41135', '41150', '41171', '41173', '41192', '41194', '41196', '41210', '41220', '41250', '41271', '41273', '41281', '41285', '41287', '41290', '41310', '41360', '41370', '41390', '41410', '41430', '41450', '41461', '41463', '41465', '41480', '41500', '41550', '41570', '41591', '41593', '41595', '41597', '41610', '41630', '41650', '41670', '41800', '41820', '41830')
   AND NOT EXISTS (SELECT 1 FROM student_profile sp WHERE sp.home_area_code = a.code);
 -- NCS: seed에 없는 능력단위·세분류·직업(커리어 리포트의 그 단위 줄은 cascade로 빠진다)

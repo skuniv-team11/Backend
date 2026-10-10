@@ -102,13 +102,27 @@ def edit_distance(a, b):
     return prev[-1]
 
 
+# 뜻을 바꾸는 말(부정·있고 없음·여부·오전 오후). 한쪽에만 있거나 수가 다르면 표기 차이가 아니다(10/10 리뷰:
+# '가능'↔'불가능', '필수'↔'필수 아님', '제공'↔'미제공', '없음'↔'있음', '오전'↔'오후'가 모두 표기 차이로 지워졌다)
+MEANING = re.compile(r"불|미|비|무|아님|않|안\s|없|있|못|금지|제외|필수|선택|가능|오전|오후")
+# 목록을 잇는 표시. 수가 다르면 항목이 늘거나 준 것이다('경영학과' ↔ '경영학과, 경제학과')
+LIST_SEP = re.compile(r"[,、/·]|및|와\s|과\s")
+
+
 def trivial_difference(a, b):
-    """두 원문이 표기만 다른가(ADR-0030). 띄어쓰기·문장부호·끝의 '외/등'만 다름, 한쪽이 다른 쪽을 품음,
-    글자 한두 개 차이(짧은 쪽 길이의 15% 이하)면 True. 숫자가 하나라도 다르면 False(날짜·금액·코드는 표기 차이가 아니다)."""
+    """두 원문이 표기만 다른가(ADR-0030). 띄어쓰기·문장부호·끝의 '외/등'만 다름, 한쪽이 다른 쪽을 품음(업종 앞의 '응용' 같은
+    덧붙임), 글자 한두 개 차이(짧은 쪽 길이의 15% 이하)면 True. 숫자가 하나라도 다르거나, 뜻을 바꾸는 말(MEANING)이나 목록
+    표시(LIST_SEP)의 수가 다르면 False."""
     x, y = notation(a), notation(b)
     if not x or not y or re.findall(r"\d+", x) != re.findall(r"\d+", y):
         return False
-    if x == y or x in y or y in x:
+    if x == y:
+        return True
+    if sorted(MEANING.findall(a or "")) != sorted(MEANING.findall(b or "")):
+        return False
+    if len(LIST_SEP.findall(a or "")) != len(LIST_SEP.findall(b or "")):
+        return False
+    if x in y or y in x:
         return True
     return edit_distance(x, y) <= max(1, min(2, int(min(len(x), len(y)) * 0.15)))
 
@@ -166,6 +180,17 @@ def list_period(cell, year):
 def plan_period(s):
     ds = [dt.date(int(y), int(mo), int(d)) for y, mo, d in re.findall(r"(\d{4})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일", s or "")]
     return (ds[0], ds[1]) if len(ds) >= 2 else (None, None)
+
+
+def period_year_typo(start, end):
+    """종료일이 시작일보다 앞이고 연도만 시작일 연도로 바꾸면 앞뒤가 맞으면 고친 종료일, 아니면 None."""
+    if not start or not end or end >= start:
+        return None
+    try:
+        fixed = end.replace(year=start.year)
+    except ValueError:   # 2월 29일
+        return None
+    return fixed if fixed >= start else None
 
 
 def list_hours(cell):
@@ -717,9 +742,11 @@ def build(a):
             if p_st and p_st != stipend:
                 mismatch("stipendAmount", "stipend_amount", "실습지원비", f"{stipend:,}원", f"{p_st:,}원")
             p_start, p_end = plan_period(g("period"))
-            if p_start and p_end and p_end < p_start:
-                # 계획서 값이 스스로 말이 안 되는 오타(종료일이 시작일보다 앞). 리스트 값을 쓰고 알림은 만들지 않는다(ADR-0030)
-                dropped_alerts.append({"기관": inst_key, "kind": "LIST_MISMATCH", "why": "계획서 실습기간 오타(종료일 < 시작일)",
+            fixed_end = period_year_typo(p_start, p_end)
+            if fixed_end and (p_start, fixed_end) == (l_start, l_end):
+                # 계획서 종료일의 연도만 틀린 오타(종료일이 시작일보다 앞, 연도를 고치면 리스트와 같음).
+                # 리스트 값을 쓰고 알림은 만들지 않는다(ADR-0030). 연도를 고쳐도 날짜가 다르면 아래에서 알린다
+                dropped_alerts.append({"기관": inst_key, "kind": "LIST_MISMATCH", "why": "계획서 실습기간 연도 오타(종료일 < 시작일)",
                                        "a": text(pj["period"]["quote"]), "b": f"{l_start}~{l_end}"})
             elif p_start and (p_start, p_end) != (l_start, l_end):
                 mismatch("period", "period", "실습기간", f"{l_start}~{l_end}", f"{p_start}~{p_end}")

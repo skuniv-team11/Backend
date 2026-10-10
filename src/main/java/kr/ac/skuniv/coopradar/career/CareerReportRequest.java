@@ -1,5 +1,6 @@
 package kr.ac.skuniv.coopradar.career;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -11,6 +12,6 @@ import jakarta.validation.constraints.Size;
  */
 public record CareerReportRequest(
         @NotNull(message = "필수예요") Integer jobId,
-        @NotNull(message = "필수예요") @Size(min = 100, max = 3000, message = "100~3,000자") String practiceText,
+        @NotBlank(message = "필수예요") @Size(min = 100, max = 3000, message = "100~3,000자") String practiceText,
         Boolean consent) {
 }

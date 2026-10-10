@@ -15,6 +15,9 @@ import kr.ac.skuniv.coopradar.career.CareerDtos.Unit;
 import kr.ac.skuniv.coopradar.common.Times;
 import kr.ac.skuniv.coopradar.explore.ExploreDtos.Fallback;
 import kr.ac.skuniv.coopradar.job.InstitutionRef;
+import kr.ac.skuniv.coopradar.common.AccountLock;
+import kr.ac.skuniv.coopradar.common.ApiException;
+import kr.ac.skuniv.coopradar.common.ErrorCode;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -167,6 +170,10 @@ public class CareerRepository {
     @Transactional
     public Saved replace(long userId, int jobId, String subcategory, String practiceText, Source source, Fallback fallback,
                          String model, String promptVersion, Map<String, String[]> covered) {
+        // 같은 계정이 두 번 겹쳐 보내도 차례로 바꾸게 계정 행을 잠근다
+        if (!AccountLock.lock(db, userId)) {
+            throw new ApiException(ErrorCode.AUTH_REQUIRED, "계정이 없어요. 다시 로그인해 주세요");
+        }
         db.sql("DELETE FROM career_report WHERE user_id = :user").param("user", userId).update();
         Saved saved = db.sql("""
                         INSERT INTO career_report (user_id, job_id, subcategory_code, practice_text, source, fallback_reason,

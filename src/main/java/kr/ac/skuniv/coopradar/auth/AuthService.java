@@ -71,6 +71,10 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public TokenResponse login(String email, String password) {
+        if (password.getBytes(StandardCharsets.UTF_8).length > MAX_PASSWORD_BYTES) {
+            // 가입할 때 막는 길이라 맞는 계정이 있을 수 없다(BCrypt는 72바이트를 넘으면 비교하지 못한다)
+            throw new ApiException(ErrorCode.LOGIN_FAILED, "이메일 또는 비밀번호가 맞지 않아요");
+        }
         var found = users.findCredentials(normalize(email));
         boolean ok = encoder.matches(password, found.map(UserRepository.Credentials::passwordHash).orElse(dummyHash))
                 && found.isPresent();
@@ -78,11 +82,6 @@ public class AuthService {
             throw new ApiException(ErrorCode.LOGIN_FAILED, "이메일 또는 비밀번호가 맞지 않아요");
         }
         return memberToken(found.get().id());
-    }
-
-    @Transactional
-    public GuestTokenResponse guest(Role role, String clientIp) {
-        return guest(role, null, null, clientIp);
     }
 
     /** 체험 계정 + 체험 묶음(ADR-0033). 학생은 예시 프로필을 저장한 뒤 시점(stage)에 맞는 기준일·지난 기록을 받는다. */
@@ -110,14 +109,14 @@ public class AuthService {
         }
         Demo demo = demos.join(id, role == Role.STUDENT, stage, demoGroup, expiresAt);
         UserView user = UserView.of(users.findAccount(id).orElseThrow());
-        return new GuestTokenResponse(jwt.issue(id, role, true, expiresAt), TOKEN_TYPE, Times.kst(expiresAt), user, profile,
+        return new GuestTokenResponse(jwt.issue(id, role, true, expiresAt, users.accountStamp(id)), TOKEN_TYPE, Times.kst(expiresAt), user, profile,
                 demo.group(), demo.today());
     }
 
     private TokenResponse memberToken(long id) {
         Instant expiresAt = clock.instant().plus(props.memberTtl());
         UserView user = UserView.of(users.findAccount(id).orElseThrow());
-        return new TokenResponse(jwt.issue(id, user.role(), false, expiresAt), TOKEN_TYPE, Times.kst(expiresAt), user);
+        return new TokenResponse(jwt.issue(id, user.role(), false, expiresAt, users.accountStamp(id)), TOKEN_TYPE, Times.kst(expiresAt), user);
     }
 
     private static String normalize(String email) {

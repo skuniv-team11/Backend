@@ -124,6 +124,20 @@ class ToSqlTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             to_sql.build(text, text)   # 같은 테이블이 두 파일에 있으면 실패
 
+    def test_직무마다_NCS_세분류가_하나씩_없으면_멈춘다(self):
+        seed = json.dumps({"job": [{"id": 101}, {"id": 102}]})
+        with self.assertRaises(ValueError):
+            to_sql.build(seed, json.dumps({"job_ncs": [{"job_id": 101, "subcategory_code": "02010301", "note": None}]}))
+        with self.assertRaises(ValueError):
+            to_sql.build(seed, json.dumps({"job_ncs": [{"job_id": j, "subcategory_code": "02010301", "note": None}
+                                                       for j in (101, 102, 102)]}))
+
+    def test_학생_프로필이나_지원서가_쓰는_학과는_지우지_않는다(self):
+        sql = to_sql.render({})
+        delete = next(line for line in sql.split(";") if "DELETE FROM department d" in line)
+        self.assertIn("student_profile", delete)
+        self.assertIn("application ap", delete)
+
 
 class NormalizeTest(unittest.TestCase):
     def test_접수마감은_그날_안의_시각이면_다음_날부터_0시면_그날부터_지원_불가(self):
@@ -208,6 +222,18 @@ class AlertNotationTest(unittest.TestCase):
         self.assertFalse(b.trivial_difference("한국표준산업분류코드 743002", "한국표준산업분류코드 71310"))
         self.assertFalse(b.trivial_difference("2026년 9월 1일 ~ 2026년 12월 12일", "* 15~16주차: 제작한 콘텐츠"))
         self.assertFalse(b.trivial_difference("[1,700,000]원", "1,617,660원"))
+
+    def test_부정_반대말_목록이_늘어난_것은_표기_차이가_아니다(self):
+        # 10/10 리뷰: 아래가 모두 표기 차이로 지워졌다
+        for a, c in [("재택근무 가능", "재택근무 불가능"), ("포트폴리오 필수", "포트폴리오 필수 아님"), ("중식 제공", "중식 미제공"),
+                     ("주말 근무 없음", "주말 근무 있음"), ("오전 근무", "오후 근무"), ("경영학과", "경영학과, 경제학과")]:
+            self.assertFalse(b.trivial_difference(a, c), (a, c))
+
+    def test_실습기간_종료_연도_오타만_고친다(self):
+        d = dt.date
+        self.assertEqual(b.period_year_typo(d(2026, 9, 1), d(2025, 12, 12)), d(2026, 12, 12))
+        self.assertIsNone(b.period_year_typo(d(2026, 9, 1), d(2026, 12, 12)))
+        self.assertIsNone(b.period_year_typo(d(2026, 9, 1), d(2025, 8, 1)))   # 연도를 고쳐도 앞뒤가 안 맞음
 
     def test_뜻이_다른_전공은_표기_차이가_아니다(self):
         self.assertFalse(b.trivial_difference("컴퓨터공학 전공 학생들이 실제 산업 현장에서", "소프트웨어학과"))

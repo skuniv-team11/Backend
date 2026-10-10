@@ -23,10 +23,18 @@ public final class ExploreText {
 
     public static final String MASK = "[가림]";
     private static final Pattern EMAIL = Pattern.compile("[\\w.+-]+@[\\w-]+(?:\\.[\\w-]+)+");
-    private static final Pattern PHONE = Pattern.compile("(?<!\\d)0\\d{1,2}[-.\\s]?\\d{3,4}[-.\\s]?\\d{4}(?!\\d)");
-    private static final Pattern LONG_NUMBER = Pattern.compile("(?<!\\d)\\d{8,10}(?!\\d)");
+    /** 휴대전화·유선: 010-1234-5678 · 010 - 1234 - 5678 · 010–1234–5678 · +82 10-1234-5678 · +821012345678. */
+    private static final Pattern PHONE = Pattern.compile(
+            "(?<![\\d+])(?:\\+\\s*82[\\s.\\-–—]*0?|0)\\d{1,2}\\s*[\\-.–—]?\\s*\\d{3,4}\\s*[\\-.–—]?\\s*\\d{4}(?!\\d)");
+    /** 주민등록번호 꼴(앞 6자리 - 뒤 7자리). */
+    private static final Pattern RESIDENT_NUMBER = Pattern.compile("(?<!\\d)\\d{6}\\s*[\\-–—]\\s*[1-8]\\d{6}(?!\\d)");
+    /** 학번 등 긴 숫자: 8~10자리, 하이픈 학번(2023-301234). */
+    private static final Pattern LONG_NUMBER = Pattern.compile("(?<!\\d)(?:\\d{8,10}|\\d{4}\\s*[\\-–—]\\s*\\d{5,6})(?!\\d)");
     /** 대조할 때 무시하는 글자: 띄어쓰기·따옴표·가운뎃점·글머리표·줄표. */
     private static final Pattern NOISE = Pattern.compile("[\\s\"'“”‘’·•*\\-–—]+");
+    private static final Pattern NOISE_CHAR = Pattern.compile("[\\s\"'“”‘’·•*\\-–—]");
+    /** 대조 열쇠(무시하는 글자를 뺀 구절)의 최소 길이. 프롬프트는 10자 이상을 요구한다(10/10 리뷰: 3~4자 구절은 근거가 못 된다). */
+    public static final int KEY_MIN = 6;
     private static final Pattern TRAILING_PUNCT = Pattern.compile("[.,!?~…]+$");
     private static final Pattern INLINE_BULLET = Pattern.compile("\\s*[*•▪]\\s*|\\s+[/\\-]\\s+|\\s+\\d{1,2}\\.\\s+");
     private static final Pattern NUMBERED = Pattern.compile("\\s+\\d{1,2}\\.\\s+");
@@ -45,20 +53,67 @@ public final class ExploreText {
     private ExploreText() {
     }
 
-    /** 학생 글 하나를 가리고 앞뒤·가운데 공백을 정리한다. */
+    /** 학생 글 하나를 가리고 앞뒤·가운데 공백을 정리한다(줄바꿈도 공백 하나로). */
     public static String mask(String s) {
         if (s == null) {
             return null;
         }
-        String t = EMAIL.matcher(s).replaceAll(MASK);
+        return hide(s).strip().replaceAll("\\s+", " ");
+    }
+
+    /**
+     * 여러 줄 글(수행결과보고서 '실습 내용')을 줄마다 가리고, 줄바꿈은 남긴다. 빈 줄은 뺀다.
+     * 구절 대조가 '한 줄(문장) 안'이라 줄이 합쳐지면 안 된다(ADR-0032).
+     */
+    public static String maskLines(String s) {
+        if (s == null) {
+            return null;
+        }
+        List<String> lines = new ArrayList<>();
+        for (String line : hide(s).split("\\R")) {
+            String t = line.strip().replaceAll("\\h+", " ");
+            if (!t.isEmpty()) {
+                lines.add(t);
+            }
+        }
+        return String.join("\n", lines);
+    }
+
+    /** 가리고 NUL 문자를 지운다(Postgres text가 받지 않아 저장 단계에서 실패하지 않게 — AI 호출 전에 지운다). */
+    private static String hide(String s) {
+        String t = EMAIL.matcher(s.replace("\0", "")).replaceAll(MASK);
+        t = RESIDENT_NUMBER.matcher(t).replaceAll(MASK);
         t = PHONE.matcher(t).replaceAll(MASK);
-        t = LONG_NUMBER.matcher(t).replaceAll(MASK);
-        return t.strip().replaceAll("\\s+", " ");
+        return LONG_NUMBER.matcher(t).replaceAll(MASK);
     }
 
     /** 대조용: 무시하는 글자를 지운다. 구절이면 끝 문장부호도 뗀다. */
     public static String squash(String s) {
         return s == null ? "" : NOISE.matcher(s).replaceAll("");
+    }
+
+    /**
+     * 원문 조각 안에서 대조 열쇠가 든 구간을 원문 그대로 돌려준다. 화면에는 AI가 쓴 문자열이 아니라 이 구간을 낸다
+     * (AI가 띄어쓰기·따옴표를 바꿔도 '원문 그대로'가 되게, 10/10 리뷰).
+     */
+    public static java.util.Optional<String> slice(String piece, String key) {
+        if (piece == null || key == null || key.isEmpty()) {
+            return java.util.Optional.empty();
+        }
+        StringBuilder kept = new StringBuilder();
+        int[] at = new int[piece.length()];
+        for (int i = 0; i < piece.length(); i++) {
+            char c = piece.charAt(i);
+            if (!NOISE_CHAR.matcher(String.valueOf(c)).matches()) {
+                at[kept.length()] = i;
+                kept.append(c);
+            }
+        }
+        int k = kept.indexOf(key);
+        if (k < 0) {
+            return java.util.Optional.empty();
+        }
+        return java.util.Optional.of(piece.substring(at[k], at[k + key.length() - 1] + 1).strip());
     }
 
     public static String squashQuote(String q) {

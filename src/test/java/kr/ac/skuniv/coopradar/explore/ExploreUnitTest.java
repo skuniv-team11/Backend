@@ -29,6 +29,28 @@ class ExploreUnitTest {
     }
 
     @Test
+    void 번호를_띄우거나_국가번호를_붙이거나_다른_줄표를_써도_가린다() {
+        // 10/10 리뷰에서 그대로 남던 모양들
+        for (String v : List.of("+82 10-1234-5678", "+821012345678", "010 - 1234 - 5678", "010–1234–5678",
+                "010.1234.5678", "02-123-4567", "030101-3234567", "030101 - 4234567", "2023-301234", "20231234")) {
+            assertThat(ExploreText.mask("연락은 " + v + " 로 주세요")).as(v).isEqualTo("연락은 [가림] 로 주세요");
+        }
+        // 숫자가 들어간 보통 글은 그대로
+        assertThat(ExploreText.mask("2024년 3월부터 12개월 동안 게시물 120개를 올렸어요"))
+                .isEqualTo("2024년 3월부터 12개월 동안 게시물 120개를 올렸어요");
+        // NUL 문자는 지운다(DB에 넣지 못해서)
+        assertThat(ExploreText.mask("운영\0했어요")).isEqualTo("운영했어요");
+    }
+
+    @Test
+    void 대조를_통과한_구절은_원문_그대로_돌려준다() {
+        Student s = new Student(List.of("인스타그램 계정을 1년 동안 운영했어요."), List.of(), null);
+        assertThat(ExploreVerifier.studentQuote("“인스타그램 계정을 1년동안”", s)).contains("인스타그램 계정을 1년 동안");
+        // 무시하는 글자를 뺀 열쇠가 6자보다 짧으면 근거가 못 된다
+        assertThat(ExploreVerifier.studentQuote("운영했어요.", s)).isEmpty();
+    }
+
+    @Test
     void 카드는_하는_일_항목만_원문_그대로_기관_이름은_회사() {
         assertThat(ExploreText.cardTexts(DOC)).containsExactly("회사 브랜드 콘텐츠 제작 및 레퍼런스 서치",
                 "자사 SNS 채널 콘텐츠 운영 및 홍보 마케팅 업무 지원");

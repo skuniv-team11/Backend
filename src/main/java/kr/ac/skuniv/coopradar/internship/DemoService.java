@@ -126,7 +126,7 @@ public class DemoService {
     @Transactional
     public InternshipDtos.Demo join(long userId, boolean student, GuestStage stage, UUID requested, Instant expiresAt) {
         UUID group = requested != null ? requested : UUID.randomUUID();
-        if (repo.upsertGroup(group, expiresAt)) {
+        if (repo.upsertGroup(group, expiresAt, clock.instant())) {
             seedVirtualApplicants(group);
         }
         GuestStage s = stage == null ? GuestStage.APPLYING : stage;
@@ -142,8 +142,9 @@ public class DemoService {
         CurrentRound round = rounds.current();
         for (Virtual v : TEMPLATE.applicants()) {
             Integer dep = repo.departmentId(v.department()).orElse(null);
-            if (dep == null) {
-                log.warn("가상 지원자 학과가 시드에 없어 넣지 않습니다: {}", v.department());
+            List<Integer> picks = repo.existingJobs(v.picks());
+            if (dep == null || picks.isEmpty()) {
+                log.warn("가상 지원자 학과·지망 직무가 시드에 없어 넣지 않습니다: {}", v.receiptNo());
                 continue;
             }
             boolean grad = Boolean.TRUE.equals(v.graduationExpected());
@@ -154,9 +155,9 @@ public class DemoService {
             Instant received = v.status() == Status.RECEIVED ? at(v.submittedOn().plusDays(1), 10) : null;
             long id = repo.insertDemo(round.id(), null, group, v.status(), v.receiptNo(), a, dep, v.grade(), v.semesters(),
                     v.gpa(), grad, Resume.EMPTY, VIRTUAL_ESSAYS, v.name(), v.counsel(), v.fixReason(), submitted, received);
-            repo.replacePicks(id, verdictPicks(round, v.picks(), new ProfileInput(dep, v.grade(), v.semesters(), v.gpa(),
+            repo.replacePicks(id, verdictPicks(round, picks, new ProfileInput(dep, v.grade(), v.semesters(), v.gpa(),
                     grad, null, null, null)));
-            approveDemo(id, v.picks(), submitted);
+            approveDemo(id, submitted);
         }
     }
 
@@ -174,11 +175,17 @@ public class DemoService {
             log.warn("예시 프로필이 없어 체험 학생 지난 기록을 넣지 않습니다");
             return;
         }
-        Instant added = at(LocalDate.of(2026, 7, 20), 20);
-        for (int i = 0; i < t.picks().size(); i++) {
-            repo.insertPlanItem(userId, t.picks().get(i), i + 1, added.plusSeconds(i));
+        // 시드에서 빠진 직무는 건너뛴다(순위는 남은 것끼리 1부터)
+        List<Integer> picks = repo.existingJobs(t.picks());
+        if (picks.isEmpty()) {
+            log.warn("체험 학생 지망 직무가 시드에 없어 지난 기록을 넣지 않습니다");
+            return;
         }
-        if (t.candidate() != null) {
+        Instant added = at(LocalDate.of(2026, 7, 20), 20);
+        for (int i = 0; i < picks.size(); i++) {
+            repo.insertPlanItem(userId, picks.get(i), i + 1, added.plusSeconds(i));
+        }
+        if (t.candidate() != null && !repo.existingJobs(List.of(t.candidate())).isEmpty()) {
             repo.insertPlanItem(userId, t.candidate(), null, added.plusSeconds(10));
         }
         Applicant a = new Applicant(t.name(), t.nameEn(), t.birthDate(), t.gender(), t.phone(), null, t.address(),
@@ -188,10 +195,10 @@ public class DemoService {
         long id = repo.insertDemo(round.id(), userId, group, Status.SUBMITTED, receipt, a, p.departmentId(), p.grade(),
                 p.completedSemesters(), p.gpa(), p.graduationExpected(), t.resume(), t.essays(), t.name(), 0, null,
                 submitted, null);
-        repo.replacePicks(id, verdictPicks(round, t.picks(), new ProfileInput(p.departmentId(), p.grade(),
+        repo.replacePicks(id, verdictPicks(round, picks, new ProfileInput(p.departmentId(), p.grade(),
                 p.completedSemesters(), p.gpa(), p.graduationExpected(), p.interestText(), p.homeAreaCode(),
                 p.certificates())));
-        approveDemo(id, t.picks(), submitted.minusSeconds(3600));
+        approveDemo(id, submitted.minusSeconds(3600));
         repo.receiveAt(id, at(t.submittedOn().plusDays(1), 10));
         repo.setPlacementDirect(id, 1, MATCHED_AT, t.interview(), t.mode(), t.result(), NOTIFIED_AT);
         if (stage == GuestStage.DONE) {
@@ -209,10 +216,12 @@ public class DemoService {
         return out;
     }
 
-    private void approveDemo(long id, List<Integer> pickIds, Instant at) {
+    /** 낸 지원서(지망을 넣은 뒤)를 승인된 상태로. 해시는 화면과 같은 값(낸 지망·학적)이다. */
+    private void approveDemo(long id, Instant at) {
         Row row = repo.byId(id).orElseThrow();
+        var basis = ApplicationViews.submittedBasis(row, repo.picks(List.of(id)).getOrDefault(id, List.of()));
         repo.insertApproved(id, ApprovalKind.APPLICATION, ApplicationViews.token(),
-                ApplicationViews.contentHash(row, pickIds), at.minusSeconds(3600), at.minusSeconds(600));
+                ApplicationViews.contentHash(row, basis), at.minusSeconds(3600), at.minusSeconds(600));
     }
 
     private void closeDemo(long id, Close c, Instant at) {

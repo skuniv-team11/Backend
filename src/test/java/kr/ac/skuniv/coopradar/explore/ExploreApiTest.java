@@ -120,6 +120,9 @@ class ExploreApiTest {
     @Autowired
     MockMvc mvc;
 
+    @Autowired
+    org.springframework.jdbc.core.simple.JdbcClient db;
+
     @BeforeEach
     void 초기화() {
         AVAILABLE.set(true);
@@ -272,7 +275,11 @@ class ExploreApiTest {
         assertThat(jobs).isNotEmpty().allSatisfy(j -> assertThat(CANDIDATES).contains(j));
         assertThat(JsonPath.<List<Object>>read(body, "$.items[*].evidence.studentQuote")).containsOnlyNulls();
         assertThat(JsonPath.<List<Object>>read(body, "$.items[*].why")).containsOnlyNulls();
-        assertThat(JsonPath.<String>read(body, "$.items[0].evidence.reason")).endsWith("요.");
+        // 학년·평점·학과가 든 #15 문장은 저장하지 않는다(ADR-0008)
+        assertThat(JsonPath.<List<String>>read(body, "$.items[*].evidence.reason"))
+                .containsOnly(ExploreService.RULE_REASON);
+        assertThat(db.sql("SELECT count(*) FROM explore_item WHERE reason ~ '학년|평점|학과'").query(Long.class).single())
+                .isZero();
         assertThat(WHY_CALLS.get()).isZero();
 
         NEXT_RANK.set(Optional.of(new RankDraft(List.of(new RankedJob(122, "지어낸 경험이에요 정말로", JOB_QUOTE.get(122),
@@ -285,6 +292,22 @@ class ExploreApiTest {
         // 키가 없으면 '왜 맞나요'도 만들지 않는다(200 + why null)
         why(token, 122).andExpect(status().isOk()).andExpect(jsonPath("$.why").isEmpty())
                 .andExpect(jsonPath("$.fallbackReason").value("NO_KEY"));
+    }
+
+    @Test
+    void 설명_AI가_실패하면_탐색은_그대로_주고_그_자리_설명만_비운다() throws Exception {
+        String token = guestToken("STUDENT");
+        NEXT_RANK.set(Optional.of(goodRanking()));
+        WHY_FAILS.set(true);
+        String body = explore(token, List.of(EXP1), List.of(), true)
+                .andExpect(status().isOk()).andExpect(jsonPath("$.source").value("AI"))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<List<Object>>read(body, "$.items[*].why")).containsOnlyNulls();
+        why(token, 122).andExpect(status().isOk()).andExpect(jsonPath("$.why").isEmpty())
+                .andExpect(jsonPath("$.fallbackReason").value("AI_ERROR"));
+        // 다시 열면 그때 만든다
+        WHY_FAILS.set(false);
+        why(token, 122).andExpect(status().isOk()).andExpect(jsonPath("$.why.summary").isNotEmpty());
     }
 
     @Test
@@ -326,6 +349,9 @@ class ExploreApiTest {
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.fields[0].field").value("cardIds"));
         explore(token, List.of(EXP1), List.of("122-1", "122-1", "123-1"), true)
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.fields[0].field").value("cardIds"));
+        // 모양이 틀린 카드 id('-' 없음)는 본문 검증에서 400
+        explore(token, List.of(EXP1), List.of("122", "122-1", "123-1"), true)
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.fields[0].field").value("cardIds[0]"));
         explore(token, List.of("너무 짧아요"), List.of(), true)
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.fields[0].field").value("experiences[0]"));
         assertThat(RANK_CALLS.get()).isZero();
