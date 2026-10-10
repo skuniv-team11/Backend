@@ -23,7 +23,7 @@ public class CenterRepository {
      * 전공 무관이면 전체 재학생 수다. 확정 안 된 표기(DRAFT)는 0으로 센다.
      */
     record JobRow(int id, InstitutionRef institution, String title, int headcount, int eligiblePool, String portfolio,
-                  String certificate, String certificateText, List<String> weekdays) {
+                  String certificate, String certificateText, List<String> weekdays, int views) {
     }
 
     List<JobRow> jobs(int roundId) {
@@ -37,7 +37,8 @@ public class CenterRepository {
                                                          FROM job_major_alias jma
                                                          JOIN major_alias_department mad ON mad.alias_id = jma.alias_id
                                                          WHERE jma.job_id = j.id))
-                               END AS eligible_pool
+                               END AS eligible_pool,
+                               (SELECT count(*) FROM job_view v WHERE v.job_id = j.id) AS views
                         FROM job j
                         JOIN institution i ON i.id = j.institution_id
                         WHERE j.round_id = :round
@@ -52,7 +53,7 @@ public class CenterRepository {
                             new InstitutionRef(rs.getInt("institution_id"), rs.getString("institution_name")),
                             rs.getString("title"), rs.getInt("headcount"), rs.getInt("eligible_pool"),
                             rs.getString("portfolio"), rs.getString("certificate"), rs.getString("certificate_text"),
-                            List.copyOf(weekdays));
+                            List.copyOf(weekdays), rs.getInt("views"));
                 })
                 .list();
     }
@@ -70,5 +71,54 @@ public class CenterRepository {
                 .param("round", roundId)
                 .query((rs, n) -> JobRepository.alert(rs))
                 .list();
+    }
+
+    /** 이 센터 계정이 보는 범위(체험 센터는 자기 묶음, 가입 센터는 묶음 없는 것 — ADR-0033)를 SQL 조건으로. */
+    private static final String ME = "WITH me AS (SELECT is_guest, demo_group_id FROM app_user WHERE id = :user) ";
+
+    /** 처리할 것: 새로 들어온 지원서 · 보완 요청 중. */
+    CenterDtos.Todo todo(long userId, int roundId) {
+        return db.sql(ME + """
+                        SELECT count(*) FILTER (WHERE a.status = 'SUBMITTED') AS submitted,
+                               count(*) FILTER (WHERE a.status = 'FIX_REQUESTED') AS fix
+                        FROM application a, me
+                        WHERE a.round_id = :round
+                          AND CASE WHEN me.is_guest THEN a.demo_group_id IS NOT DISTINCT FROM me.demo_group_id
+                                        AND a.demo_group_id IS NOT NULL
+                                   ELSE a.demo_group_id IS NULL END""")
+                .param("user", userId).param("round", roundId)
+                .query((rs, n) -> new CenterDtos.Todo(rs.getInt("submitted"), rs.getInt("fix"), null))
+                .single();
+    }
+
+    /**
+     * 학생이 찾는 직무: 범위 안 학생의 직무 탐색 1~3위 직무를 NCS 세분류로 묶어 학생 수를 센다(한 학생은 세분류마다 한 번).
+     * 이번 회차 공고(직무 수·정원)와 나란히. 직무에 고른 세분류만.
+     */
+    CenterDtos.Demand demand(long userId, int roundId) {
+        String users = ME + """
+                , users AS (SELECT u.id FROM app_user u, me
+                            WHERE CASE WHEN me.is_guest THEN u.demo_group_id = me.demo_group_id ELSE NOT u.is_guest END)
+                , picked AS (SELECT DISTINCT r.user_id, n.subcategory_code FROM explore_run r
+                             JOIN explore_item i ON i.run_id = r.id AND i.rank <= 3
+                             JOIN job_ncs n ON n.job_id = i.job_id
+                             WHERE r.round_id = :round AND r.user_id IN (SELECT id FROM users))
+                """;
+        int explorers = db.sql(users + "SELECT count(DISTINCT user_id) FROM picked")
+                .param("user", userId).param("round", roundId).query(Integer.class).single();
+        List<CenterDtos.DemandRow> rows = db.sql(users + """
+                        SELECT s.code, s.name,
+                               (SELECT count(*) FROM picked p WHERE p.subcategory_code = s.code) AS students,
+                               count(j.id) AS jobs, coalesce(sum(j.headcount), 0) AS seats
+                        FROM ncs_subcategory s
+                        JOIN job_ncs n ON n.subcategory_code = s.code
+                        JOIN job j ON j.id = n.job_id AND j.round_id = :round
+                        GROUP BY s.code, s.name
+                        ORDER BY students DESC, seats, s.code""")
+                .param("user", userId).param("round", roundId)
+                .query((rs, n) -> new CenterDtos.DemandRow(rs.getString("code"), rs.getString("name"),
+                        rs.getInt("students"), rs.getInt("jobs"), rs.getInt("seats")))
+                .list();
+        return new CenterDtos.Demand(explorers, rows);
     }
 }

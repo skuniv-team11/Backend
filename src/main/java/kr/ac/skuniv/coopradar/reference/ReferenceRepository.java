@@ -65,4 +65,16 @@ public class ReferenceRepository {
                         rs.getObject("recruit_end", LocalDate.class)))
                 .optional();
     }
+
+    /** 회차 일정(seq 순). */
+    List<ReferenceDtos.StageInfo> stages(int roundId) {
+        return db.sql("""
+                        SELECT code, phase, starts_on, ends_on, confirmed, source FROM round_stage
+                        WHERE round_id = :round ORDER BY seq""")
+                .param("round", roundId)
+                .query((rs, i) -> new ReferenceDtos.StageInfo(ReferenceDtos.Stage.valueOf(rs.getString("code")),
+                        ReferenceDtos.Phase.valueOf(rs.getString("phase")), rs.getObject("starts_on", LocalDate.class),
+                        rs.getObject("ends_on", LocalDate.class), rs.getBoolean("confirmed"), rs.getString("source")))
+                .list();
+    }
 }

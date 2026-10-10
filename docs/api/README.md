@@ -3,7 +3,7 @@
 프론트는 이 문서의 응답 예시로 목업을 만들고, 백엔드는 이 형태를 지킨다. 형태를 바꾸려면 이 문서를 먼저 고친다.
 Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 맞다.
 
-**Swagger**: https://coop-radar-api.onrender.com/swagger-ui.html (배포 서버). 드롭다운 '계약'은 이 문서와 예시 JSON으로 만든 36개 전부, '구현'은 지금 코드에 있는 것만 보여 준다(ADR-0011).
+**Swagger**: https://coop-radar-api.onrender.com/swagger-ui.html (배포 서버). 드롭다운 '계약'은 이 문서와 예시 JSON으로 만든 58개 전부, '구현'은 지금 코드에 있는 것만 보여 준다(ADR-0011).
 - '계약' 스펙은 `python scripts/build_openapi.py`가 이 폴더로 만든다(`src/main/resources/static/openapi/contract.json`). 이 문서나 예시 JSON을 고쳤으면 다시 돌려 같은 PR에 넣는다. 예시가 스키마(타입·null·코드값·범위)에 안 맞으면 여기서 실패한다.
 - 새 엔드포인트는 스크립트의 `ENDPOINTS`(요청·응답 스키마와 예시 파일)와 `S`(스키마)에도 넣는다.
 
@@ -19,6 +19,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - 서버에 저장하는 건 `PUT /api/me/profile`에 `consent: true`로 보냈을 때뿐이다. 탈퇴하면 즉시 지운다.
   - 사는 곳은 시·군·구까지만 받는다(`homeAreaCode`). 정확한 주소는 받지 않는다.
   - 요청·응답 본문을 로그에 남기지 않는다.
+  - 지원서(#37~#41)의 이름·생년월일·성별·연락처·주소·학번은 개인정보 수집·이용 동의(`consents.collect: true`) 뒤에만 저장한다. 사진·계좌는 받지 않는다. 센터는 자기 범위(체험 묶음 또는 실제)의 낸 지원서만 보고, 학과(부)장 승인 화면에는 이름·학번·학과·학년·지망만 보인다. 탈퇴하면 함께 지운다([ADR-0033](../decisions/0033-internship-flow.md)).
   - 직무 탐색(#29)의 경험 글과 커리어 리포트(#34)의 실습 내용은 `consent: true`일 때만 받아 결과와 함께 저장한다(계정당 마지막 1건, 지우기·탈퇴 때 바로 삭제). AI에는 학과·학년·평점을 보내지 않는다([ADR-0031](../decisions/0031-explore-ai.md)·[0032](../decisions/0032-ncs-career.md)).
 - **모집 신호 = 관심**: 관심은 **내 지망에 담은 사람 수**다(순위와 상관없이 [담기]한 사람, 1인 1표). 모집기간 리플레이 가상 값에 실제 사용자가 담은 수를 더해 보여 준다(ADR-0019). 신호를 주는 응답에는 `isVirtual`과 `signalSource`를 반드시 넣는다.
 - **호출 제한**(초기값, 설정으로 조정): 체험 계정 만들기 IP당 1시간 300회(환경변수 `GUEST_PER_IP_PER_HOUR`, 0이면 끔 — 시연장·학교 와이파이는 여럿이 한 IP) → 넘으면 429 + `Retry-After`(초). 이유 문장(LLM) 계정당 1시간 30회·IP당 60회 → 넘으면 **200 + 기본 문장**(화면이 깨지지 않게). 직무 탐색 AI(탐색 1번·'왜 맞나요' 1곳이 각 1회) 계정당 1시간 10회·IP당 60회·서버 전체 하루 300회 → 넘으면 **200 + 규칙 추천**(`source: RULE`, `fallbackReason: LIMITED`). 커리어 리포트(#34)도 같은 한도를 1회씩 쓰고, 넘으면 200 + AI 정리 없이(`source: NONE`). 통근 조회 계정당 1시간 30회·서버 전체 하루 900회(카카오 무료 하루 1,000건 안에서 멈춤) → 넘으면 **200 + `available: false`**.
@@ -34,15 +35,15 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | 2 | 공통 | GET | `/api/codes` | 공개 | 전체 | 코드값 → 화면 표기 | [응답](codes.json) |
 | 3 | 인증 | POST | `/api/auth/signup` | 공개 | 가입 | 이메일 가입 | [요청](auth-signup.request.json) · [응답](auth-token.json) |
 | 4 | 인증 | POST | `/api/auth/login` | 공개 | 로그인 | 이메일 로그인 | [요청](auth-login.request.json) · [응답](auth-token.json) |
-| 5 | 인증 | POST | `/api/auth/guest` | 공개 | 시작 | 체험 계정 만들기([예시 프로필로 시작]·[센터 담당자로 보기]) | [요청](auth-guest.request.json) · [응답](auth-guest.json) |
+| 5 | 인증 | POST | `/api/auth/guest` | 공개 | 시작 | 체험 계정 만들기([예시 프로필로 시작]·[센터 담당자로 보기]). 시점(지원 중·실습 중·마친 뒤)과 체험 묶음 | [요청](auth-guest.request.json) · [응답](auth-guest.json) |
 | 6 | 내 정보 | GET | `/api/me` | 로그인 | M1·공통 | 내 계정 | [응답](me.json) |
-| 7 | 내 정보 | DELETE | `/api/me` | 로그인 | M1 | 탈퇴(계정·프로필·담은 지망·탐색 결과·커리어 리포트 즉시 삭제) | 204 |
+| 7 | 내 정보 | DELETE | `/api/me` | 로그인 | M1 | 탈퇴(계정·프로필·담은 지망·탐색 결과·커리어 리포트·지원서 즉시 삭제) | 204 |
 | 8 | 내 정보 | GET | `/api/me/profile` | STUDENT | S1 | 저장한 프로필 | [응답](me-profile.json) |
 | 9 | 내 정보 | PUT | `/api/me/profile` | STUDENT | S1 | 프로필 저장(동의 필수) | [요청](me-profile.request.json) · [응답](me-profile.json) |
 | 10 | 내 정보 | DELETE | `/api/me/profile` | STUDENT | M1 | 저장한 프로필만 삭제 | 204 |
 | 11 | 기준 정보 | GET | `/api/departments` | 공개 | S1 | 학과(교육통계 재학생이 있는 60개, ADR-0014) | [응답](departments.json) |
 | 12 | 기준 정보 | GET | `/api/areas` | 공개 | S1 | 사는 곳 선택지(서울·인천·경기 시·군·구 83곳, 행정표준코드) | [응답](areas.json) |
-| 13 | 기준 정보 | GET | `/api/rounds/current` | 공개 | S5·C4 | 현재 모집 회차와 리플레이 날짜 범위 | [응답](rounds-current.json) |
+| 13 | 기준 정보 | GET | `/api/rounds/current` | 공개 | S5·C4 | 현재 모집 회차와 리플레이 날짜 범위 · 일정 11단계 | [응답](rounds-current.json) |
 | 14 | 판정·추천 | POST | `/api/eligibility` | STUDENT | S2·S4 | 회차 직무 전부의 3층 판정 | [요청](profile-body.request.json) · [응답](eligibility.json) |
 | 15 | 판정·추천 | POST | `/api/recommendations` | STUDENT | S3 | 적합도 추천 상위 5개 | [요청](profile-body.request.json) · [응답](recommendations.json) |
 | 16 | 판정·추천 | POST | `/api/recommendations/{jobId}/reason` | STUDENT | S3 | 추천 이유 문장(LLM, 실패 시 기본 문장) | [요청](profile-body.request.json) · [응답](recommendation-reason.json) |
@@ -53,7 +54,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | 21 | 지망 | DELETE | `/api/me/plan/items/{jobId}` | STUDENT | S3·S5 | 담기 취소 | 204 |
 | 22 | 지망 | PUT | `/api/me/plan/ranks` | STUDENT | S5 | 1~3지망 순위 정하기 | [요청](me-plan-ranks.request.json) · [응답](me-plan.json) |
 | 23 | 지망 | POST | `/api/me/plan/check` | STUDENT | S5 | 지망별 모집 신호 + 빈 자리 제안 | [요청](me-plan-check.request.json) · [응답](me-plan-check.json) |
-| 24 | 센터 | GET | `/api/center/board?asOf=` | CENTER | C4 | 모집 현황판 | [응답](center-board.json) |
+| 24 | 센터 | GET | `/api/center/board?asOf=` | CENTER | C4 | 모집 현황판 · 처리할 것 · 학생이 찾는 직무 | [응답](center-board.json) |
 | 25 | 직무 | GET | `/api/jobs/{jobId}/views` | 로그인 | S4·C4 | 직무 조회수(학생 계정마다 직무별 하루 1번) | [응답](job-views.json) |
 | 26 | 기준 정보 | GET | `/api/certificates` | 공개 | S1 | 자격증 선택지(이번 회차 직무가 요구·우대하는 것만, ADR-0021) | [응답](certificates.json) |
 | 27 | 지망 | POST | `/api/me/plan/items/{jobId}/alternatives` | STUDENT | S3·S4 | 담은 직무의 모집 신호 + 그 직무 기준 빈 자리 제안([담기] 바로 뒤, ADR-0029) | [요청](me-plan-check.request.json) · [응답](me-plan-item-alternatives.json) |
@@ -66,6 +67,28 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | 34 | 커리어 | POST | `/api/me/career-report` | STUDENT | 커리어 | 수행결과보고서 '실습 내용' → 다룬 NCS 능력단위(AI, 구절 대조)·다음에 채울 것·한 단계 위·이어진 수 순 넓혀 갈 직무·직업 | [요청](career-report.request.json) · [응답](career-report.json) |
 | 35 | 커리어 | GET | `/api/me/career-report` | STUDENT | 커리어 | 저장된 커리어 리포트 | [응답](career-report.json) |
 | 36 | 커리어 | DELETE | `/api/me/career-report` | STUDENT | 커리어·M1 | 커리어 리포트·실습 내용 지우기 | 204 |
+| 37 | 지원서 | GET | `/api/me/application` | STUDENT | 지원서 | 내 지원서(별지 제5호). 없으면 프로필·담은 지망으로 미리 채운 빈 지원서(`status: NONE`) | [응답](me-application.json) |
+| 38 | 지원서 | PUT | `/api/me/application` | STUDENT | 지원서 | 임시 저장(수집·이용 동의 필수, 낸 뒤에는 보완 요청을 받았을 때만) | [요청](me-application.request.json) · [응답](me-application.json) |
+| 39 | 지원서 | DELETE | `/api/me/application` | STUDENT | 지원서·M1 | 지원서 지우기(매칭 확정 전까지) | 204 |
+| 40 | 지원서 | POST | `/api/me/application/approval` | STUDENT | 지원서 | 학과(부)장 승인 링크 만들기(지금 내용 기준) | [응답](me-application.json) |
+| 41 | 지원서 | POST | `/api/me/application/submit` | STUDENT | 지원서 | 내기(신청 기간 · 빠진 칸 · 승인 확인) | [응답](me-application.json) |
+| 42 | 승인 | GET | `/api/approvals/{token}` | 공개 | 승인 | 학과(부)장이 승인할 내용(지원서 지망 또는 학점 인정 자리) | [응답](approval.json) |
+| 43 | 승인 | POST | `/api/approvals/{token}` | 공개 | 승인 | 승인 | [응답](approval.json) |
+| 44 | 내 현장실습 | GET | `/api/me/internship?asOf=` | STUDENT | 내 현장실습 | 일정 11단계 · 담은 직무 · 지원서 · 매칭·선발 · 실습 주차 · 마무리 서류 | [응답](me-internship.json) |
+| 45 | 내 현장실습 | PUT | `/api/me/internship/documents/{kind}` | STUDENT | 내 현장실습 | 마무리 서류 냄 표시(REPORT·CREDIT·SURVEY, 보고서는 커리어 리포트가 있어야) | [응답](me-internship.json) |
+| 46 | 센터 | GET | `/api/center/applications` | CENTER | 접수함 | 들어온 지원서(접수번호 순)와 상태별 수 | [응답](center-applications.json) |
+| 47 | 센터 | GET | `/api/center/applications/{applicationId}` | CENTER | 접수함 | 지원서 한 부(제5호 서식 보기·인쇄) | [응답](center-application.json) |
+| 48 | 센터 | PUT | `/api/center/applications/{applicationId}/status` | CENTER | 접수함 | 접수 · 보완 요청(이유) | [요청](center-application-status.request.json) · [응답](center-application.json) |
+| 49 | 센터 | GET | `/api/center/placement` | CENTER | 매칭·선발 | 매칭 고르기 · 직무별 매칭 수와 정원 · 면접 일정 · 결과 | [응답](center-placement.json) |
+| 50 | 센터 | PUT | `/api/center/applications/{applicationId}/match` | CENTER | 매칭·선발 | 1~3지망 중 매칭 고르기(취소는 null) | [요청](center-match.request.json) · [응답](center-placement.json) |
+| 51 | 센터 | POST | `/api/center/placement/confirm` | CENTER | 매칭·선발 | 매칭 확정(학생에게 보임) | [응답](center-placement.json) |
+| 52 | 센터 | PUT | `/api/center/applications/{applicationId}/selection` | CENTER | 매칭·선발 | 기관이 알려 준 면접 일정·결과 넣기 | [요청](center-selection.request.json) · [응답](center-placement.json) |
+| 53 | 센터 | POST | `/api/center/placement/notify` | CENTER | 매칭·선발 | 결과 알림(학생에게 보임) | [응답](center-placement.json) |
+| 54 | 센터 | GET | `/api/center/close` | CENTER | 마무리 | 학생 서류 · 기관 서류 · 학과(부)장 승인 · 안 낸 것 | [응답](center-close.json) |
+| 55 | 센터 | PUT | `/api/center/close/{applicationId}` | CENTER | 마무리 | 기관 서류(평가표·출근부) 받음 표시 | [요청](center-close-documents.request.json) · [응답](center-close.json) |
+| 56 | 센터 | POST | `/api/center/close/remind` | CENTER | 마무리 | 학생 서류를 안 낸 학생에게 알림 | [응답](center-close-remind.json) |
+| 57 | 센터 | GET | `/api/center/close/credits.csv` | CENTER | 마무리 | 학점 인정·장학금 명단 CSV(서류가 다 모이고 승인된 학생) | 200 · text/csv |
+| 58 | 체험 | POST | `/api/center/demo/advance` | CENTER | 체험 | 체험 묶음을 그 단계까지 한 번에(시연 버튼, 체험 센터 계정만) | [요청](center-demo-advance.request.json) · [응답](center-demo-advance.json) |
 
 ## 공통 객체
 **Profile** (요청 본문의 `profile`, `PUT /api/me/profile`)
@@ -147,6 +170,8 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - `signup`: 이메일은 소문자로 맞춰 저장, 비밀번호 8자 이상·UTF-8 72바이트 이하(BCrypt 한도 — 영문 72자, 한글 24자). 이메일 인증은 없다(MVP). 201 + 토큰. 이미 있으면 409 `EMAIL_TAKEN`(대소문자만 달라도 같은 이메일).
 - `login`: 틀리면 401 `LOGIN_FAILED`. 이메일과 비밀번호 중 무엇이 틀렸는지 말하지 않는다(응답 본문도 같다).
 - `guest`: `role`은 `STUDENT` 또는 `CENTER`. `STUDENT`는 예시 프로필(메이크업디자인학과 3학년)이 저장된 체험 계정을 만들고 응답에 그 프로필을 준다(`isExample: true`). 값과 고른 이유는 [ADR-0016](../decisions/0016-demo-profile-and-screen-rules.md). `CENTER`는 현황판용이고 `profile`은 null. 201 + 토큰. CENTER 역할은 이 경로와 시드로만 생기고 가입으로는 못 만든다.
+  - **시점·체험 묶음**([ADR-0033](../decisions/0033-internship-flow.md)): `stage`(`APPLYING` 지원 중 · `PRACTICING` 실습 중 · `DONE` 마친 뒤, 없으면 `APPLYING`)는 학생의 기준일(`demoToday`: 7/23 · 10/14 · 12/17)을 정한다. 내 현장실습·지원 기간을 이 날로 본다. `PRACTICING`·`DONE`은 지난 기록(1~3지망 소서 국내 마케팅·AMD·세정 국내 인플루언서, 지원서 제출·승인·접수, 1지망 매칭, 면접 합격, `DONE`은 기관 서류·학점인정신청서·설문까지)을 `virtual: true`로 갖고 시작한다 — 수행결과보고서는 학생이 커리어 리포트로 직접 낸다.
+  - 응답의 `demoGroup`을 다음 체험 계정 요청에 넣으면 같은 묶음이 된다(체험 학생이 낸 지원서가 그 체험 센터 접수함에 들어간다). 없거나 만료된 값이면 새 묶음. 묶음마다 가상 지원자 6명(`virtual: true`, v2 프로토타입과 같은 값)이 따로 있어 심사위원끼리 섞이지 않는다. 묶음은 마지막 체험 계정과 같이 지워진다.
   - 예시 프로필의 사는 곳은 노원구(`11350`)다. `area` 시드에 그 코드가 없으면 null로 둔다(ADR-0007).
   - 24시간이 지난 체험 계정은 서버가 10분마다 계정째 지운다. 지우기 전이라도 그 토큰은 401 `TOKEN_EXPIRED`.
   - 호출 제한의 IP는 `CF-Connecting-IP` 헤더(Render 앞단 Cloudflare가 넣음)로 센다. 없으면 연결 주소(ADR-0013).
@@ -154,7 +179,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - 토큰: 역할·체험 여부는 토큰이 아니라 매 요청 DB에서 읽는다. 탈퇴했거나 정리된 계정의 토큰은 401 `AUTH_REQUIRED`.
 
 **내 정보**
-- `DELETE /api/me` → 204. 계정·프로필·담은 지망·탐색 결과·커리어 리포트가 함께 지워진다(DB cascade). 직무 조회 기록은 조회수로 남고 계정 연결만 끊긴다(`job_view.user_id` NULL).
+- `DELETE /api/me` → 204. 계정·프로필·담은 지망·탐색 결과·커리어 리포트·지원서가 함께 지워진다(DB cascade). 직무 조회 기록은 조회수로 남고 계정 연결만 끊긴다(`job_view.user_id` NULL).
 - `PUT /api/me/profile`: `consent`가 true가 아니면 400 `CONSENT_REQUIRED`. `GET`에 저장한 게 없으면 404 `PROFILE_NOT_FOUND`. `certificates`는 보낸 그대로(null·`[]`·코드 목록) 저장하고 돌려준다 — 코드는 중복을 빼고 `GET /api/certificates` 순서로 맞춘다.
 - `hasProfile`(`/api/me`)이 false여도 판정·추천은 된다 — 프론트가 입력받은 프로필을 본문에 넣어 보내면 된다.
 
@@ -265,7 +290,24 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - `expand`(넓혀 갈 직무 3개): `{rank, code, name, path, relation, unitCount, linkedCount, linked, more, occupations}`. `linked`는 넓혀 갈 세분류의 단위 중 채운 단위와 이어진 것 `{code, name, level, from, note, checked}`(`from`은 이어진 채운 단위), `linkedCount`는 그 수, `more`는 안 이어진 단위 중 수준이 낮은 것 최대 3개(더 채울 것). **이어진 수가 많은 순, 같으면 `rank` 순**으로 준다(화면 '이어짐 2 / 12' = `linkedCount` / `unitCount`).
   - AI 키 없음·한도·실패·확인 통과 0개면 200 + `source: NONE`, `fallbackReason`, `covered: []`, `notCovered`는 단위 전부(목록은 그대로 보여 준다). 이때 `expand`는 `linked: []`로 `rank` 순, `nextLevel`은 가장 낮은 수준부터.
   - 계정당 마지막 1건만 둔다(새로 만들면 바꾼다). `GET`(#35)은 저장본(없으면 404 `CAREER_REPORT_NOT_FOUND`), `DELETE`(#36)은 204(없어도).
-  - 실습한 직무를 고르는 것은 학생이다(지원·선발 기록과 아직 잇지 않는다 — 매칭·선발 기능이 들어오면 잇는다).
+  - 실습한 직무를 고르는 것은 학생이다. 수행결과보고서 제출(#45 `REPORT`)은 매칭된 자리의 커리어 리포트가 있어야 한다.
+
+**현장실습 진행**([ADR-0033](../decisions/0033-internship-flow.md)) — 지원서(별지 제5호)를 플랫폼에서 쓰고 학과(부)장 승인 링크를 받아 내면, 센터가 접수 → 1~3지망 중 하나로 매칭 → 기관이 알려 준 면접·결과를 넣고 알림 → 마무리 서류를 모아 학점 인정 명단을 만든다. 기관 계정은 없다(기관 값은 센터가 넣는다). 메일·문자 알림은 보내지 않고 학생 화면(#44)에 바로 보인다.
+- **일정**(`rounds/current`의 `stages`, 11단계 `PICK`→`CREDIT`): 진로취업처 2026-2 학생 모집안내 날짜(`confirmed: true`). 중간점검(8주차 10/19~10/23)·학점 인정은 공지에 날짜가 없어 `confirmed: false`(센터 확인 전).
+- **지원서 상태**: `NONE`(저장 전, 응답에서만) → `DRAFT` → 내기 → `SUBMITTED`(센터 '새로 들어옴') → `RECEIVED`(접수 완료) 또는 `FIX_REQUESTED`(보완 요청, `fixReason`) → 매칭 확정 → `MATCHED`. 보완 요청을 받으면 고쳐서 다시 낸다(접수번호는 그대로).
+- **지원서 저장(#38)**: `consents.collect`가 true가 아니면 400 `CONSENT_REQUIRED`(아무것도 저장하지 않음). 칸은 비워도 된다. 낸 뒤(`SUBMITTED`·`RECEIVED`·`MATCHED`)에는 409 `APPLICATION_LOCKED`. 1~3지망은 본문이 아니라 담은 직무 순위(#22)에서 온다 — 내기 전에는 저장한 프로필로 다시 판정해 `verdict`를 보여 주고(프로필이 없으면 null), 낼 때 그 값과 학적(`academic`)을 고정한다.
+- **자기소개서**: 4문항(지원동기 · 성격 및 장단점 · 경력사항 및 단체활동 · 기타 자유 기술), 각 300자 이상(서식). `essayWarnings`는 글에 1~3지망 기관 이름(‘주식회사’·‘(주)’·괄호 안을 뺀 2자 이상)이 있는 문항 — 한 부가 세 기관에 같이 간다.
+- **학과(부)장 승인(#40·#42·#43)**: #40은 지금 내용(신청서·이력서·자기소개서·서약·동의·서명·1~3지망)의 해시로 링크(`approval.token`, 16진 32자)를 만든다. 다시 부르면 새 링크로 바뀐다. 승인 뒤 내용이나 지망이 바뀌면 `STALE` → 다시 요청. 링크는 학생이 학과 사무실에 전한다(프론트 경로 `/approvals/{token}`). #42는 공개, 없는 토큰 404 `APPROVAL_NOT_FOUND`, `STALE` 링크를 승인하면 409 `STATE_CONFLICT`. 학점 인정 승인(`kind: CREDIT`)은 센터가 평가표·출근부를 모두 받으면 생기고 링크는 센터 마무리 화면(#54)에 있다.
+- **내기(#41)**: 저장한 지원서가 없으면 404 `APPLICATION_NOT_FOUND`. 기준일(체험 학생은 `demoToday`, 아니면 오늘)이 신청 기간(7/13~7/24) 밖이면 409 `APPLICATION_CLOSED`. `checklist`에 false가 있으면 400 `APPLICATION_INCOMPLETE`, `fields[].field`에 빠진 항목 코드(`applicationItem`) — `PROFILE` 저장한 프로필 · `PICKS` 1지망이 있고 지원 불가·마감이 없음 · `APPLICANT` 성명(한·영)·생년월일·성별·연락처·주소·학번 · `PLEDGE` · `ESSAYS` · `CONSENTS` 두 동의 · `SIGNATURE` 2자 이상 · `APPROVAL` 승인됨.
+- **내 현장실습(#44)**: 기준일 = `asOf` → 체험 학생의 `demoToday` → 오늘. `stages[].state`: 지난 단계(끝일 전, 끝일이 없으면 뒤 단계가 시작됨)와 지금보다 앞은 `DONE`, 지금(진행 중인 단계 중 가장 뒤, 없으면 다음에 올 단계)은 `NOW`, 나머지 `NEXT`. `next`는 지금 단계의 끝일과 뒤 단계 시작일 중 가장 가까운 것(D-day). `placement`는 매칭 확정 뒤, `placement.result`·`practice`·`documents`는 합격을 알린 뒤에만. `practice`는 직무 실습 기간으로 센 날·주(9/1~12/12 = 103일·15주)와 운영계획서 주차 계획('7~8주차' 등) 중 이번 주·다음 것.
+- **마무리 서류(#45)**: `kind`는 `REPORT`(수행결과보고서 제9호) · `CREDIT`(학점인정신청서 제7호) · `SURVEY`(설문조사서 제8호). 냄 표시만 하고 파일은 받지 않는다(서식 원본은 후기 간담회 때). 합격 알림 전이면 409 `STATE_CONFLICT`, `REPORT`는 그 자리의 커리어 리포트(#34, 보고서 '실습 내용')가 없으면 409 `CAREER_REPORT_REQUIRED`.
+- **센터 범위**: 체험 센터는 자기 묶음(가상 지원자 + 같은 묶음 체험 학생), 가입 센터는 묶음 없는 실제 지원서. `DRAFT`는 보이지 않는다. 범위 밖 id는 404 `APPLICATION_NOT_FOUND`.
+- **접수(#48)**: `status`는 `RECEIVED` 또는 `FIX_REQUESTED`(`reason` 5~300자 필수, 아니면 400 `INVALID_INPUT`). `MATCHED`는 409 `STATE_CONFLICT`. 보완 요청은 고른 매칭을 지운다.
+- **매칭(#49~#51)**: 접수 완료(`RECEIVED`)마다 그 지원서의 지망 중 하나(`rank`)를 고른다 — 화면은 판정과 상담 이수만 옆에 보여 주고 순위를 매기지 않는다. 정원을 넘어도 고를 수 있다(기관이 면접으로 뽑는다, `jobs[].matched`/`headcount`). 확정(#51)은 접수 완료가 모두 골라졌을 때만(아니면 409, 보완 요청 중인 사람은 빼고), 확정 뒤에는 상태·매칭을 못 바꾼다.
+- **선발(#52·#53)**: 매칭된 학생의 면접 일정(`interviewAt`·`interviewMode`)과 `result`(`WAIT`·`PASS`·`FAIL`). 알림(#53)은 알리지 않은 학생 중 `WAIT`가 없을 때만(아니면 409). 알린 뒤에는 못 바꾼다. 2026-2는 2차 모집이 없어 불합격 학생에게는 상담·다음 학기 일정을 안내한다(화면).
+- **마무리(#54~#57)**: 합격을 알린 학생만. `missing`(`closeItem`, 이 순서) — `REPORT`·`CREDIT`·`SURVEY`(학생) · `EVALUATION`·`ATTENDANCE`(기관이 메일로 보낸 평가표·출근부를 센터가 받음 표시, #55) · `APPROVAL`(학점 인정 학과(부)장 승인). `ready`면 학점 인정·장학금 명단(#57)에 들어간다. #56은 학생 서류가 빠진 학생에게 `remindedAt`을 남긴다(학생 #44 `documents.remindedAt`).
+- **명단 CSV(#57)**: UTF-8(BOM), 열 `접수번호,학번,성명,학과,학년,실습기관,부서,직무,교과목,학점,실습 시작,실습 끝,대학 지원금 월액(원),지원금 최대 개월,가상`. 교과목 '표준 현장실습 D' · 12학점 · 월 200,000원 × 최대 3개월은 학생 모집안내 값(설정 `app.internship`). `=`·`+`·`-`·`@`로 시작하는 칸은 `'`를 붙인다.
+- **시연 버튼(#58)**: 체험 센터 계정만(가입 계정은 403 `DEMO_ONLY`). `to`까지 앞 단계를 함께 진행한다 — `RECEIVED` 낸 지원서 접수 · `MATCHED` 고르지 않은 사람을 1지망으로, 확정 · `SELECTED` 면접 일정·결과(가상 지원자는 프로토타입 값, 체험 학생은 합격) 넣고 알림 · `CLOSING` 기관 서류 받음 + 학점 인정 승인 링크(가상 지원자는 학생 서류·승인까지 프로토타입 값). 보완 요청 중인 지원서는 그대로 둔다.
 
 **센터** — CENTER만(아니면 403 `FORBIDDEN_ROLE`). 회차 직무 전부를 리스트 순번대로 행으로 준다. `asOf` 규칙은 지망 점검과 같다(생략하면 `replay.defaultAsOf`, 모집기간 밖이면 400 `AS_OF_OUT_OF_RANGE`, 날짜 형식이 아니면 400 `INVALID_INPUT`). 세부 정의는 [ADR-0017](../decisions/0017-center-board-details.md).
 - `summary`: `jobs` 직무 수 · `seats` 정원 합 · `interestTotal` asOf까지 관심 합(가상 + 실제) · `liveInterestTotal` 그중 실제 사용자가 담은 수 · `zeroSignalJobs` 관심이 0인 직무 수 · `closedJobs` `CLOSED` 직무 수.
@@ -274,6 +316,10 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - `NARROW_POOL`: 적격 학생 풀(`eligiblePool`)이 200명 미만, `detail` '선호 전공 재학생 N명'. 2026-2 시드 분포(98·102·102·102·102·195·195·198명 … — 10/7 ADR-0025 전에는 195 자리가 115)에서 하위 직무를 가르는 값이다(10/2 결정, [ADR-0016](../decisions/0016-demo-profile-and-screen-rules.md)). 설정 `app.center.narrow-pool-below`(환경변수 `CENTER_NARROW_POOL_BELOW`).
   - `DOC_ALERT`: 그 직무 또는 그 기관에 검토 알림이 있음, `detail` '검토 알림 N건'.
 - `alertCount`·`alerts`: 그 직무에 걸린 알림 + 기관 전체(`jobId` null)에 걸린 알림(판정 행의 `alertCount`와 달리 기관 단위도 센다 — `DOC_ALERT`와 같은 범위). `alerts`는 회차 기관들의 알림 전부, id 순.
+- `rows[].views`: 직무 상세 조회 수(#25와 같은 값).
+- `todo`(처리할 것, ADR-0033): `newApplications` 새로 들어온 지원서 · `fixRequested` 보완 요청 중 · `counselPending` 상담 확정 대기(상담 기능 전이라 null). 계정의 범위(체험 센터는 자기 묶음)로 센다.
+- `demand`(학생이 찾는 직무 vs 공고): 범위 안 학생의 직무 탐색(#29) 1~3위 직무를 NCS 세분류(#33)로 묶어 학생 수를 센다(한 학생은 세분류마다 한 번). `explorers`는 탐색 결과가 있는 학생 수, `rows`는 직무에 고른 세분류 전부 `{ncsCode, ncsName, students, jobs, seats}`(이번 회차 공고 수·정원), 학생 수가 많은 순(같으면 정원이 적은 순). 탐색은 이번 회차 공고 안에서만 고르므로 공고가 없는 세분류(섭외 공백)는 아직 잡지 못한다.
+- v2 화면은 관심(담은 수 — `summary.interestTotal` 등, `signal.interest`)을 보여 주지 않는다(관심은 지원이 아니라서). 필드는 프론트가 옮길 때까지 남겨 둔다.
 - `historyAvailable`이 false면 `pastZeroRounds` 열을 숨긴다. 지난 회차 결과는 센터 동의 뒤에만 적재하고 원소 모양도 그때 정한다 — 그 전까지는 항상 false · `[]`.
 
 ## 오류 코드
@@ -283,17 +329,25 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | `CONSENT_REQUIRED` | 400 | 프로필 저장에 동의가 없음 |
 | `RANK_INVALID` | 400 | 순위가 1~3이 아니거나 중복이거나 담지 않은 직무 |
 | `AS_OF_OUT_OF_RANGE` | 400 | asOf가 회차 모집기간 밖 |
+| `APPLICATION_INCOMPLETE` | 400 | 지원서에 빠진 것이 있어 낼 수 없음. `fields[].field`에 항목 코드(`applicationItem`) |
 | `AUTH_REQUIRED` | 401 | 토큰 없음·잘못된 토큰 |
 | `TOKEN_EXPIRED` | 401 | 토큰 만료(체험 계정은 계정도 지워짐) |
 | `LOGIN_FAILED` | 401 | 이메일 또는 비밀번호가 틀림 |
 | `FORBIDDEN_ROLE` | 403 | 역할이 맞지 않음(학생이 현황판 등) |
+| `DEMO_ONLY` | 403 | 시연 버튼을 체험 계정이 아닌 계정이 누름 |
 | `PROFILE_NOT_FOUND` | 404 | 저장한 프로필 없음 |
 | `JOB_NOT_FOUND` | 404 | 없는 직무 |
 | `PLAN_ITEM_NOT_FOUND` | 404 | 담지 않은 직무를 취소하거나 그 직무 기준 빈 자리를 물음 |
 | `EXPLORE_NOT_FOUND` | 404 | 저장된 탐색 결과 없음 |
 | `CAREER_REPORT_NOT_FOUND` | 404 | 저장된 커리어 리포트 없음 |
+| `APPLICATION_NOT_FOUND` | 404 | 저장한 지원서가 없거나 범위 밖 지원서 |
+| `APPROVAL_NOT_FOUND` | 404 | 승인 링크가 없거나 새 링크로 바뀜 |
 | `EMAIL_TAKEN` | 409 | 이미 가입한 이메일 |
 | `EXPLORE_NOT_CANDIDATE` | 409 | 지원할 수 없거나 마감된 직무라 '왜 맞나요'를 만들지 않음 |
+| `APPLICATION_LOCKED` | 409 | 낸 지원서를 고치려 함(보완 요청 때만 고침), 매칭 확정 뒤 지우려 함 |
+| `APPLICATION_CLOSED` | 409 | 기준일이 신청 기간 밖 |
+| `STATE_CONFLICT` | 409 | 지금 단계에서 할 수 없는 처리(확정 전 매칭이 덜 됨, 결과 대기, 내용이 바뀐 승인 링크, 합격 전 서류 등) |
+| `CAREER_REPORT_REQUIRED` | 409 | 수행결과보고서를 내려면 그 자리의 커리어 리포트가 먼저 있어야 함 |
 | `RATE_LIMITED` | 429 | 체험 계정 만들기 호출 제한 |
 | `INTERNAL` | 500 | 그 밖의 서버 오류 |
 

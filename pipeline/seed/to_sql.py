@@ -7,7 +7,7 @@
 - 부모 테이블(program·recruit_round·department·area·certificate·institution·workplace·job)은 id(area·certificate는
   code)로 upsert 하고, seed에 없는 행만 지운다. job을 지우면 담아 둔 지망(plan_item)도 함께 지워진다(직무가 없어졌으므로).
   학생 프로필이 쓰는 학과·사는 곳·자격증은 seed에서 빠져도 지우지 않는다.
-- 자식 테이블(근거·알림·판정 출처·수기·소개서 사진·신호·전공 표기·가까운 학과 묶음)은 통째로 지우고 다시 넣는다. 사용자 데이터가 가리키지 않는다.
+- 자식 테이블(근거·알림·판정 출처·수기·소개서 사진·신호·전공 표기·가까운 학과 묶음·회차 일정)은 통째로 지우고 다시 넣는다. 사용자 데이터가 가리키지 않는다.
 - NCS(ncs.json, ncs_seed.py가 만든다)는 세분류·능력단위·직업을 code로 upsert 하고 seed에 없는 행만 지운다(학생 커리어 리포트가
   능력단위를 가리킨다). 직무 ↔ 세분류·넓혀 갈 세분류·직업·능력단위끼리 연결은 통째로 다시 넣는다.
 - job_embedding(E5)·round_result(센터 동의 뒤 로컬 적재)는 건드리지 않는다.
@@ -59,6 +59,7 @@ CHILDREN = {
     "institution_photo": ["id", "institution_id", "source_document_id", "seq", "page", "scene", "caption",
                           "caption_source", "width", "height"],
     "replay_signal": ["job_id", "signal_date", "interest_count"],
+    "round_stage": ["round_id", "seq", "code", "phase", "starts_on", "ends_on", "confirmed", "source"],
     "ncs_occupation": ["subcategory_code", "occupation_code", "source"],
     "job_ncs": ["job_id", "subcategory_code", "note"],
     "ncs_expand": ["from_code", "rank", "to_code", "relation"],
@@ -70,9 +71,10 @@ ARRAYS = {("job", "weekdays"): "varchar(3)[]", ("job", "benefits"): "varchar(20)
           ("testimonial", "activities"): "text[]", ("testimonial", "outcomes"): "text[]"}
 DATES = {("recruit_round", "recruit_start"), ("recruit_round", "recruit_end"),
          ("department", "enrolled_as_of"), ("institution", "nts_checked_on"), ("job", "period_start"),
-         ("job", "period_end"), ("job", "closes_on"), ("replay_signal", "signal_date")}
+         ("job", "period_end"), ("job", "closes_on"), ("replay_signal", "signal_date"),
+         ("round_stage", "starts_on"), ("round_stage", "ends_on")}
 # 지울 때는 FK를 거꾸로 따라간다
-DELETE_CHILDREN = ["ncs_unit_link", "ncs_expand", "job_ncs", "ncs_occupation", "replay_signal", "institution_photo", "testimonial", "requirement_source", "review_alert", "field_evidence", "source_document",
+DELETE_CHILDREN = ["round_stage", "ncs_unit_link", "ncs_expand", "job_ncs", "ncs_occupation", "replay_signal", "institution_photo", "testimonial", "requirement_source", "review_alert", "field_evidence", "source_document",
                    "job_weekly_plan", "job_major_alias", "major_alias_department", "major_alias",
                    "department_cluster_member", "department_cluster"]
 CHUNK = 200

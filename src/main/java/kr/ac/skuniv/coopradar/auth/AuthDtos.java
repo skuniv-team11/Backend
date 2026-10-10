@@ -4,7 +4,10 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.UUID;
+import kr.ac.skuniv.coopradar.internship.InternshipDtos.GuestStage;
 import kr.ac.skuniv.coopradar.common.Times;
 import kr.ac.skuniv.coopradar.me.ProfileView;
 
@@ -20,7 +23,11 @@ public final class AuthDtos {
             @NotNull(message = "필수예요") @Size(min = 8, message = "8자 이상") String password) {
     }
 
-    public record GuestRequest(@NotNull(message = "STUDENT 또는 CENTER") Role role) {
+    /**
+     * @param stage     체험 학생의 시점(APPLYING 지원 중 · PRACTICING 실습 중 · DONE 실습 마친 뒤). 없으면 APPLYING. 센터는 무시
+     * @param demoGroup 같은 브라우저에서 먼저 만든 체험 계정의 묶음. 없거나 만료됐으면 새 묶음(ADR-0033)
+     */
+    public record GuestRequest(@NotNull(message = "STUDENT 또는 CENTER") Role role, GuestStage stage, UUID demoGroup) {
     }
 
     public record UserView(long id, String email, Role role, boolean isGuest, OffsetDateTime expiresAt, boolean hasProfile) {
@@ -35,6 +42,6 @@ public final class AuthDtos {
 
     /** 체험 계정. STUDENT면 저장된 예시 프로필, CENTER면 profile은 null. */
     public record GuestTokenResponse(String accessToken, String tokenType, OffsetDateTime expiresAt, UserView user,
-                                     ProfileView profile) {
+                                     ProfileView profile, UUID demoGroup, LocalDate demoToday) {
     }
 }

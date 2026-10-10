@@ -5,6 +5,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
+import java.util.UUID;
 import kr.ac.skuniv.coopradar.auth.AuthDtos.GuestTokenResponse;
 import kr.ac.skuniv.coopradar.auth.AuthDtos.TokenResponse;
 import kr.ac.skuniv.coopradar.auth.AuthDtos.UserView;
@@ -12,6 +13,9 @@ import kr.ac.skuniv.coopradar.common.ApiException;
 import kr.ac.skuniv.coopradar.common.ErrorCode;
 import kr.ac.skuniv.coopradar.common.RateLimitedException;
 import kr.ac.skuniv.coopradar.common.Times;
+import kr.ac.skuniv.coopradar.internship.DemoService;
+import kr.ac.skuniv.coopradar.internship.InternshipDtos.Demo;
+import kr.ac.skuniv.coopradar.internship.InternshipDtos.GuestStage;
 import kr.ac.skuniv.coopradar.me.ExampleProfileProperties;
 import kr.ac.skuniv.coopradar.me.ProfileRepository;
 import kr.ac.skuniv.coopradar.me.ProfileView;
@@ -35,12 +39,13 @@ public class AuthService {
     private final AuthProperties props;
     private final ExampleProfileProperties example;
     private final Clock clock;
+    private final DemoService demos;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     /** 없는 이메일로 로그인해도 같은 시간이 걸리게 비교할 해시(계정 존재 여부를 응답 시간으로 흘리지 않음). */
     private final String dummyHash = encoder.encode("dummy-password-for-timing");
 
     public AuthService(UserRepository users, ProfileRepository profiles, JwtService jwt, GuestRateLimiter limiter,
-                       AuthProperties props, ExampleProfileProperties example, Clock clock) {
+                       AuthProperties props, ExampleProfileProperties example, Clock clock, DemoService demos) {
         this.users = users;
         this.profiles = profiles;
         this.jwt = jwt;
@@ -48,6 +53,7 @@ public class AuthService {
         this.props = props;
         this.example = example;
         this.clock = clock;
+        this.demos = demos;
     }
 
     @Transactional
@@ -76,6 +82,12 @@ public class AuthService {
 
     @Transactional
     public GuestTokenResponse guest(Role role, String clientIp) {
+        return guest(role, null, null, clientIp);
+    }
+
+    /** 체험 계정 + 체험 묶음(ADR-0033). 학생은 예시 프로필을 저장한 뒤 시점(stage)에 맞는 기준일·지난 기록을 받는다. */
+    @Transactional
+    public GuestTokenResponse guest(Role role, GuestStage stage, UUID demoGroup, String clientIp) {
         Duration wait = limiter.acquire(clientIp);
         if (!wait.isZero()) {
             throw new RateLimitedException(wait);
@@ -96,8 +108,10 @@ public class AuthService {
                 profile = profiles.findView(id, true).orElseThrow();
             }
         }
+        Demo demo = demos.join(id, role == Role.STUDENT, stage, demoGroup, expiresAt);
         UserView user = UserView.of(users.findAccount(id).orElseThrow());
-        return new GuestTokenResponse(jwt.issue(id, role, true, expiresAt), TOKEN_TYPE, Times.kst(expiresAt), user, profile);
+        return new GuestTokenResponse(jwt.issue(id, role, true, expiresAt), TOKEN_TYPE, Times.kst(expiresAt), user, profile,
+                demo.group(), demo.today());
     }
 
     private TokenResponse memberToken(long id) {

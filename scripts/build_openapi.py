@@ -111,6 +111,9 @@ PROFILE_PROPS = {
                       "판정의 자격증 줄에만 쓴다"),
 }
 PROFILE_OPTIONAL = ("interestText", "homeAreaCode", "certificates")
+UUID = {"type": "string", "pattern": r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"}
+COUNT = {"type": "integer", "minimum": 0}
+TOKEN = {"type": "string", "pattern": r"^[0-9a-f]{32}$", "description": "학과(부)장 승인 링크의 비밀 값(16진 32자)"}
 CARD_ID = {"type": "string", "pattern": r"^\d+-\d+$", "description": "카드 id `{jobId}-{순번}`"}
 NCS_CODE = {"type": "string", "pattern": r"^\d{8}$", "description": "NCS 세분류 코드(대2·중2·소2·세2)"}
 NCS_LEVEL = d(nul({"type": "integer", "minimum": 1, "maximum": 8}), "NCS 수준 1~8. 원본에 없으면 null")
@@ -154,7 +157,11 @@ S.update({
         "email": {"type": "string", "format": "email", "description": "소문자로 맞춰 저장"},
         "password": {"type": "string", "minLength": 8, "description": "8자 이상, UTF-8 72바이트 이하(BCrypt 한도)"},
     }),
-    "GuestRequest": obj({"role": R("Role")}),
+    "GuestRequest": obj({
+        "role": R("Role"),
+        "stage": d(nul(R("GuestStage")), "체험 학생의 시점. 없으면 APPLYING. CENTER는 무시(ADR-0033)"),
+        "demoGroup": d(nul(UUID), "같은 브라우저에서 먼저 만든 체험 계정 응답의 demoGroup. 없거나 만료됐으면 새 묶음"),
+    }, optional=("stage", "demoGroup")),
     "User": obj({
         "id": ID,
         "email": d(nul({"type": "string", "format": "email"}), "체험 계정은 null"),
@@ -175,6 +182,8 @@ S.update({
         "expiresAt": d(DATETIME, "체험 계정 24시간"),
         "user": R("User"),
         "profile": d(nul(R("ProfileView")), "STUDENT면 저장된 예시 프로필(isExample: true). CENTER, 또는 학과 시드 전의 STUDENT면 null"),
+        "demoGroup": d(UUID, "체험 묶음. 다음 체험 계정을 만들 때 보내면 같은 묶음(학생 지원서가 그 센터 접수함에 들어간다)"),
+        "demoToday": d(nul(DATE), "체험 학생의 기준일(지원 중 7/23 · 실습 중 10/14 · 마친 뒤 12/17). CENTER는 null"),
     }, optional=("profile",)),
     "Profile": obj(PROFILE_PROPS, optional=PROFILE_OPTIONAL,
                    desc="학생 프로필. 요청 본문으로만 보낸다(URL·쿼리에 넣지 않는다)"),
@@ -208,6 +217,7 @@ S.update({
             "maxDate": DATE,
             "signalsAreVirtual": BOOL,
         }),
+        "stages": d(arr(R("RoundStage")), "회차 일정 11단계(ADR-0033), 순서대로"),
     }),
     "InstitutionRef": obj({"id": ID, "name": STR, "logoPath": LOGO_PATH}),
     "ReasonLine": obj({
@@ -449,8 +459,18 @@ S.update({
             "risks": arr(obj({"code": R("Risk"), "label": STR, "detail": nul(STR)})),
             "alertCount": {"type": "integer", "minimum": 0},
             "pastZeroRounds": d(arr({}), "지난 회차 0명 이력. 원소 모양은 지난 회차 결과를 적재할 때 정한다(지금 예시는 빈 배열)"),
+            "views": d({"type": "integer", "minimum": 0}, "직무 상세 조회 수(#25와 같은 값)"),
         })), "회차 직무 전부"),
         "alerts": arr(R("Alert")),
+        "todo": d(obj({"newApplications": d(COUNT, "새로 들어온 지원서(SUBMITTED)"),
+                       "fixRequested": d(COUNT, "보완 요청 중"),
+                       "counselPending": d(nul(COUNT), "상담 확정 대기. 상담 기능 전이라 null")}),
+                  "처리할 것(이 계정의 범위 — 체험 센터는 자기 묶음, ADR-0033)"),
+        "demand": d(obj({"explorers": d(COUNT, "범위 안에서 직무 탐색 결과가 있는 학생 수"),
+                         "rows": arr(obj({"ncsCode": NCS_CODE, "ncsName": STR,
+                                          "students": d(COUNT, "탐색 1~3위에 이 세분류 직무가 든 학생 수(한 학생은 한 번)"),
+                                          "jobs": d(COUNT, "이번 회차 공고 수"), "seats": d(COUNT, "이번 회차 정원 합")}))}),
+                    "학생이 찾는 직무 vs 이번 회차 공고. 학생 수가 많은 순(같으면 정원이 적은 순). 관심(담은 수)은 쓰지 않는다"),
     }),
     "JobViews": obj({
         "jobId": ID,
@@ -568,6 +588,153 @@ S.update({
         "expand": arr(R("CareerPath"), maxItems=3),
         "occupations": arr(R("Occupation")),
     }),
+    # ── 현장실습 진행(ADR-0033) ──
+    "RoundStage": obj({"code": R("Stage"), "phase": R("StagePhase"), "startsOn": nul(DATE), "endsOn": nul(DATE),
+                       "confirmed": d(BOOL, "true 학생 모집안내 공지의 날짜 · false 공지에 없어 정한 값(센터 확인 전)"),
+                       "source": d(STR, "날짜의 출처")}),
+    "Applicant": obj({"nameKo": nul(STR), "nameEn": nul(STR), "birthDate": nul(DATE), "gender": nul(R("Gender")),
+                      "phone": nul(STR), "email": nul(STR), "address": nul(STR), "studentNo": nul(STR),
+                      "minorMajor": d(nul(STR), "부·복수전공(없으면 null)")},
+                     desc="신청서 기본정보(별지 제5호). 수집·이용 동의 뒤에만 저장한다. 사진·계좌는 받지 않는다"),
+    "Resume": obj({
+        "certificates": arr(obj({"kind": R("ResumeKind"), "name": nul(STR), "issuer": nul(STR), "acquiredOn": nul(STR)}),
+                            maxItems=10),
+        "awards": arr(obj({"name": nul(STR), "issuer": nul(STR), "awardedOn": nul(STR), "detail": nul(STR)}), maxItems=10),
+        "careers": arr(obj({"period": nul(STR), "company": nul(STR), "role": nul(STR), "note": nul(STR)}), maxItems=10),
+    }, desc="이력서(자격증·어학·교육 · 수상 · 경력·아르바이트). 줄마다 10개까지"),
+    "Approval": obj({"status": R("ApprovalStatus"),
+                     "token": d(nul(TOKEN), "학생(지원서)·센터(학점 인정)에게만. 링크: 프론트 /approvals/{token}"),
+                     "requestedAt": nul(DATETIME), "approvedAt": nul(DATETIME)}),
+    "ApplicationPick": obj({"rank": {"type": "integer", "minimum": 1, "maximum": 3}, "jobId": ID, "title": STR, "team": STR,
+                            "institution": R("InstitutionRef"),
+                            "verdict": d(nul(R("Verdict")), "내기 전: 저장한 프로필로 다시 판정(없으면 null) · 낸 뒤: 낼 때 값"),
+                            "closed": d(BOOL, "기준일에 마감된 직무")}),
+    "Application": obj({
+        "applicationId": d(nul(ID), "저장한 적이 없으면 null(status NONE)"),
+        "status": R("ApplicationStatus"),
+        "receiptNo": d(nul({"type": "string", "pattern": r"^\d{4}-[12]-\d{3}$"}), "접수번호. 처음 낼 때 정한다"),
+        "virtual": d(BOOL, "가상 지원자·체험 학생의 지난 기록"),
+        "round": R("RoundRef"),
+        "asOf": d(DATE, "기준일(체험 학생은 계정의 기준일, 아니면 오늘)"),
+        "period": obj({"startsOn": DATE, "endsOn": DATE, "open": d(BOOL, "asOf가 신청 기간 안")}),
+        "applicant": R("Applicant"),
+        "academic": d(nul(obj({"department": R("DepartmentRef"), "grade": INT, "completedSemesters": INT, "gpa": NUM,
+                               "graduationExpected": BOOL})),
+                      "학적. 내기 전: 저장한 프로필(없으면 null) · 낸 뒤: 낼 때 값"),
+        "picks": d(arr(R("ApplicationPick"), maxItems=3), "1~3지망. 내기 전에는 담은 직무 순위(#22)"),
+        "resume": R("Resume"),
+        "essays": d(arr(STR, minItems=4, maxItems=4), "자기소개서 4문항(지원동기 · 성격 및 장단점 · 경력사항 및 단체활동 · 기타 자유 기술)"),
+        "essayWarnings": d(arr(obj({"index": {"type": "integer", "minimum": 0, "maximum": 3}, "institutions": arr(STR)})),
+                           "자기소개서에 1~3지망 기관 이름이 들어 있음(한 부가 세 기관에 같이 간다)"),
+        "pledge": d(BOOL, "서약"),
+        "consents": obj({"collect": d(BOOL, "개인정보 수집·이용"), "thirdParty": d(BOOL, "제3자 제공(실습기관·보험사)")}),
+        "signature": d(nul(STR), "본인 서명(이름)"),
+        "approval": R("Approval"),
+        "checklist": d(arr(obj({"item": R("ApplicationItem"), "done": BOOL})), "내기 전 확인. 하나라도 false면 400 APPLICATION_INCOMPLETE"),
+        "counselCount": d({"type": "integer", "minimum": 0, "maximum": 5}, "진로취업상담 이수(가점). 상담 기능 전에는 가상 지원자만 값이 있다"),
+        "fixReason": d(nul(STR), "센터가 보완을 요청한 이유"),
+        "createdAt": nul(DATETIME), "updatedAt": nul(DATETIME), "submittedAt": nul(DATETIME), "receivedAt": nul(DATETIME),
+    }, desc="현장실습 지원서(별지 제5호) 한 부. 1~3지망에 같이 간다"),
+    "ApplicationRequest": obj({
+        "applicant": R("Applicant"),
+        "resume": R("Resume"),
+        "essays": arr(nul({"type": "string", "maxLength": 3000}), minItems=4, maxItems=4),
+        "pledge": BOOL,
+        "consents": obj({"collect": d(BOOL, "true가 아니면 400 CONSENT_REQUIRED(아무것도 저장하지 않음)"), "thirdParty": BOOL}),
+        "signature": nul({"type": "string", "maxLength": 30}),
+    }, optional=("applicant", "resume", "essays", "pledge", "signature"),
+        desc="임시 저장. 칸은 비워도 된다(낼 때 본다). 1~3지망은 담은 직무 순위(#22)에서 온다"),
+    "ApprovalView": obj({
+        "kind": R("ApprovalKind"), "status": R("ApprovalStatus"), "requestedAt": DATETIME, "approvedAt": nul(DATETIME),
+        "student": obj({"nameKo": nul(STR), "studentNo": nul(STR), "department": nul(R("DepartmentRef")), "grade": nul(INT)}),
+        "round": R("RoundRef"),
+        "picks": d(arr(obj({"rank": INT, "title": STR, "institution": R("InstitutionRef")}), maxItems=3), "APPLICATION만"),
+        "placement": d(nul(obj({"title": STR, "team": STR, "institution": R("InstitutionRef"), "periodStart": nul(DATE),
+                                "periodEnd": nul(DATE)})), "CREDIT만(실습한 자리)"),
+    }, desc="학과(부)장이 승인할 내용. 연락처·주소·자기소개서는 보여 주지 않는다"),
+    "Interview": obj({"at": nul(DATETIME), "mode": nul(R("InterviewMode"))}),
+    "Internship": obj({
+        "asOf": DATE,
+        "round": R("RoundRef"),
+        "stages": arr(obj({"code": R("Stage"), "phase": R("StagePhase"), "startsOn": nul(DATE), "endsOn": nul(DATE),
+                           "confirmed": BOOL, "state": R("StageState")})),
+        "now": d(nul(R("Stage")), "지금 단계(진행 중인 단계 중 가장 뒤, 없으면 다음에 올 단계)"),
+        "next": d(nul(obj({"code": R("Stage"), "kind": R("NextKind"), "on": DATE, "days": COUNT})),
+                  "가장 가까운 마감·시작(D-day)"),
+        "picks": d(arr(obj({"rank": nul({"type": "integer", "minimum": 1, "maximum": 3}), "jobId": ID, "title": STR,
+                            "institution": R("InstitutionRef"), "ncs": nul(obj({"code": NCS_CODE, "name": STR})),
+                            "closed": BOOL})), "담은 직무(1~3지망 → 후보). rank null은 후보"),
+        "application": nul(obj({"applicationId": ID, "status": R("ApplicationStatus"), "receiptNo": nul(STR),
+                                "submittedAt": nul(DATETIME), "approval": R("Approval"), "fixReason": nul(STR),
+                                "counselCount": COUNT, "virtual": BOOL})),
+        "placement": d(nul(obj({
+            "jobId": ID, "title": STR, "team": STR, "institution": R("InstitutionRef"),
+            "rank": d({"type": "integer", "minimum": 1, "maximum": 3}, "몇 지망으로 매칭됐는지"),
+            "matchedAt": DATETIME, "interview": nul(R("Interview")),
+            "result": d(nul(R("SelectionResult")), "센터가 알린 뒤에만(그 전에는 null)"), "notifiedAt": nul(DATETIME),
+            "practice": d(nul(obj({
+                "startsOn": DATE, "endsOn": DATE,
+                "day": d(COUNT, "시작일을 1일로 센 오늘(시작 전 0)"), "days": COUNT,
+                "week": d(COUNT, "1부터(시작 전 0)"), "weeks": COUNT,
+                "weekdays": arr(R("Weekday")), "workHours": nul(STR), "weeklyHours": nul(NUM), "stipend": R("Stipend"),
+                "courseName": d(STR, "교과목(표준 현장실습 D)"), "credits": d(COUNT, "인정 학점"),
+                "currentPlan": d(nul(obj({"weeks": STR, "content": STR})), "운영계획서 주차 계획 중 이번 주"),
+                "nextPlan": nul(obj({"weeks": STR, "content": STR})),
+            })), "합격 알림 뒤에만"),
+        })), "매칭이 확정된 자리"),
+        "documents": d(nul(obj({
+            "report": nul(DATETIME), "credit": nul(DATETIME), "survey": nul(DATETIME),
+            "evaluation": d(nul(DATETIME), "기관 평가표(센터가 받음 표시)"), "attendance": d(nul(DATETIME), "출근부"),
+            "careerReportId": d(nul(ID), "이 자리의 커리어 리포트(#35). 수행결과보고서를 내려면 있어야 한다"),
+            "creditApproval": R("Approval"), "remindedAt": d(nul(DATETIME), "센터가 서류를 챙겨 달라고 알린 때"),
+        })), "마무리 서류(합격 알림 뒤에만). 각 값은 낸·받은 시각"),
+    }, desc="내 현장실습 타임라인. 기준일은 asOf → 체험 학생의 기준일 → 오늘"),
+    "StudentBrief": obj({"nameKo": nul(STR), "department": nul(R("DepartmentRef")), "grade": nul(INT),
+                         "completedSemesters": nul(INT), "gpa": nul(NUM), "graduationExpected": nul(BOOL)}),
+    "CenterPick": obj({"rank": INT, "jobId": ID, "title": STR, "institution": R("InstitutionRef"), "verdict": R("Verdict")}),
+    "CenterApplications": obj({
+        "counts": obj({"all": COUNT, "submitted": COUNT, "received": COUNT, "fixRequested": COUNT, "matched": COUNT}),
+        "items": arr(obj({"applicationId": ID, "receiptNo": STR, "submittedAt": DATETIME, "status": R("ApplicationStatus"),
+                          "virtual": BOOL, "student": R("StudentBrief"), "counselCount": COUNT,
+                          "picks": arr(R("CenterPick"), maxItems=3)})),
+    }, desc="들어온 지원서(작성 중 제외), 접수번호 순"),
+    "ApplicationStatusRequest": obj({"status": d({"type": "string", "enum": ["RECEIVED", "FIX_REQUESTED"]}, "접수 · 보완 요청"),
+                                     "reason": d(nul({"type": "string", "maxLength": 300}), "보완 요청이면 5~300자 필수")},
+                                    optional=("reason",)),
+    "PlacementBoard": obj({
+        "confirmedAt": d(nul(DATETIME), "마지막 매칭 확정 시각"), "notifiedAt": d(nul(DATETIME), "마지막 결과 알림 시각"),
+        "counts": obj({"received": COUNT, "fixRequested": COUNT, "ranked": d(COUNT, "매칭을 고른 수"),
+                       "institutions": COUNT, "matched": COUNT, "interviewed": COUNT, "pass": COUNT, "fail": COUNT}),
+        "applicants": arr(obj({
+            "applicationId": ID, "receiptNo": STR, "status": R("ApplicationStatus"), "virtual": BOOL,
+            "student": R("StudentBrief"), "counselCount": COUNT, "picks": arr(R("CenterPick"), maxItems=3),
+            "matchedRank": nul({"type": "integer", "minimum": 1, "maximum": 3}),
+            "matchedJob": nul(obj({"jobId": ID, "title": STR, "institution": R("InstitutionRef")})),
+            "interview": nul(R("Interview")), "result": R("SelectionResult"), "notifiedAt": nul(DATETIME)})),
+        "jobs": d(arr(obj({"jobId": ID, "title": STR, "team": STR, "institution": R("InstitutionRef"),
+                           "headcount": COUNT, "matched": COUNT})),
+                  "매칭을 고른 직무별 수와 정원. 정원을 넘어도 매칭할 수 있다(기관이 면접으로 뽑는다)"),
+    }, desc="매칭·선발(접수 완료·보완 요청·매칭). 순위를 매기지 않는다"),
+    "MatchRequest": obj({"rank": d(nul({"type": "integer", "minimum": 1, "maximum": 3}), "그 지원서의 지망. null이면 고른 것 취소")}),
+    "SelectionRequest": obj({"interviewAt": nul(DATETIME), "interviewMode": nul(R("InterviewMode")),
+                             "result": R("SelectionResult")}, optional=("interviewAt", "interviewMode")),
+    "CloseBoard": obj({
+        "remindedAt": nul(DATETIME),
+        "counts": obj({"students": COUNT, "studentDocsDone": COUNT, "institutions": COUNT, "institutionsDone": COUNT,
+                       "ready": d(COUNT, "학점 인정 명단에 들어갈 수")}),
+        "rows": arr(obj({
+            "applicationId": ID, "virtual": BOOL, "student": R("StudentBrief"),
+            "job": obj({"jobId": ID, "title": STR, "institution": R("InstitutionRef")}),
+            "documents": obj({"report": nul(DATETIME), "credit": nul(DATETIME), "survey": nul(DATETIME),
+                              "evaluation": nul(DATETIME), "attendance": nul(DATETIME)}),
+            "approval": d(R("Approval"), "학점 인정 학과(부)장 승인. 평가표·출근부를 모두 받으면 링크가 생긴다"),
+            "missing": arr(R("CloseItem")), "ready": BOOL})),
+    }, desc="마무리(합격을 알린 학생). 파일은 저장하지 않고 낸·받은 시각만"),
+    "CloseDocumentsRequest": obj({"evaluation": nul(BOOL), "attendance": nul(BOOL)},
+                                 desc="기관 서류 받음(true)·취소(false). null이면 그대로"),
+    "Reminded": obj({"reminded": COUNT, "remindedAt": nul(DATETIME)}),
+    "DemoAdvanceRequest": obj({"to": R("DemoStep")}),
+    "DemoAdvanced": obj({"to": R("DemoStep"), "changed": d(COUNT, "바뀐 지원서 수(단계마다 셈)")}),
     "ExploreJobWhy": obj({
         "jobId": ID,
         "fit": d(R("ExploreFit"), "탐색 결과 안이면 그 값, 밖이면 WEAK"),
@@ -649,6 +816,51 @@ ENDPOINTS = {
     "DELETE /api/me/career-report": dict(op="deleteMyCareerReport", ok={204: (None, [])}),
     "GET /api/me/explore/jobs/{jobId}/why": dict(op="getExploreWhy", ok={200: ("ExploreJobWhy", ["explore-why.json"])},
                                                  errors=["EXPLORE_NOT_FOUND", "JOB_NOT_FOUND", "EXPLORE_NOT_CANDIDATE"]),
+    "GET /api/me/application": dict(op="getMyApplication", ok={200: ("Application", ["me-application.json"])}),
+    "PUT /api/me/application": dict(op="saveMyApplication", req=("ApplicationRequest", ["me-application.request.json"]),
+                                    ok={200: ("Application", ["me-application.json"])},
+                                    errors=["CONSENT_REQUIRED", "APPLICATION_LOCKED"]),
+    "DELETE /api/me/application": dict(op="deleteMyApplication", ok={204: (None, [])}, errors=["APPLICATION_LOCKED"]),
+    "POST /api/me/application/approval": dict(op="requestApplicationApproval",
+                                              ok={200: ("Application", ["me-application.json"])},
+                                              errors=["APPLICATION_NOT_FOUND", "PROFILE_NOT_FOUND", "APPLICATION_LOCKED"]),
+    "POST /api/me/application/submit": dict(op="submitMyApplication", ok={200: ("Application", ["me-application.json"])},
+                                            errors=["APPLICATION_INCOMPLETE", "APPLICATION_NOT_FOUND", "APPLICATION_LOCKED",
+                                                    "APPLICATION_CLOSED"]),
+    "GET /api/approvals/{token}": dict(op="getApproval", ok={200: ("ApprovalView", ["approval.json"])},
+                                       errors=["APPROVAL_NOT_FOUND"]),
+    "POST /api/approvals/{token}": dict(op="approve", ok={200: ("ApprovalView", ["approval.json"])},
+                                        errors=["APPROVAL_NOT_FOUND", "STATE_CONFLICT"]),
+    "GET /api/me/internship": dict(op="getMyInternship", ok={200: ("Internship", ["me-internship.json"])}),
+    "PUT /api/me/internship/documents/{kind}": dict(op="submitInternshipDocument",
+                                                    ok={200: ("Internship", ["me-internship.json"])},
+                                                    errors=["STATE_CONFLICT", "CAREER_REPORT_REQUIRED"]),
+    "GET /api/center/applications": dict(op="getCenterApplications", ok={200: ("CenterApplications", ["center-applications.json"])}),
+    "GET /api/center/applications/{applicationId}": dict(op="getCenterApplication",
+                                                         ok={200: ("Application", ["center-application.json"])},
+                                                         errors=["APPLICATION_NOT_FOUND"]),
+    "PUT /api/center/applications/{applicationId}/status": dict(
+        op="setApplicationStatus", req=("ApplicationStatusRequest", ["center-application-status.request.json"]),
+        ok={200: ("Application", ["center-application.json"])}, errors=["APPLICATION_NOT_FOUND", "STATE_CONFLICT"]),
+    "GET /api/center/placement": dict(op="getCenterPlacement", ok={200: ("PlacementBoard", ["center-placement.json"])}),
+    "PUT /api/center/applications/{applicationId}/match": dict(
+        op="setMatch", req=("MatchRequest", ["center-match.request.json"]),
+        ok={200: ("PlacementBoard", ["center-placement.json"])}, errors=["APPLICATION_NOT_FOUND", "STATE_CONFLICT"]),
+    "POST /api/center/placement/confirm": dict(op="confirmMatches", ok={200: ("PlacementBoard", ["center-placement.json"])},
+                                               errors=["STATE_CONFLICT"]),
+    "PUT /api/center/applications/{applicationId}/selection": dict(
+        op="setSelection", req=("SelectionRequest", ["center-selection.request.json"]),
+        ok={200: ("PlacementBoard", ["center-placement.json"])}, errors=["APPLICATION_NOT_FOUND", "STATE_CONFLICT"]),
+    "POST /api/center/placement/notify": dict(op="notifyResults", ok={200: ("PlacementBoard", ["center-placement.json"])},
+                                              errors=["STATE_CONFLICT"]),
+    "GET /api/center/close": dict(op="getCenterClose", ok={200: ("CloseBoard", ["center-close.json"])}),
+    "PUT /api/center/close/{applicationId}": dict(
+        op="setInstitutionDocuments", req=("CloseDocumentsRequest", ["center-close-documents.request.json"]),
+        ok={200: ("CloseBoard", ["center-close.json"])}, errors=["APPLICATION_NOT_FOUND", "STATE_CONFLICT"]),
+    "POST /api/center/close/remind": dict(op="remindDocuments", ok={200: ("Reminded", ["center-close-remind.json"])}),
+    "GET /api/center/close/credits.csv": dict(op="getCreditsCsv", ok={200: ("text/csv", [])}),
+    "POST /api/center/demo/advance": dict(op="advanceDemo", req=("DemoAdvanceRequest", ["center-demo-advance.request.json"]),
+                                          ok={200: ("DemoAdvanced", ["center-demo-advance.json"])}, errors=["DEMO_ONLY"]),
 }
 OK_TEXT = {200: "성공", 201: "만들었음", 204: "본문 없음"}
 STATUS_TEXT = {200: "이미 담겨 있음(그대로)", 201: "새로 담음"}  # POST /api/me/plan/items
@@ -772,6 +984,8 @@ def error_responses(codes):
                         "content": {"application/json": {"schema": R("Error"), "examples": exs}}}
     return out
 
+PATH_PARAMS = {"token": TOKEN, "kind": R("StudentDocument")}
+
 paths, tags, used_examples = {}, [], set()
 seen_ops = set()
 for r in rows:
@@ -799,10 +1013,11 @@ for r in rows:
           "description": f"권한: **{r['auth']}** · 화면: {r['screen']} · 규칙은 [docs/api/README.md]({REPO_DOC}) '엔드포인트별 규칙'"}
     params = []
     for name in re.findall(r"\{(\w+)\}", path):
-        params.append({"name": name, "in": "path", "required": True, "schema": ID})
+        params.append({"name": name, "in": "path", "required": True, "schema": PATH_PARAMS.get(name, ID)})
     for name in re.findall(r"(\w+)=", query):
         params.append({"name": name, "in": "query", "required": False, "schema": DATE,
-                       "description": "회차 모집기간 안의 날짜. 생략하면 rounds/current의 replay.defaultAsOf"})
+                       "description": "기준일. 생략하면 체험 학생의 기준일, 아니면 오늘(한국 시간)" if path == "/api/me/internship"
+                       else "회차 모집기간 안의 날짜. 생략하면 rounds/current의 replay.defaultAsOf"})
     if params:
         op["parameters"] = params
     errors = list(e.get("errors", []))
@@ -824,7 +1039,9 @@ for r in rows:
     for st, (schema, files) in sorted(e["ok"].items()):
         desc = STATUS_TEXT[st] if e["op"] == "addPlanItem" else OK_TEXT[st]
         resp = {"description": desc}
-        if schema:
+        if schema and schema.startswith("text/"):
+            resp["content"] = {schema: {"schema": {"type": "string"}}}
+        elif schema:
             resp["content"] = {"application/json": {"schema": R(schema), "examples": example_obj(files)}}
             for f in files:
                 used_examples.add(f)

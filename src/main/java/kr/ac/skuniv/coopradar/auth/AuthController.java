@@ -42,6 +42,6 @@ public class AuthController {
     @PostMapping("/guest")
     @ResponseStatus(HttpStatus.CREATED)
     public GuestTokenResponse guest(@Valid @RequestBody GuestRequest body, HttpServletRequest request) {
-        return auth.guest(body.role(), clientIp.of(request));
+        return auth.guest(body.role(), body.stage(), body.demoGroup(), clientIp.of(request));
     }
 }

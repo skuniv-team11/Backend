@@ -1,0 +1,44 @@
+{
+  "applicant": {
+    "nameKo": "예시 학생",
+    "nameEn": "Yesi Haksaeng",
+    "birthDate": "2004-03-15",
+    "gender": "F",
+    "phone": "010-0000-0000",
+    "email": "student@skuniv.ac.kr",
+    "address": "서울특별시 노원구 (예시)",
+    "studentNo": "2023000000",
+    "minorMajor": null
+  },
+  "resume": {
+    "certificates": [
+      {
+        "kind": "CERTIFICATE",
+        "name": "컴퓨터활용능력 2급",
+        "issuer": "대한상공회의소",
+        "acquiredOn": "2025-08"
+      }
+    ],
+    "awards": [],
+    "careers": [
+      {
+        "period": "2025.03 ~ 2025.10",
+        "company": "화장품 매장(예시)",
+        "role": "판매 아르바이트",
+        "note": null
+      }
+    ]
+  },
+  "essays": [
+    "(가상) 졸업작품 홍보를 위해 학과 인스타그램 계정을 1년 동안 운영하며 게시 시간과 첫 문장을 바꿔 저장 수를 비교했습니다. 누리뷰티 마케팅팀의 …",
+    "(가상) 저는 한 번 맡은 일을 끝까지 정리하는 편입니다. …",
+    "(가상) 졸업작품 전시에서 홍보 담당을 맡아 다섯 명과 계정을 운영했습니다. …",
+    "(가상) SNS 콘텐츠를 기획하고 반응을 보며 고치는 일을 꾸준히 해 왔기 때문에 이 직무를 희망합니다. …"
+  ],
+  "pledge": true,
+  "consents": {
+    "collect": true,
+    "thirdParty": true
+  },
+  "signature": "예시 학생"
+}

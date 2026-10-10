@@ -1,0 +1,97 @@
+{
+  "remindedAt": null,
+  "counts": {
+    "students": 4,
+    "studentDocsDone": 1,
+    "institutions": 2,
+    "institutionsDone": 0,
+    "ready": 1
+  },
+  "rows": [
+    {
+      "applicationId": 31,
+      "virtual": true,
+      "student": {
+        "nameKo": "가상 지원자 5",
+        "department": {
+          "id": 5,
+          "name": "경영학부"
+        },
+        "grade": 4,
+        "completedSemesters": 7,
+        "gpa": 3.6,
+        "graduationExpected": true
+      },
+      "job": {
+        "jobId": 118,
+        "title": "자금업무지원",
+        "institution": {
+          "id": 5,
+          "name": "가온소프트(가상)",
+          "logoPath": "/logos/5.png"
+        }
+      },
+      "documents": {
+        "report": null,
+        "credit": null,
+        "survey": null,
+        "evaluation": null,
+        "attendance": null
+      },
+      "approval": {
+        "status": "NONE",
+        "token": null,
+        "requestedAt": null,
+        "approvedAt": null
+      },
+      "missing": [
+        "REPORT",
+        "CREDIT",
+        "SURVEY",
+        "EVALUATION",
+        "ATTENDANCE",
+        "APPROVAL"
+      ],
+      "ready": false
+    },
+    {
+      "applicationId": 7,
+      "virtual": false,
+      "student": {
+        "nameKo": "예시 학생",
+        "department": {
+          "id": 43,
+          "name": "메이크업디자인학과"
+        },
+        "grade": 3,
+        "completedSemesters": 5,
+        "gpa": 3.4,
+        "graduationExpected": false
+      },
+      "job": {
+        "jobId": 122,
+        "title": "국내 마케팅",
+        "institution": {
+          "id": 3,
+          "name": "누리뷰티(가상)",
+          "logoPath": "/logos/3.png"
+        }
+      },
+      "documents": {
+        "report": "2026-12-16T10:00:00+09:00",
+        "credit": "2026-12-16T10:00:00+09:00",
+        "survey": "2026-12-16T10:00:00+09:00",
+        "evaluation": "2026-12-16T10:00:00+09:00",
+        "attendance": "2026-12-16T10:00:00+09:00"
+      },
+      "approval": {
+        "status": "APPROVED",
+        "token": "8d41c0b9e27f4a6c93b5d0e1f2a7c3b4",
+        "requestedAt": "2026-12-16T11:00:00+09:00",
+        "approvedAt": "2026-12-16T15:00:00+09:00"
+      },
+      "missing": [],
+      "ready": true
+    }
+  ]
+}

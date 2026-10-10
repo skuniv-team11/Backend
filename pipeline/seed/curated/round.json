@@ -1,6 +1,106 @@
 {
-  "program": {"id": 1, "code": "STANDARD_COOP", "name": "표준 현장실습학기제"},
-  "round": {"id": 1, "program_id": 1, "term_code": "2026-2", "round_no": 1,
-            "recruit_start": "2026-07-13", "recruit_end": "2026-07-24"},
-  "replay_seed": "2026-2"
+  "program": {
+    "id": 1,
+    "code": "STANDARD_COOP",
+    "name": "표준 현장실습학기제"
+  },
+  "round": {
+    "id": 1,
+    "program_id": 1,
+    "term_code": "2026-2",
+    "round_no": 1,
+    "recruit_start": "2026-07-13",
+    "recruit_end": "2026-07-24"
+  },
+  "replay_seed": "2026-2",
+  "stages": [
+    {
+      "code": "PICK",
+      "phase": "APPLY",
+      "starts_on": "2026-07-13",
+      "ends_on": "2026-07-24",
+      "confirmed": true,
+      "source": "학생 모집안내(job.skuniv.ac.kr/notice/8899) — 신청 기간(1지망 필수, 2·3지망 선택)"
+    },
+    {
+      "code": "APPLY",
+      "phase": "APPLY",
+      "starts_on": "2026-07-13",
+      "ends_on": "2026-07-24",
+      "confirmed": true,
+      "source": "학생 모집안내(job.skuniv.ac.kr/notice/8899) — 신청 기간(학과(부)장 승인 뒤 제출)"
+    },
+    {
+      "code": "MATCH",
+      "phase": "APPLY",
+      "starts_on": "2026-07-27",
+      "ends_on": "2026-07-28",
+      "confirmed": true,
+      "source": "학생 모집안내(job.skuniv.ac.kr/notice/8899) — 기관-학생 매칭"
+    },
+    {
+      "code": "SELECT",
+      "phase": "APPLY",
+      "starts_on": "2026-07-29",
+      "ends_on": "2026-08-05",
+      "confirmed": true,
+      "source": "학생 모집안내(job.skuniv.ac.kr/notice/8899) — 학생 면접 및 선발"
+    },
+    {
+      "code": "CONTRACT",
+      "phase": "PREPARE",
+      "starts_on": "2026-08-10",
+      "ends_on": "2026-08-28",
+      "confirmed": true,
+      "source": "학생 모집안내(job.skuniv.ac.kr/notice/8899) — 협약 체결·보험 가입"
+    },
+    {
+      "code": "ORIENTATION",
+      "phase": "PREPARE",
+      "starts_on": "2026-08-26",
+      "ends_on": "2026-08-26",
+      "confirmed": true,
+      "source": "학생 모집안내(job.skuniv.ac.kr/notice/8899) — 사전 교육(OT)"
+    },
+    {
+      "code": "PRACTICE",
+      "phase": "PRACTICE",
+      "starts_on": "2026-09-01",
+      "ends_on": "2026-12-12",
+      "confirmed": true,
+      "source": "학생 모집안내(job.skuniv.ac.kr/notice/8899) — 실습 기간 15주"
+    },
+    {
+      "code": "MIDCHECK",
+      "phase": "PRACTICE",
+      "starts_on": "2026-10-19",
+      "ends_on": "2026-10-23",
+      "confirmed": false,
+      "source": "운영서식 제6호 중간점검서 — 공지에 날짜가 없어 8주차로 둠(센터 확인 전)"
+    },
+    {
+      "code": "CLOSE",
+      "phase": "CLOSE",
+      "starts_on": "2026-12-12",
+      "ends_on": null,
+      "confirmed": true,
+      "source": "학생 모집안내(job.skuniv.ac.kr/notice/8899) — 종료 후 서류 제출 및 평가(실습 기간 종료 후)"
+    },
+    {
+      "code": "DEBRIEF",
+      "phase": "CLOSE",
+      "starts_on": "2026-12-17",
+      "ends_on": "2026-12-17",
+      "confirmed": true,
+      "source": "학생 모집안내(job.skuniv.ac.kr/notice/8899) — 후기 간담회"
+    },
+    {
+      "code": "CREDIT",
+      "phase": "CLOSE",
+      "starts_on": null,
+      "ends_on": null,
+      "confirmed": false,
+      "source": "학생 모집안내(job.skuniv.ac.kr/notice/8899) — 학점 인정(12학점, P/NP)·대학 지원금(월 20만 원, 최대 3개월) — 날짜는 공지에 없음"
+    }
+  ]
 }

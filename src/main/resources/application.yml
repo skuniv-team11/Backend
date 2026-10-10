@@ -70,6 +70,19 @@ app:
     per-ip-per-hour: ${EXPLORE_PER_IP_PER_HOUR:60}
     # 서버 전체 하루(한국 시간 자정에 새로 셈). 0이면 끔
     per-day: ${EXPLORE_PER_DAY:300}
+  internship:
+    # 지원서 → 접수 → 매칭 → 선발 → 마무리(docs/api #37~#58, ADR-0033)
+    # 자기소개서 4문항 각각 최소 글자 수 — 운영서식 제5호 '300자 이상 작성'
+    essay-min-chars: 300
+    # 교과목·학점·대학 지원금 — 제5호 서식 '표준 현장실습 D', 2026-2 학생 모집안내 '12학점', '월 20만 원, 최대 3개월'
+    course: 표준 현장실습 D
+    credits: 12
+    scholarship-monthly: 200000
+    scholarship-months: 3
+    # 체험 학생 기준일(v2 프로토타입): 지원 중 · 실습 중 · 실습 마친 뒤(후기 간담회)
+    applying-today: 2026-07-23
+    practicing-today: 2026-10-14
+    done-today: 2026-12-17
   center:
     # 현황판 위험 요인 NARROW_POOL: 선호 전공 재학생 수가 이 값보다 적으면 표시(2026-2 시드 분포로 정함, ADR-0016)
     narrow-pool-below: ${CENTER_NARROW_POOL_BELOW:200}

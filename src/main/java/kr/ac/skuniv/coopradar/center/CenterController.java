@@ -1,6 +1,7 @@
 package kr.ac.skuniv.coopradar.center;
 
 import java.time.LocalDate;
+import kr.ac.skuniv.coopradar.auth.AuthUser;
 import kr.ac.skuniv.coopradar.auth.RequireRole;
 import kr.ac.skuniv.coopradar.auth.Role;
 import kr.ac.skuniv.coopradar.center.CenterDtos.CenterBoard;
@@ -24,7 +25,8 @@ public class CenterController {
     }
 
     @GetMapping("/api/center/board")
-    public CenterBoard board(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOf) {
-        return center.board(asOf);
+    public CenterBoard board(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOf,
+                             AuthUser user) {
+        return center.board(user, asOf);
     }
 }
