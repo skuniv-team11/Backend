@@ -41,6 +41,8 @@ import kr.ac.skuniv.coopradar.internship.InternshipDtos.WeekPlan;
 import kr.ac.skuniv.coopradar.job.RoundRef;
 import kr.ac.skuniv.coopradar.reference.ReferenceDtos.Stage;
 import kr.ac.skuniv.coopradar.reference.ReferenceDtos.StageInfo;
+import kr.ac.skuniv.coopradar.reference.ReferenceDates;
+import kr.ac.skuniv.coopradar.reference.ReferenceDates.AsOf;
 import kr.ac.skuniv.coopradar.reference.RoundService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,14 +59,16 @@ public class TimelineService {
     private final ApplicationService applications;
     private final RoundService rounds;
     private final InternshipProperties props;
+    private final ReferenceDates dates;
     private final Clock clock;
 
     public TimelineService(ApplicationRepository repo, ApplicationService applications, RoundService rounds,
-                           InternshipProperties props, Clock clock) {
+                           InternshipProperties props, ReferenceDates dates, Clock clock) {
         this.repo = repo;
         this.applications = applications;
         this.rounds = rounds;
         this.props = props;
+        this.dates = dates;
         this.clock = clock;
     }
 
@@ -72,12 +76,13 @@ public class TimelineService {
     public Internship timeline(AuthUser user, LocalDate requestedAsOf) {
         var round = rounds.current();
         Demo demo = repo.demo(user.id());
-        LocalDate asOf = requestedAsOf != null ? requestedAsOf : applications.today(demo);
+        LocalDate asOf = dates.progress(requestedAsOf, demo.today());
+        AsOf closing = ReferenceDates.on(asOf, round);
         Stages stages = stages(round.stages(), asOf);
         List<PlanPick> picks = repo.plan(user.id()).stream()
                 .map(p -> new PlanPick(p.rank(), p.jobId(), p.title(), p.institution(),
                         p.ncsCode() == null ? null : new NcsRef(p.ncsCode(), p.ncsName()),
-                        p.closesOn() != null && !p.closesOn().isAfter(asOf)))
+                        closing.closed(p.closesOn())))
                 .toList();
         Row row = repo.byUser(user.id(), round.id()).orElse(null);
         ApplicationBrief brief = null;

@@ -41,6 +41,10 @@ public class JobRepository {
                   Workplace workplace, Closing closing) {
     }
 
+    boolean exists(long jobId) {
+        return db.sql("SELECT EXISTS (SELECT 1 FROM job WHERE id = :id)").param("id", jobId).query(Boolean.class).single();
+    }
+
     Optional<JobRow> findJob(long jobId) {
         return db.sql("""
                         SELECT j.*, r.term_code,

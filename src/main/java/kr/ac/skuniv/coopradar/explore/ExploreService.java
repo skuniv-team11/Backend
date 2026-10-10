@@ -5,7 +5,6 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.HexFormat;
@@ -53,6 +52,8 @@ import kr.ac.skuniv.coopradar.recommend.RecommendDtos.Recommendation;
 import kr.ac.skuniv.coopradar.recommend.RecommendDtos.Recommendations;
 import kr.ac.skuniv.coopradar.recommend.RecommendDtos.SourceType;
 import kr.ac.skuniv.coopradar.recommend.RecommendService;
+import kr.ac.skuniv.coopradar.reference.ReferenceDates;
+import kr.ac.skuniv.coopradar.reference.ReferenceDates.AsOf;
 import kr.ac.skuniv.coopradar.reference.RoundService;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
@@ -111,7 +112,7 @@ public class ExploreService {
     }
 
     private Pool pool(int roundId, ProfileInput profile) {
-        LocalDate asOf = rounds.current().replay().defaultAsOf();
+        AsOf asOf = ReferenceDates.recruit(rounds.current());
         List<Judged> candidates = eligibility.judgeAll(roundId, profile).stream()
                 .filter(j -> j.result().verdict() != Verdict.INELIGIBLE)
                 .filter(j -> !EligibilityService.closedOn(j, asOf))
@@ -136,6 +137,7 @@ public class ExploreService {
         if (!Boolean.TRUE.equals(req.consent())) {
             throw new ApiException(ErrorCode.CONSENT_REQUIRED, "경험 글을 AI 분석에 쓰고 결과와 함께 저장하는 데 동의해 주세요");
         }
+        ProfileInput profile = profiles.bodyOrSaved(user, req.profile());
         List<String> experiences = (req.experiences() == null ? List.<String>of() : req.experiences()).stream()
                 .map(ExploreText::mask).toList();
         List<String> cardIds = req.cardIds() == null ? List.of() : req.cardIds();
@@ -146,20 +148,20 @@ public class ExploreService {
             throw ApiException.invalid("experiences", "해 본 일을 하나 이상 쓰거나 하고 싶은 일을 3개 이상 고르세요");
         }
         var round = rounds.current();
-        Pool pool = pool(round.id(), req.profile());
+        Pool pool = pool(round.id(), profile);
         Map<Integer, JobDoc> docs = docs(round.id());
         List<String> cards = resolveCards(cardIds, docs);
-        Student student = new Student(experiences, cards, ExploreText.mask(req.profile().interestText()));
+        Student student = new Student(experiences, cards, ExploreText.mask(profile.interestText()));
 
         Outcome outcome;
         if (pool.candidates().isEmpty()) {
-            outcome = rule(req.profile(), docs, Fallback.NO_CANDIDATES);
+            outcome = rule(profile, docs, Fallback.NO_CANDIDATES);
         } else if (!writer.available()) {
-            outcome = rule(req.profile(), docs, Fallback.NO_KEY);
+            outcome = rule(profile, docs, Fallback.NO_KEY);
         } else if (!limiter.tryAcquire(user.id(), ip)) {
-            outcome = rule(req.profile(), docs, Fallback.LIMITED);
+            outcome = rule(profile, docs, Fallback.LIMITED);
         } else {
-            outcome = ai(req.profile(), pool, docs, student);
+            outcome = ai(profile, pool, docs, student);
         }
         NewRun run = new NewRun(round.id(), experiences, cards, student.interestText(), outcome.source(),
                 outcome.fallback(), List.copyOf(pool.ids()), pool.counts().eligible(), pool.counts().needsCheck(),

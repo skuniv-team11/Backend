@@ -46,6 +46,8 @@ import kr.ac.skuniv.coopradar.job.RoundRef;
 import kr.ac.skuniv.coopradar.me.ProfileRepository;
 import kr.ac.skuniv.coopradar.me.SavedProfile;
 import kr.ac.skuniv.coopradar.reference.ReferenceDtos.CurrentRound;
+import kr.ac.skuniv.coopradar.reference.ReferenceDates;
+import kr.ac.skuniv.coopradar.reference.ReferenceDates.AsOf;
 import kr.ac.skuniv.coopradar.reference.RoundService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,21 +72,23 @@ public class ApplicationService {
     private final EligibilityService eligibility;
     private final RoundService rounds;
     private final InternshipProperties props;
+    private final ReferenceDates dates;
     private final Clock clock;
 
     public ApplicationService(ApplicationRepository repo, ProfileRepository profiles, EligibilityService eligibility,
-                              RoundService rounds, InternshipProperties props, Clock clock) {
+                              RoundService rounds, InternshipProperties props, ReferenceDates dates, Clock clock) {
         this.repo = repo;
         this.profiles = profiles;
         this.eligibility = eligibility;
         this.rounds = rounds;
         this.props = props;
+        this.dates = dates;
         this.clock = clock;
     }
 
-    /** 기준일: 체험 학생은 계정의 기준일, 아니면 오늘(한국 시간). */
+    /** 진행 기준일: 체험 학생은 계정의 기준일, 아니면 오늘(한국 시간, {@link ReferenceDates#progress}). */
     LocalDate today(Demo demo) {
-        return demo.today() != null ? demo.today() : LocalDate.now(clock.withZone(Times.KST));
+        return dates.progress(null, demo.today());
     }
 
     @Transactional(readOnly = true)
@@ -215,11 +219,13 @@ public class ApplicationService {
                         .map(PickRow::jobId).collect(Collectors.toSet());
                 firstOn = row.submittedAt().toLocalDate().isBefore(asOf) ? row.submittedAt().toLocalDate() : asOf;
             }
-            picks = livePicks(round, basis.picks(), saved, asOf, firstPicks, firstOn);
+            picks = livePicks(round, basis.picks(), saved, ReferenceDates.on(asOf, round), firstPicks,
+                    ReferenceDates.on(firstOn, round));
         } else {
             List<PickRow> rows = repo.picks(List.of(row.id())).getOrDefault(row.id(), List.of());
             basis = ApplicationViews.submittedBasis(row, rows);
-            picks = ApplicationViews.snapshotPicks(rows, repo.jobs(basis.jobIds()), ApplicationViews.submittedOn(row, asOf));
+            picks = ApplicationViews.snapshotPicks(rows, repo.jobs(basis.jobIds()),
+                    ReferenceDates.on(ApplicationViews.submittedOn(row, asOf), round));
         }
         Academic academic = basis.academic();
         Applicant applicant = row == null ? new Applicant(null, null, null, null, null, demo.email(), null, null, null)
@@ -265,12 +271,13 @@ public class ApplicationService {
         return new Academic(p.department(), p.grade(), p.completedSemesters(), p.gpa(), p.graduationExpected());
     }
 
-    /** 담은 직무 순위 → 1~3지망(순위 값 그대로, 저장한 프로필로 판정, 없으면 verdict null). */
     /**
+     * 담은 직무 순위 → 1~3지망(순위 값 그대로, 저장한 프로필로 판정, 없으면 verdict null).
+     *
      * @param firstPicks 보완 요청 중일 때 처음 낸 지망 직무(이 직무는 firstOn 기준으로 마감을 본다)
      */
-    private List<Pick> livePicks(CurrentRound round, List<RankedJob> ranked, Optional<SavedProfile> saved, LocalDate asOf,
-                                 Set<Integer> firstPicks, LocalDate firstOn) {
+    private List<Pick> livePicks(CurrentRound round, List<RankedJob> ranked, Optional<SavedProfile> saved, AsOf asOf,
+                                 Set<Integer> firstPicks, AsOf firstOn) {
         if (ranked.isEmpty()) {
             return List.of();
         }

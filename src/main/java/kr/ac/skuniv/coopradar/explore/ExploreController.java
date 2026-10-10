@@ -6,10 +6,11 @@ import kr.ac.skuniv.coopradar.auth.AuthUser;
 import kr.ac.skuniv.coopradar.auth.ClientIp;
 import kr.ac.skuniv.coopradar.auth.RequireRole;
 import kr.ac.skuniv.coopradar.auth.Role;
-import kr.ac.skuniv.coopradar.eligibility.ProfileBody;
+import kr.ac.skuniv.coopradar.eligibility.OptionalProfileBody;
 import kr.ac.skuniv.coopradar.explore.ExploreDtos.Cards;
 import kr.ac.skuniv.coopradar.explore.ExploreDtos.Explore;
 import kr.ac.skuniv.coopradar.explore.ExploreDtos.JobWhy;
+import kr.ac.skuniv.coopradar.me.ProfileService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,7 +21,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * docs/api #28~#32 직무 탐색(ADR-0031). 학생만. 프로필은 본문으로만 받는다. AI가 실패하거나 한도에 걸려도
+ * docs/api #28~#32 직무 탐색(ADR-0031). 학생만. 프로필은 본문으로 받고, 없으면 저장한 프로필(ADR-0035). AI가 실패하거나 한도에 걸려도
  * 200 + 규칙 추천(source RULE)이고, '왜 맞나요'는 200 + why null이다.
  */
 @RestController
@@ -28,16 +29,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class ExploreController {
 
     private final ExploreService explore;
+    private final ProfileService profiles;
     private final ClientIp clientIp;
 
-    public ExploreController(ExploreService explore, ClientIp clientIp) {
+    public ExploreController(ExploreService explore, ProfileService profiles, ClientIp clientIp) {
         this.explore = explore;
+        this.profiles = profiles;
         this.clientIp = clientIp;
     }
 
     @PostMapping("/api/explore/cards")
-    public Cards cards(@Valid @RequestBody ProfileBody body) {
-        return explore.cards(body.profile());
+    public Cards cards(@Valid @RequestBody OptionalProfileBody body, AuthUser user) {
+        return explore.cards(profiles.bodyOrSaved(user, body.profile()));
     }
 
     @PostMapping("/api/explore")

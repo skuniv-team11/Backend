@@ -3,7 +3,7 @@
   "info": {
     "title": "현장뛰자 API — 계약",
     "version": "0.0.1",
-    "description": "**계약 스펙** — 아직 구현되지 않은 엔드포인트도 보인다. 지금 코드에 있는 것만 보려면 위 드롭다운에서 '구현'을 고른다.\n\n`scripts/build_openapi.py`가 `docs/api`(README 목록 표·예시 JSON)로 만든다. 손으로 고치지 않는다. 원본은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md).\n\n인증이 필요한 API는 오른쪽 **Authorize**에 `POST /api/auth/guest` 응답의 accessToken을 넣는다.\n\n## 공통 규칙 (README에서 옮김)\n\n- 기본 경로 `/api`, JSON, 필드는 camelCase, 날짜는 ISO 8601(`2026-07-18`, `2026-09-30T14:00:00+09:00`).\n- **인증**: `Authorization: Bearer <accessToken>`. 쿠키는 쓰지 않는다 — 프론트(Cloudflare Pages, `pages.dev`)와 Render(`onrender.com`)는 사이트가 달라 서드파티 쿠키 차단에 걸린다.\n  - 토큰은 JWT(HS256, 서명 키는 환경변수 `JWT_SECRET`). 만료는 가입 계정 7일, 체험 계정 24시간(계정도 그때 지운다).\n  - 로그아웃은 프론트가 토큰을 버리는 것으로 끝난다(서버 호출 없음).\n- **권한**: `공개` / `로그인`(역할 무관) / `STUDENT` / `CENTER`. 아래 목록의 '권한' 열.\n- **오류**: HTTP 상태 코드 + `{\"code\": \"...\", \"message\": \"사람이 읽는 설명\"}`. 입력 검증 실패(`INVALID_INPUT`)만 `fields`를 더 준다. 코드 표는 맨 아래.\n- **개인정보**\n  - 프로필(학과·학년·평점 등)은 요청 **본문**으로만 보낸다. URL·쿼리에 넣지 않는다 — 그래서 판정·추천·지망 점검·통근 조회가 GET이 아니라 POST다.\n  - 서버에 저장하는 건 `PUT /api/me/profile`에 `consent: true`로 보냈을 때뿐이다. 탈퇴하면 즉시 지운다.\n  - 사는 곳은 시·군·구까지만 받는다(`homeAreaCode`). 정확한 주소는 받지 않는다.\n  - 요청·응답 본문을 로그에 남기지 않는다.\n  - 지원서(#37~#41)의 이름·생년월일·성별·연락처·주소·학번은 개인정보 수집·이용 동의(`consents.collect: true`) 뒤에만 저장한다. 사진·계좌는 받지 않는다. 센터는 자기 범위(체험 묶음 또는 실제)의 낸 지원서만 보고, 학과(부)장 승인 화면에는 이름·학번·학과·학년·지망만 보인다. 탈퇴하면 함께 지운다([ADR-0033](../decisions/0033-internship-flow.md)).\n  - 직무 탐색(#29)의 경험 글과 커리어 리포트(#34)의 실습 내용은 `consent: true`일 때만 받아 결과와 함께 저장한다(계정당 마지막 1건, 지우기·탈퇴 때 바로 삭제). AI에는 학과·학년·평점을 보내지 않는다([ADR-0031](../decisions/0031-explore-ai.md)·[0032](../decisions/0032-ncs-career.md)).\n- **모집 신호 = 관심**: 관심은 **내 지망에 담은 사람 수**다(순위와 상관없이 [담기]한 사람, 1인 1표). 모집기간 리플레이 가상 값에 실제 사용자가 담은 수를 더해 보여 준다(ADR-0019). 신호를 주는 응답에는 `isVirtual`과 `signalSource`를 반드시 넣는다.\n- **호출 제한**(초기값, 설정으로 조정): 체험 계정 만들기 IP당 1시간 300회(환경변수 `GUEST_PER_IP_PER_HOUR`, 0이면 끔 — 시연장·학교 와이파이는 여럿이 한 IP) → 넘으면 429 + `Retry-After`(초). 이유 문장(LLM) 계정당 1시간 30회·IP당 60회 → 넘으면 **200 + 기본 문장**(화면이 깨지지 않게). 직무 탐색 AI(탐색 1번·'왜 맞나요' 1곳이 각 1회) 계정당 1시간 10회·IP당 60회·서버 전체 하루 300회 → 넘으면 **200 + 규칙 추천**(`source: RULE`, `fallbackReason: LIMITED`). 커리어 리포트(#34)도 같은 한도를 1회씩 쓰고, 넘으면 200 + AI 정리 없이(`source: NONE`). 통근 조회 계정당 1시간 30회·서버 전체 하루 900회(카카오 무료 하루 1,000건 안에서 멈춤) → 넘으면 **200 + `available: false`**.\n- **실행 중 외부 호출**은 Claude(이유 문장·직무 탐색·커리어 리포트)·카카오(통근 조회 — 주소 검색과 대중교통) 둘뿐이다(ADR-0002, ADR-0007, ADR-0031). 임베딩은 쓰지 않는다(E5 결과, ADR-0018). 둘 다 실패해도 200으로 화면을 유지한다.\n- **코드값**은 영문 대문자이고 DB CHECK와 같은 집합이다(`V1__init.sql`). 화면 표기는 `GET /api/codes`에서 가져간다.\n- **예시 값**: 기관·직무·인용문은 전부 가상이다(`(가상)` 표시). 실제 값은 시드에서 나온다. 목록 응답의 예시는 일부 행만 보여 준다.\n- CORS: `CorsConfig`가 `GET`·`POST`·`PUT`·`DELETE`·`OPTIONS`와 모든 헤더(`Authorization` 포함)를 허용한다(Backend#16). 응답 헤더 `Retry-After`(429)·`Content-Disposition`(CSV 파일 이름)은 프론트 JS가 읽을 수 있게 노출한다. 통근 조회에는 환경변수 `KAKAO_REST_API_KEY`(카카오 디벨로퍼스 REST API 키)가 필요하다."
+    "description": "**계약 스펙** — 아직 구현되지 않은 엔드포인트도 보인다. 지금 코드에 있는 것만 보려면 위 드롭다운에서 '구현'을 고른다.\n\n`scripts/build_openapi.py`가 `docs/api`(README 목록 표·예시 JSON)로 만든다. 손으로 고치지 않는다. 원본은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md).\n\n인증이 필요한 API는 오른쪽 **Authorize**에 `POST /api/auth/guest` 응답의 accessToken을 넣는다.\n\n## 공통 규칙 (README에서 옮김)\n\n- 기본 경로 `/api`, JSON, 필드는 camelCase, 날짜는 ISO 8601(`2026-07-18`, `2026-09-30T14:00:00+09:00`).\n- **인증**: `Authorization: Bearer <accessToken>`. 쿠키는 쓰지 않는다 — 프론트(Cloudflare Pages, `pages.dev`)와 Render(`onrender.com`)는 사이트가 달라 서드파티 쿠키 차단에 걸린다.\n  - 토큰은 JWT(HS256, 서명 키는 환경변수 `JWT_SECRET`). 만료는 가입 계정 7일, 체험 계정 24시간(계정도 그때 지운다).\n  - 로그아웃은 프론트가 토큰을 버리는 것으로 끝난다(서버 호출 없음).\n- **권한**: `공개` / `로그인`(역할 무관) / `STUDENT` / `CENTER`. 아래 목록의 '권한' 열.\n- **오류**: HTTP 상태 코드 + `{\"code\": \"...\", \"message\": \"사람이 읽는 설명\"}`. 입력 검증 실패(`INVALID_INPUT`)만 `fields`를 더 준다. 코드 표는 맨 아래.\n- **개인정보**\n  - 프로필(학과·학년·평점 등)은 요청 **본문**으로만 보낸다. URL·쿼리에 넣지 않는다 — 그래서 판정·추천·지망 점검·통근 조회가 GET이 아니라 POST다.\n  - 판정(#14)·탐색 카드(#28)·탐색(#29)은 본문 `profile`을 빼도 된다 — 빼면 저장한 프로필(#8)로 보고, 둘 다 없으면 404 `PROFILE_NOT_FOUND`. 저장하지 않고 써 보는 길(본문 `profile`)은 그대로다. 화면은 저장한 뒤에는 `profile`을 보내지 않는다(탐색 결과를 다시 열어도 같은 프로필로 판정되게).\n  - 서버에 저장하는 건 `PUT /api/me/profile`에 `consent: true`로 보냈을 때뿐이다. 탈퇴하면 즉시 지운다.\n  - 사는 곳은 시·군·구까지만 받는다(`homeAreaCode`). 정확한 주소는 받지 않는다.\n  - 요청·응답 본문을 로그에 남기지 않는다.\n  - 지원서(#37~#41)의 이름·생년월일·성별·연락처·주소·학번은 개인정보 수집·이용 동의(`consents.collect: true`) 뒤에만 저장한다. 사진·계좌는 받지 않는다. 센터는 자기 범위(체험 묶음 또는 실제)의 낸 지원서만 보고, 학과(부)장 승인 화면에는 이름·학번·학과·학년·지망만 보인다. 탈퇴하면 함께 지운다([ADR-0033](../decisions/0033-internship-flow.md)).\n  - 직무 탐색(#29)의 경험 글과 커리어 리포트(#34)의 실습 내용은 `consent: true`일 때만 받아 결과와 함께 저장한다(계정당 마지막 1건, 지우기·탈퇴 때 바로 삭제). AI에는 학과·학년·평점을 보내지 않는다([ADR-0031](../decisions/0031-explore-ai.md)·[0032](../decisions/0032-ncs-career.md)).\n- **모집 신호 = 관심**: 관심은 **내 지망에 담은 사람 수**다(순위와 상관없이 [담기]한 사람, 1인 1표). 모집기간 리플레이 가상 값에 실제 사용자가 담은 수를 더해 보여 준다(ADR-0019). 신호를 주는 응답에는 `isVirtual`과 `signalSource`를 반드시 넣는다.\n- **호출 제한**(초기값, 설정으로 조정): 체험 계정 만들기 IP당 1시간 300회(환경변수 `GUEST_PER_IP_PER_HOUR`, 0이면 끔 — 시연장·학교 와이파이는 여럿이 한 IP) → 넘으면 429 + `Retry-After`(초). 이유 문장(LLM) 계정당 1시간 30회·IP당 60회 → 넘으면 **200 + 기본 문장**(화면이 깨지지 않게). 직무 탐색 AI(탐색 1번·'왜 맞나요' 1곳이 각 1회) 계정당 1시간 10회·IP당 60회·서버 전체 하루 300회 → 넘으면 **200 + 규칙 추천**(`source: RULE`, `fallbackReason: LIMITED`). 커리어 리포트(#34)도 같은 한도를 1회씩 쓰고, 넘으면 200 + AI 정리 없이(`source: NONE`). 통근 조회 계정당 1시간 30회·서버 전체 하루 900회(카카오 무료 하루 1,000건 안에서 멈춤) → 넘으면 **200 + `available: false`**.\n- **실행 중 외부 호출**은 Claude(이유 문장·직무 탐색·커리어 리포트)·카카오(통근 조회 — 주소 검색과 대중교통) 둘뿐이다(ADR-0002, ADR-0007, ADR-0031). 임베딩은 쓰지 않는다(E5 결과, ADR-0018). 둘 다 실패해도 200으로 화면을 유지한다.\n- **코드값**은 영문 대문자이고 DB CHECK와 같은 집합이다(`V1__init.sql`). 화면 표기는 `GET /api/codes`에서 가져간다.\n- **예시 값**: 기관·직무·인용문은 전부 가상이다(`(가상)` 표시). 실제 값은 시드에서 나온다. 목록 응답의 예시는 일부 행만 보여 준다.\n- **기준일** 두 가지(`ReferenceDates`, ADR-0035)\n  - **모집 판정 기준일**: 판정(#14)·추천(#15)·탐색(#28~#32)·지망 점검(#23) 목록의 '마감'과 후보를 이 날로 본다. 리플레이 중에는 `rounds/current`의 `replay.defaultAsOf`(7/23, 회차 모집기간 안으로 맞춤), 운영 때는 오늘로 바꿀 자리가 이 하나다.\n  - **진행 기준일**: 지원서(#37~#41)·내 현장실습(#44)은 `asOf`(#44만) → 체험 학생의 `demoToday` → 오늘(한국 시간) 순으로 정한다. 센터 지원서 화면(#47)은 오늘이다.\n  - **마감**은 한 규칙이다: `closesOn` ≤ 기준일이거나, 기준일이 회차 모집 종료일 뒤면 마감이다(낸 지원서의 지망은 낸 날로 본다).\n- CORS: `CorsConfig`가 `GET`·`POST`·`PUT`·`DELETE`·`OPTIONS`와 모든 헤더(`Authorization` 포함)를 허용한다(Backend#16). 응답 헤더 `Retry-After`(429)·`Content-Disposition`(CSV 파일 이름)은 프론트 JS가 읽을 수 있게 노출한다. 통근 조회에는 환경변수 `KAKAO_REST_API_KEY`(카카오 디벨로퍼스 REST API 키)가 필요하다."
   },
   "externalDocs": {
     "description": "docs/api/README.md",
@@ -1407,7 +1407,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProfileBody"
+                "$ref": "#/components/schemas/OptionalProfileBody"
               },
               "examples": {
                 "profile-body.request.json": {
@@ -1474,6 +1474,13 @@
                             "closesOnIsVirtual": false
                           },
                           "alertCount": 0,
+                          "ncs": {
+                            "code": "02010301",
+                            "name": "마케팅전략기획"
+                          },
+                          "views": 37,
+                          "planned": true,
+                          "planRank": 1,
                           "reasons": [
                             {
                               "layer": "SCHOOL_RULE",
@@ -1546,6 +1553,13 @@
                             "closesOnIsVirtual": false
                           },
                           "alertCount": 0,
+                          "ncs": {
+                            "code": "08020104",
+                            "name": "디지털디자인"
+                          },
+                          "views": 12,
+                          "planned": true,
+                          "planRank": null,
                           "reasons": [
                             {
                               "layer": "SCHOOL_RULE",
@@ -1631,6 +1645,13 @@
                             "closesOnIsVirtual": false
                           },
                           "alertCount": 1,
+                          "ncs": {
+                            "code": "20010202",
+                            "name": "응용SW엔지니어링"
+                          },
+                          "views": 8,
+                          "planned": false,
+                          "planRank": null,
                           "reasons": [
                             {
                               "layer": "SCHOOL_RULE",
@@ -1690,6 +1711,13 @@
                             "closesOnIsVirtual": false
                           },
                           "alertCount": 0,
+                          "ncs": {
+                            "code": "12010101",
+                            "name": "헤어미용"
+                          },
+                          "views": 3,
+                          "planned": false,
+                          "planRank": null,
                           "reasons": [
                             {
                               "layer": "SCHOOL_RULE",
@@ -1812,6 +1840,24 @@
                     "value": {
                       "code": "FORBIDDEN_ROLE",
                       "message": "역할이 맞지 않음(학생이 현황판 등)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PROFILE_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "PROFILE_NOT_FOUND": {
+                    "value": {
+                      "code": "PROFILE_NOT_FOUND",
+                      "message": "저장한 프로필 없음"
                     }
                   }
                 }
@@ -2355,6 +2401,68 @@
                         "closesOn": null,
                         "closeReason": null,
                         "closesOnIsVirtual": false
+                      },
+                      "views": 37,
+                      "todayViews": 5,
+                      "planned": true,
+                      "planRank": 1,
+                      "myEligibility": {
+                        "verdict": "ELIGIBLE",
+                        "majorMatch": "MATCH",
+                        "reasons": [
+                          {
+                            "layer": "SCHOOL_RULE",
+                            "item": "이수 학기",
+                            "requirement": "4학기 이상",
+                            "mine": "5학기",
+                            "result": "MET",
+                            "citation": {
+                              "sourceType": "SCHOOL_NOTICE",
+                              "documentTitle": "2026학년도 2학기 표준 현장실습학기제 학생 모집안내",
+                              "page": null,
+                              "quote": "4학기 이상 수료한 재학생(편입생의 경우 본교에서 1학기 이상 이수한 학생)"
+                            }
+                          },
+                          {
+                            "layer": "INSTITUTION",
+                            "item": "학년",
+                            "requirement": "3·4학년",
+                            "mine": "3학년",
+                            "result": "MET",
+                            "citation": {
+                              "sourceType": "INSTITUTION_LIST",
+                              "documentTitle": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
+                              "page": null,
+                              "quote": "학년 : 3, 4학년"
+                            }
+                          },
+                          {
+                            "layer": "INSTITUTION",
+                            "item": "학점",
+                            "requirement": "3.0 이상",
+                            "mine": "3.4",
+                            "result": "MET",
+                            "citation": {
+                              "sourceType": "INSTITUTION_LIST",
+                              "documentTitle": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
+                              "page": null,
+                              "quote": "학점 3.0 이상"
+                            }
+                          },
+                          {
+                            "layer": "MAJOR",
+                            "item": "선호 전공",
+                            "requirement": "미용예술대학, 경영학과",
+                            "mine": "메이크업디자인학과",
+                            "result": "INFO",
+                            "citation": {
+                              "sourceType": "INSTITUTION_LIST",
+                              "documentTitle": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
+                              "page": null,
+                              "quote": "전공 : 미용예술대학, 경영학과"
+                            }
+                          }
+                        ]
                       },
                       "evidence": [
                         {
@@ -3984,7 +4092,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProfileBody"
+                "$ref": "#/components/schemas/OptionalProfileBody"
               },
               "examples": {
                 "profile-body.request.json": {
@@ -4120,6 +4228,24 @@
                     "value": {
                       "code": "FORBIDDEN_ROLE",
                       "message": "역할이 맞지 않음(학생이 현황판 등)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PROFILE_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "PROFILE_NOT_FOUND": {
+                    "value": {
+                      "code": "PROFILE_NOT_FOUND",
+                      "message": "저장한 프로필 없음"
                     }
                   }
                 }
@@ -4418,6 +4544,24 @@
                     "value": {
                       "code": "FORBIDDEN_ROLE",
                       "message": "역할이 맞지 않음(학생이 현황판 등)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PROFILE_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "PROFILE_NOT_FOUND": {
+                    "value": {
+                      "code": "PROFILE_NOT_FOUND",
+                      "message": "저장한 프로필 없음"
                     }
                   }
                 }
@@ -13881,6 +14025,45 @@
             "minimum": 0,
             "description": "그 직무에 걸린 검토 알림 수(jobId가 그 직무인 것만, 기관 단위 알림은 세지 않는다). '문서 검토' 꼬리표"
           },
+          "ncs": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "pattern": "^\\d{8}$",
+                "description": "NCS 세분류 코드(대2·중2·소2·세2)"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "name"
+            ],
+            "description": "그 직무의 NCS 세분류(GET /api/jobs/{jobId}/career의 ncs와 같은 세분류). 없으면 null"
+          },
+          "views": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "지금까지 조회 수(GET /api/jobs/{jobId}/views의 views와 같은 값)"
+          },
+          "planned": {
+            "type": "boolean",
+            "description": "내가 담은 직무인지"
+          },
+          "planRank": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 3,
+            "description": "내 지망 순위. 정하지 않았거나 담지 않았으면 null"
+          },
           "reasons": {
             "type": "array",
             "items": {
@@ -13897,6 +14080,10 @@
           "majorMatch",
           "closing",
           "alertCount",
+          "ncs",
+          "views",
+          "planned",
+          "planRank",
           "reasons"
         ]
       },
@@ -14371,7 +14558,8 @@
         "type": "object",
         "properties": {
           "profile": {
-            "$ref": "#/components/schemas/Profile"
+            "$ref": "#/components/schemas/Profile",
+            "description": "빼면 저장한 프로필로 본다(둘 다 없으면 404 PROFILE_NOT_FOUND)"
           },
           "experiences": {
             "type": "array",
@@ -14399,7 +14587,6 @@
           }
         },
         "required": [
-          "profile",
           "experiences",
           "cardIds",
           "consent"
@@ -15559,6 +15746,40 @@
             ],
             "description": "직무의 모집마감(기준일과 상관없이 고정). 마감이 없으면 closesOn·closeReason이 null"
           },
+          "views": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "지금까지 조회 수(이번 조회까지 센 뒤, GET /api/jobs/{jobId}/views와 같은 값)"
+          },
+          "todayViews": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "오늘(한국 시간) 조회 수"
+          },
+          "planned": {
+            "type": "boolean",
+            "description": "내가 담은 직무인지(센터는 false)"
+          },
+          "planRank": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 3,
+            "description": "내 지망 순위. 정하지 않았거나 담지 않았으면(센터도) null"
+          },
+          "myEligibility": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MyEligibility"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "저장한 프로필로 본 판정. 저장한 프로필이 없거나 센터면 null"
+          },
           "evidence": {
             "type": "array",
             "items": {
@@ -15764,6 +15985,11 @@
           "requirements",
           "workplace",
           "closing",
+          "views",
+          "todayViews",
+          "planned",
+          "planRank",
+          "myEligibility",
           "evidence",
           "alerts",
           "seniorNotes",
@@ -15859,6 +16085,29 @@
         "required": [
           "rank"
         ]
+      },
+      "MyEligibility": {
+        "type": "object",
+        "properties": {
+          "verdict": {
+            "$ref": "#/components/schemas/Verdict"
+          },
+          "majorMatch": {
+            "$ref": "#/components/schemas/MajorMatch"
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReasonLine"
+            }
+          }
+        },
+        "required": [
+          "verdict",
+          "majorMatch",
+          "reasons"
+        ],
+        "description": "저장한 프로필로 본 이 직무의 판정(POST /api/eligibility 행의 같은 칸과 같은 값)"
       },
       "NcsExpand": {
         "type": "object",
@@ -16038,6 +16287,16 @@
           "CURATED"
         ],
         "description": "`KEIS` 한국고용정보원 연계표 · `CURATED` 연계표에 없어 팀이 고름"
+      },
+      "OptionalProfileBody": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/Profile"
+          }
+        },
+        "required": [],
+        "description": "profile을 빼면 저장한 프로필(GET /api/me/profile)로 본다. 둘 다 없으면 404 PROFILE_NOT_FOUND"
       },
       "Overtime": {
         "type": "string",

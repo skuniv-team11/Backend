@@ -1,7 +1,9 @@
 package kr.ac.skuniv.coopradar.eligibility;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -232,9 +234,10 @@ class EligibilityApiTest {
         check(token, profile(9999, 3, 5, "3.4", false))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fields[0].field").value("profile.departmentId"));
+        // 프로필을 빼면 저장한 프로필로 본다 — 저장한 것도 없으면 404(ADR-0035)
         check(token, "{}")
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.fields[0].field").value("profile"));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("PROFILE_NOT_FOUND"));
         check(token, "{\"profile\": {\"departmentId\": 43}}")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"));
@@ -249,6 +252,43 @@ class EligibilityApiTest {
                         .content(profile(MAKEUP, 3, 5, "3.4", false)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("AUTH_REQUIRED"));
+    }
+
+    @Test
+    void 프로필을_빼면_저장한_프로필로_보고_행마다_NCS_조회수_담기_순위가_있다() throws Exception {
+        String token = guestToken("STUDENT");   // 예시 프로필(메이크업디자인학과 3학년)이 저장돼 있다
+        for (String job : new String[] {"122", "120"}) {
+            mvc.perform(post("/api/me/plan/items").header("Authorization", "Bearer " + token)
+                    .contentType(MediaType.APPLICATION_JSON).content("{\"jobId\": " + job + "}"));
+        }
+        mvc.perform(put("/api/me/plan/ranks").header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"ranks\": [{\"jobId\": 122, \"rank\": 1}]}"))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/jobs/122").header("Authorization", "Bearer " + token)).andExpect(status().isOk());
+
+        String saved = check(token, "{}").andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        // 저장한 프로필을 본문으로 보낸 것과 같다
+        var json = tools.jackson.databind.json.JsonMapper.builder().build();
+        var stored = (tools.jackson.databind.node.ObjectNode) json.readTree(mvc.perform(get("/api/me/profile")
+                .header("Authorization", "Bearer " + token)).andReturn().getResponse().getContentAsString());
+        stored.remove(List.of("department", "homeArea", "isExample", "consentedAt", "updatedAt"));
+        String sent = check(token, "{\"profile\": " + stored + "}").andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<List<String>>read(saved, "$.jobs[*].verdict"))
+                .isEqualTo(JsonPath.<List<String>>read(sent, "$.jobs[*].verdict"));
+        Map<String, Object> mine = job(saved, 122);
+        assertThat(mine.get("planned")).isEqualTo(true);
+        assertThat(mine.get("planRank")).isEqualTo(1);
+        assertThat((Integer) mine.get("views")).isGreaterThanOrEqualTo(1);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> ncs = (Map<String, Object>) mine.get("ncs");
+        assertThat((String) ncs.get("code")).matches("^\\d{8}$");
+        assertThat(job(saved, 120)).containsEntry("planned", true).containsEntry("planRank", null);
+        assertThat(JsonPath.<List<Object>>read(saved, "$.jobs[?(@.planned == true)].jobId")).containsExactlyInAnyOrder(122, 120);
+        // NCS 세분류는 #33과 같은 세분류
+        String career = mvc.perform(get("/api/jobs/122/career").header("Authorization", "Bearer " + token))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(ncs.get("code")).isEqualTo(JsonPath.read(career, "$.ncs.code"));
     }
 
     // ───────── 도우미 ─────────

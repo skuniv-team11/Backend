@@ -41,6 +41,19 @@ public class ProfileService {
                 p.certificates()));
     }
 
+    /**
+     * 판정에 쓸 프로필: 본문에 있으면 그것(저장하지 않고 써 보기), 없으면 저장한 프로필(ADR-0035).
+     * 둘 다 없으면 404 PROFILE_NOT_FOUND.
+     */
+    @Transactional(readOnly = true)
+    public ProfileInput bodyOrSaved(AuthUser user, ProfileInput body) {
+        if (body != null) {
+            return body;
+        }
+        return savedInput(user).orElseThrow(() -> new ApiException(ErrorCode.PROFILE_NOT_FOUND,
+                "프로필을 보내거나 먼저 저장해 주세요"));
+    }
+
     @Transactional
     public SavedProfile save(AuthUser user, ProfileSaveRequest request) {
         if (!Boolean.TRUE.equals(request.consent())) {

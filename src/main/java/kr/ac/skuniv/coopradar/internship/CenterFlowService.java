@@ -47,6 +47,7 @@ import kr.ac.skuniv.coopradar.internship.InternshipDtos.Result;
 import kr.ac.skuniv.coopradar.internship.InternshipDtos.Status;
 import kr.ac.skuniv.coopradar.job.RoundRef;
 import kr.ac.skuniv.coopradar.reference.ReferenceDtos.CurrentRound;
+import kr.ac.skuniv.coopradar.reference.ReferenceDates;
 import kr.ac.skuniv.coopradar.reference.RoundService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -71,14 +72,16 @@ public class CenterFlowService {
     private final ApplicationService applications;
     private final RoundService rounds;
     private final InternshipProperties props;
+    private final ReferenceDates dates;
     private final Clock clock;
 
     public CenterFlowService(ApplicationRepository repo, ApplicationService applications, RoundService rounds,
-                             InternshipProperties props, Clock clock) {
+                             InternshipProperties props, ReferenceDates dates, Clock clock) {
         this.repo = repo;
         this.applications = applications;
         this.rounds = rounds;
         this.props = props;
+        this.dates = dates;
         this.clock = clock;
     }
 
@@ -181,10 +184,11 @@ public class CenterFlowService {
      */
     private Application view(Row r) {
         CurrentRound round = rounds.current();
-        LocalDate asOf = LocalDate.now(clock.withZone(Times.KST));
+        LocalDate asOf = dates.today();
         List<PickRow> pickRows = repo.picks(List.of(r.id())).getOrDefault(r.id(), List.of());
         List<Integer> pickIds = pickRows.stream().map(PickRow::jobId).toList();
-        List<Pick> picks = ApplicationViews.snapshotPicks(pickRows, repo.jobs(pickIds), ApplicationViews.submittedOn(r, asOf));
+        List<Pick> picks = ApplicationViews.snapshotPicks(pickRows, repo.jobs(pickIds),
+                ReferenceDates.on(ApplicationViews.submittedOn(r, asOf), round));
         ApprovalRow approvalRow = repo.approval(r.id(), ApprovalKind.APPLICATION).orElse(null);
         var approval = ApplicationViews.approval(approvalRow, ApplicationViews.contentHash(r, applications.basis(r)), false);
         var academic = ApplicationViews.academic(r);

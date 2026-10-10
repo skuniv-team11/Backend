@@ -27,6 +27,13 @@
         "closesOnIsVirtual": false
       },
       "alertCount": 0,
+      "ncs": {
+        "code": "02010301",
+        "name": "마케팅전략기획"
+      },
+      "views": 37,
+      "planned": true,
+      "planRank": 1,
       "reasons": [
         {
           "layer": "SCHOOL_RULE",
@@ -99,6 +106,13 @@
         "closesOnIsVirtual": false
       },
       "alertCount": 0,
+      "ncs": {
+        "code": "08020104",
+        "name": "디지털디자인"
+      },
+      "views": 12,
+      "planned": true,
+      "planRank": null,
       "reasons": [
         {
           "layer": "SCHOOL_RULE",
@@ -184,6 +198,13 @@
         "closesOnIsVirtual": false
       },
       "alertCount": 1,
+      "ncs": {
+        "code": "20010202",
+        "name": "응용SW엔지니어링"
+      },
+      "views": 8,
+      "planned": false,
+      "planRank": null,
       "reasons": [
         {
           "layer": "SCHOOL_RULE",
@@ -243,6 +264,13 @@
         "closesOnIsVirtual": false
       },
       "alertCount": 0,
+      "ncs": {
+        "code": "12010101",
+        "name": "헤어미용"
+      },
+      "views": 3,
+      "planned": false,
+      "planRank": null,
       "reasons": [
         {
           "layer": "SCHOOL_RULE",

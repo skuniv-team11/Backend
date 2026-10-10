@@ -11,15 +11,19 @@ import java.util.Set;
 import kr.ac.skuniv.coopradar.common.ApiException;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Eligibility;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.EligibilityJob;
+import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.EligibilityRow;
+import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.NcsRef;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Summary;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Verdict;
 import kr.ac.skuniv.coopradar.job.RoundRef;
+import kr.ac.skuniv.coopradar.reference.ReferenceDates;
+import kr.ac.skuniv.coopradar.reference.ReferenceDates.AsOf;
 import kr.ac.skuniv.coopradar.reference.RoundService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 회차 직무 전부의 3층 판정(#14). 프로필은 요청 본문으로만 받고 저장·로그하지 않는다(ADR-0008).
+ * 회차 직무 전부의 3층 판정(#14). 프로필은 요청 본문(없으면 저장한 프로필)으로 받고 저장·로그하지 않는다(ADR-0008).
  * 추천(#15)·지망 점검(#23)도 이 판정을 다시 쓴다.
  */
 @Service
@@ -39,14 +43,37 @@ public class EligibilityService {
     public record Judged(JobRequirement requirement, EligibilityJob result) {
     }
 
+    /**
+     * #14. 행마다 NCS 세분류·조회 수·내 담기·지망 순위를 붙인다(목록이 직무마다 다른 API를 부르지 않게, ADR-0035).
+     *
+     * @param userId 담기·순위를 볼 계정
+     */
     @Transactional(readOnly = true)
-    public Eligibility check(ProfileInput profile) {
+    public Eligibility check(long userId, ProfileInput profile) {
         var round = rounds.current();
         List<Judged> judged = judgeAll(round.id(), profile);
-        LocalDate asOf = round.replay().defaultAsOf(); // 추천과 같은 기준일(ADR-0016)
+        AsOf asOf = ReferenceDates.recruit(round); // 추천·탐색과 같은 모집 판정 기준일(ADR-0016·0035)
         List<EligibilityJob> jobs = order(judged, fitOrder.rank(round.id(), judged, profile), asOf).stream()
                 .map(Judged::result).toList();
-        return new Eligibility(new RoundRef(round.id(), round.termCode()), summary(jobs), jobs);
+        Map<Integer, NcsRef> ncs = repository.ncsByJob(round.id());
+        Map<Integer, Integer> views = repository.viewsByJob(round.id());
+        Map<Integer, Integer> ranks = new HashMap<>();
+        Set<Integer> planned = new HashSet<>();
+        repository.plan(userId).forEach(p -> {
+            planned.add(p.jobId());
+            if (p.rank() != null) {
+                ranks.put(p.jobId(), p.rank());
+            }
+        });
+        List<EligibilityRow> rows = jobs.stream().map(j -> EligibilityRow.of(j, ncs.get(j.jobId()),
+                views.getOrDefault(j.jobId(), 0), planned.contains(j.jobId()), ranks.get(j.jobId()))).toList();
+        return new Eligibility(new RoundRef(round.id(), round.termCode()), summary(jobs), rows);
+    }
+
+    /** 저장한 프로필로 본 직무 하나의 판정(#17 myEligibility). 그 직무 회차의 직무 전부를 판정한 뒤 고른다. */
+    @Transactional(readOnly = true)
+    public java.util.Optional<EligibilityJob> judgeOne(int roundId, ProfileInput profile, int jobId) {
+        return judgeAll(roundId, profile).stream().map(Judged::result).filter(j -> j.jobId() == jobId).findFirst();
     }
 
     /**
@@ -55,7 +82,7 @@ public class EligibilityService {
      *
      * @param fitRank 지원 불가가 아닌 직무 id의 적합도 순위({@link FitOrder})
      */
-    static List<Judged> order(List<Judged> judged, List<Integer> fitRank, LocalDate asOf) {
+    static List<Judged> order(List<Judged> judged, List<Integer> fitRank, AsOf asOf) {
         Map<Integer, Integer> rank = new HashMap<>();
         for (int i = 0; i < fitRank.size(); i++) {
             rank.putIfAbsent(fitRank.get(i), i);
@@ -69,10 +96,14 @@ public class EligibilityService {
         return judged.stream().sorted(order).toList();
     }
 
-    /** 기준일에 마감됐는지(closesOn ≤ 기준일 — 이 날부터 지원 불가). 추천과 같은 기준이다. */
+    /** 기준일에 마감됐는지({@link AsOf#closed} — 마감 규칙은 하나다). */
+    public static boolean closedOn(Judged judged, AsOf asOf) {
+        return asOf.closed(judged.requirement().closing().closesOn());
+    }
+
+    /** 모집 종료일을 모를 때(추천 — 기준일이 늘 모집기간 안이라 closesOn만 본다). */
     public static boolean closedOn(Judged judged, LocalDate asOf) {
-        LocalDate closesOn = judged.requirement().closing().closesOn();
-        return closesOn != null && asOf != null && !closesOn.isAfter(asOf);
+        return closedOn(judged, new AsOf(asOf, null));
     }
 
     /**
