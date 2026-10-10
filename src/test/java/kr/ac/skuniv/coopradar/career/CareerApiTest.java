@@ -97,6 +97,9 @@ class CareerApiTest {
         assertThat(JsonPath.<List<String>>read(body, "$.expand[*].name")).containsExactly("고객관리", "통계조사", "광고");
         assertThat(JsonPath.<List<String>>read(body, "$.expand[*].relation")).containsExactly("SAME_SMALL", "SAME_SMALL", "SAME_MIDDLE");
         assertThat(JsonPath.<List<String>>read(body, "$.occupations[*].name")).contains("상품 기획 전문가", "광고 및 홍보 전문가");
+        // 넓혀 갈 직무마다 이어진 직업(통계조사: 마케팅 소분류 전체에 붙은 광고·홍보는 뺐다)
+        assertThat(JsonPath.<List<String>>read(body, "$.expand[1].occupations[*].name")).contains("조사 전문가")
+                .doesNotContain("광고 및 홍보 전문가");
         // 헤어미용은 공식 연계표에 맞는 직업이 없다
         mvc.perform(get("/api/jobs/140/career").header("Authorization", "Bearer " + token))
                 .andExpect(jsonPath("$.ncs.name").value("헤어미용"))
@@ -119,6 +122,9 @@ class CareerApiTest {
                 // 목록에 없는 단위(광고): 버린다
                 new CoveredDraft("0201020205_24v4", "매주 SNS 게시물 반응을 집계해", "광고 전략을 세운 일이에요."),
                 new CoveredDraft("0201030115_16v3", "매주 SNS 게시물 반응을 집계해", "SNS 반응을 매주 집계한 일이 마케팅 성과 파악이에요."),
+                // 앞에서 버린 단위라도 다시 맞게 고르면 받는다
+                new CoveredDraft("0201030109_21v4", "경쟁사 신제품 30개의 가격과 구성을 표로 정리해",
+                        "경쟁사 제품을 조사해 정리한 일이 마케팅 시장 환경 분석의 일부예요."),
                 // 같은 단위 두 번: 앞의 것만
                 new CoveredDraft("0201030102_21v5", "세트 구성 아이디어 1건", "같은 단위를 또 골랐어요.")))));
         String body = report(token, 122, TEXT, true)
@@ -127,14 +133,24 @@ class CareerApiTest {
                 .andExpect(jsonPath("$.ncs.unitCount").value(11))
                 .andReturn().getResponse().getContentAsString();
         Contract.assertSameShape(body, Contract.responseExample("createCareerReport", 200, null));
-        assertThat(JsonPath.<List<String>>read(body, "$.covered[*].code")).containsExactly("0201030102_21v5", "0201030115_16v3");
-        assertThat(JsonPath.<List<String>>read(body, "$.notCovered[*].code")).hasSize(9).doesNotContain("0201030102_21v5");
+        assertThat(JsonPath.<List<String>>read(body, "$.covered[*].code"))
+                .containsExactly("0201030102_21v5", "0201030109_21v4", "0201030115_16v3");
+        assertThat(JsonPath.<List<String>>read(body, "$.notCovered[*].code")).hasSize(8).doesNotContain("0201030102_21v5");
+        // 한 단계 위: 채운 수준 5·3·3 → 3에서 안 채운 것
+        assertThat(JsonPath.<Integer>read(body, "$.nextLevel.baseLevel")).isEqualTo(3);
+        assertThat(JsonPath.<List<String>>read(body, "$.nextLevel.units[*].name"))
+                .containsExactly("신 유통경로 마케팅", "STP전략 타당성 분석", "마케팅믹스전략 실행계획 수립");
+        // 넓혀 갈 직무: 이어진 수가 많은 순, 이어진 출발 단위는 채운 단위
+        List<Integer> linked = JsonPath.read(body, "$.expand[*].linkedCount");
+        assertThat(linked).isSortedAccordingTo(java.util.Comparator.reverseOrder());
+        assertThat(JsonPath.<List<String>>read(body, "$.expand[*].linked[*].from.code"))
+                .isNotEmpty().allMatch(c -> List.of("0201030102_21v5", "0201030109_21v4", "0201030115_16v3").contains(c));
         assertThat(JsonPath.<String>read(body, "$.input.practiceText")).contains("[가림]").doesNotContain("5678");
         assertThat(LAST_USER.get()).doesNotContain("5678").contains("0201030102_21v5 신상품 기획");
         // 저장본(#35), 지우기(#36)
         mvc.perform(get("/api/me/career-report").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.covered.length()").value(2))
+                .andExpect(jsonPath("$.covered.length()").value(3))
                 .andExpect(jsonPath("$.reportId").value(JsonPath.<Integer>read(body, "$.reportId")));
         mvc.perform(delete("/api/me/career-report").header("Authorization", "Bearer " + token)).andExpect(status().isNoContent());
         mvc.perform(get("/api/me/career-report").header("Authorization", "Bearer " + token))
@@ -147,7 +163,10 @@ class CareerApiTest {
         report(token, 122, TEXT, true).andExpect(jsonPath("$.source").value("NONE"))
                 .andExpect(jsonPath("$.fallbackReason").value("AI_ERROR"))
                 .andExpect(jsonPath("$.covered").isEmpty())
-                .andExpect(jsonPath("$.notCovered.length()").value(11));
+                .andExpect(jsonPath("$.notCovered.length()").value(11))
+                .andExpect(jsonPath("$.expand[*].rank").value(org.hamcrest.Matchers.contains(1, 2, 3)))
+                .andExpect(jsonPath("$.expand[*].linkedCount").value(org.hamcrest.Matchers.contains(0, 0, 0)))
+                .andExpect(jsonPath("$.nextLevel.baseLevel").value(3));
         NEXT.set(Optional.of(new UnitsDraft(List.of(new CoveredDraft("0201030102_21v5", "글에 없는 구절을 지어냈어요", "지어낸 근거예요.")))));
         report(token, 122, TEXT, true).andExpect(jsonPath("$.fallbackReason").value("VERIFY_FAILED"));
         AVAILABLE.set(false);

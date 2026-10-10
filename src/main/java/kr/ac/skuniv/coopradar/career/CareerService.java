@@ -6,25 +6,35 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import kr.ac.skuniv.coopradar.auth.AuthUser;
 import kr.ac.skuniv.coopradar.career.CareerDrafts.CoveredDraft;
 import kr.ac.skuniv.coopradar.career.CareerDrafts.UnitsDraft;
 import kr.ac.skuniv.coopradar.career.CareerDtos.Covered;
+import kr.ac.skuniv.coopradar.career.CareerDtos.Expand;
 import kr.ac.skuniv.coopradar.career.CareerDtos.Input;
 import kr.ac.skuniv.coopradar.career.CareerDtos.JobCareer;
+import kr.ac.skuniv.coopradar.career.CareerDtos.Linked;
 import kr.ac.skuniv.coopradar.career.CareerDtos.Ncs;
+import kr.ac.skuniv.coopradar.career.CareerDtos.NextLevel;
 import kr.ac.skuniv.coopradar.career.CareerDtos.Report;
 import kr.ac.skuniv.coopradar.career.CareerDtos.ReportNcs;
+import kr.ac.skuniv.coopradar.career.CareerDtos.ReportPath;
 import kr.ac.skuniv.coopradar.career.CareerDtos.Source;
 import kr.ac.skuniv.coopradar.career.CareerDtos.Unit;
 import kr.ac.skuniv.coopradar.career.CareerDtos.UnitRef;
 import kr.ac.skuniv.coopradar.career.CareerRepository.JobNcs;
+import kr.ac.skuniv.coopradar.career.CareerRepository.Link;
 import kr.ac.skuniv.coopradar.career.CareerRepository.Saved;
 import kr.ac.skuniv.coopradar.career.CareerRepository.Stored;
 import kr.ac.skuniv.coopradar.common.ApiException;
@@ -44,6 +54,7 @@ import org.springframework.stereotype.Service;
  *   <li>대조: 목록 안의 단위(개정 표기만 틀리면 단위 번호로 찾는다) · 한 번만 · 학생 구절이 실습 내용 한 문장(줄) 안에 그대로(4~100자, 띄어쓰기·따옴표 무시) ·
  *       이유는 해요체 10~150자('습니다'·'당신'·'선호 전공' 없음, 직무 탐색과 같은 규칙)</li>
  *   <li>키 없음·한도(직무 탐색과 같은 한도)·실패·통과 0개면 AI 없이 능력단위 목록만(source NONE)</li>
+ *   <li>넓혀 갈 세분류는 채운 단위와 이어진 수(능력단위끼리 연결표)가 많은 순으로, 같은 세분류는 한 단계 위(nextLevel)로 보여 준다</li>
  * </ul>
  */
 @Service
@@ -51,6 +62,7 @@ public class CareerService {
 
     static final int QUOTE_MIN = 4;
     static final int QUOTE_MAX = 100;
+    static final int MORE_MAX = 3;
     private static final Pattern SENTENCE_END = Pattern.compile("(?<=[.!?。])\\s+");
 
     private final CareerRepository repository;
@@ -141,9 +153,66 @@ public class CareerService {
             }
         }
         var sub = repository.subcategory(code).orElseThrow(); // 세분류가 시드에서 빠지면 리포트도 cascade로 지워진다
+        Set<String> done = s.covered().keySet();
         return new Report(s.id(), s.createdAt(), job.jobId(), job.title(), job.team(), job.institution(), s.source(),
                 s.fallback(), new Input(s.practiceText()), new ReportNcs(code, sub.name(), sub.path(), units.size()), covered,
-                notCovered, repository.expand(code), repository.occupations(code));
+                notCovered, nextLevel(units, done), paths(repository.expand(code), repository.links(code), done,
+                        repository::units), repository.occupations(code));
+    }
+
+    /**
+     * 넓혀 갈 세분류마다 채운 단위와 이어진 단위·더 채울 것. 이어진 수가 많은 순, 같으면 사람이 고른 순위 순.
+     * 이어진 단위는 연결표(능력단위끼리, AI 초안 + 사람 확인)에서 출발 단위가 채운 단위인 것만.
+     */
+    static List<ReportPath> paths(List<Expand> expand, List<Link> links, Set<String> done,
+                                  Function<String, List<Unit>> unitsOf) {
+        List<ReportPath> out = new ArrayList<>();
+        for (Expand e : expand) {
+            List<Linked> linked = links.stream()
+                    .filter(l -> l.toCode().equals(e.code()) && done.contains(l.from().code()))
+                    .map(l -> new Linked(l.to().code(), l.to().name(), l.to().level(), ref(l.from()), l.note(), l.checked()))
+                    .toList();
+            Set<String> linkedCodes = linked.stream().map(Linked::code).collect(Collectors.toSet());
+            List<UnitRef> more = unitsOf.apply(e.code()).stream()
+                    .filter(u -> !linkedCodes.contains(u.code()))
+                    .sorted(Comparator.comparing((Unit u) -> u.level() == null ? Integer.MAX_VALUE : u.level()))
+                    .limit(MORE_MAX)
+                    .map(CareerService::ref)
+                    .toList();
+            out.add(new ReportPath(e.rank(), e.code(), e.name(), e.path(), e.relation(), e.unitCount(), linked.size(),
+                    linked, more, e.occupations()));
+        }
+        out.sort(Comparator.comparingInt(ReportPath::linkedCount).reversed().thenComparingInt(ReportPath::rank));
+        return out;
+    }
+
+    /** 같은 세분류 한 단계 위: 채운 단위에 가장 많은 수준(같으면 낮은 쪽)에서 안 채운 것, 그다음 한 수준 위 것. */
+    static NextLevel nextLevel(List<Unit> units, Set<String> done) {
+        Map<Integer, Long> counts = units.stream()
+                .filter(u -> done.contains(u.code()) && u.level() != null)
+                .collect(Collectors.groupingBy(Unit::level, Collectors.counting()));
+        Integer base = counts.isEmpty()
+                ? units.stream().map(Unit::level).filter(Objects::nonNull).min(Integer::compare).orElse(null)
+                : counts.entrySet().stream()
+                        .max(Map.Entry.<Integer, Long>comparingByValue()
+                                .thenComparing(Map.Entry.<Integer, Long>comparingByKey().reversed()))
+                        .orElseThrow().getKey();
+        if (base == null) {
+            return new NextLevel(null, List.of());
+        }
+        List<UnitRef> pick = new ArrayList<>();
+        for (int level : new int[] {base, base + 1}) {
+            for (Unit u : units) {
+                if (pick.size() < MORE_MAX && !done.contains(u.code()) && Objects.equals(u.level(), level)) {
+                    pick.add(ref(u));
+                }
+            }
+        }
+        return new NextLevel(base, pick);
+    }
+
+    private static UnitRef ref(Unit u) {
+        return new UnitRef(u.code(), u.name(), u.level());
     }
 
     /** 초안 → 통과한 단위(코드 → [학생 구절, 이유]). */

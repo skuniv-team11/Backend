@@ -63,6 +63,20 @@ CREATE TABLE ncs_expand (
 COMMENT ON TABLE  ncs_expand IS '실습 뒤 넓혀 갈 세분류 3개(사람이 고름, curated/ncs_expand.csv)';
 COMMENT ON COLUMN ncs_expand.relation IS 'SAME_SMALL 같은 소분류 · SAME_MIDDLE 같은 중분류 · OTHER 다른 분야(코드로 정함)';
 
+CREATE TABLE ncs_unit_link (
+    from_code char(8)      NOT NULL,
+    to_code   char(8)      NOT NULL,
+    from_unit varchar(20)  NOT NULL REFERENCES ncs_unit (code) ON DELETE CASCADE,
+    to_unit   varchar(20)  NOT NULL REFERENCES ncs_unit (code) ON DELETE CASCADE,
+    note      varchar(100),
+    checked   boolean      NOT NULL DEFAULT false,
+    PRIMARY KEY (from_code, to_code, to_unit),
+    FOREIGN KEY (from_code, to_code) REFERENCES ncs_expand (from_code, to_code) ON DELETE CASCADE,
+    CONSTRAINT ncs_unit_link_units CHECK (left(from_unit, 8) = from_code AND left(to_unit, 8) = to_code)
+);
+COMMENT ON TABLE  ncs_unit_link IS '능력단위끼리 연결: 직무 세분류 단위 → 넓혀 갈 세분류 단위(넓힘마다 최대 5개, curated/ncs_unit_links.csv)';
+COMMENT ON COLUMN ncs_unit_link.checked IS 'false AI 초안(ncs_links.py) · true 사람이 확인함. 응답에 그대로 내보낸다';
+
 CREATE TABLE career_report (
     id               bigint       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id          bigint       NOT NULL UNIQUE REFERENCES app_user (id) ON DELETE CASCADE,

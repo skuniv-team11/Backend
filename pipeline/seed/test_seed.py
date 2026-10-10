@@ -231,6 +231,22 @@ class NcsSeedTest(unittest.TestCase):
         self.assertEqual(got, [("0201030102_21v5", None), ("0201030116_21v4", 4)])
         self.assertEqual(subs["02010301"]["small_code"], "020103")
 
+    def test_능력단위_연결_초안은_목록_안_단위만_넓힘마다_5개_넓혀_갈_단위마다_하나(self):
+        import ncs_links
+        ncs = {"ncs_unit": [{"code": f"1111111{i:03d}_21v1", "subcategory_code": "11111111"} for i in range(1, 4)]
+               + [{"code": f"2222222{i:03d}_21v1", "subcategory_code": "22222222"} for i in range(1, 9)],
+               "ncs_expand": [{"from_code": "11111111", "rank": 1, "to_code": "22222222"}]}
+        link = lambda f, t, note="이유": {"fromUnit": f"1111111{f:03d}_21v1", "toUnit": f"2222222{t:03d}_21v1", "note": note}
+        draft = {"paths": [
+            {"toCode": "22222222", "links": [link(1, 1), link(2, 1), link(9, 2), link(1, 2, " "), link(1, 3), link(2, 4),
+                                             link(3, 5), link(3, 6), link(3, 7), link(3, 8)]},
+            {"toCode": "33333333", "links": [link(1, 1)]}]}
+        rows, dropped = ncs_links.accept(ncs, "11111111", draft)
+        # 같은 넓혀 갈 단위 두 번(2→1)·목록 밖 단위(9)·빈 이유·5개 넘침(3→7·8)·고르지 않은 넓힘(333…)은 버린다
+        self.assertEqual([r["to_unit"][7:10] for r in rows], ["001", "003", "004", "005", "006"])
+        self.assertEqual(dropped, 6)
+        self.assertTrue(all(r["checked"] == "" for r in rows))
+
 
 if __name__ == "__main__":
     unittest.main()

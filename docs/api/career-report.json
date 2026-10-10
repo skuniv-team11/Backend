@@ -89,26 +89,27 @@
       "level": 5
     }
   ],
+  "nextLevel": {
+    "baseLevel": 3,
+    "units": [
+      {
+        "code": "0201030105_16v4",
+        "name": "신 유통경로 마케팅",
+        "level": 3
+      },
+      {
+        "code": "0201030111_16v3",
+        "name": "STP전략 타당성 분석",
+        "level": 3
+      },
+      {
+        "code": "0201030113_16v3",
+        "name": "마케팅믹스전략 실행계획 수립",
+        "level": 3
+      }
+    ]
+  },
   "expand": [
-    {
-      "rank": 1,
-      "code": "02010302",
-      "name": "고객관리",
-      "path": [
-        "경영·회계·사무",
-        "기획사무",
-        "마케팅"
-      ],
-      "relation": "SAME_SMALL",
-      "unitCount": 7,
-      "sampleUnits": [
-        "고객관리 계획 수립",
-        "고객 필요정보 제공",
-        "고객관리 성과 평가",
-        "비정형 데이터 관리",
-        "고객분석과 데이터 관리"
-      ]
-    },
     {
       "rank": 2,
       "code": "02010303",
@@ -120,12 +121,147 @@
       ],
       "relation": "SAME_SMALL",
       "unitCount": 12,
-      "sampleUnits": [
-        "통계조사계획",
-        "표본설계",
-        "설문설계",
-        "실사관리",
-        "자료처리"
+      "linkedCount": 2,
+      "linked": [
+        {
+          "code": "0201030301_18v2",
+          "name": "통계조사계획",
+          "level": 5,
+          "from": {
+            "code": "0201030109_21v4",
+            "name": "마케팅 시장 환경 분석",
+            "level": 3
+          },
+          "note": "시장 환경 분석 내용이 조사 범위 결정의 바탕이 됨",
+          "checked": false
+        },
+        {
+          "code": "0201030315_18v2",
+          "name": "2차 자료 분석",
+          "level": 4,
+          "from": {
+            "code": "0201030109_21v4",
+            "name": "마케팅 시장 환경 분석",
+            "level": 3
+          },
+          "note": "내·외부 자료 분석 경험을 2차 자료 분석에 씀",
+          "checked": false
+        }
+      ],
+      "more": [
+        {
+          "code": "0201030304_18v2",
+          "name": "실사관리",
+          "level": 3
+        },
+        {
+          "code": "0201030305_18v2",
+          "name": "자료처리",
+          "level": 3
+        },
+        {
+          "code": "0201030302_18v2",
+          "name": "표본설계",
+          "level": 4
+        }
+      ],
+      "occupations": [
+        {
+          "code": "0221",
+          "name": "경영 및 진단 전문가",
+          "origin": "KEIS"
+        },
+        {
+          "code": "0242",
+          "name": "조사 전문가",
+          "origin": "KEIS"
+        },
+        {
+          "code": "0293",
+          "name": "통계·데이터 관련 사무원",
+          "origin": "KEIS"
+        }
+      ]
+    },
+    {
+      "rank": 1,
+      "code": "02010302",
+      "name": "고객관리",
+      "path": [
+        "경영·회계·사무",
+        "기획사무",
+        "마케팅"
+      ],
+      "relation": "SAME_SMALL",
+      "unitCount": 7,
+      "linkedCount": 1,
+      "linked": [
+        {
+          "code": "0201030209_15v3",
+          "name": "고객분석과 데이터 관리",
+          "level": 4,
+          "from": {
+            "code": "0201030109_21v4",
+            "name": "마케팅 시장 환경 분석",
+            "level": 3
+          },
+          "note": "시장 환경 분석 경험이 고객 특성 분류에 이어짐",
+          "checked": false
+        }
+      ],
+      "more": [
+        {
+          "code": "0201030206_21v3",
+          "name": "고객 필요정보 제공",
+          "level": 3
+        },
+        {
+          "code": "0201030210_21v4",
+          "name": "고객 관계 관리",
+          "level": 4
+        },
+        {
+          "code": "0201030201_21v3",
+          "name": "고객관리 계획 수립",
+          "level": 5
+        }
+      ],
+      "occupations": [
+        {
+          "code": "0221",
+          "name": "경영 및 진단 전문가",
+          "origin": "KEIS"
+        },
+        {
+          "code": "0241",
+          "name": "광고 및 홍보 전문가",
+          "origin": "KEIS"
+        },
+        {
+          "code": "0242",
+          "name": "조사 전문가",
+          "origin": "KEIS"
+        },
+        {
+          "code": "0243",
+          "name": "상품 기획 전문가",
+          "origin": "KEIS"
+        },
+        {
+          "code": "0261",
+          "name": "경영 기획 사무원",
+          "origin": "KEIS"
+        },
+        {
+          "code": "0292",
+          "name": "고객 상담 및 모니터 요원",
+          "origin": "KEIS"
+        },
+        {
+          "code": "0293",
+          "name": "통계·데이터 관련 사무원",
+          "origin": "KEIS"
+        }
       ]
     },
     {
@@ -139,12 +275,36 @@
       ],
       "relation": "SAME_MIDDLE",
       "unitCount": 7,
-      "sampleUnits": [
-        "광고 전략 수립",
-        "광고 제작",
-        "광고 집행 관리",
-        "광고 효과 평가",
-        "브랜드 기획"
+      "linkedCount": 0,
+      "linked": [],
+      "more": [
+        {
+          "code": "0201020206_24v4",
+          "name": "광고 제작",
+          "level": 4
+        },
+        {
+          "code": "0201020207_24v4",
+          "name": "광고 집행 관리",
+          "level": 4
+        },
+        {
+          "code": "0201020208_24v3",
+          "name": "광고 효과 평가",
+          "level": 4
+        }
+      ],
+      "occupations": [
+        {
+          "code": "0241",
+          "name": "광고 및 홍보 전문가",
+          "origin": "KEIS"
+        },
+        {
+          "code": "0261",
+          "name": "경영 기획 사무원",
+          "origin": "KEIS"
+        }
       ]
     }
   ],

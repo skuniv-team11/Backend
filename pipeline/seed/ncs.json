@@ -7713,6 +7713,10 @@
    "name": "무역 사무원"
   },
   {
+   "code": "0282",
+   "name": "도로 및 철도운송 사무원"
+  },
+  {
    "code": "0285",
    "name": "생산 및 품질관리 사무원"
   },
@@ -7723,10 +7727,6 @@
   {
    "code": "0293",
    "name": "통계·데이터 관련 사무원"
-  },
-  {
-   "code": "1312",
-   "name": "통신공학 기술자 및 연구원"
   },
   {
    "code": "1320",
@@ -7753,12 +7753,28 @@
    "name": "데이터 시스템 전문가"
   },
   {
+   "code": "1361",
+   "name": "정보 시스템 운영자"
+  },
+  {
+   "code": "1401",
+   "name": "건축가"
+  },
+  {
    "code": "1402",
    "name": "건축공학 기술자"
   },
   {
+   "code": "1403",
+   "name": "토목공학 기술자"
+  },
+  {
    "code": "1512",
    "name": "로봇공학 기술자 및 연구원"
+  },
+  {
+   "code": "1562",
+   "name": "섬유공학 시험원"
   },
   {
    "code": "1584",
@@ -7775,6 +7791,10 @@
   {
    "code": "4152",
    "name": "패션 디자이너"
+  },
+  {
+   "code": "4153",
+   "name": "실내장식 디자이너"
   },
   {
    "code": "4154",
@@ -7817,10 +7837,6 @@
    "name": "관광 서비스 종사원"
   },
   {
-   "code": "5221",
-   "name": "항공기 객실 승무원"
-  },
-  {
    "code": "6121",
    "name": "기술 영업원"
   },
@@ -7833,12 +7849,30 @@
    "name": "온라인 쇼핑 판매원"
   },
   {
+   "code": "6230",
+   "name": "물품 이동 장비 조작원"
+  },
+  {
+   "code": "8611",
+   "name": "섬유 제조 기계 조작원"
+  },
+  {
    "code": "8621",
    "name": "패턴사"
   }
  ],
  "ncs_occupation": [
   {
+   "subcategory_code": "02010201",
+   "occupation_code": "0241",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02010201",
+   "occupation_code": "0261",
+   "source": "KEIS"
+  },
+  {
    "subcategory_code": "02010202",
    "occupation_code": "0241",
    "source": "KEIS"
@@ -7917,6 +7951,46 @@
    "subcategory_code": "02010302",
    "occupation_code": "0293",
    "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02010303",
+   "occupation_code": "0221",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02010303",
+   "occupation_code": "0242",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02010303",
+   "occupation_code": "0293",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02010304",
+   "occupation_code": "0221",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02010304",
+   "occupation_code": "0243",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02010304",
+   "occupation_code": "0261",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02030101",
+   "occupation_code": "0261",
+   "source": "CURATED"
+  },
+  {
+   "subcategory_code": "02030101",
+   "occupation_code": "0271",
+   "source": "CURATED"
   },
   {
    "subcategory_code": "02030102",
@@ -7954,6 +8028,51 @@
    "source": "KEIS"
   },
   {
+   "subcategory_code": "02030202",
+   "occupation_code": "0231",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02030202",
+   "occupation_code": "0232",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02030202",
+   "occupation_code": "0251",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02030202",
+   "occupation_code": "0266",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02030202",
+   "occupation_code": "0271",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02040302",
+   "occupation_code": "0233",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02040302",
+   "occupation_code": "0261",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02040302",
+   "occupation_code": "0281",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02040302",
+   "occupation_code": "0285",
+   "source": "KEIS"
+  },
+  {
    "subcategory_code": "02040305",
    "occupation_code": "0233",
    "source": "KEIS"
@@ -7974,6 +8093,51 @@
    "source": "KEIS"
   },
   {
+   "subcategory_code": "02040306",
+   "occupation_code": "0261",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02040306",
+   "occupation_code": "0281",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02040306",
+   "occupation_code": "0282",
+   "source": "CURATED"
+  },
+  {
+   "subcategory_code": "02040306",
+   "occupation_code": "0285",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02040307",
+   "occupation_code": "0261",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02040307",
+   "occupation_code": "0285",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "02040307",
+   "occupation_code": "6230",
+   "source": "CURATED"
+  },
+  {
+   "subcategory_code": "04030201",
+   "occupation_code": "1332",
+   "source": "CURATED"
+  },
+  {
+   "subcategory_code": "04030201",
+   "occupation_code": "1333",
+   "source": "CURATED"
+  },
+  {
    "subcategory_code": "04030202",
    "occupation_code": "4155",
    "source": "CURATED"
@@ -7984,6 +8148,11 @@
    "source": "CURATED"
   },
   {
+   "subcategory_code": "08010101",
+   "occupation_code": "0244",
+   "source": "CURATED"
+  },
+  {
    "subcategory_code": "08020101",
    "occupation_code": "0244",
    "source": "KEIS"
@@ -7991,11 +8160,6 @@
   {
    "subcategory_code": "08020101",
    "occupation_code": "4151",
-   "source": "KEIS"
-  },
-  {
-   "subcategory_code": "08020101",
-   "occupation_code": "4152",
    "source": "KEIS"
   },
   {
@@ -8009,8 +8173,33 @@
    "source": "KEIS"
   },
   {
-   "subcategory_code": "08020105",
-   "occupation_code": "0244",
+   "subcategory_code": "08020102",
+   "occupation_code": "4151",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08020102",
+   "occupation_code": "4154",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08020102",
+   "occupation_code": "4155",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08020104",
+   "occupation_code": "4151",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08020104",
+   "occupation_code": "4154",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08020104",
+   "occupation_code": "4155",
    "source": "KEIS"
   },
   {
@@ -8034,18 +8223,28 @@
    "source": "KEIS"
   },
   {
-   "subcategory_code": "08020111",
-   "occupation_code": "0244",
+   "subcategory_code": "08020108",
+   "occupation_code": "4151",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08020108",
+   "occupation_code": "4152",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08020108",
+   "occupation_code": "4154",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08020108",
+   "occupation_code": "4155",
    "source": "KEIS"
   },
   {
    "subcategory_code": "08020111",
    "occupation_code": "4151",
-   "source": "KEIS"
-  },
-  {
-   "subcategory_code": "08020111",
-   "occupation_code": "4152",
    "source": "KEIS"
   },
   {
@@ -8072,6 +8271,201 @@
    "subcategory_code": "08030101",
    "occupation_code": "4111",
    "source": "CURATED"
+  },
+  {
+   "subcategory_code": "08030201",
+   "occupation_code": "0241",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030201",
+   "occupation_code": "0244",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030201",
+   "occupation_code": "4111",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030201",
+   "occupation_code": "4154",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030201",
+   "occupation_code": "4155",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030201",
+   "occupation_code": "4161",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030201",
+   "occupation_code": "4164",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030201",
+   "occupation_code": "4165",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030201",
+   "occupation_code": "4166",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030201",
+   "occupation_code": "4167",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030204",
+   "occupation_code": "0241",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030204",
+   "occupation_code": "0243",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030204",
+   "occupation_code": "0244",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030204",
+   "occupation_code": "4111",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030204",
+   "occupation_code": "4154",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030204",
+   "occupation_code": "4155",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030204",
+   "occupation_code": "4161",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030204",
+   "occupation_code": "4164",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030204",
+   "occupation_code": "4165",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030204",
+   "occupation_code": "4166",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030204",
+   "occupation_code": "4167",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030401",
+   "occupation_code": "4155",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030401",
+   "occupation_code": "4161",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030401",
+   "occupation_code": "4164",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030401",
+   "occupation_code": "4165",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030401",
+   "occupation_code": "4166",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030401",
+   "occupation_code": "4167",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030402",
+   "occupation_code": "4155",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030402",
+   "occupation_code": "4161",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030402",
+   "occupation_code": "4164",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030402",
+   "occupation_code": "4165",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030402",
+   "occupation_code": "4166",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030402",
+   "occupation_code": "4167",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030405",
+   "occupation_code": "4155",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030405",
+   "occupation_code": "4161",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030405",
+   "occupation_code": "4164",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030405",
+   "occupation_code": "4165",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030405",
+   "occupation_code": "4166",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "08030405",
+   "occupation_code": "4167",
+   "source": "KEIS"
   },
   {
    "subcategory_code": "08030406",
@@ -8102,6 +8496,16 @@
    "subcategory_code": "08030406",
    "occupation_code": "4167",
    "source": "KEIS"
+  },
+  {
+   "subcategory_code": "10010101",
+   "occupation_code": "6121",
+   "source": "CURATED"
+  },
+  {
+   "subcategory_code": "10010101",
+   "occupation_code": "6132",
+   "source": "CURATED"
   },
   {
    "subcategory_code": "10010102",
@@ -8149,8 +8553,18 @@
    "source": "KEIS"
   },
   {
-   "subcategory_code": "12030101",
-   "occupation_code": "5221",
+   "subcategory_code": "12030102",
+   "occupation_code": "5211",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "12030102",
+   "occupation_code": "5212",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "12030102",
+   "occupation_code": "5213",
    "source": "KEIS"
   },
   {
@@ -8159,8 +8573,33 @@
    "source": "KEIS"
   },
   {
+   "subcategory_code": "12030302",
+   "occupation_code": "0244",
+   "source": "KEIS"
+  },
+  {
    "subcategory_code": "12030303",
    "occupation_code": "0244",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "14010201",
+   "occupation_code": "1402",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "14010201",
+   "occupation_code": "1403",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "14010202",
+   "occupation_code": "1402",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "14010202",
+   "occupation_code": "1403",
    "source": "KEIS"
   },
   {
@@ -8174,6 +8613,16 @@
    "source": "CURATED"
   },
   {
+   "subcategory_code": "14030102",
+   "occupation_code": "1401",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "14030102",
+   "occupation_code": "1402",
+   "source": "KEIS"
+  },
+  {
    "subcategory_code": "18020101",
    "occupation_code": "0243",
    "source": "KEIS"
@@ -8219,8 +8668,68 @@
    "source": "KEIS"
   },
   {
-   "subcategory_code": "20010202",
-   "occupation_code": "1312",
+   "subcategory_code": "18020104",
+   "occupation_code": "0243",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "18020104",
+   "occupation_code": "4152",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "18020104",
+   "occupation_code": "4153",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "18020201",
+   "occupation_code": "1562",
+   "source": "CURATED"
+  },
+  {
+   "subcategory_code": "18020201",
+   "occupation_code": "8611",
+   "source": "CURATED"
+  },
+  {
+   "subcategory_code": "18020301",
+   "occupation_code": "0243",
+   "source": "CURATED"
+  },
+  {
+   "subcategory_code": "18020301",
+   "occupation_code": "6154",
+   "source": "CURATED"
+  },
+  {
+   "subcategory_code": "20010105",
+   "occupation_code": "0221",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010105",
+   "occupation_code": "0243",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010105",
+   "occupation_code": "1320",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010105",
+   "occupation_code": "1331",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010105",
+   "occupation_code": "1332",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010105",
+   "occupation_code": "1351",
    "source": "KEIS"
   },
   {
@@ -8251,6 +8760,131 @@
   {
    "subcategory_code": "20010202",
    "occupation_code": "1351",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010204",
+   "occupation_code": "1320",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010204",
+   "occupation_code": "1331",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010204",
+   "occupation_code": "1332",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010204",
+   "occupation_code": "1333",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010204",
+   "occupation_code": "1341",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010204",
+   "occupation_code": "1351",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010304",
+   "occupation_code": "1351",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010304",
+   "occupation_code": "1361",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010403",
+   "occupation_code": "1320",
+   "source": "CURATED"
+  },
+  {
+   "subcategory_code": "20010403",
+   "occupation_code": "1332",
+   "source": "CURATED"
+  },
+  {
+   "subcategory_code": "20010703",
+   "occupation_code": "1320",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010703",
+   "occupation_code": "1331",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010703",
+   "occupation_code": "1332",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010703",
+   "occupation_code": "1351",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010703",
+   "occupation_code": "1512",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010704",
+   "occupation_code": "1320",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010704",
+   "occupation_code": "1331",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010704",
+   "occupation_code": "1332",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010704",
+   "occupation_code": "1351",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010704",
+   "occupation_code": "1512",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010705",
+   "occupation_code": "1320",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010705",
+   "occupation_code": "1331",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010705",
+   "occupation_code": "1332",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010705",
+   "occupation_code": "1351",
+   "source": "KEIS"
+  },
+  {
+   "subcategory_code": "20010705",
+   "occupation_code": "1512",
    "source": "KEIS"
   },
   {
@@ -8946,6 +9580,2448 @@
    "rank": 3,
    "to_code": "02010301",
    "relation": "OTHER"
+  }
+ ],
+ "ncs_unit_link": [
+  {
+   "from_code": "02010202",
+   "to_code": "02010201",
+   "from_unit": "0201020206_24v4",
+   "to_unit": "0201020103_24v3",
+   "note": "매체에 맞는 콘텐츠 제작 경험을 온라인 PR 콘텐츠 제작에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010202",
+   "to_code": "02010201",
+   "from_unit": "0201020210_24v4",
+   "to_unit": "0201020106_24v3",
+   "note": "브랜드 이미지 관리 경험이 조직문화 전파 활동으로 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "02010202",
+   "to_code": "02010201",
+   "from_unit": "0201020205_24v4",
+   "to_unit": "0201020111_24v4",
+   "note": "광고 환경 분석 방식을 PR 환경 분석에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010202",
+   "to_code": "02010201",
+   "from_unit": "0201020205_24v4",
+   "to_unit": "0201020115_24v5",
+   "note": "광고 목표·매체 전략 수립 경험을 PR 전략 수립에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010202",
+   "to_code": "02010201",
+   "from_unit": "0201020208_24v3",
+   "to_unit": "0201020116_24v4",
+   "note": "광고 효과 평가 기준 설정·분석 방법을 PR 활동 평가에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010202",
+   "to_code": "02010301",
+   "from_unit": "0201020209_24v3",
+   "to_unit": "0201030108_21v4",
+   "note": "목표·비전 수립 경험이 마케팅 전략 계획 수립으로 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "02010202",
+   "to_code": "02010301",
+   "from_unit": "0201020211_24v4",
+   "to_unit": "0201030115_16v3",
+   "note": "브랜드 목표 달성 평가 경험을 마케팅 성과 파악에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010202",
+   "to_code": "02010301",
+   "from_unit": "0201020205_24v4",
+   "to_unit": "0201030117_21v4",
+   "note": "매체 전략·콘셉트 수립 경험이 촉진 전략 설계에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "02010202",
+   "to_code": "02010301",
+   "from_unit": "0201020208_24v3",
+   "to_unit": "0201030118_21v4",
+   "note": "광고 성과 평가·분석 방식을 마케팅 성과 관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010202",
+   "to_code": "08030204",
+   "from_unit": "0201020205_24v4",
+   "to_unit": "0803020402_16v2",
+   "note": "광고 전략 수립 업무를 그대로 이어서 수행함",
+   "checked": false
+  },
+  {
+   "from_code": "02010202",
+   "to_code": "08030204",
+   "from_unit": "0201020207_24v4",
+   "to_unit": "0803020403_16v2",
+   "note": "매체 선정·구매 경험을 매체 기획 관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010202",
+   "to_code": "08030204",
+   "from_unit": "0201020206_24v4",
+   "to_unit": "0803020411_16v2",
+   "note": "크리에이티브 콘셉트·아이디어 도출 경험을 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010202",
+   "to_code": "08030204",
+   "from_unit": "0201020206_24v4",
+   "to_unit": "0803020419_16v1",
+   "note": "매체에 맞는 콘텐츠 제작 경험을 온라인 광고 제작에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010202",
+   "to_code": "08030204",
+   "from_unit": "0201020207_24v4",
+   "to_unit": "0803020423_16v2",
+   "note": "광고 집행·모니터링 경험을 광고 실행 관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010301",
+   "to_code": "02010202",
+   "from_unit": "0201030117_21v4",
+   "to_unit": "0201020205_24v4",
+   "note": "믹스 전략의 촉진 방안이 광고 전략의 입력이 됨",
+   "checked": false
+  },
+  {
+   "from_code": "02010301",
+   "to_code": "02010202",
+   "from_unit": "0201030118_21v4",
+   "to_unit": "0201020208_24v3",
+   "note": "목표 달성 여부를 평가·분석하는 방식을 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010301",
+   "to_code": "02010202",
+   "from_unit": "0201030111_16v3",
+   "to_unit": "0201020209_24v3",
+   "note": "차별적 포지셔닝 분석이 브랜드 방향 설정에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "02010301",
+   "to_code": "02010302",
+   "from_unit": "0201030116_21v4",
+   "to_unit": "0201030201_21v3",
+   "note": "STP 전략의 타깃 설정을 고객관리 목표에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010301",
+   "to_code": "02010302",
+   "from_unit": "0201030118_21v4",
+   "to_unit": "0201030207_21v3",
+   "note": "성과 평가·분석·피드백 방식을 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010301",
+   "to_code": "02010302",
+   "from_unit": "0201030109_21v4",
+   "to_unit": "0201030209_15v3",
+   "note": "시장 환경 분석 경험이 고객 특성 분류에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "02010301",
+   "to_code": "02010303",
+   "from_unit": "0201030109_21v4",
+   "to_unit": "0201030301_18v2",
+   "note": "시장 환경 분석 내용이 조사 범위 결정의 바탕이 됨",
+   "checked": false
+  },
+  {
+   "from_code": "02010301",
+   "to_code": "02010303",
+   "from_unit": "0201030118_21v4",
+   "to_unit": "0201030308_18v4",
+   "note": "성과 분석 결과를 보고서로 정리해 발표함",
+   "checked": false
+  },
+  {
+   "from_code": "02010301",
+   "to_code": "02010303",
+   "from_unit": "0201030109_21v4",
+   "to_unit": "0201030315_18v2",
+   "note": "내·외부 자료 분석 경험을 2차 자료 분석에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010302",
+   "to_code": "02010301",
+   "from_unit": "0201030201_21v3",
+   "to_unit": "0201030108_21v4",
+   "note": "전략목표와 실행방안 도출 경험을 마케팅 전략에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010302",
+   "to_code": "02010301",
+   "from_unit": "0201030211_21v4",
+   "to_unit": "0201030109_21v4",
+   "note": "고객데이터 분석 시사점이 시장 환경 분석 입력이 됨",
+   "checked": false
+  },
+  {
+   "from_code": "02010302",
+   "to_code": "02010301",
+   "from_unit": "0201030209_15v3",
+   "to_unit": "0201030116_21v4",
+   "note": "고객 특성별 분류가 시장 세분화·타깃 선정에 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "02010302",
+   "to_code": "02010301",
+   "from_unit": "0201030210_21v4",
+   "to_unit": "0201030117_21v4",
+   "note": "고객 유형별 관계 관리가 믹스 전략 수립에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "02010302",
+   "to_code": "02010301",
+   "from_unit": "0201030207_21v3",
+   "to_unit": "0201030118_21v4",
+   "note": "평가기준에 따른 성과 평가·개선안 도출을 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010302",
+   "to_code": "02010303",
+   "from_unit": "0201030201_21v3",
+   "to_unit": "0201030301_18v2",
+   "note": "목표·실행방안 수립 방식을 조사계획에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010302",
+   "to_code": "02010303",
+   "from_unit": "0201030209_15v3",
+   "to_unit": "0201030305_18v2",
+   "note": "데이터 수집·정제 경험을 자료 코딩·정제에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010302",
+   "to_code": "02010303",
+   "from_unit": "0201030207_21v3",
+   "to_unit": "0201030308_18v4",
+   "note": "평가 결과 정리와 개선안 도출을 조사 보고서에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010302",
+   "to_code": "02010303",
+   "from_unit": "0201030211_21v4",
+   "to_unit": "0201030309_18v3",
+   "note": "고객데이터 분석 경험이 기술통계 요약·검정에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "02010302",
+   "to_code": "02010303",
+   "from_unit": "0201030208_14v2",
+   "to_unit": "0201030317_21v4",
+   "note": "비정형 자료 수집·분석 경험을 정성조사에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010302",
+   "to_code": "20010105",
+   "from_unit": "0201030211_21v4",
+   "to_unit": "2001010506_19v3",
+   "note": "고객데이터 분석 경험이 통계 기반 분석으로 확장됨",
+   "checked": false
+  },
+  {
+   "from_code": "02010302",
+   "to_code": "20010105",
+   "from_unit": "0201030208_14v2",
+   "to_unit": "2001010508_19v3",
+   "note": "비정형 자료 분석 경험이 텍스트 분석에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "02010302",
+   "to_code": "20010105",
+   "from_unit": "0201030206_21v3",
+   "to_unit": "2001010509_21v4",
+   "note": "정보 산출·제공 경험을 분석 결과 시각화에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02010302",
+   "to_code": "20010105",
+   "from_unit": "0201030209_15v3",
+   "to_unit": "2001010510_21v4",
+   "note": "데이터 수집·정제 경험을 분석용 전처리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02030102",
+   "to_code": "02030101",
+   "from_unit": "0203010201_20v3",
+   "to_unit": "0203010104_20v3",
+   "note": "자금 계획 수치를 추정재무제표 작성에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02030102",
+   "to_code": "02030101",
+   "from_unit": "0203010204_20v3",
+   "to_unit": "0203010105_20v3",
+   "note": "자금 집행·관리 경험을 확정 예산 운영에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02030102",
+   "to_code": "02030101",
+   "from_unit": "0203010207_20v3",
+   "to_unit": "0203010106_20v3",
+   "note": "계획 대비 실적 차이 분석을 예산 실적 관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02030102",
+   "to_code": "02030101",
+   "from_unit": "0203010206_20v3",
+   "to_unit": "0203010107_20v3",
+   "note": "재무위험 식별·대응 방법을 예산 위험 관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02030102",
+   "to_code": "02030201",
+   "from_unit": "0203010204_20v3",
+   "to_unit": "0203020102_20v4",
+   "note": "자금 집행·관리 경험을 현금·예금 관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02030102",
+   "to_code": "02030201",
+   "from_unit": "0203010207_20v3",
+   "to_unit": "0203020106_20v4",
+   "note": "실적 차이 분석 경험을 재무비율 분석에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02030102",
+   "to_code": "02030201",
+   "from_unit": "0203010205_20v3",
+   "to_unit": "0203020107_20v4",
+   "note": "재무정보 공시 경험을 회계감사 공시 업무에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02030201",
+   "to_code": "02030101",
+   "from_unit": "0203020110_20v2",
+   "to_unit": "0203010102_20v3",
+   "note": "원가 분석 결과를 부문별 비용계획 수립에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02030201",
+   "to_code": "02030101",
+   "from_unit": "0203020112_23v5",
+   "to_unit": "0203010104_20v3",
+   "note": "재무제표 작성 경험을 추정재무제표 작성에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02030201",
+   "to_code": "02030101",
+   "from_unit": "0203020101_20v4",
+   "to_unit": "0203010105_20v3",
+   "note": "전표 처리 경험을 확정 예산 집행 운영에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02030201",
+   "to_code": "02030102",
+   "from_unit": "0203020102_20v4",
+   "to_unit": "0203010204_20v3",
+   "note": "현금·예금 관리 경험을 자금 집행과 관리에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02030201",
+   "to_code": "02030102",
+   "from_unit": "0203020112_23v5",
+   "to_unit": "0203010205_20v3",
+   "note": "작성한 재무제표를 재무정보 제공의 자료로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02030201",
+   "to_code": "02030202",
+   "from_unit": "0203020101_20v4",
+   "to_unit": "0203020201_23v6",
+   "note": "전표 작성·증빙 처리 경험을 적격증빙 관리에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02030201",
+   "to_code": "02030202",
+   "from_unit": "0203020104_23v5",
+   "to_unit": "0203020202_20v5",
+   "note": "결산 절차와 장부 마감 경험을 결산관리에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02030201",
+   "to_code": "02030202",
+   "from_unit": "0203020105_20v4",
+   "to_unit": "0203020203_17v3",
+   "note": "회계프로그램 운용 경험을 세무정보시스템 활용에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02030201",
+   "to_code": "02030202",
+   "from_unit": "0203020112_23v5",
+   "to_unit": "0203020213_23v6",
+   "note": "작성한 재무제표가 세무조정의 표준재무제표 입력이 됨",
+   "checked": false
+  },
+  {
+   "from_code": "02040305",
+   "to_code": "02040302",
+   "from_unit": "0204030505_22v1",
+   "to_unit": "0204030205_24v2",
+   "note": "운송 경로·수단 설정을 국제운송 계획 수립에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02040305",
+   "to_code": "02040302",
+   "from_unit": "0204030501_22v4",
+   "to_unit": "0204030208_24v3",
+   "note": "환경·고객 분석 경험을 해외시장조사와 진출전략에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02040305",
+   "to_code": "02040306",
+   "from_unit": "0204030505_22v1",
+   "to_unit": "0204030601_23v4",
+   "note": "운송 수단·경로 전략을 육상운송 계획 수립에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02040305",
+   "to_code": "02040306",
+   "from_unit": "0204030505_22v1",
+   "to_unit": "0204030604_23v4",
+   "note": "운송량 예측과 수단 선정을 복합운송 방법 결정에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02040305",
+   "to_code": "02040306",
+   "from_unit": "0204030502_22v4",
+   "to_unit": "0204030606_23v1",
+   "note": "고객 맞춤 서비스 관리를 국내특송 고객 서비스에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02040305",
+   "to_code": "02040306",
+   "from_unit": "0204030508_22v4",
+   "to_unit": "0204030607_23v1",
+   "note": "물류정보시스템 활용 경험을 운송플랫폼 선정·관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02040305",
+   "to_code": "02040307",
+   "from_unit": "0204030506_22v1",
+   "to_unit": "0204030701_22v4",
+   "note": "입고 운영안 수립 경험을 입고계획 수립과 관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02040305",
+   "to_code": "02040307",
+   "from_unit": "0204030504_22v1",
+   "to_unit": "0204030702_22v4",
+   "note": "최적 재고수준 결정을 보관 재고량 최적화에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02040305",
+   "to_code": "02040307",
+   "from_unit": "0204030506_22v1",
+   "to_unit": "0204030703_22v1",
+   "note": "설비·인력 운영안 수립을 분류작업 계획에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "02040305",
+   "to_code": "02040307",
+   "from_unit": "0204030506_22v1",
+   "to_unit": "0204030706_22v4",
+   "note": "출고 운영안 수립을 출고계획 수행과 확정에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "04030202",
+   "to_code": "04030201",
+   "from_unit": "0403020230_18v2",
+   "to_unit": "0403020104_22v4",
+   "note": "UI 기획 경험이 학습시스템 화면·메뉴 설계로 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "04030202",
+   "to_code": "04030201",
+   "from_unit": "0403020219_18v3",
+   "to_unit": "0403020107_22v4",
+   "note": "품질 확인 절차를 시스템 테스트에 응용",
+   "checked": false
+  },
+  {
+   "from_code": "04030202",
+   "to_code": "04030201",
+   "from_unit": "0403020209_18v4",
+   "to_unit": "0403020108_16v3",
+   "note": "LMS 구동 확인 경험이 시스템 시범운영에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "04030202",
+   "to_code": "04030201",
+   "from_unit": "0403020203_16v3",
+   "to_unit": "0403020111_16v3",
+   "note": "학습자 시스템 환경 분석을 학습 환경 분석에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "04030202",
+   "to_code": "04030201",
+   "from_unit": "0403020217_16v3",
+   "to_unit": "0403020116_16v3",
+   "note": "요소 연결 구현 경험이 단위프로그램 개발로 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "04030202",
+   "to_code": "04030203",
+   "from_unit": "0403020235_18v3",
+   "to_unit": "0403020302_22v3",
+   "note": "개발 완료 후 운영 환경 인수 준비를 그대로 이어 씀",
+   "checked": false
+  },
+  {
+   "from_code": "04030202",
+   "to_code": "04030203",
+   "from_unit": "0403020209_18v4",
+   "to_unit": "0403020305_16v2",
+   "note": "LMS 동작 구성 경험이 수강 오류 처리에 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "04030202",
+   "to_code": "04030203",
+   "from_unit": "0403020210_14v2",
+   "to_unit": "0403020307_16v2",
+   "note": "콘텐츠 품질 점검 관점이 과정 평가에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "04030202",
+   "to_code": "04030203",
+   "from_unit": "0403020220_16v1",
+   "to_unit": "0403020312_16v1",
+   "note": "콘텐츠 유형·특성 이해가 교육과정 관리에 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "04030202",
+   "to_code": "04030203",
+   "from_unit": "0403020222_16v1",
+   "to_unit": "0403020317_16v1",
+   "note": "비용·일정·위험 관리를 운영 통합관리에 적용",
+   "checked": false
+  },
+  {
+   "from_code": "04030202",
+   "to_code": "08030406",
+   "from_unit": "0403020229_18v2",
+   "to_unit": "0803040601_13v1",
+   "note": "스토리보드 해석이 영상 장면 분석에 그대로 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "04030202",
+   "to_code": "08030406",
+   "from_unit": "0403020215_18v4",
+   "to_unit": "0803040604_15v2",
+   "note": "동영상 요소 제작 경험이 본격 영상편집에 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "04030202",
+   "to_code": "08030406",
+   "from_unit": "0403020216_18v4",
+   "to_unit": "0803040606_15v2",
+   "note": "화면 효과 구현 경험이 효과편집에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "04030202",
+   "to_code": "08030406",
+   "from_unit": "0403020214_18v4",
+   "to_unit": "0803040609_13v1",
+   "note": "그래픽 제작 능력이 자막·CG·타이틀 편집에 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "08020101",
+   "to_code": "08020104",
+   "from_unit": "0802010112_20v4",
+   "to_unit": "0802010409_16v2",
+   "note": "시각디자인 리서치 조사 방법을 프로젝트 기초조사에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020101",
+   "to_code": "08020104",
+   "from_unit": "0802010111_20v3",
+   "to_unit": "0802010410_16v2",
+   "note": "프로젝트 목적·일정·요구사항 파악 기획 역량을 기획 심화에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020101",
+   "to_code": "08020104",
+   "from_unit": "0802010113_20v4",
+   "to_unit": "0802010411_16v2",
+   "note": "리서치 분석 결과가 사용자 정의와 디자인 방향 도출에 입력됨",
+   "checked": false
+  },
+  {
+   "from_code": "08020101",
+   "to_code": "08020104",
+   "from_unit": "0802010121_20v3",
+   "to_unit": "0802010416_23v3",
+   "note": "시안 완성도 높이는 제작 기술을 구성요소 제작에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020101",
+   "to_code": "08020104",
+   "from_unit": "0802010109_20v3",
+   "to_unit": "0802010420_16v3",
+   "note": "결과물 정리·관리 경험이 프로젝트 완료 자료정리로 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "08020101",
+   "to_code": "08020111",
+   "from_unit": "0802010110_20v3",
+   "to_unit": "0802011101_17v1",
+   "note": "요구사항·일정 파악 기획 구상을 패키지 프로젝트기획안 작성에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020101",
+   "to_code": "08020111",
+   "from_unit": "0802010112_20v4",
+   "to_unit": "0802011102_17v1",
+   "note": "자료 수집·분류 조사 방법을 패키지 시장조사에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020101",
+   "to_code": "08020111",
+   "from_unit": "0802010114_20v4",
+   "to_unit": "0802011103_17v1",
+   "note": "조사 분석 바탕 콘셉트·전략 도출 방식이 같음",
+   "checked": false
+  },
+  {
+   "from_code": "08020101",
+   "to_code": "08020111",
+   "from_unit": "0802010117_20v4",
+   "to_unit": "0802011105_17v1",
+   "note": "콘셉트의 시각적 아이디어 전개를 패키지 스케치에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020101",
+   "to_code": "08020111",
+   "from_unit": "0802010108_20v2",
+   "to_unit": "0802011108_17v1",
+   "note": "디자인을 인쇄용 데이터로 변환하는 기술을 인쇄원고제작에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020101",
+   "to_code": "08030204",
+   "from_unit": "0802010114_20v4",
+   "to_unit": "0803020411_16v2",
+   "note": "조사 기반 콘셉트·크리에이티브 전략 수립을 광고 전략에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020101",
+   "to_code": "08030204",
+   "from_unit": "0802010106_20v3",
+   "to_unit": "0803020412_16v2",
+   "note": "시안 발표·설득 경험을 광고 시안 프레젠테이션에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020101",
+   "to_code": "08030204",
+   "from_unit": "0802010108_20v2",
+   "to_unit": "0803020418_16v2",
+   "note": "데이터 변환·인쇄 확인 경험을 인쇄편집에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020105",
+   "to_code": "08020108",
+   "from_unit": "0802010512_16v2",
+   "to_unit": "0802010802_23v2",
+   "note": "시장·트렌드 분석 결과를 색채디자인 요소 분석에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020105",
+   "to_code": "08020108",
+   "from_unit": "0802010514_16v2",
+   "to_unit": "0802010803_23v2",
+   "note": "디자인 콘셉트 설정 경험을 색채 콘셉트 기획에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020105",
+   "to_code": "08020108",
+   "from_unit": "0802010519_16v2",
+   "to_unit": "0802010804_23v2",
+   "note": "염색 배합과 색 구현 지식을 조색에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020105",
+   "to_code": "08020108",
+   "from_unit": "0802010516_16v2",
+   "to_unit": "0802010808_15v1",
+   "note": "이미지맵과 스케치 표현 능력을 색채디자인 완성에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020105",
+   "to_code": "18020101",
+   "from_unit": "0802010512_16v2",
+   "to_unit": "1802010101_20v4",
+   "note": "트렌드·소비자 정보 분석을 패션시장 현황분석에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020105",
+   "to_code": "18020101",
+   "from_unit": "0802010513_16v2",
+   "to_unit": "1802010103_20v4",
+   "note": "시장 세분화와 포지셔닝 경험을 브랜드 전략기획에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020105",
+   "to_code": "18020101",
+   "from_unit": "0802010514_16v2",
+   "to_unit": "1802010105_15v3",
+   "note": "콘셉트·소재 기획을 시즌 콘셉트와 소재 제안에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020105",
+   "to_code": "18020101",
+   "from_unit": "0802010513_16v2",
+   "to_unit": "1802010106_15v3",
+   "note": "타깃과 아이템 선정 경험을 아이템 기획에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020105",
+   "to_code": "18020101",
+   "from_unit": "0802010514_16v2",
+   "to_unit": "1802010113_20v3",
+   "note": "텍스타일 소재 분석·기획을 패션소재 기획에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020105",
+   "to_code": "18020102",
+   "from_unit": "0802010511_16v2",
+   "to_unit": "1802010201_15v3",
+   "note": "시장·트렌드·소비자 조사 방법을 패션 자료 수집에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020105",
+   "to_code": "18020102",
+   "from_unit": "0802010516_16v2",
+   "to_unit": "1802010203_18v3",
+   "note": "아이디어 스케치와 디자인 선정을 패션디자인 개발에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020105",
+   "to_code": "18020102",
+   "from_unit": "0802010522_16v2",
+   "to_unit": "1802010205_15v3",
+   "note": "작업지시서 작성과 시제품 완성 확인 경험을 이어 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020105",
+   "to_code": "18020102",
+   "from_unit": "0802010514_16v2",
+   "to_unit": "1802010211_16v3",
+   "note": "디자인 콘셉트 설정과 소재 기획 경험을 시즌 기획에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020105",
+   "to_code": "18020102",
+   "from_unit": "0802010514_16v2",
+   "to_unit": "1802010212_16v3",
+   "note": "콘셉트와 소재 기획 결과를 상품 개발 구상의 바탕으로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020111",
+   "to_code": "08020101",
+   "from_unit": "0802011107_17v1",
+   "to_unit": "0802010106_20v3",
+   "note": "디자인안 발표 자료 제작과 설득 발표에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020111",
+   "to_code": "08020101",
+   "from_unit": "0802011101_17v1",
+   "to_unit": "0802010110_20v3",
+   "note": "프로젝트 요구사항 파악과 기획안 작성 방식이 같음",
+   "checked": false
+  },
+  {
+   "from_code": "08020111",
+   "to_code": "08020101",
+   "from_unit": "0802011102_17v1",
+   "to_unit": "0802010112_20v4",
+   "note": "시장·트렌드·경쟁자 조사 방법을 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020111",
+   "to_code": "08020101",
+   "from_unit": "0802011103_17v1",
+   "to_unit": "0802010114_20v4",
+   "note": "조사 결과로 콘셉트와 디자인 전략을 도출함",
+   "checked": false
+  },
+  {
+   "from_code": "08020111",
+   "to_code": "08020101",
+   "from_unit": "0802011105_17v1",
+   "to_unit": "0802010116_20v4",
+   "note": "콘셉트를 스케치로 시각화하는 기술이 같음",
+   "checked": false
+  },
+  {
+   "from_code": "08020111",
+   "to_code": "08020102",
+   "from_unit": "0802011109_17v1",
+   "to_unit": "0802010206_16v2",
+   "note": "사양서 기반 구조물 제작 경험이 모형 제작에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "08020111",
+   "to_code": "08020102",
+   "from_unit": "0802011103_17v1",
+   "to_unit": "0802010213_16v2",
+   "note": "조사 결과를 바탕으로 개발 방향과 전략을 세움",
+   "checked": false
+  },
+  {
+   "from_code": "08020111",
+   "to_code": "08020102",
+   "from_unit": "0802011105_17v1",
+   "to_unit": "0802010215_16v2",
+   "note": "스펙을 파악해 스케치로 아이디어를 전개함",
+   "checked": false
+  },
+  {
+   "from_code": "08020111",
+   "to_code": "08020102",
+   "from_unit": "0802011111_17v1",
+   "to_unit": "0802010220_16v2",
+   "note": "결과 보고서와 최종 데이터 자료화를 그대로 함",
+   "checked": false
+  },
+  {
+   "from_code": "08020111",
+   "to_code": "08020108",
+   "from_unit": "0802011102_17v1",
+   "to_unit": "0802010802_23v2",
+   "note": "트렌드·소비자 조사 자료를 색채 분석에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08020111",
+   "to_code": "08020108",
+   "from_unit": "0802011104_17v1",
+   "to_unit": "0802010803_23v2",
+   "note": "차별화된 디자인 콘셉트 설정 방식이 같음",
+   "checked": false
+  },
+  {
+   "from_code": "08020111",
+   "to_code": "08020108",
+   "from_unit": "0802011106_17v1",
+   "to_unit": "0802010808_15v1",
+   "note": "콘셉트에 맞는 시안 제작 경험이 색채디자인 완성에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "08020111",
+   "to_code": "08020108",
+   "from_unit": "0802011111_17v1",
+   "to_unit": "0802010809_23v2",
+   "note": "결과 보고서 작성과 자료 보관·관리 방식이 같음",
+   "checked": false
+  },
+  {
+   "from_code": "08030101",
+   "to_code": "08030201",
+   "from_unit": "0803010103_16v1",
+   "to_unit": "0803020101_16v2",
+   "note": "분야별 세부 계획 수립이 프로그램 기획안 작성으로 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "08030101",
+   "to_code": "08030201",
+   "from_unit": "0803010106_16v1",
+   "to_unit": "0803020103_16v3",
+   "note": "기획 방향에 맞춘 실연 인력 구성을 출연자 캐스팅에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08030101",
+   "to_code": "08030201",
+   "from_unit": "0803010102_16v1",
+   "to_unit": "0803020111_16v3",
+   "note": "이용자 분석 결과를 방송 아이템 선정 근거로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08030101",
+   "to_code": "08030201",
+   "from_unit": "0803010108_16v1",
+   "to_unit": "0803020114_16v3",
+   "note": "장비 운용 계획이 촬영 장비 준비의 입력이 됨",
+   "checked": false
+  },
+  {
+   "from_code": "08030101",
+   "to_code": "12030101",
+   "from_unit": "0803010102_16v1",
+   "to_unit": "1203010101_22v3",
+   "note": "이용자 소비시장 분석 방법을 여행상품 시장조사에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08030101",
+   "to_code": "12030101",
+   "from_unit": "0803010105_16v1",
+   "to_unit": "1203010107_22v3",
+   "note": "예산서 작성과 집행 기획 경험을 상품개발 예산 편성에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08030101",
+   "to_code": "12030101",
+   "from_unit": "0803010109_16v1",
+   "to_unit": "1203010109_22v2",
+   "note": "계약 조건 설정과 관리 경험을 상품 계약 관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08030101",
+   "to_code": "12030101",
+   "from_unit": "0803010102_16v1",
+   "to_unit": "1203010113_22v3",
+   "note": "소비 유형 분석 결과가 시장 세분화와 목표시장 선정의 입력이 됨",
+   "checked": false
+  },
+  {
+   "from_code": "08030101",
+   "to_code": "12030101",
+   "from_unit": "0803010104_16v1",
+   "to_unit": "1203010114_22v3",
+   "note": "유통 플랫폼 선택 계획이 마케팅 믹스의 유통전략으로 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "08030101",
+   "to_code": "20030306",
+   "from_unit": "0803010102_16v1",
+   "to_unit": "2003030601_19v1",
+   "note": "이용자와 시장 동향 분석을 소셜미디어 기획에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08030101",
+   "to_code": "20030306",
+   "from_unit": "0803010108_16v1",
+   "to_unit": "2003030604_19v1",
+   "note": "장비 운용 계획 경험을 생방송 제작·송출 장비 운용에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08030101",
+   "to_code": "20030306",
+   "from_unit": "0803010104_16v1",
+   "to_unit": "2003030605_19v1",
+   "note": "플랫폼 특성 파악이 채널 특성에 맞는 운영의 바탕이 됨",
+   "checked": false
+  },
+  {
+   "from_code": "08030101",
+   "to_code": "20030306",
+   "from_unit": "0803010101_16v1",
+   "to_unit": "2003030606_19v1",
+   "note": "산업 생태계 분석 방법을 콘텐츠 시장 동향 분석에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08030101",
+   "to_code": "20030306",
+   "from_unit": "0803010104_16v1",
+   "to_unit": "2003030607_19v1",
+   "note": "플랫폼 특성 분석과 선택을 채널 마케팅에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08030406",
+   "to_code": "08030401",
+   "from_unit": "0803040601_13v1",
+   "to_unit": "0803040102_15v2",
+   "note": "스토리와 장면 분석 능력이 대본 분석에 그대로 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "08030406",
+   "to_code": "08030401",
+   "from_unit": "0803040604_15v2",
+   "to_unit": "0803040107_15v2",
+   "note": "스토리에 맞춰 순서를 정하고 영상을 구성하는 일이 같음",
+   "checked": false
+  },
+  {
+   "from_code": "08030406",
+   "to_code": "08030401",
+   "from_unit": "0803040606_15v2",
+   "to_unit": "0803040108_15v2",
+   "note": "특수영상 제작 경험이 CGI/VFX 확정에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "08030406",
+   "to_code": "08030401",
+   "from_unit": "0803040607_13v1",
+   "to_unit": "0803040109_15v2",
+   "note": "오디오 편집·믹싱 경험이 사운드 연출에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "08030406",
+   "to_code": "08030401",
+   "from_unit": "0803040609_13v1",
+   "to_unit": "0803040110_15v2",
+   "note": "최종본 완성과 A/V 점검이 최종 확정 단계로 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "08030406",
+   "to_code": "08030402",
+   "from_unit": "0803040601_13v1",
+   "to_unit": "0803040202_15v2",
+   "note": "제작의도와 스토리 장면을 분석하는 방법을 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "08030406",
+   "to_code": "08030402",
+   "from_unit": "0803040602_13v1",
+   "to_unit": "0803040204_15v2",
+   "note": "장비 구성과 예산 판단 경험이 촬영장비 선택에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "08030406",
+   "to_code": "08030402",
+   "from_unit": "0803040604_15v2",
+   "to_unit": "0803040209_13v1",
+   "note": "스토리 구성 편집 경험이 촬영원본 편집에 그대로 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "08030406",
+   "to_code": "08030402",
+   "from_unit": "0803040608_13v1",
+   "to_unit": "0803040210_15v2",
+   "note": "밝기·색 보정 작업이 촬영원본 보정으로 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "08030406",
+   "to_code": "08030405",
+   "from_unit": "0803040609_13v1",
+   "to_unit": "0803040506_25v3",
+   "note": "자막·CG·타이틀 편집이 그래픽 소스 디자인으로 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "08030406",
+   "to_code": "08030405",
+   "from_unit": "0803040606_15v2",
+   "to_unit": "0803040509_25v3",
+   "note": "효과 적용과 합성 작업이 컴포지팅에 그대로 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "08030406",
+   "to_code": "08030405",
+   "from_unit": "0803040605_13v1",
+   "to_unit": "0803040510_25v3",
+   "note": "공정 조율과 자료 정리 경험이 제작 후 데이터 관리에 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "10010102",
+   "to_code": "02010301",
+   "from_unit": "1001010202_20v2",
+   "to_unit": "0201030102_21v5",
+   "note": "상품·사업성 분석 경험이 신상품 기획 타당성 분석에 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "10010102",
+   "to_code": "02010301",
+   "from_unit": "1001010203_20v2",
+   "to_unit": "0201030108_21v4",
+   "note": "해외 진입전략 수립이 마케팅 전략 계획 수립으로 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "10010102",
+   "to_code": "02010301",
+   "from_unit": "1001010201_20v2",
+   "to_unit": "0201030109_21v4",
+   "note": "시장 조사·환경 분석이 마케팅 환경 분석에 그대로 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "10010102",
+   "to_code": "02010301",
+   "from_unit": "1001010210_20v2",
+   "to_unit": "0201030115_16v3",
+   "note": "고객 요구 분석·평가 결과를 마케팅 성과 파악에 활용",
+   "checked": false
+  },
+  {
+   "from_code": "10010102",
+   "to_code": "02040302",
+   "from_unit": "1001010206_20v2",
+   "to_unit": "0204030202_24v3",
+   "note": "결제조건 협상 경험이 수출입 위험관리에 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "10010102",
+   "to_code": "02040302",
+   "from_unit": "1001010207_14v1",
+   "to_unit": "0204030204_24v2",
+   "note": "국제계약 조건 검토·작성이 수출입계약과 동일",
+   "checked": false
+  },
+  {
+   "from_code": "10010102",
+   "to_code": "02040302",
+   "from_unit": "1001010201_20v2",
+   "to_unit": "0204030208_24v3",
+   "note": "해외시장 조사 경험을 수출 시장 개척에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "10010102",
+   "to_code": "02040302",
+   "from_unit": "1001010204_20v2",
+   "to_unit": "0204030209_24v3",
+   "note": "해외 거래처 탐색이 해외공급자 발굴에 그대로 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "10010102",
+   "to_code": "02040302",
+   "from_unit": "1001010208_20v2",
+   "to_unit": "0204030212_24v3",
+   "note": "계약 이행 중 대금 결제 관리가 수출대금결제로 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "10010102",
+   "to_code": "10010101",
+   "from_unit": "1001010201_20v2",
+   "to_unit": "1001010101_14v1",
+   "note": "시장 조사·환경 분석 방법이 외부환경 분석과 같음",
+   "checked": false
+  },
+  {
+   "from_code": "10010102",
+   "to_code": "10010101",
+   "from_unit": "1001010203_20v2",
+   "to_unit": "1001010103_20v2",
+   "note": "해외마케팅 전략 수립 경험이 영업 전략 수립에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "10010102",
+   "to_code": "10010101",
+   "from_unit": "1001010204_20v2",
+   "to_unit": "1001010104_20v2",
+   "note": "잠재고객 탐색·발굴 방식을 국내 고객발굴에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "10010102",
+   "to_code": "10010101",
+   "from_unit": "1001010205_20v2",
+   "to_unit": "1001010105_20v2",
+   "note": "상품소개서 작성과 거래 제안 절차가 같음",
+   "checked": false
+  },
+  {
+   "from_code": "10010102",
+   "to_code": "10010101",
+   "from_unit": "1001010209_14v1",
+   "to_unit": "1001010109_20v2",
+   "note": "클레임 분석·해결 협상이 고객불만 처리에 그대로 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "10030102",
+   "to_code": "02010301",
+   "from_unit": "1003010202_16v2",
+   "to_unit": "0201030102_21v5",
+   "note": "상품 개발전략·시장조사를 신상품 기획에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "10030102",
+   "to_code": "02010301",
+   "from_unit": "1003010210_16v2",
+   "to_unit": "0201030109_21v4",
+   "note": "시장·경쟁사 환경 분석을 마케팅 환경 분석에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "10030102",
+   "to_code": "02010301",
+   "from_unit": "1003010212_16v2",
+   "to_unit": "0201030113_16v3",
+   "note": "마케팅 실행 경험을 믹스 전략 실행계획에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "10030102",
+   "to_code": "02010301",
+   "from_unit": "1003010209_13v1",
+   "to_unit": "0201030115_16v3",
+   "note": "판매 성과 분석 경험을 마케팅 성과파악에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "10030102",
+   "to_code": "02010301",
+   "from_unit": "1003010213_16v2",
+   "to_unit": "0201030118_21v4",
+   "note": "마케팅 성과 측정 계획과 활용을 성과 관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "10030102",
+   "to_code": "02010302",
+   "from_unit": "1003010209_13v1",
+   "to_unit": "0201030207_21v3",
+   "note": "만족도 조사·성과 분석을 고객관리 성과 평가에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "10030102",
+   "to_code": "02010302",
+   "from_unit": "1003010208_13v1",
+   "to_unit": "0201030209_15v3",
+   "note": "고객DB 관리·등급 분류를 고객분석에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "10030102",
+   "to_code": "02010302",
+   "from_unit": "1003010213_16v2",
+   "to_unit": "0201030211_21v4",
+   "note": "성과 측정 결과 분석을 고객데이터 분석에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "10030102",
+   "to_code": "02010304",
+   "from_unit": "1003010212_16v2",
+   "to_unit": "0201030404_21v2",
+   "note": "온라인 마케팅 실행 경험을 판매촉진 기획에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "10030102",
+   "to_code": "02010304",
+   "from_unit": "1003010208_13v1",
+   "to_unit": "0201030406_21v2",
+   "note": "고객DB·클레임 관리를 매장 고객 응대·관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "10030102",
+   "to_code": "02010304",
+   "from_unit": "1003010210_16v2",
+   "to_unit": "0201030407_21v2",
+   "note": "경쟁사·시장 현황 분석을 상권·경쟁점 분석에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "10030102",
+   "to_code": "02010304",
+   "from_unit": "1003010207_16v2",
+   "to_unit": "0201030408_21v2",
+   "note": "주문·배송·재고 관리 경험을 유통물류 관리에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "10030102",
+   "to_code": "02010304",
+   "from_unit": "1003010209_13v1",
+   "to_unit": "0201030412_21v2",
+   "note": "판매실적·사업성과 분석을 성과표준 관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12010101",
+   "to_code": "12010102",
+   "from_unit": "1201010130_21v5",
+   "to_unit": "1201010201_17v3",
+   "note": "고객 요구 파악과 상담 능력을 피부 상담에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12010101",
+   "to_code": "12010102",
+   "from_unit": "1201010101_21v5",
+   "to_unit": "1201010210_19v3",
+   "note": "공중위생 기준의 업소·직원 위생관리를 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12010101",
+   "to_code": "12010102",
+   "from_unit": "1201010153_21v5",
+   "to_unit": "1201010211_19v3",
+   "note": "미용업소 재무·운영 관리 지식이 샵 경영관리에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "12010101",
+   "to_code": "12010102",
+   "from_unit": "1201010112_21v5",
+   "to_unit": "1201010235_19v3",
+   "note": "두피 상태 파악 경험을 두피분석에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12010101",
+   "to_code": "12010102",
+   "from_unit": "1201010140_17v4",
+   "to_unit": "1201010236_19v3",
+   "note": "두피 케어 기기·제품 사용을 두피 모공관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12010101",
+   "to_code": "12010103",
+   "from_unit": "1201010101_21v5",
+   "to_unit": "1201010301_19v5",
+   "note": "미용업 안전위생 관리 지식을 메이크업 위생관리에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12010101",
+   "to_code": "12010103",
+   "from_unit": "1201010116_21v6",
+   "to_unit": "1201010340_19v3",
+   "note": "미용 고객 접점 응대 경험을 고객 응대에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12010101",
+   "to_code": "12010103",
+   "from_unit": "1201010154_17v4",
+   "to_unit": "1201010343_19v5",
+   "note": "미용업소 인사·운영 관리 지식이 사업장 경영관리에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "12010101",
+   "to_code": "12010103",
+   "from_unit": "1201010129_17v4",
+   "to_unit": "1201010344_19v5",
+   "note": "고객 정보 수집·활용 관리를 메이크업 고객관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12010101",
+   "to_code": "12010103",
+   "from_unit": "1201010130_21v5",
+   "to_unit": "1201010345_19v5",
+   "note": "고객 요구와 어울리는 스타일 제안 경험을 이미지 제안에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12010101",
+   "to_code": "12010104",
+   "from_unit": "1201010101_21v5",
+   "to_unit": "1201010411_23v5",
+   "note": "미용업 안전위생 관리를 네일숍 위생서비스에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12010101",
+   "to_code": "12010104",
+   "from_unit": "1201010116_21v6",
+   "to_unit": "1201010412_17v4",
+   "note": "미용 고객 응대 경험을 네일 고객서비스에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12010101",
+   "to_code": "12010104",
+   "from_unit": "1201010153_21v5",
+   "to_unit": "1201010432_16v3",
+   "note": "미용업 재무관리 지식을 네일업 재무관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12010101",
+   "to_code": "12010104",
+   "from_unit": "1201010151_21v5",
+   "to_unit": "1201010434_16v3",
+   "note": "미용업 홍보 계획·성과 분석을 네일업 홍보에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12010101",
+   "to_code": "12010104",
+   "from_unit": "1201010152_17v4",
+   "to_unit": "1201010435_16v3",
+   "note": "미용업 재고관리 방식을 네일 재고관리에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030101",
+   "to_code": "08010101",
+   "from_unit": "1203010113_22v3",
+   "to_unit": "0801010101_14v1",
+   "note": "시장 세분화와 목표시장 설정을 기획전략 수립에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030101",
+   "to_code": "08010101",
+   "from_unit": "1203010107_22v3",
+   "to_unit": "0801010102_20v2",
+   "note": "예산 편성 경험이 문화예술 예산 수립·정산에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "12030101",
+   "to_code": "12030102",
+   "from_unit": "1203010104_22v3",
+   "to_unit": "1203010202_13v1",
+   "note": "가격별·대상별 상품 구성 지식으로 고객에게 상품을 추천함",
+   "checked": false
+  },
+  {
+   "from_code": "12030101",
+   "to_code": "12030102",
+   "from_unit": "1203010103_22v3",
+   "to_unit": "1203010207_22v3",
+   "note": "원가 분석 경험이 원가표 작성과 요금 산출에 그대로 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "12030101",
+   "to_code": "12030102",
+   "from_unit": "1203010115_16v1",
+   "to_unit": "1203010211_16v1",
+   "note": "교육훈련 지원 경험이 상담 교육 지원으로 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "12030101",
+   "to_code": "12030102",
+   "from_unit": "1203010108_22v2",
+   "to_unit": "1203010218_22v3",
+   "note": "출시 상품 정보 구축 경험이 상품 설명 자료 작성에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "12030101",
+   "to_code": "12030303",
+   "from_unit": "1203010101_22v3",
+   "to_unit": "1203030301_23v3",
+   "note": "시장·수요자 조사 결과를 이벤트 주제와 전략 도출에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030101",
+   "to_code": "12030303",
+   "from_unit": "1203010107_22v3",
+   "to_unit": "1203030302_23v3",
+   "note": "예산 편성 경험이 이벤트 예산 수립·집행에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "12030101",
+   "to_code": "12030303",
+   "from_unit": "1203010105_22v3",
+   "to_unit": "1203030303_23v3",
+   "note": "샘플투어 점검 경험이 이벤트 실행계획 수립에 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "12030301",
+   "to_code": "10010102",
+   "from_unit": "1203030116_17v2",
+   "to_unit": "1001010203_20v2",
+   "note": "홍보·마케팅 계획 수립 경험을 해외마케팅 전략에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030301",
+   "to_code": "10010102",
+   "from_unit": "1203030105_23v3",
+   "to_unit": "1001010205_20v2",
+   "note": "후원 제안서 작성·설득 경험을 거래 제안에 이어 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030301",
+   "to_code": "12030302",
+   "from_unit": "1203030103_23v3",
+   "to_unit": "1203030202_22v3",
+   "note": "행사 환경 분석·목표 수립·기획안 작성 방식을 전시 기획서에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030301",
+   "to_code": "12030302",
+   "from_unit": "1203030105_23v3",
+   "to_unit": "1203030204_22v3",
+   "note": "대상 발굴과 제안서·TM·방문으로 하는 유치 활동이 같음",
+   "checked": false
+  },
+  {
+   "from_code": "12030301",
+   "to_code": "12030302",
+   "from_unit": "1203030104_23v3",
+   "to_unit": "1203030205_13v1",
+   "note": "수입·지출 항목 파악부터 집행·정산까지 예산 관리를 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030301",
+   "to_code": "12030302",
+   "from_unit": "1203030106_23v3",
+   "to_unit": "1203030211_17v2",
+   "note": "프로그램 편성과 연사 섭외 경험을 개막식·부대행사 기획에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030301",
+   "to_code": "12030302",
+   "from_unit": "1203030111_23v3",
+   "to_unit": "1203030217_22v3",
+   "note": "시설 점검과 현장 조성·장비 구축 경험이 전시장 조성과 같음",
+   "checked": false
+  },
+  {
+   "from_code": "12030301",
+   "to_code": "12030303",
+   "from_unit": "1203030103_23v3",
+   "to_unit": "1203030301_23v3",
+   "note": "환경 분석으로 주제를 도출하고 기획안을 쓰는 과정이 같음",
+   "checked": false
+  },
+  {
+   "from_code": "12030301",
+   "to_code": "12030303",
+   "from_unit": "1203030104_23v3",
+   "to_unit": "1203030302_23v3",
+   "note": "예산 수립·집행·정산 업무를 이벤트 예산에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030301",
+   "to_code": "12030303",
+   "from_unit": "1203030110_23v3",
+   "to_unit": "1203030310_23v2",
+   "note": "현장 인력 모집·교육·운영 경험을 이벤트 인력 관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030301",
+   "to_code": "12030303",
+   "from_unit": "1203030112_23v2",
+   "to_unit": "1203030313_23v3",
+   "note": "위기 대처 계획 수립과 현장 점검 경험을 안전 관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030303",
+   "to_code": "02010201",
+   "from_unit": "1203030308_23v3",
+   "to_unit": "0201020104_24v3",
+   "note": "제작물 콘텐츠 구성·제작·배포를 오프라인 홍보물에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030303",
+   "to_code": "02010201",
+   "from_unit": "1203030301_23v3",
+   "to_unit": "0201020115_24v5",
+   "note": "자료 조사와 전략 도출 경험을 PR 전략 수립에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030303",
+   "to_code": "12030301",
+   "from_unit": "1203030301_23v3",
+   "to_unit": "1203030103_23v3",
+   "note": "자료 조사 기반 행사 기획안 작성을 회의 기획에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030303",
+   "to_code": "12030301",
+   "from_unit": "1203030302_23v3",
+   "to_unit": "1203030104_23v3",
+   "note": "기초예산 수립부터 정산까지 회의 예산에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030303",
+   "to_code": "12030301",
+   "from_unit": "1203030310_23v2",
+   "to_unit": "1203030110_23v3",
+   "note": "현장 인력 선발·교육·배치를 회의 인력관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030303",
+   "to_code": "12030301",
+   "from_unit": "1203030304_23v3",
+   "to_unit": "1203030111_23v3",
+   "note": "행사장 조성·시스템 설치를 회의장 조성에 적용",
+   "checked": false
+  },
+  {
+   "from_code": "12030303",
+   "to_code": "12030301",
+   "from_unit": "1203030313_23v3",
+   "to_unit": "1203030112_23v2",
+   "note": "비상상황 대응계획 수립을 회의 위기관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030303",
+   "to_code": "12030302",
+   "from_unit": "1203030301_23v3",
+   "to_unit": "1203030202_22v3",
+   "note": "행사 기획·제안 경험이 전시 기획서 작성에 그대로 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "12030303",
+   "to_code": "12030302",
+   "from_unit": "1203030302_23v3",
+   "to_unit": "1203030205_13v1",
+   "note": "예산 수립·집행·정산 절차를 전시 재무관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030303",
+   "to_code": "12030302",
+   "from_unit": "1203030313_23v3",
+   "to_unit": "1203030214_22v3",
+   "note": "비상상황 식별·안전계획 수립을 전시 안전관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030303",
+   "to_code": "12030302",
+   "from_unit": "1203030304_23v3",
+   "to_unit": "1203030217_22v3",
+   "note": "행사장 조성·시스템 설치 계획을 전시장 조성에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "12030303",
+   "to_code": "12030302",
+   "from_unit": "1203030303_23v3",
+   "to_unit": "1203030220_22v3",
+   "note": "행사 실행계획·운영 관리를 전시회 운영에 적용",
+   "checked": false
+  },
+  {
+   "from_code": "14010301",
+   "to_code": "14010201",
+   "from_unit": "1401030101_25v3",
+   "to_unit": "1401020101_25v3",
+   "note": "준공도서 등 자료 검토로 계획 세우는 방식이 공사 분석과 같음",
+   "checked": false
+  },
+  {
+   "from_code": "14010301",
+   "to_code": "14010201",
+   "from_unit": "1401030103_25v3",
+   "to_unit": "1401020105_25v3",
+   "note": "자료 수집·정리 경험을 공정관리 자료관리에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "14010301",
+   "to_code": "14010201",
+   "from_unit": "1401030108_25v3",
+   "to_unit": "1401020109_25v3",
+   "note": "보수·보강 공사 관리 경험이 공사 진도관리에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "14010301",
+   "to_code": "14010201",
+   "from_unit": "1401030112_25v3",
+   "to_unit": "1401020110_25v3",
+   "note": "결과 분석과 개선 방안 도출을 공정 성과분석에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "14010301",
+   "to_code": "14010202",
+   "from_unit": "1401030101_25v3",
+   "to_unit": "1401020201_25v3",
+   "note": "준공도서·법규 검토로 계획 세우는 방식이 품질 분석과 같음",
+   "checked": false
+  },
+  {
+   "from_code": "14010301",
+   "to_code": "14010202",
+   "from_unit": "1401030111_25v3",
+   "to_unit": "1401020206_25v3",
+   "note": "이력 기록·관리 업무가 품질 문서 기록·보존에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "14010301",
+   "to_code": "14010202",
+   "from_unit": "1401030104_25v3",
+   "to_unit": "1401020208_25v3",
+   "note": "안전점검 현장조사 경험을 품질 검사·점검에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "14010301",
+   "to_code": "14010202",
+   "from_unit": "1401030108_25v3",
+   "to_unit": "1401020209_25v3",
+   "note": "보수·보강 시공 관리 경험이 품질사고 예방·수습에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "14010301",
+   "to_code": "14010202",
+   "from_unit": "1401030112_25v3",
+   "to_unit": "1401020210_25v3",
+   "note": "결과 분석 후 개선안 도출 방식이 품질 성과분석과 같음",
+   "checked": false
+  },
+  {
+   "from_code": "14010301",
+   "to_code": "14030102",
+   "from_unit": "1401030103_25v3",
+   "to_unit": "1403010202_20v3",
+   "note": "기존 자료 수집 경험을 설계기준·도서 조사에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "14010301",
+   "to_code": "14030102",
+   "from_unit": "1401030106_25v3",
+   "to_unit": "1403010206_20v3",
+   "note": "구조적 상태 분석 지식이 골조해석 결과 판단에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "14010301",
+   "to_code": "14030102",
+   "from_unit": "1401030107_25v3",
+   "to_unit": "1403010210_20v3",
+   "note": "설계서·구조계산서 작성 경험을 구조설계 도서작성에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "14010301",
+   "to_code": "14030102",
+   "from_unit": "1401030105_25v3",
+   "to_unit": "1403010215_20v1",
+   "note": "진단 중 구조 부재 파악이 건축구조 검토로 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "18020101",
+   "to_code": "18020102",
+   "from_unit": "1802010101_20v4",
+   "to_unit": "1802010201_15v3",
+   "note": "트렌드 정보 수집·조사를 디자인 자료 수집에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020101",
+   "to_code": "18020102",
+   "from_unit": "1802010108_20v4",
+   "to_unit": "1802010207_16v3",
+   "note": "생산업체 선정과 원부자재 관리를 생산 준비에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020101",
+   "to_code": "18020102",
+   "from_unit": "1802010102_20v4",
+   "to_unit": "1802010210_14v2",
+   "note": "자사·경쟁사 판매분석을 보완상품 개발 결정에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020101",
+   "to_code": "18020102",
+   "from_unit": "1802010105_15v3",
+   "to_unit": "1802010211_16v3",
+   "note": "시즌 콘셉트·컬러·소재 제안을 디자인 기획에 이어 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020101",
+   "to_code": "18020104",
+   "from_unit": "1802010101_20v4",
+   "to_unit": "1802010401_22v3",
+   "note": "패션 트렌드·시장 조사 방법을 VMD 트렌드 조사에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020101",
+   "to_code": "18020104",
+   "from_unit": "1802010103_20v4",
+   "to_unit": "1802010402_22v4",
+   "note": "브랜드 포지셔닝·STP 분석 경험을 자사 브랜드 전략 분석에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020101",
+   "to_code": "18020104",
+   "from_unit": "1802010105_15v3",
+   "to_unit": "1802010404_16v3",
+   "note": "시즌 콘셉트 구상이 VMD 테마 선정의 입력이 됨",
+   "checked": false
+  },
+  {
+   "from_code": "18020101",
+   "to_code": "18020104",
+   "from_unit": "1802010109_20v4",
+   "to_unit": "1802010407_22v3",
+   "note": "매장·상품 물량 관리 경험을 매장 구성과 상품 전개에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020101",
+   "to_code": "18020104",
+   "from_unit": "1802010106_15v3",
+   "to_unit": "1802010408_14v2",
+   "note": "월별 출고 상품 구성이 시즌별 상품 전개의 바탕이 됨",
+   "checked": false
+  },
+  {
+   "from_code": "18020101",
+   "to_code": "18020301",
+   "from_unit": "1802010101_20v4",
+   "to_unit": "1802030101_16v3",
+   "note": "시장·경쟁사 조사 능력을 유통환경 분석에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020101",
+   "to_code": "18020301",
+   "from_unit": "1802010103_20v4",
+   "to_unit": "1802030102_14v2",
+   "note": "브랜드 포지셔닝 설정을 유통전략의 표적시장 선정에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020101",
+   "to_code": "18020301",
+   "from_unit": "1802010106_15v3",
+   "to_unit": "1802030103_14v2",
+   "note": "상품 구성과 예상판매가 기획을 유통 상품·물량 계획에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020101",
+   "to_code": "18020301",
+   "from_unit": "1802010109_20v4",
+   "to_unit": "1802030108_14v2",
+   "note": "유통망·매장 관리 경험을 점포별 영업관리에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020101",
+   "to_code": "18020301",
+   "from_unit": "1802010102_20v4",
+   "to_unit": "1802030110_14v2",
+   "note": "판매 분석 결과를 재고상품 소진 계획 수립에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020102",
+   "to_code": "08020105",
+   "from_unit": "1802010211_16v3",
+   "to_unit": "0802010514_16v2",
+   "note": "콘셉트·컬러·소재 기획 경험을 텍스타일 기획에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020102",
+   "to_code": "08020105",
+   "from_unit": "1802010203_18v3",
+   "to_unit": "0802010516_16v2",
+   "note": "아이디어 스케치와 디자인 완성 경험을 스케치 단계에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020102",
+   "to_code": "08020105",
+   "from_unit": "1802010204_14v2",
+   "to_unit": "0802010522_16v2",
+   "note": "작업의뢰서 작성 경험이 시제품 작업지시서 작성과 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "18020102",
+   "to_code": "18020101",
+   "from_unit": "1802010210_14v2",
+   "to_unit": "1802010102_20v4",
+   "note": "경쟁사·자사 판매 분석 경험을 판매분석에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020102",
+   "to_code": "18020101",
+   "from_unit": "1802010211_16v3",
+   "to_unit": "1802010105_15v3",
+   "note": "시즌 콘셉트·컬러·소재 기획을 시즌전략수립에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020102",
+   "to_code": "18020101",
+   "from_unit": "1802010206_15v3",
+   "to_unit": "1802010107_15v3",
+   "note": "시제품 품평 진행·최종 선정 경험을 상품 품평에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020102",
+   "to_code": "18020101",
+   "from_unit": "1802010207_16v3",
+   "to_unit": "1802010108_20v4",
+   "note": "원부자재 확인·생산 준비 경험을 생산기획에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020102",
+   "to_code": "18020103",
+   "from_unit": "1802010213_16v1",
+   "to_unit": "1802010301_18v3",
+   "note": "핏 개선·핏 완성 경험을 핏 경향 분석에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020102",
+   "to_code": "18020103",
+   "from_unit": "1802010204_14v2",
+   "to_unit": "1802010302_16v3",
+   "note": "시제품작업의뢰서 작성 경험으로 샘플작업지시서를 분석함",
+   "checked": false
+  },
+  {
+   "from_code": "18020102",
+   "to_code": "18020103",
+   "from_unit": "1802010207_16v3",
+   "to_unit": "1802010305_18v3",
+   "note": "본작업의뢰서와 원부자재 확인 경험을 봉제사양서 작성에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020102",
+   "to_code": "18020103",
+   "from_unit": "1802010208_15v3",
+   "to_unit": "1802010310_16v3",
+   "note": "제품별 생산품질확인(QC) 경험이 완제품 검사와 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "18020102",
+   "to_code": "18020103",
+   "from_unit": "1802010205_15v3",
+   "to_unit": "1802010312_18v4",
+   "note": "가봉 시제품 확인·패턴 수정 의뢰 경험을 샘플패턴 수정에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020103",
+   "to_code": "18020101",
+   "from_unit": "1802010301_18v3",
+   "to_unit": "1802010101_20v4",
+   "note": "핏·사이즈 경향 분석이 시장 트렌드 조사와 닿음",
+   "checked": false
+  },
+  {
+   "from_code": "18020103",
+   "to_code": "18020101",
+   "from_unit": "1802010302_16v3",
+   "to_unit": "1802010107_15v3",
+   "note": "디자인 의도 파악 경험이 품평 시 스타일 평가에 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "18020103",
+   "to_code": "18020101",
+   "from_unit": "1802010305_18v3",
+   "to_unit": "1802010108_20v4",
+   "note": "봉제·부자재 지식이 생산 준비와 원부자재 관리에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "18020103",
+   "to_code": "18020102",
+   "from_unit": "1802010302_16v3",
+   "to_unit": "1802010204_14v2",
+   "note": "작업지시서 분석 경험이 시제품작업의뢰서 작성에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "18020103",
+   "to_code": "18020102",
+   "from_unit": "1802010312_18v4",
+   "to_unit": "1802010205_15v3",
+   "note": "가봉 후 패턴 수정 경험을 시제품 패턴 수정 의뢰에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "18020103",
+   "to_code": "18020102",
+   "from_unit": "1802010307_16v3",
+   "to_unit": "1802010208_15v3",
+   "note": "QC샘플 검사 기술이 생산 투입 시 품질확인에 그대로 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "18020103",
+   "to_code": "18020102",
+   "from_unit": "1802010305_18v3",
+   "to_unit": "1802010213_16v1",
+   "note": "봉제사양서 작성 경험을 테크니컬 패키지 완성에 활용",
+   "checked": false
+  },
+  {
+   "from_code": "18020103",
+   "to_code": "18020201",
+   "from_unit": "1802010302_16v3",
+   "to_unit": "1802020101_14v2",
+   "note": "작업지시서 분석이 생산의뢰서 분석과 같은 읽기 기술",
+   "checked": false
+  },
+  {
+   "from_code": "18020103",
+   "to_code": "18020201",
+   "from_unit": "1802010306_20v5",
+   "to_unit": "1802020102_14v2",
+   "note": "봉제기술 지도 경험이 공정 분석과 PP 샘플 제작에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "18020103",
+   "to_code": "18020201",
+   "from_unit": "1802010310_16v3",
+   "to_unit": "1802020110_14v2",
+   "note": "완제품 치수·봉제 확인이 완성품 검사와 같음",
+   "checked": false
+  },
+  {
+   "from_code": "18020103",
+   "to_code": "18020201",
+   "from_unit": "1802010309_16v3",
+   "to_unit": "1802020112_16v3",
+   "note": "마킹 경험이 재단 본작업의 마킹·재단에 바로 쓰임",
+   "checked": false
+  },
+  {
+   "from_code": "18020103",
+   "to_code": "18020201",
+   "from_unit": "1802010305_18v3",
+   "to_unit": "1802020114_16v3",
+   "note": "봉제사양서 작성 지식이 합복 봉제 작업에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "20010202",
+   "to_code": "20010204",
+   "from_unit": "2001020219_23v6",
+   "to_unit": "2001020401_19v4",
+   "note": "요구사항 도출·분석 방법을 DB 요구사항 분석에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20010202",
+   "to_code": "20010204",
+   "from_unit": "2001020222_23v6",
+   "to_unit": "2001020403_19v4",
+   "note": "정적모델 설계 경험이 논리 E-R 설계로 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "20010202",
+   "to_code": "20010204",
+   "from_unit": "2001020205_23v6",
+   "to_unit": "2001020405_19v4",
+   "note": "데이터 입출력 구현 경험이 DB 오브젝트 생성에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "20010202",
+   "to_code": "20010204",
+   "from_unit": "2001020205_23v6",
+   "to_unit": "2001020414_19v4",
+   "note": "데이터 조작언어 구현을 SQL 응용에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20010202",
+   "to_code": "20010204",
+   "from_unit": "2001020231_23v5",
+   "to_unit": "2001020415_19v1",
+   "note": "프로그래밍 기본 문법 위에 SQL 조회·수정을 얹음",
+   "checked": false
+  },
+  {
+   "from_code": "20010202",
+   "to_code": "20010403",
+   "from_unit": "2001020201_23v5",
+   "to_unit": "2001040312_21v5",
+   "note": "요구사항 확인 결과가 테스트 요구사항 식별의 입력이 됨",
+   "checked": false
+  },
+  {
+   "from_code": "20010202",
+   "to_code": "20010403",
+   "from_unit": "2001020226_23v6",
+   "to_unit": "2001040314_21v5",
+   "note": "테스트케이스 작성 경험을 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20010202",
+   "to_code": "20010403",
+   "from_unit": "2001020227_23v6",
+   "to_unit": "2001040315_21v5",
+   "note": "테스트 수행과 결함 조치가 단위테스트 실행과 같음",
+   "checked": false
+  },
+  {
+   "from_code": "20010202",
+   "to_code": "20010403",
+   "from_unit": "2001020226_23v6",
+   "to_unit": "2001040316_21v5",
+   "note": "개발자 통합 테스트 경험이 통합테스트 실행에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "20010202",
+   "to_code": "20010403",
+   "from_unit": "2001020233_23v5",
+   "to_unit": "2001040321_21v5",
+   "note": "개발 환경 구축 지식을 테스트 환경 구축에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20010202",
+   "to_code": "20010705",
+   "from_unit": "2001020219_23v6",
+   "to_unit": "2001070501_24v2",
+   "note": "요구사항 분석이 구현요건 분석의 입력이 됨",
+   "checked": false
+  },
+  {
+   "from_code": "20010202",
+   "to_code": "20010705",
+   "from_unit": "2001020221_23v6",
+   "to_unit": "2001070503_24v2",
+   "note": "애플리케이션 상세 설계 경험이 구성요소 설계에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "20010202",
+   "to_code": "20010705",
+   "from_unit": "2001020211_23v6",
+   "to_unit": "2001070504_24v2",
+   "note": "서버 업무로직 구현을 AI 서비스 앱 개발에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20010202",
+   "to_code": "20010705",
+   "from_unit": "2001020212_23v6",
+   "to_unit": "2001070506_24v2",
+   "note": "인터페이스 설계서 기반 구현을 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20010202",
+   "to_code": "20010705",
+   "from_unit": "2001020208_23v5",
+   "to_unit": "2001070508_24v2",
+   "note": "운영 환경 이행과 인계 절차가 같음",
+   "checked": false
+  },
+  {
+   "from_code": "20010706",
+   "to_code": "20010304",
+   "from_unit": "2001070604_22v1",
+   "to_unit": "2001030405_24v3",
+   "note": "데이터 저장소 관리 경험이 솔루션 환경 관리에 이어짐",
+   "checked": false
+  },
+  {
+   "from_code": "20010706",
+   "to_code": "20010304",
+   "from_unit": "2001070610_22v1",
+   "to_unit": "2001030407_24v3",
+   "note": "데이터 품질 기준·검증 경험을 빅데이터 품질 관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20010706",
+   "to_code": "20010304",
+   "from_unit": "2001070609_22v1",
+   "to_unit": "2001030408_24v3",
+   "note": "데이터 변환 프로그램 지식을 데이터 플로우 관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20010706",
+   "to_code": "20010703",
+   "from_unit": "2001070601_22v1",
+   "to_unit": "2001070301_23v2",
+   "note": "학습데이터 구축 기획의 요구사항 분석을 모델 문제 정의에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20010706",
+   "to_code": "20010703",
+   "from_unit": "2001070602_22v1",
+   "to_unit": "2001070303_23v2",
+   "note": "원시데이터 종류·양·방법 계획이 데이터 수집 방안이 됨",
+   "checked": false
+  },
+  {
+   "from_code": "20010706",
+   "to_code": "20010703",
+   "from_unit": "2001070605_22v1",
+   "to_unit": "2001070304_23v2",
+   "note": "학습데이터 필터링·클렌징 경험을 전처리에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20010706",
+   "to_code": "20010703",
+   "from_unit": "2001070610_22v1",
+   "to_unit": "2001070309_23v1",
+   "note": "학습데이터 품질 검증이 데이터 품질 검증과 같은 일",
+   "checked": false
+  },
+  {
+   "from_code": "20030306",
+   "to_code": "02010201",
+   "from_unit": "2003030602_19v1",
+   "to_unit": "0201020103_24v3",
+   "note": "영상 제작 역량으로 온라인 PR 콘텐츠를 만들어 알림",
+   "checked": false
+  },
+  {
+   "from_code": "20030306",
+   "to_code": "02010201",
+   "from_unit": "2003030603_19v1",
+   "to_unit": "0201020104_24v3",
+   "note": "그래픽 디자인 기술을 홍보물 제작에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20030306",
+   "to_code": "02010201",
+   "from_unit": "2003030611_19v1",
+   "to_unit": "0201020108_24v3",
+   "note": "윤리 규정 준수 경험을 온라인 위기 예방과 대응에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20030306",
+   "to_code": "02010201",
+   "from_unit": "2003030606_19v1",
+   "to_unit": "0201020111_24v4",
+   "note": "콘텐츠 시장 동향 분석을 PR 현황 분석에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20030306",
+   "to_code": "02010201",
+   "from_unit": "2003030601_19v1",
+   "to_unit": "0201020115_24v5",
+   "note": "시청자 수요 파악과 기획 경험을 PR 전략 수립에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20030306",
+   "to_code": "02010202",
+   "from_unit": "2003030601_19v1",
+   "to_unit": "0201020205_24v4",
+   "note": "시장·채널 분석과 콘텐츠 기획 경험을 광고 전략 수립에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20030306",
+   "to_code": "02010202",
+   "from_unit": "2003030602_19v1",
+   "to_unit": "0201020206_24v4",
+   "note": "영상 촬영·편집 기술로 매체용 광고 콘텐츠를 제작함",
+   "checked": false
+  },
+  {
+   "from_code": "20030306",
+   "to_code": "02010202",
+   "from_unit": "2003030605_19v1",
+   "to_unit": "0201020207_24v4",
+   "note": "채널 업로드·관리 경험을 매체별 광고 집행 모니터링에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20030306",
+   "to_code": "02010202",
+   "from_unit": "2003030606_19v1",
+   "to_unit": "0201020208_24v3",
+   "note": "통계 수집·분석 도구 활용을 광고 효과 분석에 그대로 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20030306",
+   "to_code": "02010202",
+   "from_unit": "2003030603_19v1",
+   "to_unit": "0201020210_24v4",
+   "note": "채널 아이덴티티 그래픽 제작을 브랜드 아이덴티티 관리에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20030306",
+   "to_code": "02010301",
+   "from_unit": "2003030607_19v1",
+   "to_unit": "0201030105_16v4",
+   "note": "소셜 채널 마케팅 경험을 새 유통경로 마케팅에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20030306",
+   "to_code": "02010301",
+   "from_unit": "2003030601_19v1",
+   "to_unit": "0201030109_21v4",
+   "note": "시장 동향·채널 분석을 마케팅 시장 환경 분석에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20030306",
+   "to_code": "02010301",
+   "from_unit": "2003030606_19v1",
+   "to_unit": "0201030115_16v3",
+   "note": "통계 분석 결과물 작성을 마케팅 성과 파악에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20030306",
+   "to_code": "02010301",
+   "from_unit": "2003030607_19v1",
+   "to_unit": "0201030117_21v4",
+   "note": "상품 기획과 유통 경험을 마케팅 믹스 전략에 씀",
+   "checked": false
+  },
+  {
+   "from_code": "20030306",
+   "to_code": "02010301",
+   "from_unit": "2003030606_19v1",
+   "to_unit": "0201030118_21v4",
+   "note": "분석도구 활용 경험을 마케팅 성과 평가·분석에 씀",
+   "checked": false
   }
  ]
 }

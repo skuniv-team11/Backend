@@ -27,8 +27,9 @@ public final class CareerDtos {
     public record Ncs(String code, String name, List<String> path, String note, List<Unit> units) {
     }
 
+    /** 넓혀 갈 세분류. occupations는 그 세분류와 이어진 직업. */
     public record Expand(int rank, String code, String name, List<String> path, Relation relation, int unitCount,
-                         List<String> sampleUnits) {
+                         List<String> sampleUnits, List<Occupation> occupations) {
     }
 
     public record Occupation(String code, String name, Origin origin) {
@@ -46,12 +47,35 @@ public final class CareerDtos {
     public record UnitRef(String code, String name, Integer level) {
     }
 
+    /**
+     * 채운 능력단위와 이어진 넓혀 갈 세분류의 능력단위.
+     * @param from 이어진 채운 단위
+     * @param checked false면 AI 초안(사람 확인 전)
+     */
+    public record Linked(String code, String name, Integer level, UnitRef from, String note, boolean checked) {
+    }
+
+    /**
+     * 리포트의 넓혀 갈 세분류. 채운 단위와 이어진 수(linkedCount)가 많은 순, 같으면 rank 순.
+     * @param more 아직 안 이어진 단위 중 수준이 낮은 것 최대 3개(더 채울 것)
+     */
+    public record ReportPath(int rank, String code, String name, List<String> path, Relation relation, int unitCount,
+                             int linkedCount, List<Linked> linked, List<UnitRef> more, List<Occupation> occupations) {
+    }
+
+    /**
+     * 같은 세분류 한 단계 위. baseLevel은 채운 단위에 가장 많은 수준(같으면 낮은 쪽, 채운 게 없으면 가장 낮은 수준).
+     * @param units 아직 안 채운 단위 중 baseLevel 것, 그다음 baseLevel+1 것 순으로 최대 3개
+     */
+    public record NextLevel(Integer baseLevel, List<UnitRef> units) {
+    }
+
     public record Input(String practiceText) {
     }
 
     public record Report(long reportId, OffsetDateTime createdAt, int jobId, String title, String team,
                          InstitutionRef institution, Source source, Fallback fallbackReason, Input input, ReportNcs ncs,
-                         List<Covered> covered, List<UnitRef> notCovered, List<Expand> expand,
+                         List<Covered> covered, List<UnitRef> notCovered, NextLevel nextLevel, List<ReportPath> expand,
                          List<Occupation> occupations) {
     }
 }

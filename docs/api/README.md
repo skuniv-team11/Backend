@@ -63,7 +63,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | 31 | 탐색 | DELETE | `/api/me/explore` | STUDENT | 탐색·M1 | 탐색 결과·경험 글 지우기 | 204 |
 | 32 | 탐색 | GET | `/api/me/explore/jobs/{jobId}/why` | STUDENT | S4 | 직무 상세 '왜 맞나요'(없으면 이때 만든다) | [응답](explore-why.json) |
 | 33 | 커리어 | GET | `/api/jobs/{jobId}/career` | 로그인 | 탐색·S4 | 실습 뒤 길: 직무의 NCS 세분류·능력단위, 넓혀 갈 직무 3개, 이어지는 직업(ADR-0032) | [응답](job-career.json) |
-| 34 | 커리어 | POST | `/api/me/career-report` | STUDENT | 커리어 | 수행결과보고서 '실습 내용' → 다룬 NCS 능력단위(AI, 구절 대조)·다음에 채울 것·넓혀 갈 직무·직업 | [요청](career-report.request.json) · [응답](career-report.json) |
+| 34 | 커리어 | POST | `/api/me/career-report` | STUDENT | 커리어 | 수행결과보고서 '실습 내용' → 다룬 NCS 능력단위(AI, 구절 대조)·다음에 채울 것·한 단계 위·이어진 수 순 넓혀 갈 직무·직업 | [요청](career-report.request.json) · [응답](career-report.json) |
 | 35 | 커리어 | GET | `/api/me/career-report` | STUDENT | 커리어 | 저장된 커리어 리포트 | [응답](career-report.json) |
 | 36 | 커리어 | DELETE | `/api/me/career-report` | STUDENT | 커리어·M1 | 커리어 리포트·실습 내용 지우기 | 204 |
 
@@ -252,15 +252,18 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 
 **커리어**([ADR-0032](../decisions/0032-ncs-career.md)) — 실습이 다음 진로로 이어지게 직무를 NCS(국가직무능력표준)로 풀어 준다. NCS 값은 시드로 미리 넣고 실행 중에 공공 API를 부르지 않는다.
 - **직무 ↔ NCS**: 직무마다 세분류 하나(사람이 직무 원문과 능력단위를 보고 고름, `pipeline/seed/curated/job_ncs.csv`). `ncs`는 `{code, name, path, note, units}` — `path`는 `[대분류, 중분류, 소분류]`, `note`는 고른 까닭, `units`는 그 세분류의 능력단위 `{code, name, level, definition}`(능력단위 번호 순, `level`은 NCS 수준 1~8 — 원본에 없으면 null). 구버전 단위는 빼고 이름이 같은 단위는 최신 개정 하나만 둔다. 세분류가 없는 직무면 `ncs: null`·`expand: []`·`occupations: []`(2026-2는 40개 모두 있다).
-- **넓혀 갈 직무**(`expand`): 세분류마다 3개(사람이 고름, `curated/ncs_expand.csv`), `{rank, code, name, path, relation, unitCount, sampleUnits}`. `relation`은 코드로 정한다 — `SAME_SMALL` 같은 소분류 · `SAME_MIDDLE` 같은 중분류 · `OTHER` 다른 분야. `sampleUnits`는 능력단위 이름 앞 5개.
-- **이어지는 직업**(`occupations`): 한국고용정보원 '직업능력 코드매핑정보'(2025-11-26, NCS ↔ 한국고용직업분류)에서 그 세분류와 그 소분류에 이어진 직업 `{code, name, origin}`, 코드 순. 연계표에 없는 세분류(소셜미디어방송서비스·전자상거래 등)는 같은 표의 직업에서 사람이 골라 더했고(`origin: CURATED`), 소분류 전체에 붙어 엉뚱한 직업(디자인 세분류의 건축가 등)은 뺐다(`curated/ncs_occupations.csv`). 맞는 직업이 표에 없으면 `[]`(헤어미용).
+- **넓혀 갈 직무**(`expand`): 세분류마다 3개(사람이 고름, `curated/ncs_expand.csv`), `{rank, code, name, path, relation, unitCount, sampleUnits, occupations}`. `relation`은 코드로 정한다 — `SAME_SMALL` 같은 소분류 · `SAME_MIDDLE` 같은 중분류 · `OTHER` 다른 분야. `sampleUnits`는 능력단위 이름 앞 5개, `occupations`는 그 세분류와 이어진 직업(아래와 같은 규칙).
+- **이어지는 직업**(`occupations`): 한국고용정보원 '직업능력 코드매핑정보'(2025-11-26, NCS ↔ 한국고용직업분류)에서 그 세분류와 그 소분류에 이어진 직업 `{code, name, origin}`, 코드 순. 연계표에 없는 세분류(소셜미디어방송서비스·전자상거래 등)는 같은 표의 직업에서 사람이 골라 더했고(`origin: CURATED`), 소분류 전체에 붙어 엉뚱한 직업(디자인 세분류의 건축가 등)은 뺐다(`curated/ncs_occupations.csv`, 직무 세분류와 넓혀 갈 세분류 모두). 맞는 직업이 표에 없으면 `[]`(미용 4개·이러닝과정운영).
+- **능력단위끼리 연결**(리포트에서 씀): 직무 세분류의 단위 → 넓혀 갈 세분류의 단위, 넓힘마다 최대 5개·넓혀 갈 단위 하나에 하나. AI(Sonnet)가 단위 이름·정의만 보고 초안을 만들고(`pipeline/seed/ncs_links.py`, 2026-10-10 305개) 사람이 보고 `checked`를 켠다. 응답의 `checked: false`는 'AI 초안 · 확인 전'으로 표시한다.
 - 화면에는 출처를 적는다: 'NCS 능력단위(한국산업인력공단, 2026-09-30 적재)', '직업 연계: 한국고용정보원 직업능력 코드매핑정보(2025-11-26)'.
 - `GET /api/jobs/{jobId}/career`(#33): 로그인(역할 무관). 없는 직무 404 `JOB_NOT_FOUND`. 지원 불가 직무도 준다(길을 보는 것이라서).
 - **커리어 리포트**(#34): 본문 `{jobId, practiceText, consent}`.
   - `practiceText`: 수행결과보고서(별지 제9호)의 '실습 내용'을 붙여 넣은 글, 100~3,000자. `consent`가 true가 아니면 400 `CONSENT_REQUIRED`. 전화번호·이메일·8~10자리 숫자는 `[가림]`으로 바꾼 뒤 AI에 보내고 저장한다. 없는 직무 404 `JOB_NOT_FOUND`, NCS 세분류가 없는 직무는 400 `INVALID_INPUT`(`jobId`).
   - AI(Sonnet)가 실습 내용과 그 직무 세분류의 능력단위(이름·정의)만 읽고 실습에서 해 본 단위를 고른다 — 단위마다 `studentQuote`(실습 내용 한 문장 안의 구절)와 `reason`(해요체 한 문장). 서버가 확인해 통과한 것만 `covered`에 둔다: 그 세분류의 단위(코드의 개정 표기 `_21v4`만 틀리면 앞 10자리 단위 번호로 찾는다) · 한 번만 · 구절이 실습 내용 한 문장(줄) 안에 그대로 · 문장 규칙(#29와 같다). 학과·학년·평점은 보내지 않는다.
   - `covered`·`notCovered`(다음에 채울 것)는 능력단위 번호 순. `ncs.unitCount` = 둘의 합.
-  - AI 키 없음·한도·실패·확인 통과 0개면 200 + `source: NONE`, `fallbackReason`, `covered: []`, `notCovered`는 단위 전부(목록은 그대로 보여 준다).
+  - `nextLevel`(같은 세분류 한 단계 위): `baseLevel`은 채운 단위에 가장 많은 수준(같으면 낮은 쪽, 채운 게 없으면 그 세분류의 가장 낮은 수준), `units`는 안 채운 단위 중 `baseLevel` 것 → `baseLevel+1` 것 순으로 최대 3개.
+  - `expand`(넓혀 갈 직무 3개): `{rank, code, name, path, relation, unitCount, linkedCount, linked, more, occupations}`. `linked`는 넓혀 갈 세분류의 단위 중 채운 단위와 이어진 것 `{code, name, level, from, note, checked}`(`from`은 이어진 채운 단위), `linkedCount`는 그 수, `more`는 안 이어진 단위 중 수준이 낮은 것 최대 3개(더 채울 것). **이어진 수가 많은 순, 같으면 `rank` 순**으로 준다(화면 '이어짐 2 / 12' = `linkedCount` / `unitCount`).
+  - AI 키 없음·한도·실패·확인 통과 0개면 200 + `source: NONE`, `fallbackReason`, `covered: []`, `notCovered`는 단위 전부(목록은 그대로 보여 준다). 이때 `expand`는 `linked: []`로 `rank` 순, `nextLevel`은 가장 낮은 수준부터.
   - 계정당 마지막 1건만 둔다(새로 만들면 바꾼다). `GET`(#35)은 저장본(없으면 404 `CAREER_REPORT_NOT_FOUND`), `DELETE`(#36)은 204(없어도).
   - 실습한 직무를 고르는 것은 학생이다(지원·선발 기록과 아직 잇지 않는다 — 매칭·선발 기능이 들어오면 잇는다).
 

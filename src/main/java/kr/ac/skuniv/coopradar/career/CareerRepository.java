@@ -71,7 +71,7 @@ public class CareerRepository {
                 .list();
     }
 
-    /** 넓혀 갈 세분류(순위 순)와 능력단위 수·이름 앞 5개. */
+    /** 넓혀 갈 세분류(순위 순)와 능력단위 수·이름 앞 5개·이어진 직업. */
     List<Expand> expand(String subcategory) {
         return db.sql("""
                         SELECT e.rank, e.relation, s.code, s.name, s.large_name, s.middle_name, s.small_name,
@@ -87,7 +87,35 @@ public class CareerRepository {
                 .query((rs, n) -> new Expand(rs.getInt("rank"), rs.getString("code"), rs.getString("name"),
                         List.of(rs.getString("large_name"), rs.getString("middle_name"), rs.getString("small_name")),
                         Relation.valueOf(rs.getString("relation")), rs.getInt("unit_count"),
-                        rs.getArray("sample") == null ? List.of() : List.of((String[]) rs.getArray("sample").getArray())))
+                        rs.getArray("sample") == null ? List.of() : List.of((String[]) rs.getArray("sample").getArray()),
+                        null))
+                .list()
+                .stream()
+                .map(e -> new Expand(e.rank(), e.code(), e.name(), e.path(), e.relation(), e.unitCount(), e.sampleUnits(),
+                        occupations(e.code())))
+                .toList();
+    }
+
+    /** 능력단위끼리 연결 한 줄: 직무 세분류 단위 → 넓혀 갈 세분류 단위. */
+    record Link(String toCode, Unit from, Unit to, String note, boolean checked) {
+    }
+
+    /** 직무 세분류에서 넓혀 갈 세분류로 가는 능력단위 연결 전부(넓힘·넓혀 갈 단위 번호 순). */
+    List<Link> links(String subcategory) {
+        return db.sql("""
+                        SELECT l.to_code, l.note, l.checked,
+                               f.code AS f_code, f.name AS f_name, f.level AS f_level,
+                               t.code AS t_code, t.name AS t_name, t.level AS t_level
+                        FROM ncs_unit_link l
+                        JOIN ncs_unit f ON f.code = l.from_unit
+                        JOIN ncs_unit t ON t.code = l.to_unit
+                        WHERE l.from_code = :code
+                        ORDER BY l.to_code, t.seq, t.code""")
+                .param("code", subcategory)
+                .query((rs, n) -> new Link(rs.getString("to_code"),
+                        new Unit(rs.getString("f_code"), rs.getString("f_name"), (Integer) rs.getObject("f_level"), null),
+                        new Unit(rs.getString("t_code"), rs.getString("t_name"), (Integer) rs.getObject("t_level"), null),
+                        rs.getString("note"), rs.getBoolean("checked")))
                 .list();
     }
 

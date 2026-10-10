@@ -206,11 +206,23 @@ check(cr["source"] == "AI" or cov == [], "AI 정리 없이는 covered가 비어�
 check(all(q["studentQuote"] in cr["input"]["practiceText"] for q in cr["covered"]), "커리어 리포트 학생 구절이 실습 내용에 있음")
 for name in ("job-career.json", "career-report.json"):
     ex_ = docs[name]["expand"]
-    check([e["rank"] for e in ex_] == list(range(1, len(ex_) + 1)), f"{name} 넓혀 갈 직무 순위")
+    check(sorted(e["rank"] for e in ex_) == list(range(1, len(ex_) + 1)), f"{name} 넓혀 갈 직무 순위")
     base = docs[name]["ncs"]["code"]
     for e in ex_:
         want = "SAME_SMALL" if e["code"][:6] == base[:6] else "SAME_MIDDLE" if e["code"][:4] == base[:4] else "OTHER"
         check(e["relation"] == want and e["code"] != base, f"{name} {e['code']} relation {e['relation']} ≠ {want}")
+check([e["rank"] for e in docs["job-career.json"]["expand"]] == [1, 2, 3], "직무 커리어 넓혀 갈 직무는 순위 순")
+order = [(-e["linkedCount"], e["rank"]) for e in cr["expand"]]
+check(order == sorted(order), "커리어 리포트 넓혀 갈 직무는 이어진 수가 많은 순, 같으면 순위 순")
+for e in cr["expand"]:
+    got = [l["code"] for l in e["linked"]]
+    check(e["linkedCount"] == len(got) <= 5 and got == sorted(got) and len(set(got)) == len(got), f"리포트 {e['code']} linked")
+    check(all(c[:8] == e["code"] for c in got + [m["code"] for m in e["more"]]), f"리포트 {e['code']} 단위가 그 세분류 것")
+    check(all(l["from"]["code"] in cov for l in e["linked"]), f"리포트 {e['code']} 이어진 출발 단위는 채운 단위")
+    check(not set(got) & {m["code"] for m in e["more"]} and len(e["more"]) <= 3, f"리포트 {e['code']} more")
+nl = cr["nextLevel"]
+check(all(u["code"] in notc and u["level"] in (nl["baseLevel"], nl["baseLevel"] + 1) for u in nl["units"])
+      and len(nl["units"]) <= 3, "커리어 리포트 한 단계 위")
 jc = docs["job-career.json"]
 check(all(u["code"][:8] == jc["ncs"]["code"] for u in jc["ncs"]["units"]), "직무 커리어 단위가 그 세분류 것")
 crq = docs["career-report.request.json"]

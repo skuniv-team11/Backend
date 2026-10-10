@@ -28,7 +28,7 @@ class MigrationTest {
     }
 
     @Test
-    void 테이블_38개가_만들어진다() {
+    void 테이블_39개가_만들어진다() {
         Integer tables = jdbc.sql("""
                         SELECT count(*) FROM information_schema.tables
                         WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
@@ -36,9 +36,9 @@ class MigrationTest {
                         """)
                 .query(Integer.class)
                 .single();
-        assertThat(tables).isEqualTo(38); // V1 21개 + V3 job_view + V5 certificate + V6 requirement_source + V7 학과 묶음 2개
+        assertThat(tables).isEqualTo(39); // V1 21개 + V3 job_view + V5 certificate + V6 requirement_source + V7 학과 묶음 2개
                                           // + V8 institution_photo + V9 탐색 3개(explore_run·item·why)
-                                          // + V10 NCS·커리어 8개(ncs_subcategory·unit·occupation·ncs_occupation·job_ncs·ncs_expand·career_report·unit)
+                                          // + V10 NCS·커리어 9개(ncs_subcategory·unit·occupation·ncs_occupation·job_ncs·ncs_expand·ncs_unit_link·career_report·unit)
     }
 
     @Test

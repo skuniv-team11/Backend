@@ -9,9 +9,12 @@
 - 한국고용정보원 '직업능력_코드매핑정보'(2025-11-26, 공공데이터포털 15154290): NCS 소분류(6자리)·세분류(8자리) ↔ 한국고용직업분류(KECO)
 - curated/job_ncs.csv: 직무마다 세분류 하나(사람이 고름 — 직무 원문과 능력단위를 보고)
 - curated/ncs_expand.csv: 세분류마다 넓혀 갈 세분류 3개(사람이 고름)
-- curated/ncs_occupations.csv: 공식 연계표에 없는 세분류의 직업 추가(ADD)·소분류 전체에 붙어 엉뚱한 직업 빼기(DROP). 직업은 공식 표에 있는 것만
+- curated/ncs_occupations.csv: 공식 연계표에 없는 세분류의 직업 추가(ADD)·소분류 전체에 붙어 엉뚱한 직업 빼기(DROP). 직업은 공식 표에 있는 것만.
+  직무 세분류와 넓혀 갈 세분류 모두 고친다
+- curated/ncs_unit_links.csv: 직무 세분류 능력단위 → 넓혀 갈 세분류 능력단위 연결. ncs_links.py --draft가 AI 초안을 채우고
+  사람이 보고 checked에 Y를 적는다(넓힘 하나에 최대 5개, 넓혀 갈 단위 하나에 연결 하나)
 
-결과(seed/ncs.json, 커밋): ncs_subcategory · ncs_unit · occupation · ncs_occupation · job_ncs · ncs_expand.
+결과(seed/ncs.json, 커밋): ncs_subcategory · ncs_unit · occupation · ncs_occupation · job_ncs · ncs_expand · ncs_unit_link.
 능력단위는 직무에 고른 세분류와 넓혀 갈 세분류 것만 넣는다. 원본 CSV는 저장소 밖에 둔다.
 """
 import argparse, csv, json, pathlib, re, sys
@@ -20,6 +23,7 @@ from collections import defaultdict
 HERE = pathlib.Path(__file__).resolve().parent
 CURATED = HERE / "curated"
 UNIT_CODE = re.compile(r"^(\d{8})(\d{2})_(\d{2})v(\d+)$")
+LINKS_MAX = 5  # 넓힘 하나에 능력단위 연결 최대 개수
 
 
 def norm(s):
@@ -112,13 +116,16 @@ def build(units_path, keco_path, seed):
         if ranks != [1, 2, 3]:
             fails.append(f"ncs_expand.csv {code}: 순위가 1·2·3이 아님 {ranks}")
 
-    # 이어지는 직업: 공식 연계표(세분류 8자리 + 그 소분류 6자리) ± 사람이 고친 것
-    occ = {code: links.get(code, set()) | links.get(code[:6], set()) for code in mapped}
+    needed = sorted(set(mapped) | {e["to_code"] for e in expand})
+    pairs = {(e["from_code"], e["to_code"]) for e in expand}
+
+    # 이어지는 직업: 공식 연계표(세분류 8자리 + 그 소분류 6자리) ± 사람이 고친 것. 직무 세분류와 넓혀 갈 세분류 모두
+    occ = {code: links.get(code, set()) | links.get(code[:6], set()) for code in needed}
     source = {(code, k): "KEIS" for code, ks in occ.items() for k in ks}
     for r in read_csv("ncs_occupations.csv"):
         code, k, action = r["ncs_code"], r["keco_code"], r["action"]
-        if code not in mapped:
-            fails.append(f"ncs_occupations.csv: 직무에 고르지 않은 세분류 {code}")
+        if code not in occ:
+            fails.append(f"ncs_occupations.csv: 직무 세분류도 넓혀 갈 세분류도 아님 {code}")
             continue
         if k not in keco_names:
             fails.append(f"ncs_occupations.csv {code}: 공식 표에 없는 직업 코드 {k}")
@@ -134,19 +141,44 @@ def build(units_path, keco_path, seed):
             occ[code].discard(k)
         else:
             fails.append(f"ncs_occupations.csv {code}: action은 ADD·DROP — {action}")
+
+    # 능력단위끼리 연결: 직무 세분류의 단위 → 넓혀 갈 세분류의 단위(AI 초안, 사람이 확인하면 checked=Y — ncs_links.py)
+    unit_sub = {u["code"]: c for c in needed for u in units.get(c, [])}
+    unit_links, seen = [], set()
+    for r in read_csv("ncs_unit_links.csv") if (CURATED / "ncs_unit_links.csv").exists() else []:
+        a, b, fu, tu = r["from_code"], r["to_code"], r["from_unit"], r["to_unit"]
+        where = f"ncs_unit_links.csv {a}→{b} {fu}→{tu}"
+        if (a, b) not in pairs:
+            fails.append(f"{where}: ncs_expand.csv에 없는 넓힘")
+            continue
+        if unit_sub.get(fu) != a or unit_sub.get(tu) != b:
+            fails.append(f"{where}: 단위가 그 세분류에 없음(구버전이거나 코드가 틀림)")
+            continue
+        if (a, b, tu) in seen:
+            fails.append(f"{where}: 같은 넓힘에서 한 단위에 연결이 둘")
+            continue
+        if r["checked"].strip() not in ("", "Y"):
+            fails.append(f"{where}: checked는 비우거나 Y — {r['checked']}")
+        seen.add((a, b, tu))
+        unit_links.append({"from_code": a, "to_code": b, "from_unit": fu, "to_unit": tu,
+                           "note": r["note"].strip() or None, "checked": r["checked"].strip() == "Y"})
+    for a, b in sorted(pairs):
+        n = sum(1 for l in unit_links if (l["from_code"], l["to_code"]) == (a, b))
+        if n > LINKS_MAX:
+            fails.append(f"ncs_unit_links.csv {a}→{b}: 연결이 {n}개(최대 {LINKS_MAX})")
     if fails:
         sys.exit("ncs 시드를 만들 수 없습니다:\n  " + "\n  ".join(fails))
 
-    needed = sorted(set(mapped) | {e["to_code"] for e in expand})
     used_keco = sorted({k for ks in occ.values() for k in ks})
     return {
         "ncs_subcategory": [subs[c] for c in needed],
         "ncs_unit": [u for c in needed for u in units[c]],
         "occupation": [{"code": k, "name": keco_names[k]} for k in used_keco],
         "ncs_occupation": [{"subcategory_code": c, "occupation_code": k, "source": source[(c, k)]}
-                           for c in mapped for k in sorted(occ[c])],
+                           for c in needed for k in sorted(occ[c])],
         "job_ncs": sorted(job_ncs, key=lambda j: j["job_id"]),
         "ncs_expand": sorted(expand, key=lambda e: (e["from_code"], e["rank"])),
+        "ncs_unit_link": sorted(unit_links, key=lambda l: (l["from_code"], l["to_code"], l["to_unit"])),
     }
 
 
