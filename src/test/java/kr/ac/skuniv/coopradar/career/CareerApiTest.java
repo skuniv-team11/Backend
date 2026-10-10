@@ -174,6 +174,55 @@ class CareerApiTest {
     }
 
     @Test
+    void AI_리포트는_AI_답을_못_받은_요청으로_덮어쓰지_않고_대조_실패나_다른_직무면_바꾼다() throws Exception {
+        String token = guestToken("STUDENT");
+        UnitsDraft good = new UnitsDraft(List.of(new CoveredDraft("0201030115_16v3", "매주 SNS 게시물 반응을 집계해",
+                "SNS 반응을 매주 집계한 일이 마케팅 성과 파악이에요.")));
+        NEXT.set(Optional.of(good));
+        String first = report(token, 122, TEXT, true).andExpect(jsonPath("$.source").value("AI"))
+                .andExpect(jsonPath("$.keptReason").value(org.hamcrest.Matchers.nullValue()))
+                .andReturn().getResponse().getContentAsString();
+        int id = JsonPath.read(first, "$.reportId");
+        String edited = TEXT.replace("매주 SNS", "격주로 SNS");
+        // AI 오류·키 없음: 저장한 AI 리포트를 그대로 돌려주고 까닭을 keptReason에 둔다(ADR-0037)
+        NEXT.set(Optional.empty());
+        String kept = report(token, 122, edited, true).andExpect(status().isOk())
+                .andExpect(jsonPath("$.reportId").value(id))
+                .andExpect(jsonPath("$.source").value("AI"))
+                .andExpect(jsonPath("$.fallbackReason").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.keptReason").value("AI_ERROR"))
+                .andExpect(jsonPath("$.covered.length()").value(1))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<String>read(kept, "$.input.practiceText")).contains("매주 SNS").doesNotContain("격주로");
+        Contract.assertSameShape(kept, Contract.responseExample("createCareerReport", 200, null));
+        AVAILABLE.set(false);
+        report(token, 122, edited, true).andExpect(jsonPath("$.reportId").value(id))
+                .andExpect(jsonPath("$.keptReason").value("NO_KEY"));
+        mvc.perform(get("/api/me/career-report").header("Authorization", "Bearer " + token))
+                .andExpect(jsonPath("$.reportId").value(id))
+                .andExpect(jsonPath("$.keptReason").value(org.hamcrest.Matchers.nullValue()));
+        // 확인 통과 0개는 이번 글에 대한 결과라 바꾼다
+        AVAILABLE.set(true);
+        NEXT.set(Optional.of(new UnitsDraft(List.of(new CoveredDraft("0201030102_21v5", "글에 없는 구절", "지어낸 근거예요.")))));
+        String replaced = report(token, 122, edited, true).andExpect(jsonPath("$.source").value("NONE"))
+                .andExpect(jsonPath("$.fallbackReason").value("VERIFY_FAILED"))
+                .andExpect(jsonPath("$.keptReason").value(org.hamcrest.Matchers.nullValue()))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<Integer>read(replaced, "$.reportId")).isNotEqualTo(id);
+        // 다른 직무는 AI 답을 못 받아도 바꾼다(계정당 1건, 고른 직무의 리포트가 있어야 하니까)
+        NEXT.set(Optional.of(good));
+        int again = JsonPath.read(report(token, 122, TEXT, true).andExpect(jsonPath("$.source").value("AI"))
+                .andReturn().getResponse().getContentAsString(), "$.reportId");
+        NEXT.set(Optional.empty());
+        String otherJob = report(token, 140, TEXT, true).andExpect(jsonPath("$.jobId").value(140))
+                .andExpect(jsonPath("$.source").value("NONE"))
+                .andExpect(jsonPath("$.fallbackReason").value("AI_ERROR"))
+                .andExpect(jsonPath("$.keptReason").value(org.hamcrest.Matchers.nullValue()))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<Integer>read(otherJob, "$.reportId")).isNotEqualTo(again);
+    }
+
+    @Test
     void 동의_없음_짧은_글_없는_직무는_오류_센터는_403() throws Exception {
         String token = guestToken("STUDENT");
         report(token, 122, TEXT, false).andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("CONSENT_REQUIRED"));

@@ -74,7 +74,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | 36 | 커리어 | DELETE | `/api/me/career-report` | STUDENT | 커리어·M1 | 커리어 리포트·실습 내용 지우기 | 204 |
 | 37 | 지원서 | GET | `/api/me/application` | STUDENT | 지원서 | 내 지원서(별지 제5호). 없으면 프로필·담은 지망으로 미리 채운 빈 지원서(`status: NONE`) | [응답](me-application.json) |
 | 38 | 지원서 | PUT | `/api/me/application` | STUDENT | 지원서 | 임시 저장(수집·이용 동의 필수, 낸 뒤에는 보완 요청을 받았을 때만) | [요청](me-application.request.json) · [응답](me-application.json) |
-| 39 | 지원서 | DELETE | `/api/me/application` | STUDENT | 지원서·M1 | 지원서 지우기(매칭 확정 전까지) | 204 |
+| 39 | 지원서 | DELETE | `/api/me/application` | STUDENT | 지원서·M1 | 지원서 지우기(내기 전까지) | 204 |
 | 40 | 지원서 | POST | `/api/me/application/approval` | STUDENT | 지원서 | 학과(부)장 승인 링크 만들기(지금 내용 기준) | [응답](me-application.json) |
 | 41 | 지원서 | POST | `/api/me/application/submit` | STUDENT | 지원서 | 내기(신청 기간 · 빠진 칸 · 승인 확인) | [응답](me-application.json) |
 | 42 | 승인 | GET | `/api/approvals/{token}` | 공개 | 승인 | 학과(부)장이 승인할 내용(지원서 지망 또는 학점 인정 자리) | [응답](approval.json) |
@@ -220,7 +220,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - `requirements.majorAliases`: `[{label, departments: [{id, name}]}]` — 직무의 선호 전공 표기(`job_major_alias`)마다 확정된 학과 대응(`major_alias_department`, EXACT·CONFIRMED만 적재됨). `majorOpen`이면 `[]`. 화면의 '선호 전공 안내'(표기 → 학과)와 판정 이유의 '표기 해석'에 쓴다. 표기 순서는 표기 id 순, 학과는 id 순. 확정 전 표기(`DRAFT`, 2026-2는 없음)는 `departments: []`.
 - `evidence`: 이 직무의 근거 + 그 기관의 근거(기관명·규모·소재지·접수 마감 등). 순서는 직무 필드(V1 허용 목록 순서: 부서 → 직무명 → … → 자격증) 다음 기관 필드. `label`은 서버가 붙이는 한글 표기(예: `stipendAmount` → '실습지원비').
 - `alerts`: 이 직무에 걸린 알림 + 기관 전체에 걸린 알림(`jobId` null), id 순. 판정 항목이 아닌 알림(선호 전공·기간·지원비 불일치 등)도 여기에는 보인다. `documentTitle`은 `pageA`·`quoteA`(`DOC_INCONSISTENCY`면 `pageB`·`quoteB`도)가 있는 문서 이름이다(예: '소서 운영계획서', ADR-0023). `LIST_MISMATCH`의 리스트 쪽 값은 `description`에 들어 있다.
-- `seniorNotes`: 최근 학기 먼저, 같은 학기는 쪽 순. 수기 **전문**이다(10/10, ADR-0030): `major`·`grade`(수기에 적힌 학과·학년 원문), `oneLine`(한 줄 소개), `companyIntro`(기관·부서 소개), `activities`(실습 내용 원문 항목), `results`(실습 결과 문단), `reflection`(소감). 수기에 없는 칸은 null. 이름·사진은 없다(추출하지 않는다). 원문은 이미지 PDF를 AI로 옮겨 적은 것이다(E2).
+- `seniorNotes`: 최근 학기 먼저, 같은 학기는 쪽 순. 수기 **전문**이다(10/10, ADR-0030): `oneLine`(한 줄 소개), `companyIntro`(기관·부서 소개), `activities`(실습 내용 원문 항목), `results`(실습 결과 문단), `reflection`(소감). 수기에 없는 칸은 null. 이름·사진은 없다(추출하지 않는다). 학과·학년도 주지 않는다 — 학기·기관·팀과 같이 보이면 선배를 알아볼 수 있어서 시드에도 넣지 않는다([ADR-0037](../decisions/0037-hide-senior-major-keep-receipts-keep-report.md)). 원문은 이미지 PDF를 AI로 옮겨 적은 것이다(E2).
   - 수기가 전부 '우수' 수기(학교가 고른 것)라 긍정 쪽으로 치우쳐 있다. 화면에는 '우수 참여수기 기준'임을 꼭 밝힌다(`documentTitle`에 들어 있다). 기관을 평가하는 데 쓰지 않는다.
   - `outcomes`는 실습 결과 문단에서 원문 그대로 자른 **사실 구절** 0~3개(60자 이내 — 만든 결과물·맡은 일·참여한 프로젝트·채택된 제안)로, 추천 근거(`citations`)용으로 그대로 둔다(ADR-0020).
 - `photos`: 그 기관 실습기관 소개서(별지 제1-2호)의 '회사 전경 및 활동사진' 칸 사진, 순번 순(ADR-0030). 소개서에 그 칸이 없는 기관(회사 소개 책자를 낸 곳, 2026-2는 4곳)은 `[]`.
@@ -296,6 +296,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - `nextLevel`(같은 세분류 한 단계 위): `baseLevel`은 채운 단위에 가장 많은 수준(같으면 낮은 쪽, 채운 게 없으면 그 세분류의 가장 낮은 수준), `units`는 안 채운 단위 중 `baseLevel` 것 → 그보다 높은 수준 중 그 세분류에 실제로 있는 가장 낮은 수준(수준이 건너뛰면 4 대신 5처럼) 것 순으로 최대 3개.
   - `expand`(넓혀 갈 직무 3개): `{rank, code, name, path, relation, unitCount, linkedCount, linked, more, occupations}`. `linked`는 넓혀 갈 세분류의 단위 중 채운 단위와 이어진 것 `{code, name, level, from, note, checked}`(`from`은 이어진 채운 단위), `linkedCount`는 그 수, `more`는 안 이어진 단위 중 수준이 낮은 것 최대 3개(더 채울 것). **이어진 수가 많은 순, 같으면 `rank` 순**으로 준다(화면 '이어짐 2 / 12' = `linkedCount` / `unitCount`).
   - AI 키 없음·한도·실패·확인 통과 0개면 200 + `source: NONE`, `fallbackReason`, `covered: []`, `notCovered`는 단위 전부(목록은 그대로 보여 준다). 이때 `expand`는 `linked: []`로 `rank` 순, `nextLevel`은 가장 낮은 수준부터.
+  - **저장한 AI 리포트는 잠깐의 실패로 덮어쓰지 않는다**([ADR-0037](../decisions/0037-hide-senior-major-keep-receipts-keep-report.md)): 같은 직무의 `source: AI` 리포트가 저장돼 있는데 이번 요청이 AI 답을 못 받으면(`NO_KEY`·`LIMITED`·`AI_ERROR`) 저장본을 바꾸지 않고 그대로 200으로 돌려주며 `keptReason`에 그 까닭을 둔다(화면: '지금은 AI가 답하지 않아 전에 만든 리포트를 보여 줘요. 잠시 뒤 다시 해 주세요'). 확인 통과 0개(`VERIFY_FAILED`)는 이번 글에 대한 결과라 바꾸고, 다른 직무면 바꾼다. 그 밖에는 `keptReason: null`.
   - 계정당 마지막 1건만 둔다(새로 만들면 바꾼다). `GET`(#35)은 저장본(없으면 404 `CAREER_REPORT_NOT_FOUND`), `DELETE`(#36)은 204(없어도).
   - 실습한 직무를 고르는 것은 학생이다. 수행결과보고서 제출(#45 `REPORT`)은 매칭된 자리의 커리어 리포트가 있어야 한다.
 
@@ -303,6 +304,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - **일정**(`rounds/current`의 `stages`, 11단계 `PICK`→`CREDIT`): 진로취업처 2026-2 학생 모집안내 날짜(`confirmed: true`). 중간점검(8주차 10/19~10/23)·학점 인정은 공지에 날짜가 없어 `confirmed: false`(센터 확인 전).
 - **지원서 상태**: `NONE`(저장 전, 응답에서만) → `DRAFT` → 내기 → `SUBMITTED`(센터 '새로 들어옴') → `RECEIVED`(접수 완료) 또는 `FIX_REQUESTED`(보완 요청, `fixReason`) → 매칭 확정 → `MATCHED`. 보완 요청을 받으면 고쳐서 다시 낸다(접수번호는 그대로, 신청 기간이 끝났어도 된다).
 - **지원서 저장(#38)**: `consents.collect`가 true가 아니면 400 `CONSENT_REQUIRED`(아무것도 저장하지 않음). 칸은 비워도 된다. 낸 뒤(`SUBMITTED`·`RECEIVED`·`MATCHED`)에는 409 `APPLICATION_LOCKED`. 1~3지망은 본문이 아니라 담은 직무 순위(#22)에서 순위 값 그대로 온다(2·3지망만 정했으면 `rank` 2·3 — 1지망이 없으면 `PICKS`가 false) — 내기 전에는 저장한 프로필로 다시 판정해 `verdict`를 보여 주고(프로필이 없으면 null), 낼 때 그 값과 학적(`academic`)을 고정한다.
+- **지원서 지우기(#39)**: 내기 전(`DRAFT`)만 지운다. 한 번 낸 지원서(접수번호가 있음 — 보완 요청 중·매칭 뒤 포함)는 409 `APPLICATION_LOCKED`: 센터가 이미 받은 서류이고, 지우면 마지막 접수번호가 다음 학생에게 다시 매겨진다([ADR-0037](../decisions/0037-hide-senior-major-keep-receipts-keep-report.md)). 탈퇴(#7)는 개인정보라 낸 지원서도 함께 지운다.
 - **자기소개서**: 4문항(지원동기 · 성격 및 장단점 · 경력사항 및 단체활동 · 기타 자유 기술), 각 300자 이상(서식). `essayWarnings`는 글에 1~3지망 기관 이름(‘주식회사’·‘(주)’·괄호 안을 뺀 2자 이상)이 있는 문항 — 한 부가 세 기관에 같이 간다.
 - **학과(부)장 승인(#40·#42·#43)**: #40은 지금 내용(신청서·이력서·자기소개서·서약·동의·서명·1~3지망의 순위와 직무·학적 — 학과·학년·이수 학기·평점·졸업예정)의 해시로 링크(`approval.token`, 16진 32자)를 만든다. 학적은 내기 전이면 저장한 프로필, 낸 뒤면 고정한 값이고 승인 화면(#42)도 같은 값을 보여 준다. 다시 부르면 새 링크로 바뀐다. 승인 뒤 내용·지망·프로필이 바뀌면 `STALE` → 다시 요청. 링크는 학생이 학과 사무실에 전한다(프론트 경로 `/approvals/{token}`). #42는 공개, 없는 토큰 404 `APPROVAL_NOT_FOUND`(지원서 링크는 매칭이 확정되면 닫혀 404 — 링크로 이름·학번이 계속 열리지 않게), `STALE` 링크를 승인하면 409 `STATE_CONFLICT`. 학점 인정 승인(`kind: CREDIT`)은 센터가 평가표·출근부를 모두 받으면 생기고 링크는 센터 마무리 화면(#54)에 있다.
 - **내기(#41)**: 저장한 지원서가 없으면 404 `APPLICATION_NOT_FOUND`. 기준일(체험 학생은 `demoToday`, 아니면 오늘)이 신청 기간(7/13~7/24) 밖이면 409 `APPLICATION_CLOSED` — 보완 요청을 받아 다시 내는 것은 기간 밖이어도 된다. `submittedAt`은 처음 낸 시각이다(보완 뒤 다시 내도 그대로 — 접수번호와 같이). 체험 학생은 기준일 날짜로 남는다. 낸 뒤 `picks[].closed`는 낸 날 기준이다(낸 뒤에 마감돼도 낸 지망은 유효). 보완 요청 중이면 처음 낸 지망은 낸 날 기준으로 보고(그날 열려 있었으면 그대로 다시 낼 수 있다), 보완 중에 새로 넣은 지망은 오늘 기준이다. 확인한 뒤 고정하는 사이 프로필이 바뀌어 승인이 맞지 않으면 409 `STATE_CONFLICT`(내지 않음). `checklist`에 false가 있으면 400 `APPLICATION_INCOMPLETE`, `fields[].field`에 빠진 항목 코드(`applicationItem`) — `PROFILE` 저장한 프로필 · `PICKS` 1지망이 있고 지원 불가·마감이 없음 · `APPLICANT` 성명(한·영)·생년월일·성별·연락처·주소·학번 · `PLEDGE` · `ESSAYS` · `CONSENTS` 두 동의 · `SIGNATURE` 2자 이상 · `APPROVAL` 승인됨.
@@ -351,7 +353,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | `APPROVAL_NOT_FOUND` | 404 | 승인 링크가 없거나 새 링크로 바뀜 |
 | `EMAIL_TAKEN` | 409 | 이미 가입한 이메일 |
 | `EXPLORE_NOT_CANDIDATE` | 409 | 지원할 수 없거나 마감된 직무라 '왜 맞나요'를 만들지 않음 |
-| `APPLICATION_LOCKED` | 409 | 낸 지원서를 고치려 함(보완 요청 때만 고침), 매칭 확정 뒤 지우려 함 |
+| `APPLICATION_LOCKED` | 409 | 낸 지원서를 고치려 함(보완 요청 때만 고침), 낸 지원서를 지우려 함 |
 | `APPLICATION_CLOSED` | 409 | 기준일이 신청 기간 밖 |
 | `STATE_CONFLICT` | 409 | 지금 단계에서 할 수 없는 처리(확정 전 매칭이 덜 됨, 결과 대기, 내용이 바뀐 승인 링크, 합격 전 서류 등) |
 | `CAREER_REPORT_REQUIRED` | 409 | 수행결과보고서를 내려면 그 자리의 커리어 리포트가 먼저 있어야 함 |

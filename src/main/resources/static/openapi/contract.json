@@ -2489,8 +2489,6 @@
                           "teamText": "마케팅팀",
                           "documentTitle": "2025-1 우수 참여수기",
                           "page": 7,
-                          "major": "(가상) 광고홍보콘텐츠학과",
-                          "grade": "4학년",
                           "oneLine": "(가상) 실무를 처음 배운 15주",
                           "companyIntro": "(가상) 화장품 브랜드를 운영하는 회사입니다. 마케팅팀은 SNS 콘텐츠와 브랜드 캠페인을 맡습니다.",
                           "activities": [
@@ -5364,6 +5362,7 @@
                       },
                       "source": "AI",
                       "fallbackReason": null,
+                      "keptReason": null,
                       "input": {
                         "practiceText": "(가상) 1~4주차에는 회사 소개와 인스타그램 운영 방식을 배웠습니다. 5주차부터 경쟁사 신제품 30개의 가격과 구성을 표로 정리해 신제품 기획 회의에 냈고, 제안한 세트 구성 아이디어 1건이 다음 분기 기획안에 들어갔습니다. 매주 SNS 게시물 반응을 집계해 콘텐츠 기획 회의 자료를 만들었습니다."
                       },
@@ -5818,6 +5817,7 @@
                       },
                       "source": "AI",
                       "fallbackReason": null,
+                      "keptReason": null,
                       "input": {
                         "practiceText": "(가상) 1~4주차에는 회사 소개와 인스타그램 운영 방식을 배웠습니다. 5주차부터 경쟁사 신제품 30개의 가격과 구성을 표로 정리해 신제품 기획 회의에 냈고, 제안한 세트 구성 아이디어 1건이 다음 분기 기획안에 들어갔습니다. 매주 SNS 게시물 반응을 집계해 콘텐츠 기획 회의 자료를 만들었습니다."
                       },
@@ -6838,7 +6838,7 @@
                   "APPLICATION_LOCKED": {
                     "value": {
                       "code": "APPLICATION_LOCKED",
-                      "message": "낸 지원서를 고치려 함(보완 요청 때만 고침), 매칭 확정 뒤 지우려 함"
+                      "message": "낸 지원서를 고치려 함(보완 요청 때만 고침), 낸 지원서를 지우려 함"
                     }
                   }
                 }
@@ -6852,7 +6852,7 @@
           "지원서"
         ],
         "operationId": "deleteMyApplication",
-        "summary": "지원서 지우기(매칭 확정 전까지)",
+        "summary": "지원서 지우기(내기 전까지)",
         "x-auth": "STUDENT",
         "description": "권한: **STUDENT** · 화면: 지원서·M1 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "security": [
@@ -6917,7 +6917,7 @@
                   "APPLICATION_LOCKED": {
                     "value": {
                       "code": "APPLICATION_LOCKED",
-                      "message": "낸 지원서를 고치려 함(보완 요청 때만 고침), 매칭 확정 뒤 지우려 함"
+                      "message": "낸 지원서를 고치려 함(보완 요청 때만 고침), 낸 지원서를 지우려 함"
                     }
                   }
                 }
@@ -7197,7 +7197,7 @@
                   "APPLICATION_LOCKED": {
                     "value": {
                       "code": "APPLICATION_LOCKED",
-                      "message": "낸 지원서를 고치려 함(보완 요청 때만 고침), 매칭 확정 뒤 지우려 함"
+                      "message": "낸 지원서를 고치려 함(보완 요청 때만 고침), 낸 지원서를 지우려 함"
                     }
                   }
                 }
@@ -7489,7 +7489,7 @@
                   "APPLICATION_LOCKED": {
                     "value": {
                       "code": "APPLICATION_LOCKED",
-                      "message": "낸 지원서를 고치려 함(보완 요청 때만 고침), 매칭 확정 뒤 지우려 함"
+                      "message": "낸 지원서를 고치려 함(보완 요청 때만 고침), 낸 지원서를 지우려 함"
                     }
                   },
                   "APPLICATION_CLOSED": {
@@ -12794,6 +12794,17 @@
             ],
             "description": "source가 AI면 null(NO_KEY·LIMITED·AI_ERROR·VERIFY_FAILED)"
           },
+          "keptReason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExploreFallback"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "만들기(#34)가 AI 답을 못 받아(NO_KEY·LIMITED·AI_ERROR) 저장한 같은 직무의 AI 리포트를 그대로 돌려줄 때 그 까닭. 이때 응답은 바꾸지 않은 저장본이다. 그 밖에는 null(ADR-0037)"
+          },
           "input": {
             "type": "object",
             "properties": {
@@ -12927,6 +12938,7 @@
           "institution",
           "source",
           "fallbackReason",
+          "keptReason",
           "input",
           "ncs",
           "covered",
@@ -15846,20 +15858,6 @@
                   "type": "integer",
                   "minimum": 1
                 },
-                "major": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
-                  "description": "수기에 적힌 학과(전공) 원문"
-                },
-                "grade": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
-                  "description": "수기에 적힌 학년 원문(예: 4학년)"
-                },
                 "oneLine": {
                   "type": [
                     "string",
@@ -15909,8 +15907,6 @@
                 "teamText",
                 "documentTitle",
                 "page",
-                "major",
-                "grade",
                 "oneLine",
                 "companyIntro",
                 "activities",
@@ -15919,7 +15915,7 @@
                 "reflection"
               ]
             },
-            "description": "같은 기관의 선배 수기 전문(ADR-0030). 이름·사진은 없다. 전부 '우수' 수기라 화면에 그 점을 밝힌다"
+            "description": "같은 기관의 선배 수기 전문(ADR-0030). 이름·사진·학과·학년은 없다(ADR-0037). 전부 '우수' 수기라 화면에 그 점을 밝힌다"
           },
           "photos": {
             "type": "array",

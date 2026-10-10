@@ -124,10 +124,16 @@ public class CareerService {
             }
         }
         Source source = fallback == null ? Source.AI : Source.NONE;
-        Saved saved = repository.replace(user.id(), job.jobId(), job.subcategory().code(), text, source, fallback,
-                source == Source.AI ? writer.model() : null, promptVersion, covered);
-        return view(new Stored(saved.id(), job.jobId(), job.subcategory().code(), text, source, fallback,
-                saved.createdAt(), covered), job);
+        // AI 답을 못 받은 것(키 없음·한도·오류)은 잠깐의 실패라, 같은 직무의 AI 리포트가 있으면 그대로 둔다(ADR-0037).
+        // 확인 통과 0개(VERIFY_FAILED)는 이번 글에 대한 결과라 바꾼다.
+        boolean transientFailure = fallback == Fallback.NO_KEY || fallback == Fallback.LIMITED || fallback == Fallback.AI_ERROR;
+        Optional<Saved> saved = repository.replace(user.id(), job.jobId(), job.subcategory().code(), text, source, fallback,
+                source == Source.AI ? writer.model() : null, promptVersion, covered, transientFailure);
+        if (saved.isEmpty()) {
+            return view(repository.find(user.id()).orElseThrow(), job, fallback);
+        }
+        return view(new Stored(saved.get().id(), job.jobId(), job.subcategory().code(), text, source, fallback,
+                saved.get().createdAt(), covered), job, null);
     }
 
     /** #35 */
@@ -135,7 +141,7 @@ public class CareerService {
         Stored s = repository.find(user.id())
                 .orElseThrow(() -> new ApiException(ErrorCode.CAREER_REPORT_NOT_FOUND, "저장된 커리어 리포트가 없어요"));
         JobNcs job = repository.job(s.jobId()).orElseThrow();
-        return view(s, job);
+        return view(s, job, null);
     }
 
     /** #36 */
@@ -143,7 +149,8 @@ public class CareerService {
         repository.delete(user.id());
     }
 
-    private Report view(Stored s, JobNcs job) {
+    /** @param keptReason 이번 요청이 AI 답을 못 받아 저장한 리포트를 그대로 돌려줄 때 그 까닭. 아니면 null */
+    private Report view(Stored s, JobNcs job, Fallback keptReason) {
         String code = s.subcategory();
         List<Unit> units = repository.units(code);
         List<Covered> covered = new ArrayList<>();
@@ -159,7 +166,7 @@ public class CareerService {
         var sub = repository.subcategory(code).orElseThrow(); // 세분류가 시드에서 빠지면 리포트도 cascade로 지워진다
         Set<String> done = s.covered().keySet();
         return new Report(s.id(), s.createdAt(), job.jobId(), job.title(), job.team(), job.institution(), s.source(),
-                s.fallback(), new Input(s.practiceText()), new ReportNcs(code, sub.name(), sub.path(), units.size()), covered,
+                s.fallback(), keptReason, new Input(s.practiceText()), new ReportNcs(code, sub.name(), sub.path(), units.size()), covered,
                 notCovered, nextLevel(units, done), paths(repository.expand(code), repository.links(code), done,
                         repository::units), repository.occupations(code));
     }

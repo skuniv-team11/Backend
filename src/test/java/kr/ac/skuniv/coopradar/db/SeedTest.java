@@ -56,6 +56,9 @@ class SeedTest {
         assertThat(count("SELECT count(*) FROM review_alert")).isEqualTo(6);
         // 수기는 전문이 들어 있다(실습 결과·소감)
         assertThat(count("SELECT count(*) FROM testimonial WHERE results IS NULL OR reflection IS NULL")).isZero();
+        // 학과·학년은 넣지 않는다 — 학기·기관·팀과 같이 보이면 선배를 알아볼 수 있다(ADR-0037)
+        assertThat(count("SELECT count(*) FROM testimonial WHERE major_text IS NOT NULL OR grade_text IS NOT NULL"))
+                .isZero();
     }
 
     @Test

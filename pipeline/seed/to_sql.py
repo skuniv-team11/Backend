@@ -55,7 +55,7 @@ CHILDREN = {
                      "source_document_id", "page_a", "quote_a", "page_b", "quote_b"],
     "requirement_source": ["job_id", "item", "source_type", "document_title", "page", "quote"],
     "testimonial": ["id", "source_document_id", "institution_id", "team_text", "activities", "outcomes", "page",
-                    "one_line", "company_intro", "results", "reflection", "major_text", "grade_text"],
+                    "one_line", "company_intro", "results", "reflection"],
     "institution_photo": ["id", "institution_id", "source_document_id", "seq", "page", "scene", "caption",
                           "caption_source", "width", "height"],
     "replay_signal": ["job_id", "signal_date", "interest_count"],

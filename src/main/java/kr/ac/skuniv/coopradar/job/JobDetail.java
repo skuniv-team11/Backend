@@ -87,13 +87,13 @@ public record JobDetail(
     }
 
     /**
-     * 같은 기관의 선배 수기 전문(ADR-0030). 이름·사진은 없다(시드에도 없다). '우수' 수기라 긍정 쪽으로 치우쳐 있다 — 화면이 밝힌다.
+     * 같은 기관의 선배 수기 전문(ADR-0030). 이름·사진·학과·학년은 없다(시드에도 없다 — 학기·기관·팀과 같이 보이면 선배를
+     * 알아볼 수 있어서, ADR-0037). '우수' 수기라 긍정 쪽으로 치우쳐 있다 — 화면이 밝힌다.
      *
      * @param outcomes 실습 결과 중 원문 그대로 자른 사실 구절(만든 결과물·맡은 일 등, 0~3개). 추천 근거용(ADR-0020)
      * @param results  실습 결과 문단 전문. 수기에 없으면 null
      */
-    public record SeniorNote(String termCode, String teamText, String documentTitle, int page, String major, String grade,
-                             String oneLine, String companyIntro, List<String> activities, List<String> outcomes,
+    public record SeniorNote(String termCode, String teamText, String documentTitle, int page, String oneLine, String companyIntro, List<String> activities, List<String> outcomes,
                              String results, String reflection) {
     }
 

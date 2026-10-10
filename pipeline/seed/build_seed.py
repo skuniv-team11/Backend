@@ -63,7 +63,7 @@ LIMITS = {("institution", "name"): 100, ("institution", "business_type"): 100, (
           ("job", "title"): 200, ("job", "work_hours_text"): 100, ("job", "certificate_text"): 200,
           ("job", "major_text"): 300, ("job_weekly_plan", "weeks_label"): 30, ("field_evidence", "quote"): 200,
           ("review_alert", "quote_a"): 200, ("review_alert", "quote_b"): 200, ("testimonial", "team_text"): 100,
-          ("testimonial", "major_text"): 100, ("testimonial", "grade_text"): 20, ("institution_photo", "caption"): 100,
+          ("institution_photo", "caption"): 100,
           ("source_document", "title"): 200, ("department", "name"): 50, ("major_alias", "label"): 100,
           ("department_cluster", "label"): 50,
           ("area", "sido"): 10, ("area", "name"): 20, ("certificate", "label"): 100,
@@ -827,8 +827,8 @@ def build(a):
                                         "team_text": text(t["department"]), "activities": acts,
                                         "outcomes": outcomes[(src, t["text_page"])], "page": t["text_page"],
                                         "one_line": text(t["one_line"]), "company_intro": text(t["company_intro"]),
-                                        "results": text(t["results"]), "reflection": text(t["reflection"]),
-                                        "major_text": text(t["major"]), "grade_text": text(t["grade"])})
+                                        "results": text(t["results"]), "reflection": text(t["reflection"])})
+            # 학과·학년은 넣지 않는다 — 학기·기관·팀과 같이 보이면 선배를 알아볼 수 있다(ADR-0037)
 
     # 소개서 사진(ADR-0030): 기관마다 소개서 문서 하나와 사진 행
     inst_names = {i["id"]: i["name"] for i in seed["institution"]}

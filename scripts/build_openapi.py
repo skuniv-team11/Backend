@@ -373,8 +373,6 @@ S.update({
             "teamText": nul(STR),
             "documentTitle": STR,
             "page": PAGE,
-            "major": d(nul(STR), "수기에 적힌 학과(전공) 원문"),
-            "grade": d(nul(STR), "수기에 적힌 학년 원문(예: 4학년)"),
             "oneLine": d(nul(STR), "한 줄 소개(수기 제목)"),
             "companyIntro": d(nul(STR), "수기의 기관·부서 소개 문단"),
             "activities": arr(STR, minItems=1),
@@ -382,7 +380,7 @@ S.update({
                           "실습 결과 중 원문 그대로 자른 사실 구절 0~3개(추천 근거용, ADR-0020)"),
             "results": d(nul(STR), "실습 결과 문단 전문"),
             "reflection": d(nul(STR), "소감 문단 전문"),
-        })), "같은 기관의 선배 수기 전문(ADR-0030). 이름·사진은 없다. 전부 '우수' 수기라 화면에 그 점을 밝힌다"),
+        })), "같은 기관의 선배 수기 전문(ADR-0030). 이름·사진·학과·학년은 없다(ADR-0037). 전부 '우수' 수기라 화면에 그 점을 밝힌다"),
         "photos": d(arr(obj({
             "seq": ID,
             "path": d(STR, "사진 경로(API 서버 기준, 예: /photos/7/1.jpg). API 기본 주소 뒤에 붙여 <img>로 띄운다"),
@@ -597,6 +595,9 @@ S.update({
         "jobId": ID, "title": STR, "team": STR, "institution": R("InstitutionRef"),
         "source": R("CareerSource"),
         "fallbackReason": d(nul(R("ExploreFallback")), "source가 AI면 null(NO_KEY·LIMITED·AI_ERROR·VERIFY_FAILED)"),
+        "keptReason": d(nul(R("ExploreFallback")),
+                        "만들기(#34)가 AI 답을 못 받아(NO_KEY·LIMITED·AI_ERROR) 저장한 같은 직무의 AI 리포트를 그대로 돌려줄 때 "
+                        "그 까닭. 이때 응답은 바꾸지 않은 저장본이다. 그 밖에는 null(ADR-0037)"),
         "input": obj({"practiceText": STR}, desc="저장한 실습 내용(전화·이메일·긴 숫자는 [가림])"),
         "ncs": obj({"code": NCS_CODE, "name": STR, "path": R("NcsPath"), "unitCount": {"type": "integer", "minimum": 0}}),
         "covered": d(arr(obj({"code": NCS_UNIT_CODE, "name": STR, "level": NCS_LEVEL,

@@ -115,12 +115,15 @@ public class ApplicationService {
         return view(user, repo.byId(row.id()).orElseThrow());
     }
 
-    /** 지원서 지우기(매칭 확정 전까지). 없어도 204. */
+    /**
+     * 지원서 지우기(내기 전까지). 없어도 204. 한 번 낸 지원서(접수번호가 있음 — 보완 요청 중·매칭 뒤 포함)는 지우지 못한다:
+     * 센터가 이미 받은 서류이고, 지우면 마지막 접수번호가 다음 학생에게 다시 매겨진다(ADR-0037). 탈퇴는 예외로 함께 지운다(ADR-0008).
+     */
     @Transactional
     public void delete(AuthUser user) {
         repo.byUserForUpdate(user.id(), rounds.current().id()).ifPresent(r -> {
-            if (r.status() == Status.MATCHED) {
-                throw new ApiException(ErrorCode.APPLICATION_LOCKED, "매칭이 확정된 지원서는 지울 수 없어요. 센터에 문의해 주세요");
+            if (r.receiptNo() != null) {
+                throw new ApiException(ErrorCode.APPLICATION_LOCKED, "낸 지원서는 지울 수 없어요. 센터에 문의해 주세요");
             }
             repo.delete(r.id());
         });
