@@ -83,10 +83,10 @@ class JobApiTest {
         List<Integer> weeks = JsonPath.read(body, "$.weeklyPlan[*].seq");
         assertThat(weeks).hasSize(count("SELECT count(*) FROM job_weekly_plan WHERE job_id = 101")).isSorted();
 
-        // 수기 전문(ADR-0030): 학과·학년·한 줄 소개·회사 소개·실습 결과·소감까지. 이름은 없다.
+        // 수기 전문(ADR-0030): 한 줄 소개·회사 소개·실습 결과·소감까지. 이름·학과·학년은 없다(ADR-0037).
         // 실습 결과 사실 구절(outcomes)은 추천 근거용으로 그대로(ADR-0020)
         Map<String, Object> note = JsonPath.read(body, "$.seniorNotes[0]");
-        assertThat(note).containsOnlyKeys("termCode", "teamText", "documentTitle", "page", "major", "grade", "oneLine",
+        assertThat(note).containsOnlyKeys("termCode", "teamText", "documentTitle", "page", "oneLine",
                 "companyIntro", "activities", "outcomes", "results", "reflection");
         assertThat((String) note.get("documentTitle")).contains("참여수기");
         assertThat((String) note.get("companyIntro")).startsWith("더에스엠씨는");
@@ -113,7 +113,9 @@ class JobApiTest {
                 .andReturn().getResponse().getContentAsString();
         assertThat(JsonPath.<List<Integer>>read(body, "$.photos[*].seq")).containsExactly(1, 2, 3, 4);
         assertThat(JsonPath.<List<Integer>>read(body, "$.photos[*].width")).allMatch(w -> w > 0);
-        assertThat(JsonPath.<List<String>>read(body, "$.seniorNotes[*].major")).contains("헤어메이크업디자인학과");
+        // 학과·학년은 주지 않는다 — 학기·기관·팀과 같이 보이면 선배를 알아볼 수 있다(ADR-0037)
+        List<Map<String, Object>> notes = JsonPath.read(body, "$.seniorNotes");
+        assertThat(notes).isNotEmpty().allSatisfy(n -> assertThat(n).doesNotContainKeys("major", "grade"));
         Contract.assertSameShape(body, Contract.responseExample("getJob", 200, null));
     }
 

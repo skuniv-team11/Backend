@@ -63,7 +63,7 @@ LIMITS = {("institution", "name"): 100, ("institution", "business_type"): 100, (
           ("job", "title"): 200, ("job", "work_hours_text"): 100, ("job", "certificate_text"): 200,
           ("job", "major_text"): 300, ("job_weekly_plan", "weeks_label"): 30, ("field_evidence", "quote"): 200,
           ("review_alert", "quote_a"): 200, ("review_alert", "quote_b"): 200, ("testimonial", "team_text"): 100,
-          ("testimonial", "major_text"): 100, ("testimonial", "grade_text"): 20, ("institution_photo", "caption"): 100,
+          ("institution_photo", "caption"): 100,
           ("source_document", "title"): 200, ("department", "name"): 50, ("major_alias", "label"): 100,
           ("department_cluster", "label"): 50,
           ("area", "sido"): 10, ("area", "name"): 20, ("certificate", "label"): 100,
@@ -460,7 +460,7 @@ def build(a):
                             "job", "major_alias", "major_alias_department", "department_cluster", "department_cluster_member",
                             "job_major_alias", "job_weekly_plan",
                             "source_document", "field_evidence", "review_alert", "requirement_source", "testimonial",
-                            "institution_photo", "replay_signal", "round_stage"]}
+                            "institution_photo", "round_stage"]}
     # 판정 이유 줄 출처의 문서명: 리스트 파일 이름에서 끝의 괄호(상시 업데이트 진행중 등)를 뗀다(ADR-0023)
     list_title = re.sub(r"\s*\([^)]*\)\s*$", "", pathlib.Path(a.list).stem).strip()
     seed["program"].append(rnd["program"])
@@ -827,8 +827,8 @@ def build(a):
                                         "team_text": text(t["department"]), "activities": acts,
                                         "outcomes": outcomes[(src, t["text_page"])], "page": t["text_page"],
                                         "one_line": text(t["one_line"]), "company_intro": text(t["company_intro"]),
-                                        "results": text(t["results"]), "reflection": text(t["reflection"]),
-                                        "major_text": text(t["major"]), "grade_text": text(t["grade"])})
+                                        "results": text(t["results"]), "reflection": text(t["reflection"])})
+            # 학과·학년은 넣지 않는다 — 학기·기관·팀과 같이 보이면 선배를 알아볼 수 있다(ADR-0037)
 
     # 소개서 사진(ADR-0030): 기관마다 소개서 문서 하나와 사진 행
     inst_names = {i["id"]: i["name"] for i in seed["institution"]}
@@ -847,12 +847,11 @@ def build(a):
             "seq": int(r["seq"]), "page": int(r["page"]), "scene": SCENE[r["scene"]], "caption": text(r["caption"]),
             "caption_source": r["caption_source"] or None, "width": int(r["width"]), "height": int(r["height"])})
 
-    # 리플레이(가상 신호)
-    signals, virtual = replay.generate(jobs_for_replay, start, end, rnd["replay_seed"])
+    # 날짜 없는 센터 모집마감의 가상 마감일(모집 신호는 ADR-0036에서 걷어냄)
+    virtual = replay.virtual_closes(jobs_for_replay, start, end, rnd["replay_seed"])
     for j in seed["job"]:
         if j["id"] in virtual:
             j["closes_on"], j["closes_on_is_virtual"] = virtual[j["id"]].isoformat(), True
-    seed["replay_signal"] = signals
 
     validate(seed)
     return seed, review, ids, ids_path, dropped_alerts
@@ -871,10 +870,6 @@ def validate(seed):
     names = [r["name"] for r in seed["institution"]]
     if len(names) != len(set(names)):
         fail("institution.name 중복")
-    for j in seed["job"]:
-        total = sum(s["interest_count"] for s in seed["replay_signal"] if s["job_id"] == j["id"])
-        if total != j["final_assigned"]:
-            fail(f"job {j['id']}: 리플레이 관심 합 {total} ≠ 배정 {j['final_assigned']}")
 
 
 def stages_only(out):
@@ -927,8 +922,7 @@ def main():
           f"배정 {sum(j['final_assigned'] for j in seed['job'])} · 학과 {c['department']} · 전공 표기 {c['major_alias']}"
           f"(학과 연결 {len({m['alias_id'] for m in seed['major_alias_department']})}, 확정 대기 {draft}) · 근거 {c['field_evidence']} · "
           f"알림 {c['review_alert']} · 수기 {c['testimonial']}(실습 결과 구절 {sum(len(t['outcomes']) for t in seed['testimonial'])}) · "
-          f"소개서 사진 {c['institution_photo']} · "
-          f"신호 {c['replay_signal']}행")
+          f"소개서 사진 {c['institution_photo']}")
     print(f"→ {a.out}\n→ {rp} (사람 검토용, 커밋하지 않음)\n다음: python to_sql.py")
 
 

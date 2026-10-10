@@ -74,7 +74,8 @@ public final class CareerDtos {
     }
 
     public record Report(long reportId, OffsetDateTime createdAt, int jobId, String title, String team,
-                         InstitutionRef institution, Source source, Fallback fallbackReason, Input input, ReportNcs ncs,
+                         InstitutionRef institution, Source source, Fallback fallbackReason, Fallback keptReason,
+                         Input input, ReportNcs ncs,
                          List<Covered> covered, List<UnitRef> notCovered, NextLevel nextLevel, List<ReportPath> expand,
                          List<Occupation> occupations) {
     }

@@ -110,9 +110,8 @@ class ReferenceApiTest {
                 .andExpect(jsonPath("$.recruitStart").value("2026-07-13"))
                 .andExpect(jsonPath("$.recruitEnd").value("2026-07-24"))
                 .andExpect(jsonPath("$.replay.defaultAsOf").value("2026-07-23")) // application.yml app.replay.default-as-of
-                .andExpect(jsonPath("$.replay.minDate").value("2026-07-13"))
-                .andExpect(jsonPath("$.replay.maxDate").value("2026-07-24"))
-                .andExpect(jsonPath("$.replay.signalsAreVirtual").value(true))
+                // 모집 신호 슬라이더 범위는 ADR-0036에서 지웠다(시연 기준일만)
+                .andExpect(jsonPath("$.replay.minDate").doesNotExist())
                 .andReturn().getResponse().getContentAsString();
         Contract.assertSameShape(body, Contract.responseExample("getCurrentRound", 200, null));
     }

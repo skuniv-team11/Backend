@@ -397,6 +397,11 @@ class InternshipFlowApiTest {
         assertThat(JsonPath.<String>read(submitted, "$.approval.status")).isEqualTo("APPROVED");
         assertThat(JsonPath.<String>read(submitted, "$.submittedAt")).startsWith("2026-07-23T");
         assertThat(JsonPath.<List<Boolean>>read(submitted, "$.picks[*].closed")).containsOnly(false);
+        // 낸 지원서는 지우지 못한다 — 지우면 마지막 접수번호가 다음 학생에게 다시 매겨진다(ADR-0037)
+        perform(delete("/api/me/application"), student, null)
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("APPLICATION_LOCKED"));
+        assertThat(JsonPath.<String>read(perform(get("/api/me/application"), student, null).andReturn().getResponse()
+                .getContentAsString(), "$.receiptNo")).isEqualTo(JsonPath.read(submitted, "$.receiptNo"));
         // 센터 화면도 같은 승인 상태, 매칭은 그 지원서에 있는 순위만
         Guest center = guest("CENTER", null, student.group());
         long id = ((Number) JsonPath.read(submitted, "$.applicationId")).longValue();
@@ -446,6 +451,9 @@ class InternshipFlowApiTest {
         long id = ((Number) JsonPath.read(submitted, "$.applicationId")).longValue();
         perform(put("/api/center/applications/" + id + "/status"), center,
                 "{\"status\": \"FIX_REQUESTED\", \"reason\": \"연락처를 다시 확인해 주세요.\"}").andExpect(status().isOk());
+        // 보완 요청 중이어도 한 번 낸 지원서는 지우지 못한다(ADR-0037)
+        perform(delete("/api/me/application"), student, null)
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("APPLICATION_LOCKED"));
         // 학생이 고치는 중인 지원서를 센터가 접수로 잠그지 않는다
         perform(put("/api/center/applications/" + id + "/status"), center, "{\"status\": \"RECEIVED\"}")
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("STATE_CONFLICT"));

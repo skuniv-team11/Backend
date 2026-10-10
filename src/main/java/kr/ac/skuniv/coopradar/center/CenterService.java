@@ -1,9 +1,7 @@
 package kr.ac.skuniv.coopradar.center;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import kr.ac.skuniv.coopradar.auth.AuthUser;
 import kr.ac.skuniv.coopradar.center.CenterDtos.CenterBoard;
 import kr.ac.skuniv.coopradar.center.CenterDtos.Risk;
@@ -13,63 +11,52 @@ import kr.ac.skuniv.coopradar.center.CenterDtos.Summary;
 import kr.ac.skuniv.coopradar.job.Alert;
 import kr.ac.skuniv.coopradar.job.RoundRef;
 import kr.ac.skuniv.coopradar.reference.CodeLabels;
+import kr.ac.skuniv.coopradar.reference.ReferenceDates;
+import kr.ac.skuniv.coopradar.reference.ReferenceDates.AsOf;
 import kr.ac.skuniv.coopradar.reference.RoundService;
-import kr.ac.skuniv.coopradar.signal.Signal;
-import kr.ac.skuniv.coopradar.signal.SignalService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 센터 모집 현황판(#24). 지망 점검(#23)과 같은 관심 신호 계산(실제 담은 수는 모든 계정)을 직무 전체 표로 보여 준다.
- * 위험 요인은 규칙이다(AI 없음). 처리할 것(새 지원서·보완 요청)과 학생이 찾는 직무(직무 탐색 1~3위 → NCS 세분류)는
- * 계정의 범위(체험 묶음 또는 실제)로 센다(ADR-0033). v2 화면은 관심(담은 수)을 보여 주지 않는다.
- * 지난 회차 결과(round_result)는 센터 동의 뒤에만 적재하고 원소 모양도 그때 정하므로 지금은 historyAvailable false.
+ * 센터 현황판(#24). 직무별 정원·조건 위험·문서 검토와, 처리할 것(새 지원서·보완 요청)·학생이 찾는 직무(직무 탐색 1~3위 →
+ * NCS 세분류)를 보여 준다. 위험 요인은 규칙이다(AI 없음). 처리할 것·학생이 찾는 직무는 계정의 범위(체험 묶음 또는 실제)로
+ * 센다(ADR-0033). 관심(담은 수)은 지원이 아니라서 보여 주지 않는다(ADR-0036). 마감은 모집 판정 기준일로 본다(ADR-0035).
  */
 @Service
 public class CenterService {
 
     private final CenterRepository repository;
-    private final SignalService signals;
     private final RoundService rounds;
     private final CenterProperties properties;
 
-    public CenterService(CenterRepository repository, SignalService signals, RoundService rounds,
-                         CenterProperties properties) {
+    public CenterService(CenterRepository repository, RoundService rounds, CenterProperties properties) {
         this.repository = repository;
-        this.signals = signals;
         this.rounds = rounds;
         this.properties = properties;
     }
 
     @Transactional(readOnly = true)
-    public CenterBoard board(AuthUser user, LocalDate requestedAsOf) {
+    public CenterBoard board(AuthUser user) {
         var round = rounds.current();
-        LocalDate asOf = SignalService.resolveAsOf(round, requestedAsOf);
-        Map<Integer, Signal> byJob = signals.byJob(round, asOf);
+        AsOf asOf = ReferenceDates.recruit(round);
         List<Alert> alerts = repository.alerts(round.id());
 
         List<Row> rows = new ArrayList<>();
         int seats = 0;
-        int interestTotal = 0;
-        int liveTotal = 0;
-        int zeroSignal = 0;
         int closed = 0;
         for (var job : repository.jobs(round.id())) {
-            Signal signal = byJob.get(job.id());
             int alertCount = (int) alerts.stream()
                     .filter(a -> a.institution().id() == job.institution().id()
                             && (a.jobId() == null || a.jobId() == job.id()))
                     .count();
-            rows.add(new Row(job.id(), job.institution(), job.title(), job.headcount(), signal, job.eligiblePool(),
-                    risks(job, alertCount, properties.narrowPoolBelow()), alertCount, List.of(), job.views()));
+            boolean isClosed = asOf.closed(job.closing().closesOn());
+            rows.add(new Row(job.id(), job.institution(), job.title(), job.headcount(), job.closing(), isClosed,
+                    job.eligiblePool(), risks(job, alertCount, properties.narrowPoolBelow()), alertCount, job.views()));
             seats += job.headcount();
-            interestTotal += signal.interest();
-            liveTotal += signal.liveInterest();
-            zeroSignal += signal.interest() == 0 ? 1 : 0;
-            closed += signal.status() == Signal.Status.CLOSED ? 1 : 0;
+            closed += isClosed ? 1 : 0;
         }
-        return new CenterBoard(asOf, true, Signal.Source.REPLAY, new RoundRef(round.id(), round.termCode()),
-                new Summary(rows.size(), seats, interestTotal, liveTotal, zeroSignal, closed), false, rows, alerts,
+        return new CenterBoard(asOf.date(), new RoundRef(round.id(), round.termCode()),
+                new Summary(rows.size(), seats, closed), rows, alerts,
                 repository.todo(user.id(), round.id()), repository.demand(user.id(), round.id()));
     }
 

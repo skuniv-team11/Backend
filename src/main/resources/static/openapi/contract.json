@@ -3,7 +3,7 @@
   "info": {
     "title": "현장뛰자 API — 계약",
     "version": "0.0.1",
-    "description": "**계약 스펙** — 아직 구현되지 않은 엔드포인트도 보인다. 지금 코드에 있는 것만 보려면 위 드롭다운에서 '구현'을 고른다.\n\n`scripts/build_openapi.py`가 `docs/api`(README 목록 표·예시 JSON)로 만든다. 손으로 고치지 않는다. 원본은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md).\n\n인증이 필요한 API는 오른쪽 **Authorize**에 `POST /api/auth/guest` 응답의 accessToken을 넣는다.\n\n## 공통 규칙 (README에서 옮김)\n\n- 기본 경로 `/api`, JSON, 필드는 camelCase, 날짜는 ISO 8601(`2026-07-18`, `2026-09-30T14:00:00+09:00`).\n- **인증**: `Authorization: Bearer <accessToken>`. 쿠키는 쓰지 않는다 — 프론트(Cloudflare Pages, `pages.dev`)와 Render(`onrender.com`)는 사이트가 달라 서드파티 쿠키 차단에 걸린다.\n  - 토큰은 JWT(HS256, 서명 키는 환경변수 `JWT_SECRET`). 만료는 가입 계정 7일, 체험 계정 24시간(계정도 그때 지운다).\n  - 로그아웃은 프론트가 토큰을 버리는 것으로 끝난다(서버 호출 없음).\n- **권한**: `공개` / `로그인`(역할 무관) / `STUDENT` / `CENTER`. 아래 목록의 '권한' 열.\n- **오류**: HTTP 상태 코드 + `{\"code\": \"...\", \"message\": \"사람이 읽는 설명\"}`. 입력 검증 실패(`INVALID_INPUT`)만 `fields`를 더 준다. 코드 표는 맨 아래.\n- **개인정보**\n  - 프로필(학과·학년·평점 등)은 요청 **본문**으로만 보낸다. URL·쿼리에 넣지 않는다 — 그래서 판정·추천·지망 점검·통근 조회가 GET이 아니라 POST다.\n  - 판정(#14)·탐색 카드(#28)·탐색(#29)은 본문 `profile`을 빼도 된다 — 빼면 저장한 프로필(#8)로 보고, 둘 다 없으면 404 `PROFILE_NOT_FOUND`. 저장하지 않고 써 보는 길(본문 `profile`)은 그대로다. 화면은 저장한 뒤에는 `profile`을 보내지 않는다(탐색 결과를 다시 열어도 같은 프로필로 판정되게).\n  - 서버에 저장하는 건 `PUT /api/me/profile`에 `consent: true`로 보냈을 때뿐이다. 탈퇴하면 즉시 지운다.\n  - 사는 곳은 시·군·구까지만 받는다(`homeAreaCode`). 정확한 주소는 받지 않는다.\n  - 요청·응답 본문을 로그에 남기지 않는다.\n  - 지원서(#37~#41)의 이름·생년월일·성별·연락처·주소·학번은 개인정보 수집·이용 동의(`consents.collect: true`) 뒤에만 저장한다. 사진·계좌는 받지 않는다. 센터는 자기 범위(체험 묶음 또는 실제)의 낸 지원서만 보고, 학과(부)장 승인 화면에는 이름·학번·학과·학년·지망만 보인다. 탈퇴하면 함께 지운다([ADR-0033](../decisions/0033-internship-flow.md)).\n  - 직무 탐색(#29)의 경험 글과 커리어 리포트(#34)의 실습 내용은 `consent: true`일 때만 받아 결과와 함께 저장한다(계정당 마지막 1건, 지우기·탈퇴 때 바로 삭제). AI에는 학과·학년·평점을 보내지 않는다([ADR-0031](../decisions/0031-explore-ai.md)·[0032](../decisions/0032-ncs-career.md)).\n- **모집 신호 = 관심**: 관심은 **내 지망에 담은 사람 수**다(순위와 상관없이 [담기]한 사람, 1인 1표). 모집기간 리플레이 가상 값에 실제 사용자가 담은 수를 더해 보여 준다(ADR-0019). 신호를 주는 응답에는 `isVirtual`과 `signalSource`를 반드시 넣는다.\n- **호출 제한**(초기값, 설정으로 조정): 체험 계정 만들기 IP당 1시간 300회(환경변수 `GUEST_PER_IP_PER_HOUR`, 0이면 끔 — 시연장·학교 와이파이는 여럿이 한 IP) → 넘으면 429 + `Retry-After`(초). 이유 문장(LLM) 계정당 1시간 30회·IP당 60회 → 넘으면 **200 + 기본 문장**(화면이 깨지지 않게). 직무 탐색 AI(탐색 1번·'왜 맞나요' 1곳이 각 1회) 계정당 1시간 10회·IP당 60회·서버 전체 하루 300회 → 넘으면 **200 + 규칙 추천**(`source: RULE`, `fallbackReason: LIMITED`). 커리어 리포트(#34)도 같은 한도를 1회씩 쓰고, 넘으면 200 + AI 정리 없이(`source: NONE`). 통근 조회 계정당 1시간 30회·서버 전체 하루 900회(카카오 무료 하루 1,000건 안에서 멈춤) → 넘으면 **200 + `available: false`**.\n- **실행 중 외부 호출**은 Claude(이유 문장·직무 탐색·커리어 리포트)·카카오(통근 조회 — 주소 검색과 대중교통) 둘뿐이다(ADR-0002, ADR-0007, ADR-0031). 임베딩은 쓰지 않는다(E5 결과, ADR-0018). 둘 다 실패해도 200으로 화면을 유지한다.\n- **코드값**은 영문 대문자이고 DB CHECK와 같은 집합이다(`V1__init.sql`). 화면 표기는 `GET /api/codes`에서 가져간다.\n- **예시 값**: 기관·직무·인용문은 전부 가상이다(`(가상)` 표시). 실제 값은 시드에서 나온다. 목록 응답의 예시는 일부 행만 보여 준다.\n- **기준일** 두 가지(`ReferenceDates`, ADR-0035)\n  - **모집 판정 기준일**: 판정(#14)·추천(#15)·탐색(#28~#32)·지망 점검(#23) 목록의 '마감'과 후보를 이 날로 본다. 리플레이 중에는 `rounds/current`의 `replay.defaultAsOf`(7/23, 회차 모집기간 안으로 맞춤), 운영 때는 오늘로 바꿀 자리가 이 하나다.\n  - **진행 기준일**: 지원서(#37~#41)·내 현장실습(#44)은 `asOf`(#44만) → 체험 학생의 `demoToday` → 오늘(한국 시간) 순으로 정한다. 센터 지원서 화면(#47)은 오늘이다.\n  - **마감**은 한 규칙이다: `closesOn` ≤ 기준일이거나, 기준일이 회차 모집 종료일 뒤면 마감이다(낸 지원서의 지망은 낸 날로 본다).\n- CORS: `CorsConfig`가 `GET`·`POST`·`PUT`·`DELETE`·`OPTIONS`와 모든 헤더(`Authorization` 포함)를 허용한다(Backend#16). 응답 헤더 `Retry-After`(429)·`Content-Disposition`(CSV 파일 이름)은 프론트 JS가 읽을 수 있게 노출한다. 통근 조회에는 환경변수 `KAKAO_REST_API_KEY`(카카오 디벨로퍼스 REST API 키)가 필요하다."
+    "description": "**계약 스펙** — 아직 구현되지 않은 엔드포인트도 보인다. 지금 코드에 있는 것만 보려면 위 드롭다운에서 '구현'을 고른다.\n\n`scripts/build_openapi.py`가 `docs/api`(README 목록 표·예시 JSON)로 만든다. 손으로 고치지 않는다. 원본은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md).\n\n인증이 필요한 API는 오른쪽 **Authorize**에 `POST /api/auth/guest` 응답의 accessToken을 넣는다.\n\n## 공통 규칙 (README에서 옮김)\n\n- 기본 경로 `/api`, JSON, 필드는 camelCase, 날짜는 ISO 8601(`2026-07-18`, `2026-09-30T14:00:00+09:00`).\n- **인증**: `Authorization: Bearer <accessToken>`. 쿠키는 쓰지 않는다 — 프론트(Cloudflare Pages, `pages.dev`)와 Render(`onrender.com`)는 사이트가 달라 서드파티 쿠키 차단에 걸린다.\n  - 토큰은 JWT(HS256, 서명 키는 환경변수 `JWT_SECRET`). 만료는 가입 계정 7일, 체험 계정 24시간(계정도 그때 지운다).\n  - 로그아웃은 프론트가 토큰을 버리는 것으로 끝난다(서버 호출 없음).\n- **권한**: `공개` / `로그인`(역할 무관) / `STUDENT` / `CENTER`. 아래 목록의 '권한' 열.\n- **오류**: HTTP 상태 코드 + `{\"code\": \"...\", \"message\": \"사람이 읽는 설명\"}`. 입력 검증 실패(`INVALID_INPUT`)만 `fields`를 더 준다. 코드 표는 맨 아래.\n- **개인정보**\n  - 프로필(학과·학년·평점 등)은 요청 **본문**으로만 보낸다. URL·쿼리에 넣지 않는다 — 그래서 판정·추천·지망 점검·통근 조회가 GET이 아니라 POST다.\n  - 판정(#14)·탐색 카드(#28)·탐색(#29)은 본문 `profile`을 빼도 된다 — 빼면 저장한 프로필(#8)로 보고, 둘 다 없으면 404 `PROFILE_NOT_FOUND`. 저장하지 않고 써 보는 길(본문 `profile`)은 그대로다. 화면은 저장한 뒤에는 `profile`을 보내지 않는다(탐색 결과를 다시 열어도 같은 프로필로 판정되게).\n  - 서버에 저장하는 건 `PUT /api/me/profile`에 `consent: true`로 보냈을 때뿐이다. 탈퇴하면 즉시 지운다.\n  - 사는 곳은 시·군·구까지만 받는다(`homeAreaCode`). 정확한 주소는 받지 않는다.\n  - 요청·응답 본문을 로그에 남기지 않는다.\n  - 지원서(#37~#41)의 이름·생년월일·성별·연락처·주소·학번은 개인정보 수집·이용 동의(`consents.collect: true`) 뒤에만 저장한다. 사진·계좌는 받지 않는다. 센터는 자기 범위(체험 묶음 또는 실제)의 낸 지원서만 보고, 학과(부)장 승인 화면에는 이름·학번·학과·학년·지망만 보인다. 탈퇴하면 함께 지운다([ADR-0033](../decisions/0033-internship-flow.md)).\n  - 직무 탐색(#29)의 경험 글과 커리어 리포트(#34)의 실습 내용은 `consent: true`일 때만 받아 결과와 함께 저장한다(계정당 마지막 1건, 지우기·탈퇴 때 바로 삭제). AI에는 학과·학년·평점을 보내지 않는다([ADR-0031](../decisions/0031-explore-ai.md)·[0032](../decisions/0032-ncs-career.md)).\n- **관심(담은 수)은 보여 주지 않는다**: 담기는 지원이 아니라서다. 모집 신호(리플레이 가상 관심·빈 자리 제안)는 걷어냈다([ADR-0036](../decisions/0036-remove-signals-and-reason-llm.md)). 담기·순위(#19~#22)는 지원서 1~3지망(#37)에 쓴다.\n- **호출 제한**(초기값, 설정으로 조정): 체험 계정 만들기 IP당 1시간 300회(환경변수 `GUEST_PER_IP_PER_HOUR`, 0이면 끔 — 시연장·학교 와이파이는 여럿이 한 IP) → 넘으면 429 + `Retry-After`(초). 직무 탐색 AI(탐색 1번·'왜 맞나요' 1곳이 각 1회) 계정당 1시간 10회·IP당 60회·서버 전체 하루 300회 → 넘으면 **200 + 규칙 추천**(`source: RULE`, `fallbackReason: LIMITED`). 커리어 리포트(#34)도 같은 한도를 1회씩 쓰고, 넘으면 200 + AI 정리 없이(`source: NONE`). 통근 조회 계정당 1시간 30회·서버 전체 하루 900회(카카오 무료 하루 1,000건 안에서 멈춤) → 넘으면 **200 + `available: false`**.\n- **실행 중 외부 호출**은 Claude(직무 탐색·커리어 리포트)·카카오(통근 조회 — 주소 검색과 대중교통) 둘뿐이다(ADR-0002, ADR-0007, ADR-0031). 임베딩은 쓰지 않는다(E5 결과, ADR-0018). 둘 다 실패해도 200으로 화면을 유지한다.\n- **코드값**은 영문 대문자이고 DB CHECK와 같은 집합이다(`V1__init.sql`). 화면 표기는 `GET /api/codes`에서 가져간다.\n- **예시 값**: 기관·직무·인용문은 전부 가상이다(`(가상)` 표시). 실제 값은 시드에서 나온다. 목록 응답의 예시는 일부 행만 보여 준다.\n- **기준일** 두 가지(`ReferenceDates`, ADR-0035)\n  - **모집 판정 기준일**: 판정(#14)·탐색(#28~#32)·현황판(#24)의 '마감'과 후보를 이 날로 본다. 리플레이 중에는 `rounds/current`의 `replay.defaultAsOf`(7/23, 회차 모집기간 안으로 맞춤), 운영 때는 오늘로 바꿀 자리가 이 하나다.\n  - **진행 기준일**: 지원서(#37~#41)·내 현장실습(#44)은 `asOf`(#44만) → 체험 학생의 `demoToday` → 오늘(한국 시간) 순으로 정한다. 센터 지원서 화면(#47)은 오늘이다.\n  - **마감**은 한 규칙이다: `closesOn` ≤ 기준일이거나, 기준일이 회차 모집 종료일 뒤면 마감이다(낸 지원서의 지망은 낸 날로 본다).\n- CORS: `CorsConfig`가 `GET`·`POST`·`PUT`·`DELETE`·`OPTIONS`와 모든 헤더(`Authorization` 포함)를 허용한다(Backend#16). 응답 헤더 `Retry-After`(429)·`Content-Disposition`(CSV 파일 이름)은 프론트 JS가 읽을 수 있게 노출한다. 통근 조회에는 환경변수 `KAKAO_REST_API_KEY`(카카오 디벨로퍼스 REST API 키)가 필요하다."
   },
   "externalDocs": {
     "description": "docs/api/README.md",
@@ -23,7 +23,7 @@
       "name": "기준 정보"
     },
     {
-      "name": "판정·추천"
+      "name": "판정"
     },
     {
       "name": "직무"
@@ -130,18 +130,6 @@
                         "NOT_LISTED": "선호 전공 밖",
                         "OPEN": "전공 무관"
                       },
-                      "fit": {
-                        "HIGH": "높음",
-                        "MEDIUM": "보통"
-                      },
-                      "signalStatus": {
-                        "OPEN": "모집 중",
-                        "CLOSED": "마감"
-                      },
-                      "signalSource": {
-                        "REPLAY": "모집기간 리플레이(가상) + 실제 담은 수",
-                        "LIVE": "실제 신호"
-                      },
                       "closeReason": {
                         "APPLICATION_DEADLINE": "기관 접수마감",
                         "CENTER_CLOSED": "센터 모집마감"
@@ -229,11 +217,6 @@
                         "TESTIMONIAL": "선배 수기",
                         "INSTITUTION_LIST": "참여기관 리스트",
                         "SCHOOL_NOTICE": "학생 모집안내"
-                      },
-                      "reasonSource": {
-                        "LLM": "AI 생성",
-                        "CACHE": "AI 생성(저장본)",
-                        "TEMPLATE": "기본 문장"
                       },
                       "role": {
                         "STUDENT": "학생",
@@ -1267,7 +1250,7 @@
           "기준 정보"
         ],
         "operationId": "getCurrentRound",
-        "summary": "현재 모집 회차와 리플레이 날짜 범위 · 일정 11단계",
+        "summary": "현재 모집 회차와 시연 기준일 · 일정 11단계",
         "x-auth": "공개",
         "description": "권한: **공개** · 화면: S5·C4 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "responses": {
@@ -1289,10 +1272,7 @@
                       "recruitStart": "2026-07-13",
                       "recruitEnd": "2026-07-24",
                       "replay": {
-                        "defaultAsOf": "2026-07-23",
-                        "minDate": "2026-07-13",
-                        "maxDate": "2026-07-24",
-                        "signalsAreVirtual": true
+                        "defaultAsOf": "2026-07-23"
                       },
                       "stages": [
                         {
@@ -1396,7 +1376,7 @@
     "/api/eligibility": {
       "post": {
         "tags": [
-          "판정·추천"
+          "판정"
         ],
         "operationId": "checkEligibility",
         "summary": "회차 직무 전부의 3층 판정",
@@ -1867,404 +1847,6 @@
         }
       }
     },
-    "/api/recommendations": {
-      "post": {
-        "tags": [
-          "판정·추천"
-        ],
-        "operationId": "getRecommendations",
-        "summary": "적합도 추천 상위 5개",
-        "x-auth": "STUDENT",
-        "description": "권한: **STUDENT** · 화면: S3 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProfileBody"
-              },
-              "examples": {
-                "profile-body.request.json": {
-                  "summary": "docs/api/profile-body.request.json",
-                  "value": {
-                    "profile": {
-                      "departmentId": 31,
-                      "grade": 3,
-                      "completedSemesters": 5,
-                      "gpa": 3.4,
-                      "graduationExpected": false,
-                      "interestText": "뷰티 브랜드 SNS 마케팅",
-                      "homeAreaCode": "11350",
-                      "certificates": []
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "성공",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Recommendations"
-                },
-                "examples": {
-                  "recommendations.json": {
-                    "summary": "docs/api/recommendations.json",
-                    "value": {
-                      "round": {
-                        "id": 1,
-                        "termCode": "2026-2"
-                      },
-                      "items": [
-                        {
-                          "rank": 1,
-                          "jobId": 101,
-                          "title": "국내 마케팅",
-                          "institution": {
-                            "id": 3,
-                            "name": "누리뷰티(가상)",
-                            "logoPath": "/logos/3.png"
-                          },
-                          "verdict": "ELIGIBLE",
-                          "fit": "HIGH",
-                          "jobType": "EXPERIENCE",
-                          "stipend": {
-                            "basis": "MONTHLY",
-                            "amount": 2156880,
-                            "minWageRatio": 100.0
-                          },
-                          "reasonTemplate": "3학년·학점 3.4라 지원 조건(3·4학년, 학점 3.0 이상)을 모두 갖췄어요. 메이크업디자인학과는 회사가 선호하는 전공 범위('(가상)미용예술대학')에 들어가요. 관심 분야가 직무 개요 '(가상) 온라인 채널 마케팅 운영 보조'와 겹쳐요. 같은 팀의 해외 마케팅과 달리 '(가상) 영어 가능자' 요건은 없어요.",
-                          "reasonStatus": "PENDING",
-                          "citations": [
-                            {
-                              "sourceType": "TESTIMONIAL",
-                              "documentTitle": "2025-1 우수 참여수기",
-                              "page": 7,
-                              "quote": "(가상) 브랜드 SNS 콘텐츠를 기획하고 반응을 주마다 정리"
-                            },
-                            {
-                              "sourceType": "OPERATION_PLAN",
-                              "documentTitle": "누리뷰티(가상) 운영계획서",
-                              "page": 3,
-                              "quote": "(가상) 온라인 채널 마케팅 운영 보조"
-                            }
-                          ]
-                        },
-                        {
-                          "rank": 2,
-                          "jobId": 102,
-                          "title": "해외 마케팅",
-                          "institution": {
-                            "id": 3,
-                            "name": "누리뷰티(가상)",
-                            "logoPath": "/logos/3.png"
-                          },
-                          "verdict": "ELIGIBLE",
-                          "fit": "HIGH",
-                          "jobType": "EXPERIENCE",
-                          "stipend": {
-                            "basis": "MONTHLY",
-                            "amount": 2156880,
-                            "minWageRatio": 100.0
-                          },
-                          "reasonTemplate": "3학년·학점 3.4라 지원 조건(3·4학년, 학점 3.0 이상)을 모두 갖췄어요. 메이크업디자인학과는 회사가 선호하는 전공 범위('(가상)미용예술대학')에 들어가요. 관심 분야가 직무 개요 '(가상) 온라인 채널 마케팅 운영 보조'와 겹쳐요. 같은 팀의 국내 마케팅과 달리 '(가상) 영어 가능자' 요건이 있어요.",
-                          "reasonStatus": "PENDING",
-                          "citations": [
-                            {
-                              "sourceType": "TESTIMONIAL",
-                              "documentTitle": "2025-1 우수 참여수기",
-                              "page": 7,
-                              "quote": "(가상) 브랜드 SNS 콘텐츠를 기획하고 반응을 주마다 정리"
-                            },
-                            {
-                              "sourceType": "OPERATION_PLAN",
-                              "documentTitle": "누리뷰티(가상) 운영계획서",
-                              "page": 3,
-                              "quote": "(가상) 온라인 채널 마케팅 운영 보조"
-                            }
-                          ]
-                        },
-                        {
-                          "rank": 3,
-                          "jobId": 104,
-                          "title": "MD 보조",
-                          "institution": {
-                            "id": 7,
-                            "name": "다온커머스(가상)",
-                            "logoPath": "/logos/7.png"
-                          },
-                          "verdict": "NEEDS_CHECK",
-                          "fit": "MEDIUM",
-                          "jobType": "HIRING",
-                          "stipend": {
-                            "basis": "MONTHLY",
-                            "amount": 1620000,
-                            "minWageRatio": 75.1
-                          },
-                          "reasonTemplate": "포트폴리오만 준비해서 내면 지원할 수 있어요. 3학년이라 나머지 조건(3·4학년)은 갖췄어요. 메이크업디자인학과는 회사가 선호하는 전공((가상)광고홍보콘텐츠학과)과는 거리가 있는 전공이에요. 지난 매칭(2025-2~2026-2)에서 이렇게 먼 전공으로 매칭된 학생은 73명 중 7명이었어요. 관심 분야와는 조금 겹쳐요. 채용연계형 자리예요(실습 뒤 채용으로 이어질 수 있는 유형).",
-                          "reasonStatus": "PENDING",
-                          "citations": []
-                        }
-                      ],
-                      "blockedBy": []
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "INVALID_INPUT",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "INVALID_INPUT": {
-                    "value": {
-                      "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
-                      "fields": [
-                        {
-                          "field": "profile.gpa",
-                          "reason": "0.0~4.5, 소수 첫째 자리까지"
-                        }
-                      ]
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "AUTH_REQUIRED · TOKEN_EXPIRED",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "AUTH_REQUIRED": {
-                    "value": {
-                      "code": "AUTH_REQUIRED",
-                      "message": "토큰 없음·잘못된 토큰"
-                    }
-                  },
-                  "TOKEN_EXPIRED": {
-                    "value": {
-                      "code": "TOKEN_EXPIRED",
-                      "message": "토큰 만료(체험 계정은 계정도 지워짐)"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "FORBIDDEN_ROLE",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "FORBIDDEN_ROLE": {
-                    "value": {
-                      "code": "FORBIDDEN_ROLE",
-                      "message": "역할이 맞지 않음(학생이 현황판 등)"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/recommendations/{jobId}/reason": {
-      "post": {
-        "tags": [
-          "판정·추천"
-        ],
-        "operationId": "getRecommendationReason",
-        "summary": "추천 이유 문장(LLM, 실패 시 기본 문장)",
-        "x-auth": "STUDENT",
-        "description": "권한: **STUDENT** · 화면: S3 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
-        "parameters": [
-          {
-            "name": "jobId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "minimum": 1
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProfileBody"
-              },
-              "examples": {
-                "profile-body.request.json": {
-                  "summary": "docs/api/profile-body.request.json",
-                  "value": {
-                    "profile": {
-                      "departmentId": 31,
-                      "grade": 3,
-                      "completedSemesters": 5,
-                      "gpa": 3.4,
-                      "graduationExpected": false,
-                      "interestText": "뷰티 브랜드 SNS 마케팅",
-                      "homeAreaCode": "11350",
-                      "certificates": []
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "성공",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RecommendationReason"
-                },
-                "examples": {
-                  "recommendation-reason.json": {
-                    "summary": "docs/api/recommendation-reason.json",
-                    "value": {
-                      "jobId": 101,
-                      "source": "LLM",
-                      "text": "3학년·학점 3.4라 지원 조건(3·4학년, 학점 3.0 이상)을 모두 갖췄어요. 메이크업디자인학과는 회사가 선호하는 전공 범위('(가상)미용예술대학')에 들어가요. 뷰티 브랜드 SNS 마케팅에 관심이 있다면, 선배가 맡았던 '(가상) 브랜드 SNS 콘텐츠를 기획하고 반응을 주마다 정리'와 이어지는 '(가상) 온라인 채널 마케팅 운영 보조'를 맡아요. 같은 팀의 해외 마케팅과 달리 '(가상) 영어 가능자' 요건은 없어요.",
-                      "citations": [
-                        {
-                          "sourceType": "TESTIMONIAL",
-                          "documentTitle": "2025-1 우수 참여수기",
-                          "page": 7,
-                          "quote": "(가상) 브랜드 SNS 콘텐츠를 기획하고 반응을 주마다 정리"
-                        },
-                        {
-                          "sourceType": "OPERATION_PLAN",
-                          "documentTitle": "누리뷰티(가상) 운영계획서",
-                          "page": 3,
-                          "quote": "(가상) 온라인 채널 마케팅 운영 보조"
-                        }
-                      ]
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "INVALID_INPUT",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "INVALID_INPUT": {
-                    "value": {
-                      "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
-                      "fields": [
-                        {
-                          "field": "profile.gpa",
-                          "reason": "0.0~4.5, 소수 첫째 자리까지"
-                        }
-                      ]
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "AUTH_REQUIRED · TOKEN_EXPIRED",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "AUTH_REQUIRED": {
-                    "value": {
-                      "code": "AUTH_REQUIRED",
-                      "message": "토큰 없음·잘못된 토큰"
-                    }
-                  },
-                  "TOKEN_EXPIRED": {
-                    "value": {
-                      "code": "TOKEN_EXPIRED",
-                      "message": "토큰 만료(체험 계정은 계정도 지워짐)"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "FORBIDDEN_ROLE",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "FORBIDDEN_ROLE": {
-                    "value": {
-                      "code": "FORBIDDEN_ROLE",
-                      "message": "역할이 맞지 않음(학생이 현황판 등)"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "JOB_NOT_FOUND",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "JOB_NOT_FOUND": {
-                    "value": {
-                      "code": "JOB_NOT_FOUND",
-                      "message": "없는 직무"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/jobs/{jobId}": {
       "get": {
         "tags": [
@@ -2489,8 +2071,6 @@
                           "teamText": "마케팅팀",
                           "documentTitle": "2025-1 우수 참여수기",
                           "page": 7,
-                          "major": "(가상) 광고홍보콘텐츠학과",
-                          "grade": "4학년",
                           "oneLine": "(가상) 실무를 처음 배운 15주",
                           "companyIntro": "(가상) 화장품 브랜드를 운영하는 회사입니다. 마케팅팀은 SNS 콘텐츠와 브랜드 캠페인을 맡습니다.",
                           "activities": [
@@ -3224,234 +2804,15 @@
         }
       }
     },
-    "/api/me/plan/check": {
-      "post": {
-        "tags": [
-          "지망"
-        ],
-        "operationId": "checkPlan",
-        "summary": "지망별 모집 신호 + 빈 자리 제안",
-        "x-auth": "STUDENT",
-        "description": "권한: **STUDENT** · 화면: S5 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PlanCheckRequest"
-              },
-              "examples": {
-                "me-plan-check.request.json": {
-                  "summary": "docs/api/me-plan-check.request.json",
-                  "value": {
-                    "profile": {
-                      "departmentId": 31,
-                      "grade": 3,
-                      "completedSemesters": 5,
-                      "gpa": 3.4,
-                      "graduationExpected": false,
-                      "interestText": "뷰티 브랜드 SNS 마케팅",
-                      "homeAreaCode": "11350"
-                    },
-                    "asOf": "2026-07-18"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "성공",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PlanCheck"
-                },
-                "examples": {
-                  "me-plan-check.json": {
-                    "summary": "docs/api/me-plan-check.json",
-                    "value": {
-                      "asOf": "2026-07-23",
-                      "isVirtual": true,
-                      "signalSource": "REPLAY",
-                      "items": [
-                        {
-                          "rank": 1,
-                          "jobId": 101,
-                          "title": "국내 마케팅",
-                          "institution": {
-                            "id": 3,
-                            "name": "누리뷰티(가상)",
-                            "logoPath": "/logos/3.png"
-                          },
-                          "signal": {
-                            "interest": 3,
-                            "liveInterest": 1,
-                            "headcount": 2,
-                            "ratio": 1.5,
-                            "status": "OPEN",
-                            "closesOn": null,
-                            "closeReason": null,
-                            "closesOnIsVirtual": false,
-                            "expectedFullOn": null
-                          }
-                        },
-                        {
-                          "rank": 2,
-                          "jobId": 104,
-                          "title": "MD 보조",
-                          "institution": {
-                            "id": 7,
-                            "name": "다온커머스(가상)",
-                            "logoPath": "/logos/7.png"
-                          },
-                          "signal": {
-                            "interest": 1,
-                            "liveInterest": 0,
-                            "headcount": 2,
-                            "ratio": 0.5,
-                            "status": "OPEN",
-                            "closesOn": "2026-07-24",
-                            "closeReason": "CENTER_CLOSED",
-                            "closesOnIsVirtual": true,
-                            "expectedFullOn": null
-                          }
-                        }
-                      ],
-                      "alternatives": [
-                        {
-                          "jobId": 102,
-                          "title": "해외 마케팅",
-                          "institution": {
-                            "id": 3,
-                            "name": "누리뷰티(가상)",
-                            "logoPath": "/logos/3.png"
-                          },
-                          "verdict": "ELIGIBLE",
-                          "fit": "HIGH",
-                          "remaining": 2,
-                          "signal": {
-                            "interest": 0,
-                            "liveInterest": 0,
-                            "headcount": 2,
-                            "ratio": 0.0,
-                            "status": "OPEN",
-                            "closesOn": null,
-                            "closeReason": null,
-                            "closesOnIsVirtual": false,
-                            "expectedFullOn": null
-                          },
-                          "why": "1지망과 같은 기관의 직무이고, 지금 담은 사람이 0명이에요."
-                        }
-                      ]
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "INVALID_INPUT · AS_OF_OUT_OF_RANGE",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "INVALID_INPUT": {
-                    "value": {
-                      "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
-                      "fields": [
-                        {
-                          "field": "profile.gpa",
-                          "reason": "0.0~4.5, 소수 첫째 자리까지"
-                        }
-                      ]
-                    }
-                  },
-                  "AS_OF_OUT_OF_RANGE": {
-                    "value": {
-                      "code": "AS_OF_OUT_OF_RANGE",
-                      "message": "asOf가 회차 모집기간 밖"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "AUTH_REQUIRED · TOKEN_EXPIRED",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "AUTH_REQUIRED": {
-                    "value": {
-                      "code": "AUTH_REQUIRED",
-                      "message": "토큰 없음·잘못된 토큰"
-                    }
-                  },
-                  "TOKEN_EXPIRED": {
-                    "value": {
-                      "code": "TOKEN_EXPIRED",
-                      "message": "토큰 만료(체험 계정은 계정도 지워짐)"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "FORBIDDEN_ROLE",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "FORBIDDEN_ROLE": {
-                    "value": {
-                      "code": "FORBIDDEN_ROLE",
-                      "message": "역할이 맞지 않음(학생이 현황판 등)"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/center/board": {
       "get": {
         "tags": [
           "센터"
         ],
         "operationId": "getCenterBoard",
-        "summary": "모집 현황판 · 처리할 것 · 학생이 찾는 직무",
+        "summary": "현황판(직무별 정원·조건 위험·문서 검토) · 처리할 것 · 학생이 찾는 직무",
         "x-auth": "CENTER",
         "description": "권한: **CENTER** · 화면: C4 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
-        "parameters": [
-          {
-            "name": "asOf",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "format": "date"
-            },
-            "description": "회차 모집기간 안의 날짜. 생략하면 rounds/current의 replay.defaultAsOf"
-          }
-        ],
         "security": [
           {
             "bearerAuth": []
@@ -3470,8 +2831,6 @@
                     "summary": "docs/api/center-board.json",
                     "value": {
                       "asOf": "2026-07-23",
-                      "isVirtual": true,
-                      "signalSource": "REPLAY",
                       "round": {
                         "id": 1,
                         "termCode": "2026-2"
@@ -3479,12 +2838,8 @@
                       "summary": {
                         "jobs": 40,
                         "seats": 59,
-                        "interestTotal": 27,
-                        "liveInterestTotal": 1,
-                        "zeroSignalJobs": 14,
                         "closedJobs": 1
                       },
-                      "historyAvailable": false,
                       "rows": [
                         {
                           "jobId": 101,
@@ -3495,21 +2850,15 @@
                           },
                           "title": "국내 마케팅",
                           "headcount": 2,
-                          "signal": {
-                            "interest": 3,
-                            "liveInterest": 1,
-                            "headcount": 2,
-                            "ratio": 1.5,
-                            "status": "OPEN",
+                          "closing": {
                             "closesOn": null,
                             "closeReason": null,
-                            "closesOnIsVirtual": false,
-                            "expectedFullOn": null
+                            "closesOnIsVirtual": false
                           },
+                          "closed": false,
                           "eligiblePool": 910,
                           "risks": [],
                           "alertCount": 0,
-                          "pastZeroRounds": [],
                           "views": 23
                         },
                         {
@@ -3521,21 +2870,15 @@
                           },
                           "title": "해외 마케팅",
                           "headcount": 2,
-                          "signal": {
-                            "interest": 0,
-                            "liveInterest": 0,
-                            "headcount": 2,
-                            "ratio": 0.0,
-                            "status": "OPEN",
+                          "closing": {
                             "closesOn": null,
                             "closeReason": null,
-                            "closesOnIsVirtual": false,
-                            "expectedFullOn": null
+                            "closesOnIsVirtual": false
                           },
+                          "closed": false,
                           "eligiblePool": 910,
                           "risks": [],
                           "alertCount": 0,
-                          "pastZeroRounds": [],
                           "views": 9
                         },
                         {
@@ -3547,17 +2890,12 @@
                           },
                           "title": "콘텐츠 디자인",
                           "headcount": 1,
-                          "signal": {
-                            "interest": 0,
-                            "liveInterest": 0,
-                            "headcount": 1,
-                            "ratio": 0.0,
-                            "status": "OPEN",
+                          "closing": {
                             "closesOn": null,
                             "closeReason": null,
-                            "closesOnIsVirtual": false,
-                            "expectedFullOn": null
+                            "closesOnIsVirtual": false
                           },
+                          "closed": false,
                           "eligiblePool": 120,
                           "risks": [
                             {
@@ -3572,7 +2910,6 @@
                             }
                           ],
                           "alertCount": 0,
-                          "pastZeroRounds": [],
                           "views": 3
                         },
                         {
@@ -3584,17 +2921,12 @@
                           },
                           "title": "웹 서비스 개발",
                           "headcount": 1,
-                          "signal": {
-                            "interest": 1,
-                            "liveInterest": 0,
-                            "headcount": 1,
-                            "ratio": 1.0,
-                            "status": "OPEN",
+                          "closing": {
                             "closesOn": null,
                             "closeReason": null,
-                            "closesOnIsVirtual": false,
-                            "expectedFullOn": null
+                            "closesOnIsVirtual": false
                           },
+                          "closed": false,
                           "eligiblePool": 750,
                           "risks": [
                             {
@@ -3604,7 +2936,6 @@
                             }
                           ],
                           "alertCount": 1,
-                          "pastZeroRounds": [],
                           "views": 4
                         }
                       ],
@@ -3671,24 +3002,6 @@
               }
             }
           },
-          "400": {
-            "description": "AS_OF_OUT_OF_RANGE",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "AS_OF_OUT_OF_RANGE": {
-                    "value": {
-                      "code": "AS_OF_OUT_OF_RANGE",
-                      "message": "asOf가 회차 모집기간 밖"
-                    }
-                  }
-                }
-              }
-            }
-          },
           "401": {
             "description": "AUTH_REQUIRED · TOKEN_EXPIRED",
             "content": {
@@ -3725,97 +3038,6 @@
                     "value": {
                       "code": "FORBIDDEN_ROLE",
                       "message": "역할이 맞지 않음(학생이 현황판 등)"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/jobs/{jobId}/views": {
-      "get": {
-        "tags": [
-          "직무"
-        ],
-        "operationId": "getJobViews",
-        "summary": "직무 조회수(학생 계정마다 직무별 하루 1번)",
-        "x-auth": "로그인",
-        "description": "권한: **로그인** · 화면: S4·C4 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
-        "parameters": [
-          {
-            "name": "jobId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "minimum": 1
-            }
-          }
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "성공",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobViews"
-                },
-                "examples": {
-                  "job-views.json": {
-                    "summary": "docs/api/job-views.json",
-                    "value": {
-                      "jobId": 101,
-                      "views": 37,
-                      "todayViews": 5
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "AUTH_REQUIRED · TOKEN_EXPIRED",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "AUTH_REQUIRED": {
-                    "value": {
-                      "code": "AUTH_REQUIRED",
-                      "message": "토큰 없음·잘못된 토큰"
-                    }
-                  },
-                  "TOKEN_EXPIRED": {
-                    "value": {
-                      "code": "TOKEN_EXPIRED",
-                      "message": "토큰 만료(체험 계정은 계정도 지워짐)"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "JOB_NOT_FOUND",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "JOB_NOT_FOUND": {
-                    "value": {
-                      "code": "JOB_NOT_FOUND",
-                      "message": "없는 직무"
                     }
                   }
                 }
@@ -3856,219 +3078,6 @@
                           "label": "회계·자금 관련 자격증"
                         }
                       ]
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/me/plan/items/{jobId}/alternatives": {
-      "post": {
-        "tags": [
-          "지망"
-        ],
-        "operationId": "getPlanItemAlternatives",
-        "summary": "담은 직무의 모집 신호 + 그 직무 기준 빈 자리 제안([담기] 바로 뒤, ADR-0029)",
-        "x-auth": "STUDENT",
-        "description": "권한: **STUDENT** · 화면: S3·S4 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
-        "parameters": [
-          {
-            "name": "jobId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "minimum": 1
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PlanCheckRequest"
-              },
-              "examples": {
-                "me-plan-check.request.json": {
-                  "summary": "docs/api/me-plan-check.request.json",
-                  "value": {
-                    "profile": {
-                      "departmentId": 31,
-                      "grade": 3,
-                      "completedSemesters": 5,
-                      "gpa": 3.4,
-                      "graduationExpected": false,
-                      "interestText": "뷰티 브랜드 SNS 마케팅",
-                      "homeAreaCode": "11350"
-                    },
-                    "asOf": "2026-07-18"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "성공",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PlanItemAlternatives"
-                },
-                "examples": {
-                  "me-plan-item-alternatives.json": {
-                    "summary": "docs/api/me-plan-item-alternatives.json",
-                    "value": {
-                      "asOf": "2026-07-23",
-                      "isVirtual": true,
-                      "signalSource": "REPLAY",
-                      "item": {
-                        "jobId": 101,
-                        "title": "국내 마케팅",
-                        "institution": {
-                          "id": 3,
-                          "name": "누리뷰티(가상)",
-                          "logoPath": "/logos/3.png"
-                        },
-                        "rank": null,
-                        "signal": {
-                          "interest": 3,
-                          "liveInterest": 1,
-                          "headcount": 2,
-                          "ratio": 1.5,
-                          "status": "OPEN",
-                          "closesOn": null,
-                          "closeReason": null,
-                          "closesOnIsVirtual": false,
-                          "expectedFullOn": null
-                        }
-                      },
-                      "alternatives": [
-                        {
-                          "jobId": 102,
-                          "title": "해외 마케팅",
-                          "institution": {
-                            "id": 3,
-                            "name": "누리뷰티(가상)",
-                            "logoPath": "/logos/3.png"
-                          },
-                          "verdict": "ELIGIBLE",
-                          "fit": "HIGH",
-                          "remaining": 2,
-                          "signal": {
-                            "interest": 0,
-                            "liveInterest": 0,
-                            "headcount": 2,
-                            "ratio": 0.0,
-                            "status": "OPEN",
-                            "closesOn": null,
-                            "closeReason": null,
-                            "closesOnIsVirtual": false,
-                            "expectedFullOn": null
-                          },
-                          "why": "방금 담은 직무와 같은 기관의 직무이고, 지금 담은 사람이 0명이에요."
-                        }
-                      ]
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "INVALID_INPUT · AS_OF_OUT_OF_RANGE",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "INVALID_INPUT": {
-                    "value": {
-                      "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
-                      "fields": [
-                        {
-                          "field": "profile.gpa",
-                          "reason": "0.0~4.5, 소수 첫째 자리까지"
-                        }
-                      ]
-                    }
-                  },
-                  "AS_OF_OUT_OF_RANGE": {
-                    "value": {
-                      "code": "AS_OF_OUT_OF_RANGE",
-                      "message": "asOf가 회차 모집기간 밖"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "AUTH_REQUIRED · TOKEN_EXPIRED",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "AUTH_REQUIRED": {
-                    "value": {
-                      "code": "AUTH_REQUIRED",
-                      "message": "토큰 없음·잘못된 토큰"
-                    }
-                  },
-                  "TOKEN_EXPIRED": {
-                    "value": {
-                      "code": "TOKEN_EXPIRED",
-                      "message": "토큰 만료(체험 계정은 계정도 지워짐)"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "FORBIDDEN_ROLE",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "FORBIDDEN_ROLE": {
-                    "value": {
-                      "code": "FORBIDDEN_ROLE",
-                      "message": "역할이 맞지 않음(학생이 현황판 등)"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "PLAN_ITEM_NOT_FOUND",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "PLAN_ITEM_NOT_FOUND": {
-                    "value": {
-                      "code": "PLAN_ITEM_NOT_FOUND",
-                      "message": "담지 않은 직무를 취소하거나 그 직무 기준 빈 자리를 물음"
                     }
                   }
                 }
@@ -5364,6 +4373,7 @@
                       },
                       "source": "AI",
                       "fallbackReason": null,
+                      "keptReason": null,
                       "input": {
                         "practiceText": "(가상) 1~4주차에는 회사 소개와 인스타그램 운영 방식을 배웠습니다. 5주차부터 경쟁사 신제품 30개의 가격과 구성을 표로 정리해 신제품 기획 회의에 냈고, 제안한 세트 구성 아이디어 1건이 다음 분기 기획안에 들어갔습니다. 매주 SNS 게시물 반응을 집계해 콘텐츠 기획 회의 자료를 만들었습니다."
                       },
@@ -5818,6 +4828,7 @@
                       },
                       "source": "AI",
                       "fallbackReason": null,
+                      "keptReason": null,
                       "input": {
                         "practiceText": "(가상) 1~4주차에는 회사 소개와 인스타그램 운영 방식을 배웠습니다. 5주차부터 경쟁사 신제품 30개의 가격과 구성을 표로 정리해 신제품 기획 회의에 냈고, 제안한 세트 구성 아이디어 1건이 다음 분기 기획안에 들어갔습니다. 매주 SNS 게시물 반응을 집계해 콘텐츠 기획 회의 자료를 만들었습니다."
                       },
@@ -6838,7 +5849,7 @@
                   "APPLICATION_LOCKED": {
                     "value": {
                       "code": "APPLICATION_LOCKED",
-                      "message": "낸 지원서를 고치려 함(보완 요청 때만 고침), 매칭 확정 뒤 지우려 함"
+                      "message": "낸 지원서를 고치려 함(보완 요청 때만 고침), 낸 지원서를 지우려 함"
                     }
                   }
                 }
@@ -6852,7 +5863,7 @@
           "지원서"
         ],
         "operationId": "deleteMyApplication",
-        "summary": "지원서 지우기(매칭 확정 전까지)",
+        "summary": "지원서 지우기(내기 전까지)",
         "x-auth": "STUDENT",
         "description": "권한: **STUDENT** · 화면: 지원서·M1 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "security": [
@@ -6917,7 +5928,7 @@
                   "APPLICATION_LOCKED": {
                     "value": {
                       "code": "APPLICATION_LOCKED",
-                      "message": "낸 지원서를 고치려 함(보완 요청 때만 고침), 매칭 확정 뒤 지우려 함"
+                      "message": "낸 지원서를 고치려 함(보완 요청 때만 고침), 낸 지원서를 지우려 함"
                     }
                   }
                 }
@@ -7197,7 +6208,7 @@
                   "APPLICATION_LOCKED": {
                     "value": {
                       "code": "APPLICATION_LOCKED",
-                      "message": "낸 지원서를 고치려 함(보완 요청 때만 고침), 매칭 확정 뒤 지우려 함"
+                      "message": "낸 지원서를 고치려 함(보완 요청 때만 고침), 낸 지원서를 지우려 함"
                     }
                   }
                 }
@@ -7489,7 +6500,7 @@
                   "APPLICATION_LOCKED": {
                     "value": {
                       "code": "APPLICATION_LOCKED",
-                      "message": "낸 지원서를 고치려 함(보완 요청 때만 고침), 매칭 확정 뒤 지우려 함"
+                      "message": "낸 지원서를 고치려 함(보완 요청 때만 고침), 낸 지원서를 지우려 함"
                     }
                   },
                   "APPLICATION_CLOSED": {
@@ -11854,49 +10865,6 @@
         ],
         "description": "`DOC_INCONSISTENCY` 문서 내부 불일치 · `RULE_CHECK` 규정 점검 · `LIST_MISMATCH` 리스트·계획서 불일치"
       },
-      "Alternative": {
-        "type": "object",
-        "properties": {
-          "jobId": {
-            "type": "integer",
-            "minimum": 1
-          },
-          "title": {
-            "type": "string"
-          },
-          "institution": {
-            "$ref": "#/components/schemas/InstitutionRef"
-          },
-          "verdict": {
-            "$ref": "#/components/schemas/Verdict"
-          },
-          "fit": {
-            "$ref": "#/components/schemas/Fit"
-          },
-          "remaining": {
-            "type": "integer",
-            "minimum": 1
-          },
-          "signal": {
-            "$ref": "#/components/schemas/Signal"
-          },
-          "why": {
-            "type": "string",
-            "description": "규칙 문장. 기준 직무와 같은 기관이면 지망 점검은 '1지망과 같은 기관의 직무이고', 담은 직무 기준(#27)은 '방금 담은 직무와 같은 기관의 직무이고', 관심 문장과 겹치면 '관심 분야와 가깝고', 둘 다 아니면 '지원 조건을 모두 통과했고' + 관심 0이면 '지금 담은 사람이 0명이에요.', 아니면 '남은 자리가 N개예요.'"
-          }
-        },
-        "required": [
-          "jobId",
-          "title",
-          "institution",
-          "verdict",
-          "fit",
-          "remaining",
-          "signal",
-          "why"
-        ],
-        "description": "요건이 맞는 빈 자리(ADR-0016). 지망 점검(#23)과 담은 직무 기준 빈 자리(#27)가 같은 모양을 쓴다"
-      },
       "Applicant": {
         "type": "object",
         "properties": {
@@ -12794,6 +11762,17 @@
             ],
             "description": "source가 AI면 null(NO_KEY·LIMITED·AI_ERROR·VERIFY_FAILED)"
           },
+          "keptReason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExploreFallback"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "만들기(#34)가 AI 답을 못 받아(NO_KEY·LIMITED·AI_ERROR) 저장한 같은 직무의 AI 리포트를 그대로 돌려줄 때 그 까닭. 이때 응답은 바꾸지 않은 저장본이다. 그 밖에는 null(ADR-0037)"
+          },
           "input": {
             "type": "object",
             "properties": {
@@ -12927,6 +11906,7 @@
           "institution",
           "source",
           "fallbackReason",
+          "keptReason",
           "input",
           "ncs",
           "covered",
@@ -13064,13 +12044,8 @@
         "properties": {
           "asOf": {
             "type": "string",
-            "format": "date"
-          },
-          "isVirtual": {
-            "type": "boolean"
-          },
-          "signalSource": {
-            "$ref": "#/components/schemas/SignalSource"
+            "format": "date",
+            "description": "마감을 본 날(모집 판정 기준일, ADR-0035)"
           },
           "round": {
             "$ref": "#/components/schemas/RoundRef"
@@ -13084,34 +12059,16 @@
               "seats": {
                 "type": "integer"
               },
-              "interestTotal": {
-                "type": "integer",
-                "description": "asOf까지 관심 합(가상 + 실제)"
-              },
-              "liveInterestTotal": {
-                "type": "integer",
-                "description": "interestTotal 중 실제 사용자가 담은 수"
-              },
-              "zeroSignalJobs": {
-                "type": "integer",
-                "description": "관심이 0인 직무 수"
-              },
               "closedJobs": {
-                "type": "integer"
+                "type": "integer",
+                "description": "asOf에 마감인 직무 수"
               }
             },
             "required": [
               "jobs",
               "seats",
-              "interestTotal",
-              "liveInterestTotal",
-              "zeroSignalJobs",
               "closedJobs"
             ]
-          },
-          "historyAvailable": {
-            "type": "boolean",
-            "description": "false면 pastZeroRounds 열을 숨긴다"
           },
           "rows": {
             "type": "array",
@@ -13132,8 +12089,41 @@
                   "type": "integer",
                   "minimum": 1
                 },
-                "signal": {
-                  "$ref": "#/components/schemas/Signal"
+                "closing": {
+                  "type": "object",
+                  "properties": {
+                    "closesOn": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date",
+                      "description": "이 날부터 지원 불가. 화면은 하루 전 날짜를 마감일로 보여 준다"
+                    },
+                    "closeReason": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/components/schemas/CloseReason"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "closesOnIsVirtual": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "closesOn",
+                    "closeReason",
+                    "closesOnIsVirtual"
+                  ],
+                  "description": "판정 목록·직무 상세의 closing과 같은 값"
+                },
+                "closed": {
+                  "type": "boolean",
+                  "description": "asOf에 마감인지(closesOn ≤ asOf이거나 모집 종료일 뒤)"
                 },
                 "eligiblePool": {
                   "type": "integer",
@@ -13169,15 +12159,10 @@
                   "type": "integer",
                   "minimum": 0
                 },
-                "pastZeroRounds": {
-                  "type": "array",
-                  "items": {},
-                  "description": "지난 회차 0명 이력. 원소 모양은 지난 회차 결과를 적재할 때 정한다(지금 예시는 빈 배열)"
-                },
                 "views": {
                   "type": "integer",
                   "minimum": 0,
-                  "description": "직무 상세 조회 수(#25와 같은 값)"
+                  "description": "직무 상세 조회 수(GET /api/jobs/{jobId}의 views와 같은 값)"
                 }
               },
               "required": [
@@ -13185,15 +12170,15 @@
                 "institution",
                 "title",
                 "headcount",
-                "signal",
+                "closing",
+                "closed",
                 "eligiblePool",
                 "risks",
                 "alertCount",
-                "pastZeroRounds",
                 "views"
               ]
             },
-            "description": "회차 직무 전부"
+            "description": "회차 직무 전부. 관심(담은 수)은 주지 않는다(ADR-0036)"
           },
           "alerts": {
             "type": "array",
@@ -13286,11 +12271,8 @@
         },
         "required": [
           "asOf",
-          "isVirtual",
-          "signalSource",
           "round",
           "summary",
-          "historyAvailable",
           "rows",
           "alerts",
           "todo",
@@ -13792,25 +12774,11 @@
               "defaultAsOf": {
                 "type": "string",
                 "format": "date",
-                "description": "asOf를 생략하면 이 날짜"
-              },
-              "minDate": {
-                "type": "string",
-                "format": "date"
-              },
-              "maxDate": {
-                "type": "string",
-                "format": "date"
-              },
-              "signalsAreVirtual": {
-                "type": "boolean"
+                "description": "시연 기준일 = 모집 판정 기준일(판정·탐색·현황판의 마감을 이 날로 본다, ADR-0035)"
               }
             },
             "required": [
-              "defaultAsOf",
-              "minDate",
-              "maxDate",
-              "signalsAreVirtual"
+              "defaultAsOf"
             ]
           },
           "stages": {
@@ -14049,7 +13017,7 @@
           "views": {
             "type": "integer",
             "minimum": 0,
-            "description": "지금까지 조회 수(GET /api/jobs/{jobId}/views의 views와 같은 값)"
+            "description": "지금까지 조회 수(GET /api/jobs/{jobId}의 views와 같은 값)"
           },
           "planned": {
             "type": "boolean",
@@ -14128,7 +13096,6 @@
           "INVALID_INPUT",
           "CONSENT_REQUIRED",
           "RANK_INVALID",
-          "AS_OF_OUT_OF_RANGE",
           "APPLICATION_INCOMPLETE",
           "AUTH_REQUIRED",
           "TOKEN_EXPIRED",
@@ -14151,12 +13118,11 @@
           "RATE_LIMITED",
           "INTERNAL"
         ],
-        "description": "`INVALID_INPUT` 400 · `CONSENT_REQUIRED` 400 · `RANK_INVALID` 400 · `AS_OF_OUT_OF_RANGE` 400 · `APPLICATION_INCOMPLETE` 400 · `AUTH_REQUIRED` 401 · `TOKEN_EXPIRED` 401 · `LOGIN_FAILED` 401 · `FORBIDDEN_ROLE` 403 · `DEMO_ONLY` 403 · `PROFILE_NOT_FOUND` 404 · `JOB_NOT_FOUND` 404 · `PLAN_ITEM_NOT_FOUND` 404 · `EXPLORE_NOT_FOUND` 404 · `CAREER_REPORT_NOT_FOUND` 404 · `APPLICATION_NOT_FOUND` 404 · `APPROVAL_NOT_FOUND` 404 · `EMAIL_TAKEN` 409 · `EXPLORE_NOT_CANDIDATE` 409 · `APPLICATION_LOCKED` 409 · `APPLICATION_CLOSED` 409 · `STATE_CONFLICT` 409 · `CAREER_REPORT_REQUIRED` 409 · `RATE_LIMITED` 429 · `INTERNAL` 500",
+        "description": "`INVALID_INPUT` 400 · `CONSENT_REQUIRED` 400 · `RANK_INVALID` 400 · `APPLICATION_INCOMPLETE` 400 · `AUTH_REQUIRED` 401 · `TOKEN_EXPIRED` 401 · `LOGIN_FAILED` 401 · `FORBIDDEN_ROLE` 403 · `DEMO_ONLY` 403 · `PROFILE_NOT_FOUND` 404 · `JOB_NOT_FOUND` 404 · `PLAN_ITEM_NOT_FOUND` 404 · `EXPLORE_NOT_FOUND` 404 · `CAREER_REPORT_NOT_FOUND` 404 · `APPLICATION_NOT_FOUND` 404 · `APPROVAL_NOT_FOUND` 404 · `EMAIL_TAKEN` 409 · `EXPLORE_NOT_CANDIDATE` 409 · `APPLICATION_LOCKED` 409 · `APPLICATION_CLOSED` 409 · `STATE_CONFLICT` 409 · `CAREER_REPORT_REQUIRED` 409 · `RATE_LIMITED` 429 · `INTERNAL` 500",
         "x-status": {
           "INVALID_INPUT": 400,
           "CONSENT_REQUIRED": 400,
           "RANK_INVALID": 400,
-          "AS_OF_OUT_OF_RANGE": 400,
           "APPLICATION_INCOMPLETE": 400,
           "AUTH_REQUIRED": 401,
           "TOKEN_EXPIRED": 401,
@@ -14675,14 +13641,6 @@
           "prepare"
         ],
         "description": "'왜 맞나요'. 구절은 서버가 원문과 대조해 통과한 것만 남긴다"
-      },
-      "Fit": {
-        "type": "string",
-        "enum": [
-          "HIGH",
-          "MEDIUM"
-        ],
-        "description": "`HIGH` 높음 · `MEDIUM` 보통"
       },
       "Gender": {
         "type": "string",
@@ -15749,7 +14707,7 @@
           "views": {
             "type": "integer",
             "minimum": 0,
-            "description": "지금까지 조회 수(이번 조회까지 센 뒤, GET /api/jobs/{jobId}/views와 같은 값)"
+            "description": "지금까지 조회 수(이번 조회까지 센 뒤). 학생 계정마다 직무별로 하루(한국 시간) 한 번 센다"
           },
           "todayViews": {
             "type": "integer",
@@ -15846,20 +14804,6 @@
                   "type": "integer",
                   "minimum": 1
                 },
-                "major": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
-                  "description": "수기에 적힌 학과(전공) 원문"
-                },
-                "grade": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
-                  "description": "수기에 적힌 학년 원문(예: 4학년)"
-                },
                 "oneLine": {
                   "type": [
                     "string",
@@ -15909,8 +14853,6 @@
                 "teamText",
                 "documentTitle",
                 "page",
-                "major",
-                "grade",
                 "oneLine",
                 "companyIntro",
                 "activities",
@@ -15919,7 +14861,7 @@
                 "reflection"
               ]
             },
-            "description": "같은 기관의 선배 수기 전문(ADR-0030). 이름·사진은 없다. 전부 '우수' 수기라 화면에 그 점을 밝힌다"
+            "description": "같은 기관의 선배 수기 전문(ADR-0030). 이름·사진·학과·학년은 없다(ADR-0037). 전부 '우수' 수기라 화면에 그 점을 밝힌다"
           },
           "photos": {
             "type": "array",
@@ -16005,31 +14947,6 @@
           "UNSPECIFIED"
         ],
         "description": "`EXPERIENCE` 직무체험형 · `HIRING` 채용연계형 · `UNSPECIFIED` 미기재"
-      },
-      "JobViews": {
-        "type": "object",
-        "properties": {
-          "jobId": {
-            "type": "integer",
-            "minimum": 1
-          },
-          "views": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "지금까지 조회 수. 학생 계정마다 직무별로 하루(한국 시간) 한 번 센다"
-          },
-          "todayViews": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "오늘(한국 시간) 조회 수"
-          }
-        },
-        "required": [
-          "jobId",
-          "views",
-          "todayViews"
-        ],
-        "description": "직무 조회수(ADR-0019). 실제 값만(가상 값 없음). 조회는 직무 상세(GET /api/jobs/{jobId})를 학생이 열 때만 센다"
       },
       "Listing": {
         "type": "string",
@@ -16569,85 +15486,6 @@
           "jobId"
         ]
       },
-      "PlanCheck": {
-        "type": "object",
-        "properties": {
-          "asOf": {
-            "type": "string",
-            "format": "date"
-          },
-          "isVirtual": {
-            "type": "boolean"
-          },
-          "signalSource": {
-            "$ref": "#/components/schemas/SignalSource"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "rank": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 3
-                },
-                "jobId": {
-                  "type": "integer",
-                  "minimum": 1
-                },
-                "title": {
-                  "type": "string"
-                },
-                "institution": {
-                  "$ref": "#/components/schemas/InstitutionRef"
-                },
-                "signal": {
-                  "$ref": "#/components/schemas/Signal"
-                }
-              },
-              "required": [
-                "rank",
-                "jobId",
-                "title",
-                "institution",
-                "signal"
-              ]
-            }
-          },
-          "alternatives": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Alternative"
-            },
-            "maxItems": 5,
-            "description": "verdict ELIGIBLE · CLOSED 아님 · 남은 자리(headcount − interest) > 0 · 이미 담은 직무 아님. 적합도 점수 → 남은 자리 순 최대 5개"
-          }
-        },
-        "required": [
-          "asOf",
-          "isVirtual",
-          "signalSource",
-          "items",
-          "alternatives"
-        ]
-      },
-      "PlanCheckRequest": {
-        "type": "object",
-        "properties": {
-          "profile": {
-            "$ref": "#/components/schemas/Profile"
-          },
-          "asOf": {
-            "type": "string",
-            "format": "date",
-            "description": "회차 모집기간 안. 생략하면 rounds/current의 replay.defaultAsOf"
-          }
-        },
-        "required": [
-          "profile"
-        ]
-      },
       "PlanItem": {
         "type": "object",
         "properties": {
@@ -16682,73 +15520,6 @@
           "rank",
           "addedAt"
         ]
-      },
-      "PlanItemAlternatives": {
-        "type": "object",
-        "properties": {
-          "asOf": {
-            "type": "string",
-            "format": "date"
-          },
-          "isVirtual": {
-            "type": "boolean"
-          },
-          "signalSource": {
-            "$ref": "#/components/schemas/SignalSource"
-          },
-          "item": {
-            "type": "object",
-            "properties": {
-              "jobId": {
-                "type": "integer",
-                "minimum": 1
-              },
-              "title": {
-                "type": "string"
-              },
-              "institution": {
-                "$ref": "#/components/schemas/InstitutionRef"
-              },
-              "rank": {
-                "type": [
-                  "integer",
-                  "null"
-                ],
-                "minimum": 1,
-                "maximum": 3,
-                "description": "1~3지망. 순위를 안 정했으면 null"
-              },
-              "signal": {
-                "$ref": "#/components/schemas/Signal",
-                "description": "관심은 본인을 뺀 다른 사람 수(지망 점검과 같다)"
-              }
-            },
-            "required": [
-              "jobId",
-              "title",
-              "institution",
-              "rank",
-              "signal"
-            ],
-            "description": "기준이 된 담은 직무"
-          },
-          "alternatives": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Alternative"
-            },
-            "maxItems": 5,
-            "description": "verdict ELIGIBLE · CLOSED 아님 · 남은 자리(headcount − interest) > 0 · 이미 담은 직무 아님. 적합도 점수 → 남은 자리 순 최대 5개. 기준 직무도 빠진다"
-          }
-        },
-        "required": [
-          "asOf",
-          "isVirtual",
-          "signalSource",
-          "item",
-          "alternatives"
-        ],
-        "description": "[담기] 바로 뒤에 부른다(ADR-0029). 제안을 띄울지는 화면이 item.signal.interest ≥ headcount로 정한다 — 몰림 상태는 없다(ADR-0015)"
       },
       "PlanRanksRequest": {
         "type": "object",
@@ -16848,17 +15619,6 @@
           "graduationExpected"
         ],
         "description": "학생 프로필. 요청 본문으로만 보낸다(URL·쿼리에 넣지 않는다)"
-      },
-      "ProfileBody": {
-        "type": "object",
-        "properties": {
-          "profile": {
-            "$ref": "#/components/schemas/Profile"
-          }
-        },
-        "required": [
-          "profile"
-        ]
       },
       "ProfileSaveRequest": {
         "type": "object",
@@ -17103,142 +15863,6 @@
           "INFO"
         ],
         "description": "`MET` 충족 · `NOT_MET` 미충족 · `CHECK` 확인 필요 · `INFO` 참고"
-      },
-      "ReasonSource": {
-        "type": "string",
-        "enum": [
-          "LLM",
-          "CACHE",
-          "TEMPLATE"
-        ],
-        "description": "`LLM` AI 생성 · `CACHE` AI 생성(저장본) · `TEMPLATE` 기본 문장"
-      },
-      "Recommendation": {
-        "type": "object",
-        "properties": {
-          "rank": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 5
-          },
-          "jobId": {
-            "type": "integer",
-            "minimum": 1
-          },
-          "title": {
-            "type": "string"
-          },
-          "institution": {
-            "$ref": "#/components/schemas/InstitutionRef"
-          },
-          "verdict": {
-            "$ref": "#/components/schemas/Verdict"
-          },
-          "fit": {
-            "$ref": "#/components/schemas/Fit"
-          },
-          "jobType": {
-            "$ref": "#/components/schemas/JobType"
-          },
-          "stipend": {
-            "$ref": "#/components/schemas/Stipend"
-          },
-          "reasonTemplate": {
-            "type": "string",
-            "description": "바로 보여 줄 기본 이유 문장"
-          },
-          "reasonStatus": {
-            "type": "string",
-            "description": "PENDING이면 카드마다 `POST /api/recommendations/{jobId}/reason`을 부른다"
-          },
-          "citations": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Citation"
-            }
-          }
-        },
-        "required": [
-          "rank",
-          "jobId",
-          "title",
-          "institution",
-          "verdict",
-          "fit",
-          "jobType",
-          "stipend",
-          "reasonTemplate",
-          "reasonStatus",
-          "citations"
-        ]
-      },
-      "RecommendationReason": {
-        "type": "object",
-        "properties": {
-          "jobId": {
-            "type": "integer",
-            "minimum": 1
-          },
-          "source": {
-            "$ref": "#/components/schemas/ReasonSource"
-          },
-          "text": {
-            "type": "string"
-          },
-          "citations": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Citation"
-            }
-          }
-        },
-        "required": [
-          "jobId",
-          "source",
-          "text",
-          "citations"
-        ],
-        "description": "LLM 실패·5초 초과·호출 제한이어도 200 + source TEMPLATE"
-      },
-      "Recommendations": {
-        "type": "object",
-        "properties": {
-          "round": {
-            "$ref": "#/components/schemas/RoundRef"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Recommendation"
-            },
-            "maxItems": 5,
-            "description": "INELIGIBLE과 기준일에 마감된 직무를 빼고, 선호 전공이 맞거나 관심 문장과 겹치는 직무만 적합도 점수 순으로 5개까지(0~5개, ADR-0022). 점수는 주지 않는다"
-          },
-          "blockedBy": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "item": {
-                  "type": "string"
-                },
-                "count": {
-                  "type": "integer"
-                }
-              },
-              "required": [
-                "item",
-                "count"
-              ]
-            },
-            "description": "items가 비었을 때 막은 요건별 직무 수(학교 규정 항목 · '자격증' · '모집 마감' · '관심 분야'). 1~4개면 []"
-          }
-        },
-        "required": [
-          "round",
-          "items",
-          "blockedBy"
-        ]
       },
       "Reminded": {
         "type": "object",
@@ -17613,90 +16237,6 @@
           "FAIL"
         ],
         "description": "`WAIT` 대기 · `PASS` 합격 · `FAIL` 불합격"
-      },
-      "Signal": {
-        "type": "object",
-        "properties": {
-          "interest": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "관심 = asOf까지 누적한 내 지망에 담은 사람 수(리플레이 가상 값 + 실제 담은 수, ADR-0019)"
-          },
-          "liveInterest": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "interest 중 실제 사용자가 담은 수(순위 무관, 1인 1표, 체험 계정 포함). 지망 점검은 본인 제외. replay.defaultAsOf에 생긴 관심으로 더하므로 asOf가 그보다 앞이거나 그날 마감된 직무면 0"
-          },
-          "headcount": {
-            "type": "integer",
-            "minimum": 1
-          },
-          "ratio": {
-            "type": "number",
-            "minimum": 0,
-            "description": "interest ÷ headcount, 소수 둘째 자리"
-          },
-          "status": {
-            "$ref": "#/components/schemas/SignalStatus"
-          },
-          "closesOn": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date"
-          },
-          "closeReason": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/CloseReason"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "closesOnIsVirtual": {
-            "type": "boolean",
-            "description": "true면 closesOn이 생성기가 정한 가상 날짜"
-          },
-          "expectedFullOn": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date",
-            "description": "정원 도달 예상일. 모집기간 안에 닿지 않거나 이미 닿았으면 null"
-          }
-        },
-        "required": [
-          "interest",
-          "liveInterest",
-          "headcount",
-          "ratio",
-          "status",
-          "closesOn",
-          "closeReason",
-          "closesOnIsVirtual",
-          "expectedFullOn"
-        ],
-        "description": "모집 신호(관심 = 내 지망에 담은 사람 수). status: asOf가 회차 종료일보다 뒤이거나 closesOn ≤ asOf면 CLOSED → 아니면 OPEN. 관심이 정원을 넘어도 몰림 표시·경고는 하지 않는다(ADR-0015)"
-      },
-      "SignalSource": {
-        "type": "string",
-        "enum": [
-          "REPLAY",
-          "LIVE"
-        ],
-        "description": "`REPLAY` 모집기간 리플레이(가상) + 실제 담은 수 · `LIVE` 실제 신호"
-      },
-      "SignalStatus": {
-        "type": "string",
-        "enum": [
-          "OPEN",
-          "CLOSED"
-        ],
-        "description": "`OPEN` 모집 중 · `CLOSED` 마감"
       },
       "Size": {
         "type": "string",

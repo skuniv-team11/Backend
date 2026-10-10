@@ -166,13 +166,21 @@ public class CareerRepository {
     record Saved(long id, OffsetDateTime createdAt) {
     }
 
-    /** 계정의 커리어 리포트를 이번 것으로 바꾼다(계정당 1건). */
+    /**
+     * 계정의 커리어 리포트를 이번 것으로 바꾼다(계정당 1건). {@code keepAi}가 true이고(AI 답을 못 받음) 같은 직무의 AI 리포트가
+     * 저장돼 있으면 바꾸지 않고 empty — 잠깐의 실패가 AI 결과를 지우지 않게 한다(ADR-0037). 확인은 계정 잠금 안에서 한다.
+     */
     @Transactional
-    public Saved replace(long userId, int jobId, String subcategory, String practiceText, Source source, Fallback fallback,
-                         String model, String promptVersion, Map<String, String[]> covered) {
+    public Optional<Saved> replace(long userId, int jobId, String subcategory, String practiceText, Source source,
+                                   Fallback fallback, String model, String promptVersion, Map<String, String[]> covered,
+                                   boolean keepAi) {
         // 같은 계정이 두 번 겹쳐 보내도 차례로 바꾸게 계정 행을 잠근다
         if (!AccountLock.lock(db, userId)) {
             throw new ApiException(ErrorCode.AUTH_REQUIRED, "계정이 없어요. 다시 로그인해 주세요");
+        }
+        if (keepAi && db.sql("SELECT count(*) FROM career_report WHERE user_id = :user AND job_id = :job AND source = 'AI'")
+                .param("user", userId).param("job", jobId).query(Long.class).single() > 0) {
+            return Optional.empty();
         }
         db.sql("DELETE FROM career_report WHERE user_id = :user").param("user", userId).update();
         Saved saved = db.sql("""
@@ -200,7 +208,7 @@ public class CareerRepository {
                     .param("reason", e.getValue()[1])
                     .update();
         }
-        return saved;
+        return Optional.of(saved);
     }
 
     void delete(long userId) {

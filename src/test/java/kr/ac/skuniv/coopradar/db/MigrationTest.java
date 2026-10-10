@@ -28,7 +28,7 @@ class MigrationTest {
     }
 
     @Test
-    void 테이블_45개가_만들어진다() {
+    void 테이블_42개가_만들어진다() {
         Integer tables = jdbc.sql("""
                         SELECT count(*) FROM information_schema.tables
                         WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
@@ -36,10 +36,24 @@ class MigrationTest {
                         """)
                 .query(Integer.class)
                 .single();
-        assertThat(tables).isEqualTo(45); // V1 21개 + V3 job_view + V5 certificate + V6 requirement_source + V7 학과 묶음 2개
+        assertThat(tables).isEqualTo(42); // V1 21개 + V3 job_view + V5 certificate + V6 requirement_source + V7 학과 묶음 2개
                                           // + V8 institution_photo + V9 탐색 3개(explore_run·item·why)
                                           // + V10 NCS·커리어 9개(ncs_subcategory·unit·occupation·ncs_occupation·job_ncs·ncs_expand·ncs_unit_link·career_report·unit)
                                           // + V11 현장실습 진행 6개(round_stage·demo_group·application·application_pick·dept_approval·internship_close)
+                                          // − V12 쓰지 않는 3개(replay_signal·job_embedding·round_result, ADR-0036)
+    }
+
+    @Test
+    void V12가_적용되고_모집_신호_임베딩_지난_회차_테이블이_없다() {
+        Boolean success = jdbc.sql("SELECT success FROM flyway_schema_history WHERE version = '12'")
+                .query(Boolean.class)
+                .single();
+        assertThat(success).isTrue();
+        Integer left = jdbc.sql("""
+                        SELECT count(*) FROM information_schema.tables
+                        WHERE table_schema = 'public' AND table_name IN ('replay_signal', 'job_embedding', 'round_result')""")
+                .query(Integer.class).single();
+        assertThat(left).isZero();
     }
 
     @Test
@@ -59,19 +73,18 @@ class MigrationTest {
     }
 
     @Test
-    void V3가_적용되고_신호는_관심_하나_조회_기록_테이블이_있다() {
+    void V3가_적용되고_조회_기록_테이블이_있다() {
         Boolean success = jdbc.sql("SELECT success FROM flyway_schema_history WHERE version = '3'")
                 .query(Boolean.class)
                 .single();
         assertThat(success).isTrue();
-        // ADR-0019: 예전 관심 칸은 없애고 지원 의사 칸을 관심으로 바꿨다
+        // ADR-0019(V3에서 바꾼 replay_signal은 V12에서 지웠다, ADR-0036)
         List<String> columns = jdbc.sql("""
                         SELECT table_name || '.' || column_name FROM information_schema.columns
-                        WHERE table_schema = 'public' AND table_name IN ('replay_signal', 'job_view')""")
+                        WHERE table_schema = 'public' AND table_name = 'job_view'""")
                 .query(String.class)
                 .list();
-        assertThat(columns).containsExactlyInAnyOrder("replay_signal.job_id", "replay_signal.signal_date",
-                "replay_signal.interest_count", "job_view.id", "job_view.job_id", "job_view.user_id",
+        assertThat(columns).containsExactlyInAnyOrder("job_view.id", "job_view.job_id", "job_view.user_id",
                 "job_view.viewed_on");
     }
 

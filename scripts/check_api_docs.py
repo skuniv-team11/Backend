@@ -27,9 +27,12 @@ readme = (API / "README.md").read_text(encoding="utf-8")
 linked = set(re.findall(r"\]\(([\w.-]+\.json)\)", readme))
 check(linked == set(docs), f"README 링크 ↔ 파일 불일치: 링크만 {linked - set(docs)}, 파일만 {set(docs) - linked}")
 
-# 목록 표의 번호가 1..N 연속인지
+# 목록 표의 번호: 오름차순·중복 없음. 지운 API의 번호는 다시 쓰지 않는다(코드·문서·Notion이 번호로 가리켜서) —
+# 빈 번호는 README '목록' 아래 '지운 번호'에 적힌 것만
 nums = [int(m) for m in re.findall(r"^\| (\d+) \|", readme, re.M)]
-check(nums == list(range(1, len(nums) + 1)), f"목록 번호 {nums}")
+removed = {int(x) for x in re.findall(r"#(\d+)", (re.search(r"지운 번호[^—\n]*", readme) or re.match("", "")).group(0))}
+check(nums == sorted(set(nums)) and set(range(1, max(nums) + 1)) - set(nums) == removed,
+      f"목록 번호 {nums} · 지운 번호 {sorted(removed)}")
 
 # 코드값 ↔ DDL CHECK
 def ddl_set(col):
@@ -58,11 +61,11 @@ check(src_kind <= set(codes["sourceType"]) and set(codes["sourceType"]) - src_ki
 
 # 예시 안의 모든 코드값이 코드표에 있는지
 FIELD_CODE = {"verdict": "verdict", "layer": "reasonLayer", "result": "reasonResult", "majorMatch": "majorMatch",
-              "fit": "fit", "status": "signalStatus", "signalSource": "signalSource", "closeReason": "closeReason",
+              "closeReason": "closeReason",
               "code": "risk", "kind": "alertKind", "size": "size", "listing": "listing", "ntsStatus": "ntsStatus", "course": "course",
               "jobType": "jobType", "overtime": "overtime", "basis": "stipendBasis", "gradeRule": "gradeRule",
               "portfolio": "requirement", "certificate": "requirement", "sourceType": "sourceType",
-              "source": "reasonSource", "role": "role",
+              "role": "role",
               "provider": "commuteProvider", "unavailableReason": "commuteUnavailable"}
 # 직무 탐색(ADR-0031)은 같은 필드 이름에 다른 코드 묶음을 쓴다
 FILE_FIELD_CODE = {name: {"fit": "exploreFit", "source": "exploreSource", "fallbackReason": "exploreFallback",
@@ -128,45 +131,24 @@ def code_check(fname):
         if k == "stipend" and isinstance(v, dict):
             base = 2156880 if v["basis"] == "MONTHLY" else 10320
             check(v["minWageRatio"] == round(v["amount"] / base * 100, 1), f"{fname}{path} 최저임금 대비 % 틀림")
-        if k == "signal" and isinstance(v, dict):
-            check(v["ratio"] == round(v["interest"] / v["headcount"], 2), f"{fname}{path} ratio 틀림")
-            check(0 <= v["liveInterest"] <= v["interest"], f"{fname}{path} 실제 담은 수 > 관심")
+        if k == "closing" and isinstance(v, dict):
             check((v["closesOn"] is None) == (v["closeReason"] is None), f"{fname}{path} 마감일·사유 짝")
     return fn
 for name, d in docs.items():
     walk(d, "", code_check(name))
 
-# 신호 status 규칙(asOf 기준)
+# 현황판 마감(ADR-0035): closesOn ≤ asOf이거나 모집 종료일 뒤면 closed. 관심(담은 수)은 없다(ADR-0036)
 RECRUIT_END = docs["rounds-current.json"]["recruitEnd"]
-for name in ("me-plan-check.json", "center-board.json"):
-    d = docs[name]
-    check(d["isVirtual"] is True and d["signalSource"] == "REPLAY", f"{name} 가상 표시")
-    rows = d.get("items", []) + d.get("alternatives", []) + d.get("rows", [])
-    for r in rows:
-        s = r["signal"]
-        closed = d["asOf"] > RECRUIT_END or (s["closesOn"] is not None and s["closesOn"] <= d["asOf"])
-        want = "CLOSED" if closed else "OPEN"  # 몰림 표시는 하지 않는다(ADR-0015)
-        check(s["status"] == want, f"{name} job {r['jobId']} status {s['status']} ≠ {want}")
-    # 대안: ELIGIBLE · CLOSED 아님 · 남은 자리 > 0 · 담지 않은 직무, why는 규칙 문장(ADR-0016)
-    planned = {i["jobId"] for i in docs["me-plan.json"]["items"]}
-    first = next((i for i in d.get("items", []) if i["rank"] == 1), None)
-    for a in d.get("alternatives", []):
-        check(a["remaining"] == a["signal"]["headcount"] - a["signal"]["interest"] and a["remaining"] > 0, f"대안 {a['jobId']} 남은 자리")
-        check(a["verdict"] == "ELIGIBLE" and a["signal"]["status"] != "CLOSED", f"대안 {a['jobId']} 조건")
-        check(a["jobId"] not in planned, f"대안 {a['jobId']} 이미 담은 직무")
-        same = first is not None and first["institution"]["id"] == a["institution"]["id"]
-        heads = ["1지망과 같은 기관의 직무이고"] if same else ["관심 분야와 가깝고", "지원 조건을 모두 통과했고"]  # ADR-0022
-        tail = "지금 담은 사람이 0명이에요." if a["signal"]["interest"] == 0 else f"남은 자리가 {a['remaining']}개예요."
-        check(a["why"] in [f"{h}, {tail}" for h in heads], f"대안 {a['jobId']} why 규칙 문장 아님: {a['why']}")
-    r0 = docs["rounds-current.json"]["replay"]
-    check(r0["minDate"] <= d["asOf"] <= r0["maxDate"], f"{name} asOf 범위")
-
-# 현황판 요약: 실제 담은 수 합 ≤ 관심 합
-check(0 <= docs["center-board.json"]["summary"]["liveInterestTotal"] <= docs["center-board.json"]["summary"]["interestTotal"],
-      "현황판 liveInterestTotal > interestTotal")
+board = docs["center-board.json"]
+check(board["asOf"] == docs["rounds-current.json"]["replay"]["defaultAsOf"], "현황판 asOf = 시연 기준일")
+for r in board["rows"]:
+    c = r["closing"]
+    want = board["asOf"] > RECRUIT_END or (c["closesOn"] is not None and c["closesOn"] <= board["asOf"])
+    check(r["closed"] == want, f"현황판 job {r['jobId']} closed {r['closed']} ≠ {want}")
+walk(docs, "", lambda k, v, path: check(k not in ("signal", "interest", "liveInterest", "interestTotal", "isVirtual",
+                                                    "signalSource", "alternatives"), f"{path}.{k}: 모집 신호는 지웠다(ADR-0036)"))
 
 # 현황판 위험: NARROW_POOL = 적격 풀 200명 미만, DOC_ALERT = 그 직무 또는 그 기관에 검토 알림(ADR-0016)
-board = docs["center-board.json"]
 for r in board["rows"]:
     codes_in_row = {x["code"] for x in r["risks"]}
     check(("NARROW_POOL" in codes_in_row) == (r["eligiblePool"] < 200), f"현황판 {r['jobId']} NARROW_POOL ↔ eligiblePool {r['eligiblePool']}")
@@ -194,12 +176,6 @@ for j in docs["eligibility.json"]["jobs"]:
     check(all(r["result"] == "INFO" for r in rs if r["layer"] == "MAJOR"), f"판정 {j['jobId']} MAJOR는 INFO만")
 s = docs["eligibility.json"]["summary"]
 check(s["eligible"] + s["needsCheck"] + s["ineligible"] == s["total"], "판정 요약 합계")
-
-# 추천: 5개 이하, INELIGIBLE 없음, 순위 연속, 점수 노출 없음
-items = docs["recommendations.json"]["items"]
-check(len(items) <= 5 and [i["rank"] for i in items] == list(range(1, len(items) + 1)), "추천 순위")
-check(all(i["verdict"] != "INELIGIBLE" for i in items), "추천에 지원 불가 포함")
-check(all("score" not in i for i in items), "추천에 점수 노출")
 
 # 직무 탐색(ADR-0031): 후보 합계, 순위 연속, 지원 불가 없음, fit = 순위(AI), why는 1~3위만, AI면 대신 사유 없음
 ex = docs["explore.json"]
@@ -302,11 +278,11 @@ check(len({r["rank"] for r in req}) == len(req), "순위 요청 중복")
 # 프로필 규칙
 cert_codes = [c["code"] for c in docs["certificates.json"]["certificates"]]
 check(len(set(cert_codes)) == len(cert_codes), "certificates 코드 중복")
-for name in ("profile-body.request.json", "me-plan-check.request.json", "me-profile.request.json", "me-profile.json",
+for name in ("profile-body.request.json", "me-profile.request.json", "me-profile.json",
              "auth-guest.json", "explore.request.json"):
     d = docs[name]; certs = (d.get("profile") or d).get("certificates")
     check(certs is None or all(c in cert_codes for c in certs), f"{name} certificates가 자격증 선택지 예시에 없음")
-for name in ("profile-body.request.json", "me-plan-check.request.json", "explore.request.json"):
+for name in ("profile-body.request.json", "explore.request.json"):
     p = docs[name]["profile"]
     check(1 <= p["grade"] <= 4 and 0 <= p["completedSemesters"] <= 8 and 0 <= p["gpa"] <= 4.5
           and round(p["gpa"], 1) == p["gpa"], f"{name} 프로필 범위")
@@ -319,7 +295,7 @@ for name, d in docs.items():
     walk(d, "", lambda k, v, path, name=name: check(not k.lower().startswith("commute"), f"{name}{path}.{k}: 통근 값은 통근 조회에서만"))
 area_codes = [a["code"] for a in docs["areas.json"]["areas"]]
 check(all(re.fullmatch(r"(11|28|41)\d{3}", c) for c in area_codes) and len(set(area_codes)) == len(area_codes), "areas 코드 형식·중복")
-for name in ("profile-body.request.json", "me-plan-check.request.json", "me-profile.request.json", "commute.request.json",
+for name in ("profile-body.request.json", "me-profile.request.json", "commute.request.json",
              "explore.request.json"):
     d = docs[name]; hc = (d.get("profile") or d).get("homeAreaCode")
     check(hc is None or hc in area_codes, f"{name} homeAreaCode가 areas 예시에 없음")

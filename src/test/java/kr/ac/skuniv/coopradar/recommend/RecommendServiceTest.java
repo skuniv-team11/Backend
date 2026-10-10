@@ -1,44 +1,45 @@
 package kr.ac.skuniv.coopradar.recommend;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import kr.ac.skuniv.coopradar.TestcontainersConfiguration;
-import kr.ac.skuniv.coopradar.contract.Contract;
+import kr.ac.skuniv.coopradar.eligibility.ProfileInput;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultMatcher;
+import org.springframework.web.servlet.FlashMap;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
+import tools.jackson.databind.json.JsonMapper;
 
-/** docs/api #15 적합도 추천. 2026-2 실제 시드로 본다 — 예시 학생(메이크업디자인학과 43)의 시연 흐름이 데이터로 이어지는지. */
+/**
+ * 규칙 적합도 추천(직무 탐색이 AI 대신 규칙 추천으로 갈 때 쓴다 — #15 API는 ADR-0036에서 지움). 2026-2 실제 시드로 본다 —
+ * 예시 학생(메이크업디자인학과 43)의 시연 흐름이 데이터로 이어지는지. 서비스를 바로 부르고 결과를 JSON으로 바꿔 본다.
+ */
 @SpringBootTest
-@AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
-class RecommendApiTest {
+class RecommendServiceTest {
 
-    private static final AtomicInteger IP = new AtomicInteger(1);
+    private static final JsonMapper JSON = JsonMapper.builder().build();
 
     @Autowired
-    MockMvc mvc;
+    RecommendService service;
 
     @Test
-    void 예시_학생은_소서_국내_해외_마케팅이_1_2위이고_계약_모양과_같다() throws Exception {
-        String body = recommend(guestToken("STUDENT"), profile(3, 5, "\"뷰티 브랜드 SNS 마케팅\""))
-                .andExpect(status().isOk())
+    void 예시_학생은_소서_국내_해외_마케팅이_1_2위() throws Exception {
+        String body = recommend(profile(3, 5, "\"뷰티 브랜드 SNS 마케팅\""))
                 .andExpect(jsonPath("$.round.termCode").value("2026-2"))
                 .andExpect(jsonPath("$.items.length()").value(5))
                 .andExpect(jsonPath("$.items[0].jobId").value(122))
                 .andExpect(jsonPath("$.items[0].fit").value("HIGH"))
-                .andExpect(jsonPath("$.items[0].reasonStatus").value("PENDING"))
                 // 기본 문장: 내 값으로 갖춘 조건 → 내 학과와 선호 전공 → 관심과 겹친 원문 → 같은 팀 해외 마케팅과의 차이
                 // (ADR-0020·0024)
                 .andExpect(jsonPath("$.items[0].reasonTemplate").value(
@@ -70,9 +71,7 @@ class RecommendApiTest {
                                 + "관심 분야와 직무 내용이 가까워요."))
                 .andExpect(jsonPath("$.items[4].jobId").value(103))
                 .andExpect(jsonPath("$.blockedBy").isEmpty())
-                .andReturn().getResponse().getContentAsString();
-        Contract.assertSameShape(body, Contract.responseExample("getRecommendations", 200, null));
-
+                .body();
         List<Integer> ranks = JsonPath.read(body, "$.items[*].rank");
         assertThat(ranks).containsExactly(1, 2, 3, 4, 5);
         List<String> verdicts = JsonPath.read(body, "$.items[*].verdict");
@@ -92,22 +91,20 @@ class RecommendApiTest {
     @Test
     void 기준일에_마감된_직무는_추천에서_빠진다() throws Exception {
         // 광고홍보콘텐츠학과(10) 4학년: 선호 전공이 맞는 101 AE는 7/18 센터 모집마감이라 기준일(7/23)에 빠진다(ADR-0016)
-        String body = recommend(guestToken("STUDENT"), """
+        String body = recommend("""
                 {"profile": {"departmentId": 10, "grade": 4, "completedSemesters": 7, "gpa": 4.0,
                  "graduationExpected": false, "interestText": "광고 캠페인 기획", "homeAreaCode": null}}""")
-                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items.length()").value(5))
-                .andReturn().getResponse().getContentAsString();
+                .body();
         assertThat(JsonPath.<List<Integer>>read(body, "$.items[*].jobId")).doesNotContain(101);
     }
 
     @Test
     void 전부_지원_불가면_items는_비고_blockedBy에_막은_요건별_직무_수() throws Exception {
         // 2학년·3학기: 이수 학기로 40개 모두 막히고, 학년(3학년 이상) 40 · 학점 하한 3.5·3.6 5 · 필수 자격증 1도 함께 센다(ADR-0024)
-        String body = recommend(guestToken("STUDENT"), profile(2, 3, "null"))
-                .andExpect(status().isOk())
+        String body = recommend(profile(2, 3, "null"))
                 .andExpect(jsonPath("$.items").isEmpty())
-                .andReturn().getResponse().getContentAsString();
+                .body();
         assertThat(JsonPath.<List<String>>read(body, "$.blockedBy[*].item")).containsExactly("이수 학기", "학년", "학점", "자격증");
         assertThat(JsonPath.<List<Integer>>read(body, "$.blockedBy[*].count")).containsExactly(40, 40, 5, 1);
     }
@@ -116,12 +113,11 @@ class RecommendApiTest {
     void 자격증은_답하지_않아도_없음으로_보고_blockedBy에_센다() throws Exception {
         // ADR-0021·0024: certificates가 null이든 []이든 미용 시술 보조는 자격증으로 막힌다
         for (String certificates : new String[] {"null", "[]"}) {
-            String body = recommend(guestToken("STUDENT"), """
+            String body = recommend("""
                     {"profile": {"departmentId": 43, "grade": 2, "completedSemesters": 3, "gpa": 3.4,
                      "graduationExpected": false, "interestText": null, "homeAreaCode": null, "certificates": %s}}"""
                     .formatted(certificates))
-                    .andExpect(status().isOk())
-                    .andReturn().getResponse().getContentAsString();
+                        .body();
             assertThat(JsonPath.<List<String>>read(body, "$.blockedBy[*].item")).contains("자격증");
         }
     }
@@ -132,10 +128,9 @@ class RecommendApiTest {
         // '백엔드 개발자'는 선도소프트 소프트웨어 개발(119, 학점 3.5 이상, 선호 전공 소프트웨어학과)과 가장 많이 겹친다.
         // 컴퓨터공학과는 소프트웨어학과와 같은 묶음이라 119는 가까운 전공 + 관심 많이 겹침 → 높음.
         // 전공 무관 자리(116 강의제작)·미용 시술 보조 등은 이유가 없어 채우지 않는다
-        String body = recommend(guestToken("STUDENT"), """
+        String body = recommend("""
                 {"profile": {"departmentId": 26, "grade": 3, "completedSemesters": 5, "gpa": 4.0,
                  "graduationExpected": false, "interestText": "백엔드 개발자", "homeAreaCode": null}}""")
-                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items.length()").value(2))
                 .andExpect(jsonPath("$.blockedBy").isEmpty())
                 // 119는 가까운 전공 + 관심 많이 겹침이라 높음, 136은 관심과 겹치는 내용이 적어 보통 — 문장이 그 이유를 말한다
@@ -148,59 +143,87 @@ class RecommendApiTest {
                 .andExpect(jsonPath("$.items[1].fit").value("MEDIUM"))
                 .andExpect(jsonPath("$.items[1].reasonTemplate").value(org.hamcrest.Matchers.endsWith(
                         "컴퓨터공학과는 회사가 선호하는 전공 범위('이공계열')에 들어가요. 관심 분야와 겹치는 내용은 적어요.")))
-                .andReturn().getResponse().getContentAsString();
+                .body();
         assertThat(JsonPath.<List<Integer>>read(body, "$.items[*].jobId")).doesNotContain(116);
 
         // 학점이 하한(3.5)보다 낮으면 119는 지원 불가라 빠지고, 가장 많이 겹친 직무가 빠졌다고 덜 겹친 마케팅 직무가
         // 관심 분야 이유로 들어오지도 않는다(관심 유사도는 회차 직무 전부로 잰다, ADR-0024)
-        String lowGpa = recommend(guestToken("STUDENT"), """
+        String lowGpa = recommend("""
                 {"profile": {"departmentId": 26, "grade": 3, "completedSemesters": 5, "gpa": 3.4,
                  "graduationExpected": false, "interestText": "백엔드 개발자", "homeAreaCode": null}}""")
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
+                .body();
         assertThat(JsonPath.<List<Integer>>read(lowGpa, "$.items[*].jobId")).containsExactly(136);
 
         // 선호 전공이 맞는 직무가 없는 학과(무용예술학부 53)가 관심 분야를 비우면 전공 무관 자리(116 강의제작)만 '보통'으로.
         // 관심 문장이 없을 때만 전공 무관이 이유가 된다(ADR-0025·0026) — 위처럼 관심을 적었는데 겹치지 않으면 넣지 않는다
-        String none = recommend(guestToken("STUDENT"), """
+        String none = recommend("""
                 {"profile": {"departmentId": 53, "grade": 3, "completedSemesters": 5, "gpa": 4.5,
                  "graduationExpected": false, "interestText": null, "homeAreaCode": null, "certificates": []}}""")
-                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].fit").value("MEDIUM"))
                 .andExpect(jsonPath("$.items[0].reasonTemplate").value("3학년이라 지원 조건(3·4학년)을 모두 갖췄어요. 전공을 따지지 않는 자리예요."))
                 .andExpect(jsonPath("$.blockedBy").isEmpty())
-                .andReturn().getResponse().getContentAsString();
+                .body();
         assertThat(JsonPath.<List<Integer>>read(none, "$.items[*].jobId")).containsExactly(116);
     }
 
-    @Test
-    void 입력이_틀리면_400_센터는_403_토큰이_없으면_401() throws Exception {
-        recommend(guestToken("STUDENT"), "{\"profile\": {\"departmentId\": 9999, \"grade\": 3, \"completedSemesters\": 5,"
-                + " \"gpa\": 3.4, \"graduationExpected\": false}}")
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.fields[0].field").value("profile.departmentId"));
-        recommend(guestToken("CENTER"), profile(3, 5, "null"))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value("FORBIDDEN_ROLE"));
-        mvc.perform(post("/api/recommendations").contentType(MediaType.APPLICATION_JSON).content(profile(3, 5, "null")))
-                .andExpect(status().isUnauthorized());
+    /** 결과 JSON. MockMvc의 jsonPath 검사를 그대로 쓴다(응답 대신 이 글로 본다). */
+    record Result(String body) {
+
+        Result andExpect(ResultMatcher matcher) throws Exception {
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            response.setCharacterEncoding("UTF-8");
+            response.setContentType("application/json");
+            response.getWriter().write(body);
+            matcher.match(new MvcResult() {
+                public MockHttpServletRequest getRequest() {
+                    return new MockHttpServletRequest();
+                }
+
+                public MockHttpServletResponse getResponse() {
+                    return response;
+                }
+
+                public Object getHandler() {
+                    return null;
+                }
+
+                public HandlerInterceptor[] getInterceptors() {
+                    return null;
+                }
+
+                public ModelAndView getModelAndView() {
+                    return null;
+                }
+
+                public Exception getResolvedException() {
+                    return null;
+                }
+
+                public FlashMap getFlashMap() {
+                    return null;
+                }
+
+                public Object getAsyncResult() {
+                    return null;
+                }
+
+                public Object getAsyncResult(long timeToWait) {
+                    return null;
+                }
+            });
+            return this;
+        }
     }
 
-    private ResultActions recommend(String token, String body) throws Exception {
-        return mvc.perform(post("/api/recommendations").header("Authorization", "Bearer " + token)
-                .contentType(MediaType.APPLICATION_JSON).content(body));
+    /** 본문 {"profile": {...}} 글 → 서비스 결과 JSON. */
+    private Result recommend(String body) {
+        ProfileInput profile = JSON.treeToValue(JSON.readTree(body).get("profile"), ProfileInput.class);
+        return new Result(JSON.writeValueAsString(service.recommend(profile)));
     }
 
     private static String profile(int grade, int semesters, String interest) {
         return """
                 {"profile": {"departmentId": 43, "grade": %d, "completedSemesters": %d, "gpa": 3.4,
                  "graduationExpected": false, "interestText": %s, "homeAreaCode": null}}""".formatted(grade, semesters, interest);
-    }
-
-    private String guestToken(String role) throws Exception {
-        String body = mvc.perform(post("/api/auth/guest").header("CF-Connecting-IP", "198.51.100." + (100 + IP.getAndIncrement()))
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"role\":\"" + role + "\"}"))
-                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
-        return JsonPath.read(body, "$.accessToken");
     }
 }

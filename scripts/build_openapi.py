@@ -89,9 +89,6 @@ S["NtsStatus"] = d(S["NtsStatus"], "국세청 사업자 상태(오프라인 조�
 S["EvidenceFieldKey"] = {"type": "string", "enum": ddl_field_keys(),
                          "description": "근거를 보여 줄 수 있는 추출 필드명(V1 field_evidence 허용 목록). 사업자번호·매출액 등은 없다"}
 
-ALTERNATIVES_TEXT = ("verdict ELIGIBLE · CLOSED 아님 · 남은 자리(headcount − interest) > 0 · 이미 담은 직무 아님. "
-                     "적합도 점수 → 남은 자리 순 최대 5개")
-
 AREA_CODE = {"type": "string", "pattern": r"^(11|28|41)\d{3}$",
              "description": "시·군·구 5자리(서울 11·인천 28·경기 41). `GET /api/areas`의 code"}
 
@@ -124,21 +121,6 @@ PROFILE_VIEW_PROPS = {
     "homeArea": nul(R("Area")),
     "isExample": d(BOOL, "체험 계정의 예시 프로필이면 true"),
 }
-
-SIGNAL = obj({
-    "interest": d({"type": "integer", "minimum": 0},
-                  "관심 = asOf까지 누적한 내 지망에 담은 사람 수(리플레이 가상 값 + 실제 담은 수, ADR-0019)"),
-    "liveInterest": d({"type": "integer", "minimum": 0},
-                      "interest 중 실제 사용자가 담은 수(순위 무관, 1인 1표, 체험 계정 포함). 지망 점검은 본인 제외. "
-                      "replay.defaultAsOf에 생긴 관심으로 더하므로 asOf가 그보다 앞이거나 그날 마감된 직무면 0"),
-    "headcount": {"type": "integer", "minimum": 1},
-    "ratio": d({"type": "number", "minimum": 0}, "interest ÷ headcount, 소수 둘째 자리"),
-    "status": R("SignalStatus"),
-    "closesOn": nul(DATE),
-    "closeReason": nul(R("CloseReason")),
-    "closesOnIsVirtual": d(BOOL, "true면 closesOn이 생성기가 정한 가상 날짜"),
-    "expectedFullOn": d(nul(DATE), "정원 도달 예상일. 모집기간 안에 닿지 않거나 이미 닿았으면 null"),
-}, desc="모집 신호(관심 = 내 지망에 담은 사람 수). status: asOf가 회차 종료일보다 뒤이거나 closesOn ≤ asOf면 CLOSED → 아니면 OPEN. 관심이 정원을 넘어도 몰림 표시·경고는 하지 않는다(ADR-0015)")
 
 CLOSING = obj({"closesOn": d(nul(DATE), "이 날부터 지원 불가. 화면은 하루 전 날짜를 마감일로 보여 준다"),
                "closeReason": nul(R("CloseReason")), "closesOnIsVirtual": BOOL},
@@ -191,7 +173,6 @@ S.update({
     }, optional=("profile",)),
     "Profile": obj(PROFILE_PROPS, optional=PROFILE_OPTIONAL,
                    desc="학생 프로필. 요청 본문으로만 보낸다(URL·쿼리에 넣지 않는다)"),
-    "ProfileBody": obj({"profile": R("Profile")}),
     "OptionalProfileBody": obj({"profile": R("Profile")}, optional=("profile",),
                                desc="profile을 빼면 저장한 프로필(GET /api/me/profile)로 본다. 둘 다 없으면 404 PROFILE_NOT_FOUND"),
     "ProfileSaveRequest": obj({
@@ -218,10 +199,7 @@ S.update({
         "recruitStart": DATE,
         "recruitEnd": DATE,
         "replay": obj({
-            "defaultAsOf": d(DATE, "asOf를 생략하면 이 날짜"),
-            "minDate": DATE,
-            "maxDate": DATE,
-            "signalsAreVirtual": BOOL,
+            "defaultAsOf": d(DATE, "시연 기준일 = 모집 판정 기준일(판정·탐색·현황판의 마감을 이 날로 본다, ADR-0035)"),
         }),
         "stages": d(arr(R("RoundStage")), "회차 일정 11단계(ADR-0033), 순서대로"),
     }),
@@ -249,7 +227,7 @@ S.update({
         "closing": d(CLOSING, "직무 상세의 closing과 같은 값. 목록은 closesOn ≤ 기준일이면 '마감' 꼬리표를 단다"),
         "alertCount": d({"type": "integer", "minimum": 0}, "그 직무에 걸린 검토 알림 수(jobId가 그 직무인 것만, 기관 단위 알림은 세지 않는다). '문서 검토' 꼬리표"),
         "ncs": d(nul(obj({"code": NCS_CODE, "name": STR})), "그 직무의 NCS 세분류(GET /api/jobs/{jobId}/career의 ncs와 같은 세분류). 없으면 null"),
-        "views": d({"type": "integer", "minimum": 0}, "지금까지 조회 수(GET /api/jobs/{jobId}/views의 views와 같은 값)"),
+        "views": d({"type": "integer", "minimum": 0}, "지금까지 조회 수(GET /api/jobs/{jobId}의 views와 같은 값)"),
         "planned": d(BOOL, "내가 담은 직무인지"),
         "planRank": d(nul({"type": "integer", "minimum": 1, "maximum": 3}), "내 지망 순위. 정하지 않았거나 담지 않았으면 null"),
         "reasons": arr(R("ReasonLine")),
@@ -271,32 +249,6 @@ S.update({
     }),
     "Citation": obj({"sourceType": R("SourceType"), "documentTitle": STR, "page": PAGE, "quote": STR},
                     desc="근거 인용. 원문 PDF 링크는 주지 않는다"),
-    "Recommendation": obj({
-        "rank": {"type": "integer", "minimum": 1, "maximum": 5},
-        "jobId": ID, "title": STR,
-        "institution": R("InstitutionRef"),
-        "verdict": R("Verdict"),
-        "fit": R("Fit"),
-        "jobType": R("JobType"),
-        "stipend": R("Stipend"),
-        "reasonTemplate": d(STR, "바로 보여 줄 기본 이유 문장"),
-        "reasonStatus": d(STR, "PENDING이면 카드마다 `POST /api/recommendations/{jobId}/reason`을 부른다"),
-        "citations": arr(R("Citation")),
-    }),
-    "Recommendations": obj({
-        "round": R("RoundRef"),
-        "items": d(arr(R("Recommendation"), maxItems=5),
-                   "INELIGIBLE과 기준일에 마감된 직무를 빼고, 선호 전공이 맞거나 관심 문장과 겹치는 직무만 적합도 점수 순으로 5개까지"
-                   "(0~5개, ADR-0022). 점수는 주지 않는다"),
-        "blockedBy": d(arr(obj({"item": STR, "count": INT})),
-                       "items가 비었을 때 막은 요건별 직무 수(학교 규정 항목 · '자격증' · '모집 마감' · '관심 분야'). 1~4개면 []"),
-    }),
-    "RecommendationReason": obj({
-        "jobId": ID,
-        "source": R("ReasonSource"),
-        "text": STR,
-        "citations": arr(R("Citation")),
-    }, desc="LLM 실패·5초 초과·호출 제한이어도 200 + source TEMPLATE"),
     "Alert": obj({
         "id": ID,
         "institution": R("InstitutionRef"),
@@ -354,7 +306,7 @@ S.update({
             "hasCoordinates": d(BOOL, "true면 프론트가 `POST /api/jobs/{jobId}/commute`를 부른다"),
         })), "근로지. V1 job.workplace_id가 null을 허용해 null일 수 있다"),
         "closing": CLOSING,
-        "views": d({"type": "integer", "minimum": 0}, "지금까지 조회 수(이번 조회까지 센 뒤, GET /api/jobs/{jobId}/views와 같은 값)"),
+        "views": d({"type": "integer", "minimum": 0}, "지금까지 조회 수(이번 조회까지 센 뒤). 학생 계정마다 직무별로 하루(한국 시간) 한 번 센다"),
         "todayViews": d({"type": "integer", "minimum": 0}, "오늘(한국 시간) 조회 수"),
         "planned": d(BOOL, "내가 담은 직무인지(센터는 false)"),
         "planRank": d(nul({"type": "integer", "minimum": 1, "maximum": 3}), "내 지망 순위. 정하지 않았거나 담지 않았으면(센터도) null"),
@@ -373,8 +325,6 @@ S.update({
             "teamText": nul(STR),
             "documentTitle": STR,
             "page": PAGE,
-            "major": d(nul(STR), "수기에 적힌 학과(전공) 원문"),
-            "grade": d(nul(STR), "수기에 적힌 학년 원문(예: 4학년)"),
             "oneLine": d(nul(STR), "한 줄 소개(수기 제목)"),
             "companyIntro": d(nul(STR), "수기의 기관·부서 소개 문단"),
             "activities": arr(STR, minItems=1),
@@ -382,7 +332,7 @@ S.update({
                           "실습 결과 중 원문 그대로 자른 사실 구절 0~3개(추천 근거용, ADR-0020)"),
             "results": d(nul(STR), "실습 결과 문단 전문"),
             "reflection": d(nul(STR), "소감 문단 전문"),
-        })), "같은 기관의 선배 수기 전문(ADR-0030). 이름·사진은 없다. 전부 '우수' 수기라 화면에 그 점을 밝힌다"),
+        })), "같은 기관의 선배 수기 전문(ADR-0030). 이름·사진·학과·학년은 없다(ADR-0037). 전부 '우수' 수기라 화면에 그 점을 밝힌다"),
         "photos": d(arr(obj({
             "seq": ID,
             "path": d(STR, "사진 경로(API 서버 기준, 예: /photos/7/1.jpg). API 기본 주소 뒤에 붙여 <img>로 띄운다"),
@@ -419,68 +369,22 @@ S.update({
         "ranks": d(arr(obj({"jobId": ID, "rank": {"type": "integer", "minimum": 1, "maximum": 3}}), maxItems=3),
                    "순위 전체. 여기 없는 담은 직무는 순위가 지워진다. 1~3, 중복 불가, 담은 직무만"),
     }),
-    "PlanCheckRequest": obj({
-        "profile": R("Profile"),
-        "asOf": d(DATE, "회차 모집기간 안. 생략하면 rounds/current의 replay.defaultAsOf"),
-    }, optional=("asOf",)),
-    "Signal": SIGNAL,
-    "PlanCheck": obj({
-        "asOf": DATE,
-        "isVirtual": BOOL,
-        "signalSource": R("SignalSource"),
-        "items": arr(obj({
-            "rank": {"type": "integer", "minimum": 1, "maximum": 3},
-            "jobId": ID, "title": STR,
-            "institution": R("InstitutionRef"),
-            "signal": R("Signal"),
-        })),
-        "alternatives": d(arr(R("Alternative"), maxItems=5), ALTERNATIVES_TEXT),
-    }),
-    "Alternative": obj({
-        "jobId": ID, "title": STR,
-        "institution": R("InstitutionRef"),
-        "verdict": R("Verdict"),
-        "fit": R("Fit"),
-        "remaining": {"type": "integer", "minimum": 1},
-        "signal": R("Signal"),
-        "why": d(STR, "규칙 문장. 기준 직무와 같은 기관이면 지망 점검은 '1지망과 같은 기관의 직무이고', 담은 직무 기준(#27)은 "
-                      "'방금 담은 직무와 같은 기관의 직무이고', 관심 문장과 겹치면 '관심 분야와 가깝고', 둘 다 아니면 "
-                      "'지원 조건을 모두 통과했고' + 관심 0이면 '지금 담은 사람이 0명이에요.', 아니면 '남은 자리가 N개예요.'"),
-    }, desc="요건이 맞는 빈 자리(ADR-0016). 지망 점검(#23)과 담은 직무 기준 빈 자리(#27)가 같은 모양을 쓴다"),
-    "PlanItemAlternatives": obj({
-        "asOf": DATE,
-        "isVirtual": BOOL,
-        "signalSource": R("SignalSource"),
-        "item": d(obj({
-            "jobId": ID, "title": STR,
-            "institution": R("InstitutionRef"),
-            "rank": d(nul({"type": "integer", "minimum": 1, "maximum": 3}), "1~3지망. 순위를 안 정했으면 null"),
-            "signal": d(R("Signal"), "관심은 본인을 뺀 다른 사람 수(지망 점검과 같다)"),
-        }), "기준이 된 담은 직무"),
-        "alternatives": d(arr(R("Alternative"), maxItems=5), ALTERNATIVES_TEXT + ". 기준 직무도 빠진다"),
-    }, desc="[담기] 바로 뒤에 부른다(ADR-0029). 제안을 띄울지는 화면이 item.signal.interest ≥ headcount로 정한다 — 몰림 상태는 없다(ADR-0015)"),
     "CenterBoard": obj({
-        "asOf": DATE,
-        "isVirtual": BOOL,
-        "signalSource": R("SignalSource"),
+        "asOf": d(DATE, "마감을 본 날(모집 판정 기준일, ADR-0035)"),
         "round": R("RoundRef"),
-        "summary": obj({"jobs": INT, "seats": INT,
-                        "interestTotal": d(INT, "asOf까지 관심 합(가상 + 실제)"),
-                        "liveInterestTotal": d(INT, "interestTotal 중 실제 사용자가 담은 수"),
-                        "zeroSignalJobs": d(INT, "관심이 0인 직무 수"), "closedJobs": INT}),
-        "historyAvailable": d(BOOL, "false면 pastZeroRounds 열을 숨긴다"),
+        "summary": obj({"jobs": INT, "seats": INT, "closedJobs": d(INT, "asOf에 마감인 직무 수")}),
         "rows": d(arr(obj({
             "jobId": ID,
             "institution": R("InstitutionRef"),
             "title": STR,
             "headcount": {"type": "integer", "minimum": 1},
-            "signal": R("Signal"),
+            "closing": d(CLOSING, "판정 목록·직무 상세의 closing과 같은 값"),
+            "closed": d(BOOL, "asOf에 마감인지(closesOn ≤ asOf이거나 모집 종료일 뒤)"),
             "eligiblePool": d({"type": "integer", "minimum": 0}, "적격 학생 풀(선호 전공 재학생 수). 200명 미만이면 NARROW_POOL"),
             "risks": arr(obj({"code": R("Risk"), "label": STR, "detail": nul(STR)})),
             "alertCount": {"type": "integer", "minimum": 0},
-            "pastZeroRounds": d(arr({}), "지난 회차 0명 이력. 원소 모양은 지난 회차 결과를 적재할 때 정한다(지금 예시는 빈 배열)"),
-            "views": d({"type": "integer", "minimum": 0}, "직무 상세 조회 수(#25와 같은 값)"),
-        })), "회차 직무 전부"),
+            "views": d({"type": "integer", "minimum": 0}, "직무 상세 조회 수(GET /api/jobs/{jobId}의 views와 같은 값)"),
+        })), "회차 직무 전부. 관심(담은 수)은 주지 않는다(ADR-0036)"),
         "alerts": arr(R("Alert")),
         "todo": d(obj({"newApplications": d(COUNT, "새로 들어온 지원서(SUBMITTED)"),
                        "fixRequested": d(COUNT, "보완 요청 중"),
@@ -492,11 +396,6 @@ S.update({
                                           "jobs": d(COUNT, "이번 회차 공고 수"), "seats": d(COUNT, "이번 회차 정원 합")}))}),
                     "학생이 찾는 직무 vs 이번 회차 공고. 학생 수가 많은 순(같으면 정원이 적은 순). 관심(담은 수)은 쓰지 않는다"),
     }),
-    "JobViews": obj({
-        "jobId": ID,
-        "views": d({"type": "integer", "minimum": 0}, "지금까지 조회 수. 학생 계정마다 직무별로 하루(한국 시간) 한 번 센다"),
-        "todayViews": d({"type": "integer", "minimum": 0}, "오늘(한국 시간) 조회 수"),
-    }, desc="직무 조회수(ADR-0019). 실제 값만(가상 값 없음). 조회는 직무 상세(GET /api/jobs/{jobId})를 학생이 열 때만 센다"),
     # ── 직무 탐색(ADR-0031) ──
     "ExploreCandidates": obj({
         "total": d({"type": "integer", "minimum": 0}, "후보 수 = eligible + needsCheck"),
@@ -597,6 +496,9 @@ S.update({
         "jobId": ID, "title": STR, "team": STR, "institution": R("InstitutionRef"),
         "source": R("CareerSource"),
         "fallbackReason": d(nul(R("ExploreFallback")), "source가 AI면 null(NO_KEY·LIMITED·AI_ERROR·VERIFY_FAILED)"),
+        "keptReason": d(nul(R("ExploreFallback")),
+                        "만들기(#34)가 AI 답을 못 받아(NO_KEY·LIMITED·AI_ERROR) 저장한 같은 직무의 AI 리포트를 그대로 돌려줄 때 "
+                        "그 까닭. 이때 응답은 바꾸지 않은 저장본이다. 그 밖에는 null(ADR-0037)"),
         "input": obj({"practiceText": STR}, desc="저장한 실습 내용(전화·이메일·긴 숫자는 [가림])"),
         "ncs": obj({"code": NCS_CODE, "name": STR, "path": R("NcsPath"), "unitCount": {"type": "integer", "minimum": 0}}),
         "covered": d(arr(obj({"code": NCS_UNIT_CODE, "name": STR, "level": NCS_LEVEL,
@@ -774,7 +676,6 @@ S["ErrorCode"] = {"type": "string", "enum": list(ERR),
 # ───────────────────────── 엔드포인트 ─────────────────────────
 # req: (스키마, [예시 파일]) / ok: {상태: (스키마 또는 None, [예시 파일])} / errors: 공통 규칙 밖에서 더 나는 오류 코드
 # 공통 규칙: 본문이 있으면 INVALID_INPUT, 공개가 아니면 AUTH_REQUIRED·TOKEN_EXPIRED, STUDENT·CENTER면 FORBIDDEN_ROLE
-PB = ("ProfileBody", ["profile-body.request.json"])
 OPB = ("OptionalProfileBody", ["profile-body.request.json"])
 ENDPOINTS = {
     "GET /api/ping": dict(op="ping", ok={200: ("Ping", ["ping.json"])}),
@@ -797,11 +698,6 @@ ENDPOINTS = {
     "GET /api/rounds/current": dict(op="getCurrentRound", ok={200: ("CurrentRound", ["rounds-current.json"])}),
     "POST /api/eligibility": dict(op="checkEligibility", req=OPB, ok={200: ("Eligibility", ["eligibility.json"])},
                                   errors=["PROFILE_NOT_FOUND"]),
-    "POST /api/recommendations": dict(op="getRecommendations", req=PB,
-                                      ok={200: ("Recommendations", ["recommendations.json"])}),
-    "POST /api/recommendations/{jobId}/reason": dict(op="getRecommendationReason", req=PB,
-                                                     ok={200: ("RecommendationReason", ["recommendation-reason.json"])},
-                                                     errors=["JOB_NOT_FOUND"]),
     "GET /api/jobs/{jobId}": dict(op="getJob", ok={200: ("JobDetail", ["job-detail.json"])}, errors=["JOB_NOT_FOUND"]),
     "POST /api/jobs/{jobId}/commute": dict(op="getCommute", req=("CommuteRequest", ["commute.request.json"]),
                                            ok={200: ("Commute", ["commute.json", "commute-unavailable.json"])},
@@ -812,17 +708,8 @@ ENDPOINTS = {
     "DELETE /api/me/plan/items/{jobId}": dict(op="removePlanItem", ok={204: (None, [])}, errors=["PLAN_ITEM_NOT_FOUND"]),
     "PUT /api/me/plan/ranks": dict(op="setPlanRanks", req=("PlanRanksRequest", ["me-plan-ranks.request.json"]),
                                    ok={200: ("Plan", ["me-plan.json"])}, errors=["RANK_INVALID"]),
-    "POST /api/me/plan/check": dict(op="checkPlan", req=("PlanCheckRequest", ["me-plan-check.request.json"]),
-                                    ok={200: ("PlanCheck", ["me-plan-check.json"])}, errors=["AS_OF_OUT_OF_RANGE"]),
-    "GET /api/center/board": dict(op="getCenterBoard", ok={200: ("CenterBoard", ["center-board.json"])},
-                                  errors=["AS_OF_OUT_OF_RANGE"]),
-    "GET /api/jobs/{jobId}/views": dict(op="getJobViews", ok={200: ("JobViews", ["job-views.json"])},
-                                        errors=["JOB_NOT_FOUND"]),
+    "GET /api/center/board": dict(op="getCenterBoard", ok={200: ("CenterBoard", ["center-board.json"])}),
     "GET /api/certificates": dict(op="getCertificates", ok={200: ("Certificates", ["certificates.json"])}),
-    "POST /api/me/plan/items/{jobId}/alternatives": dict(
-        op="getPlanItemAlternatives", req=("PlanCheckRequest", ["me-plan-check.request.json"]),
-        ok={200: ("PlanItemAlternatives", ["me-plan-item-alternatives.json"])},
-        errors=["PLAN_ITEM_NOT_FOUND", "AS_OF_OUT_OF_RANGE"]),
     "POST /api/explore/cards": dict(op="getExploreCards", req=OPB, ok={200: ("ExploreCards", ["explore-cards.json"])},
                                     errors=["PROFILE_NOT_FOUND"]),
     "POST /api/explore": dict(op="explore", req=("ExploreRequest", ["explore.request.json"]),

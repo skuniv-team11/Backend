@@ -30,17 +30,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 적합도 추천(#15, ADR-0018). 판정에서 지원 불가가 아니고 기준일에 마감되지 않은 직무(ADR-0016) 중
+ * 규칙 적합도 추천(ADR-0018). 판정에서 지원 불가가 아니고 기준일에 마감되지 않은 직무(ADR-0016) 중
  * 추천할 이유가 있는 직무(선호 전공이 맞거나 관심 문장과 겹침, ADR-0022)를 규칙+키워드 점수로 줄 세워 상위 5개까지 준다.
- * 근거 인용과 기본 이유 문장은 관심 문장과 겹치는 원문을 골라 만든다(ADR-0020, {@link EvidencePicker}·{@link ReasonTemplates}).
- * 실행 중 외부 호출이 없다. LLM 이유 문장은 #16이 따로 만든다.
- * 지망 점검(#23)도 같은 점수로 빈 자리의 적합도를 정한다.
+ * 근거 인용은 관심 문장과 겹치는 원문을 골라 만든다(ADR-0020, {@link EvidencePicker}). 실행 중 외부 호출이 없다.
+ * API로 따로 내보내지 않는다(#15·#16은 ADR-0036에서 지움) — 직무 탐색이 AI 대신 규칙 추천으로 갈 때(#29 source RULE) 쓴다.
  */
 @Service
 public class RecommendService {
 
     static final int LIMIT = 5;
-    static final String REASON_PENDING = "PENDING";
     /** 추천 0개일 때 blockedBy 항목: 선호 전공도 관심 문장도 맞지 않아 뺀 직무(ADR-0022). */
     static final String UNRELATED = "관심 분야";
 
@@ -78,7 +76,7 @@ public class RecommendService {
             var r = e.scored().judged().result();
             items.add(new Recommendation(items.size() + 1, r.jobId(), r.title(), r.institution(), r.verdict(),
                     e.scored().fit(), e.scored().features().jobType(), e.scored().features().stipend(), e.template(),
-                    REASON_PENDING, e.citations()));
+                    e.citations()));
         }
         return new Recommendations(new RoundRef(round.id(), round.termCode()), items,
                 items.isEmpty() ? blockedBy(judged, score(round.id(), judged, profile), asOf) : List.of());

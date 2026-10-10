@@ -11,44 +11,15 @@ D = dt.date
 START, END = D(2026, 7, 13), D(2026, 7, 24)
 
 
-class ReplayTest(unittest.TestCase):
-    def cases(self):
-        for job_id in range(1, 60):
-            for hc, fa in ((1, 0), (1, 2), (2, 3), (3, 1), (2, 0), (5, 5)):
-                for closes in (None, D(2026, 7, 18), D(2026, 7, 14), D(2026, 7, 24)):
-                    yield job_id, hc, fa, closes
-
-    def test_관심_합은_배정_수_마감일부터는_행이_없다(self):
-        for job_id, hc, fa, closes in self.cases():
-            rows = replay.job_signals(job_id, hc, fa, START, END, closes, "t")
-            self.assertEqual(sum(r[1] for r in rows), fa)
-            for day, interest in rows:
-                self.assertGreater(interest, 0)
-                self.assertTrue(START <= day <= END)
-                if closes:
-                    self.assertLess(day, closes)
-            self.assertEqual([r[0] for r in rows], sorted({r[0] for r in rows}))
-
-    def test_같은_seed면_같은_값_다른_seed면_다른_값(self):
-        jobs = [{"id": i, "headcount": 2, "final_assigned": 3, "closes_on": None} for i in range(1, 30)]
-        self.assertEqual(replay.generate(jobs, START, END, "2026-2"), replay.generate(jobs, START, END, "2026-2"))
-        self.assertNotEqual(replay.generate(jobs, START, END, "2026-2")[0], replay.generate(jobs, START, END, "x")[0])
-
-    def test_날짜_없는_센터_모집마감은_회차_안에서_가상_마감일을_정하고_그_전까지만_신호(self):
-        jobs = [{"id": i, "headcount": 2, "final_assigned": 2, "closes_on": None, "center_closed_undated": True}
-                for i in range(1, 40)]
-        signals, virtual = replay.generate(jobs, START, END, "2026-2")
+class VirtualCloseTest(unittest.TestCase):
+    def test_날짜_없는_센터_모집마감만_회차_안에서_가상_마감일을_정하고_같은_seed면_같은_날(self):
+        jobs = [{"id": i, "closes_on": None, "center_closed_undated": True} for i in range(1, 40)]
+        jobs.append({"id": 99, "closes_on": D(2026, 7, 18), "center_closed_undated": False})
+        virtual = replay.virtual_closes(jobs, START, END, "2026-2")
         self.assertEqual(set(virtual), set(range(1, 40)))
-        for job_id, close in virtual.items():
-            self.assertTrue(START < close < END)
-            days = [s["signal_date"] for s in signals if s["job_id"] == job_id]
-            self.assertTrue(all(d < close.isoformat() for d in days))
-            self.assertEqual(sum(s["interest_count"] for s in signals if s["job_id"] == job_id), 2)
-
-    def test_열린_날이_없는데_배정이_있으면_멈춘다(self):
-        self.assertEqual(replay.job_signals(1, 1, 0, START, END, START, "t"), [])
-        with self.assertRaises(ValueError):
-            replay.job_signals(1, 1, 1, START, END, START, "t")
+        self.assertTrue(all(START < close < END for close in virtual.values()))
+        self.assertEqual(virtual, replay.virtual_closes(jobs, START, END, "2026-2"))
+        self.assertNotEqual(virtual, replay.virtual_closes(jobs, START, END, "x"))
 
 
 class ToSqlTest(unittest.TestCase):

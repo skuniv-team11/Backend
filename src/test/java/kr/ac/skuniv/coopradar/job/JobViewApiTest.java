@@ -10,7 +10,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.JsonPath;
 import java.util.concurrent.atomic.AtomicInteger;
 import kr.ac.skuniv.coopradar.TestcontainersConfiguration;
-import kr.ac.skuniv.coopradar.contract.Contract;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,8 +22,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 /**
- * docs/api #25 직무 조회수(ADR-0019). 학생이 직무 상세(#17)를 열면 계정마다 직무별로 하루 한 번 센다.
- * 테스트마다 조회 기록을 비운다.
+ * 직무 조회수(ADR-0019). 학생이 직무 상세(#17)를 열면 계정마다 직무별로 하루 한 번 센다. 조회 수는 #17·#14·#24에
+ * 들어 있다(#25는 ADR-0036에서 지움) — 여기서는 세지 않는 센터 계정으로 #17을 열어 본다. 테스트마다 조회 기록을 비운다.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -44,18 +43,16 @@ class JobViewApiTest {
     }
 
     @Test
-    void 학생은_계정마다_하루_한_번만_세고_센터와_조회수_API는_세지_않는다() throws Exception {
+    void 학생은_계정마다_하루_한_번만_세고_센터는_세지_않는다() throws Exception {
         String a = guestToken("STUDENT");
         String b = guestToken("STUDENT");
         String center = guestToken("CENTER");
 
-        String body = views(a, 122)
+        views(a, 122)
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.jobId").value(122))
+                .andExpect(jsonPath("$.id").value(122))
                 .andExpect(jsonPath("$.views").value(0))
-                .andExpect(jsonPath("$.todayViews").value(0))
-                .andReturn().getResponse().getContentAsString();
-        Contract.assertSameShape(body, Contract.responseExample("getJobViews", 200, null));
+                .andExpect(jsonPath("$.todayViews").value(0));
 
         detail(a, 122).andExpect(status().isOk());
         detail(a, 122).andExpect(status().isOk()); // 같은 날 다시 열어도 그대로
@@ -89,12 +86,12 @@ class JobViewApiTest {
 
     @Test
     void 없는_직무는_404_토큰이_없으면_401() throws Exception {
-        views(guestToken("STUDENT"), 999999)
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("JOB_NOT_FOUND"));
-        mvc.perform(get("/api/jobs/122/views"))
+        mvc.perform(get("/api/jobs/122"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("AUTH_REQUIRED"));
+        // 조회수만 따로 주는 API는 없다(#25, ADR-0036)
+        mvc.perform(get("/api/jobs/122/views").header("Authorization", "Bearer " + guestToken("STUDENT")))
+                .andExpect(status().isNotFound());
         // 없는 직무 상세는 기록하지 않는다
         detail(guestToken("STUDENT"), 999999).andExpect(status().isNotFound());
         assertThat(db.sql("SELECT count(*) FROM job_view").query(Integer.class).single()).isZero();
@@ -106,8 +103,14 @@ class JobViewApiTest {
         return mvc.perform(get("/api/jobs/" + jobId).header("Authorization", "Bearer " + token));
     }
 
+    private String viewer;
+
+    /** 조회 수 보기: 세지 않는 센터 계정으로 직무 상세(#17)를 연다(token은 누가 보는지 적어 둘 뿐). */
     private ResultActions views(String token, int jobId) throws Exception {
-        return mvc.perform(get("/api/jobs/" + jobId + "/views").header("Authorization", "Bearer " + token));
+        if (viewer == null) {
+            viewer = guestToken("CENTER");
+        }
+        return mvc.perform(get("/api/jobs/" + jobId).header("Authorization", "Bearer " + viewer));
     }
 
     private String guestToken(String role) throws Exception {

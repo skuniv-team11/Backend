@@ -54,14 +54,6 @@ app:
     # 시연 기본 기준일(GET /api/rounds/current의 replay.defaultAsOf, 10/5 7/18 → 7/23 — ADR-0019).
     # 실제 사용자가 담은 수는 이 날 생긴 관심으로 더한다. 현재 회차 모집기간 밖이면 가까운 끝 날짜로 맞춘다
     default-as-of: ${REPLAY_DEFAULT_AS_OF:2026-07-23}
-  reason:
-    # 추천 이유 문장(docs/api #16). 키가 비면 LLM을 부르지 않고 기본 문장(TEMPLATE)으로 답한다
-    api-key: ${ANTHROPIC_API_KEY:}
-    model: ${REASON_MODEL:claude-haiku-4-5-20251001}
-    timeout: 5s
-    per-user-per-hour: 30
-    per-ip-per-hour: 60
-    cache-size: 2000
   explore:
     # 직무 탐색(docs/api #28~#32, ADR-0031). 키가 비면 AI를 부르지 않고 규칙 추천(source RULE, NO_KEY)으로 답한다.
     # 모델은 sonnet급이어야 한다(E7: haiku는 키워드보다 Hit@1이 낮음)

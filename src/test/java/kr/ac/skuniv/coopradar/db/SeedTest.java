@@ -56,6 +56,9 @@ class SeedTest {
         assertThat(count("SELECT count(*) FROM review_alert")).isEqualTo(6);
         // 수기는 전문이 들어 있다(실습 결과·소감)
         assertThat(count("SELECT count(*) FROM testimonial WHERE results IS NULL OR reflection IS NULL")).isZero();
+        // 학과·학년은 넣지 않는다 — 학기·기관·팀과 같이 보이면 선배를 알아볼 수 있다(ADR-0037)
+        assertThat(count("SELECT count(*) FROM testimonial WHERE major_text IS NOT NULL OR grade_text IS NOT NULL"))
+                .isZero();
     }
 
     @Test
@@ -65,18 +68,12 @@ class SeedTest {
     }
 
     @Test
-    void 리플레이_관심_합은_배정_수이고_마감일부터와_회차_밖에는_신호가_없다() {
+    void 날짜_없는_센터_모집마감은_회차_안의_가상_마감일이다() {
         assertThat(count("""
-                SELECT count(*) FROM job j
-                WHERE j.final_assigned <> (SELECT coalesce(sum(interest_count), 0) FROM replay_signal s WHERE s.job_id = j.id)
+                SELECT count(*) FROM job j JOIN recruit_round r ON r.id = j.round_id
+                WHERE j.closes_on_is_virtual AND (j.closes_on IS NULL OR j.closes_on <= r.recruit_start
+                                                  OR j.closes_on >= r.recruit_end)
                 """)).isZero();
-        assertThat(count("""
-                SELECT count(*) FROM replay_signal s JOIN job j ON j.id = s.job_id JOIN recruit_round r ON r.id = j.round_id
-                WHERE s.signal_date >= j.closes_on OR s.signal_date < r.recruit_start OR s.signal_date > r.recruit_end
-                """)).isZero();
-        // 관심이 0인 날은 행이 없다(ADR-0019 — 신호는 관심 하나)
-        assertThat(count("SELECT count(*) FROM replay_signal WHERE interest_count = 0")).isZero();
-        assertThat(count("SELECT count(*) FROM replay_signal")).isEqualTo(21);
     }
 
     @Test

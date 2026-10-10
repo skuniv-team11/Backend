@@ -28,10 +28,7 @@ public final class ReferenceDtos {
     public record Certificates(List<Certificate> certificates) {
     }
 
-    /**
-     * 현재 모집 회차(#13). {@code replay}는 S5·C4 날짜 슬라이더 범위와 기본 기준일이다.
-     * 판정·지망 점검·현황판의 asOf 범위 검사도 이 값을 쓴다(README '지망' — asOf는 회차 기간 안).
-     */
+    /** 현재 모집 회차(#13). {@code replay.defaultAsOf}는 시연 기준일(모집 판정 기준일, ADR-0035)이다. */
     public record CurrentRound(int id, String programName, String termCode, int roundNo, LocalDate recruitStart,
                                LocalDate recruitEnd, Replay replay, List<StageInfo> stages) {
     }
@@ -50,9 +47,7 @@ public final class ReferenceDtos {
                             String source) {
     }
 
-    /**
-     * @param signalsAreVirtual 모집 신호가 리플레이용 가상 데이터인지. MVP는 항상 true(실제 신호를 모으지 않는다)
-     */
-    public record Replay(LocalDate defaultAsOf, LocalDate minDate, LocalDate maxDate, boolean signalsAreVirtual) {
+    /** @param defaultAsOf 시연 기준일("시연 모드 · 2026-07-23 기준" 배너). 판정·탐색·현황판의 마감을 이 날로 본다 */
+    public record Replay(LocalDate defaultAsOf) {
     }
 }

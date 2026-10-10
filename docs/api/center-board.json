@@ -1,7 +1,5 @@
 {
   "asOf": "2026-07-23",
-  "isVirtual": true,
-  "signalSource": "REPLAY",
   "round": {
     "id": 1,
     "termCode": "2026-2"
@@ -9,12 +7,8 @@
   "summary": {
     "jobs": 40,
     "seats": 59,
-    "interestTotal": 27,
-    "liveInterestTotal": 1,
-    "zeroSignalJobs": 14,
     "closedJobs": 1
   },
-  "historyAvailable": false,
   "rows": [
     {
       "jobId": 101,
@@ -25,21 +19,15 @@
       },
       "title": "국내 마케팅",
       "headcount": 2,
-      "signal": {
-        "interest": 3,
-        "liveInterest": 1,
-        "headcount": 2,
-        "ratio": 1.5,
-        "status": "OPEN",
+      "closing": {
         "closesOn": null,
         "closeReason": null,
-        "closesOnIsVirtual": false,
-        "expectedFullOn": null
+        "closesOnIsVirtual": false
       },
+      "closed": false,
       "eligiblePool": 910,
       "risks": [],
       "alertCount": 0,
-      "pastZeroRounds": [],
       "views": 23
     },
     {
@@ -51,21 +39,15 @@
       },
       "title": "해외 마케팅",
       "headcount": 2,
-      "signal": {
-        "interest": 0,
-        "liveInterest": 0,
-        "headcount": 2,
-        "ratio": 0.0,
-        "status": "OPEN",
+      "closing": {
         "closesOn": null,
         "closeReason": null,
-        "closesOnIsVirtual": false,
-        "expectedFullOn": null
+        "closesOnIsVirtual": false
       },
+      "closed": false,
       "eligiblePool": 910,
       "risks": [],
       "alertCount": 0,
-      "pastZeroRounds": [],
       "views": 9
     },
     {
@@ -77,17 +59,12 @@
       },
       "title": "콘텐츠 디자인",
       "headcount": 1,
-      "signal": {
-        "interest": 0,
-        "liveInterest": 0,
-        "headcount": 1,
-        "ratio": 0.0,
-        "status": "OPEN",
+      "closing": {
         "closesOn": null,
         "closeReason": null,
-        "closesOnIsVirtual": false,
-        "expectedFullOn": null
+        "closesOnIsVirtual": false
       },
+      "closed": false,
       "eligiblePool": 120,
       "risks": [
         {
@@ -102,7 +79,6 @@
         }
       ],
       "alertCount": 0,
-      "pastZeroRounds": [],
       "views": 3
     },
     {
@@ -114,17 +90,12 @@
       },
       "title": "웹 서비스 개발",
       "headcount": 1,
-      "signal": {
-        "interest": 1,
-        "liveInterest": 0,
-        "headcount": 1,
-        "ratio": 1.0,
-        "status": "OPEN",
+      "closing": {
         "closesOn": null,
         "closeReason": null,
-        "closesOnIsVirtual": false,
-        "expectedFullOn": null
+        "closesOnIsVirtual": false
       },
+      "closed": false,
       "eligiblePool": 750,
       "risks": [
         {
@@ -134,7 +105,6 @@
         }
       ],
       "alertCount": 1,
-      "pastZeroRounds": [],
       "views": 4
     }
   ],
