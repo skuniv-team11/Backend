@@ -252,8 +252,9 @@ for e in cr["expand"]:
     check(all(l["from"]["code"] in cov for l in e["linked"]), f"리포트 {e['code']} 이어진 출발 단위는 채운 단위")
     check(not set(got) & {m["code"] for m in e["more"]} and len(e["more"]) <= 3, f"리포트 {e['code']} more")
 nl = cr["nextLevel"]
-check(all(u["code"] in notc and u["level"] in (nl["baseLevel"], nl["baseLevel"] + 1) for u in nl["units"])
-      and len(nl["units"]) <= 3, "커리어 리포트 한 단계 위")
+levels = [u["level"] for u in nl["units"]]
+check(all(u["code"] in notc and u["level"] >= nl["baseLevel"] for u in nl["units"])
+      and len(set(levels)) <= 2 and levels == sorted(levels) and len(nl["units"]) <= 3, "커리어 리포트 한 단계 위")
 jc = docs["job-career.json"]
 check(all(u["code"][:8] == jc["ncs"]["code"] for u in jc["ncs"]["units"]), "직무 커리어 단위가 그 세분류 것")
 crq = docs["career-report.request.json"]

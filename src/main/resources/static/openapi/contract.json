@@ -3,7 +3,7 @@
   "info": {
     "title": "현장뛰자 API — 계약",
     "version": "0.0.1",
-    "description": "**계약 스펙** — 아직 구현되지 않은 엔드포인트도 보인다. 지금 코드에 있는 것만 보려면 위 드롭다운에서 '구현'을 고른다.\n\n`scripts/build_openapi.py`가 `docs/api`(README 목록 표·예시 JSON)로 만든다. 손으로 고치지 않는다. 원본은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md).\n\n인증이 필요한 API는 오른쪽 **Authorize**에 `POST /api/auth/guest` 응답의 accessToken을 넣는다.\n\n## 공통 규칙 (README에서 옮김)\n\n- 기본 경로 `/api`, JSON, 필드는 camelCase, 날짜는 ISO 8601(`2026-07-18`, `2026-09-30T14:00:00+09:00`).\n- **인증**: `Authorization: Bearer <accessToken>`. 쿠키는 쓰지 않는다 — 프론트(Cloudflare Pages, `pages.dev`)와 Render(`onrender.com`)는 사이트가 달라 서드파티 쿠키 차단에 걸린다.\n  - 토큰은 JWT(HS256, 서명 키는 환경변수 `JWT_SECRET`). 만료는 가입 계정 7일, 체험 계정 24시간(계정도 그때 지운다).\n  - 로그아웃은 프론트가 토큰을 버리는 것으로 끝난다(서버 호출 없음).\n- **권한**: `공개` / `로그인`(역할 무관) / `STUDENT` / `CENTER`. 아래 목록의 '권한' 열.\n- **오류**: HTTP 상태 코드 + `{\"code\": \"...\", \"message\": \"사람이 읽는 설명\"}`. 입력 검증 실패(`INVALID_INPUT`)만 `fields`를 더 준다. 코드 표는 맨 아래.\n- **개인정보**\n  - 프로필(학과·학년·평점 등)은 요청 **본문**으로만 보낸다. URL·쿼리에 넣지 않는다 — 그래서 판정·추천·지망 점검·통근 조회가 GET이 아니라 POST다.\n  - 서버에 저장하는 건 `PUT /api/me/profile`에 `consent: true`로 보냈을 때뿐이다. 탈퇴하면 즉시 지운다.\n  - 사는 곳은 시·군·구까지만 받는다(`homeAreaCode`). 정확한 주소는 받지 않는다.\n  - 요청·응답 본문을 로그에 남기지 않는다.\n  - 지원서(#37~#41)의 이름·생년월일·성별·연락처·주소·학번은 개인정보 수집·이용 동의(`consents.collect: true`) 뒤에만 저장한다. 사진·계좌는 받지 않는다. 센터는 자기 범위(체험 묶음 또는 실제)의 낸 지원서만 보고, 학과(부)장 승인 화면에는 이름·학번·학과·학년·지망만 보인다. 탈퇴하면 함께 지운다([ADR-0033](../decisions/0033-internship-flow.md)).\n  - 직무 탐색(#29)의 경험 글과 커리어 리포트(#34)의 실습 내용은 `consent: true`일 때만 받아 결과와 함께 저장한다(계정당 마지막 1건, 지우기·탈퇴 때 바로 삭제). AI에는 학과·학년·평점을 보내지 않는다([ADR-0031](../decisions/0031-explore-ai.md)·[0032](../decisions/0032-ncs-career.md)).\n- **모집 신호 = 관심**: 관심은 **내 지망에 담은 사람 수**다(순위와 상관없이 [담기]한 사람, 1인 1표). 모집기간 리플레이 가상 값에 실제 사용자가 담은 수를 더해 보여 준다(ADR-0019). 신호를 주는 응답에는 `isVirtual`과 `signalSource`를 반드시 넣는다.\n- **호출 제한**(초기값, 설정으로 조정): 체험 계정 만들기 IP당 1시간 300회(환경변수 `GUEST_PER_IP_PER_HOUR`, 0이면 끔 — 시연장·학교 와이파이는 여럿이 한 IP) → 넘으면 429 + `Retry-After`(초). 이유 문장(LLM) 계정당 1시간 30회·IP당 60회 → 넘으면 **200 + 기본 문장**(화면이 깨지지 않게). 직무 탐색 AI(탐색 1번·'왜 맞나요' 1곳이 각 1회) 계정당 1시간 10회·IP당 60회·서버 전체 하루 300회 → 넘으면 **200 + 규칙 추천**(`source: RULE`, `fallbackReason: LIMITED`). 커리어 리포트(#34)도 같은 한도를 1회씩 쓰고, 넘으면 200 + AI 정리 없이(`source: NONE`). 통근 조회 계정당 1시간 30회·서버 전체 하루 900회(카카오 무료 하루 1,000건 안에서 멈춤) → 넘으면 **200 + `available: false`**.\n- **실행 중 외부 호출**은 Claude(이유 문장·직무 탐색)·카카오(통근 조회 — 주소 검색과 대중교통) 둘뿐이다(ADR-0002, ADR-0007, ADR-0031). 임베딩은 쓰지 않는다(E5 결과, ADR-0018). 둘 다 실패해도 200으로 화면을 유지한다.\n- **코드값**은 영문 대문자이고 DB CHECK와 같은 집합이다(`V1__init.sql`). 화면 표기는 `GET /api/codes`에서 가져간다.\n- **예시 값**: 기관·직무·인용문은 전부 가상이다(`(가상)` 표시). 실제 값은 시드에서 나온다. 목록 응답의 예시는 일부 행만 보여 준다.\n- CORS: `CorsConfig`가 `GET`·`POST`·`PUT`·`DELETE`·`OPTIONS`와 모든 헤더(`Authorization` 포함)를 허용한다(Backend#16). 통근 조회에는 환경변수 `KAKAO_REST_API_KEY`(카카오 디벨로퍼스 REST API 키)가 필요하다."
+    "description": "**계약 스펙** — 아직 구현되지 않은 엔드포인트도 보인다. 지금 코드에 있는 것만 보려면 위 드롭다운에서 '구현'을 고른다.\n\n`scripts/build_openapi.py`가 `docs/api`(README 목록 표·예시 JSON)로 만든다. 손으로 고치지 않는다. 원본은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md).\n\n인증이 필요한 API는 오른쪽 **Authorize**에 `POST /api/auth/guest` 응답의 accessToken을 넣는다.\n\n## 공통 규칙 (README에서 옮김)\n\n- 기본 경로 `/api`, JSON, 필드는 camelCase, 날짜는 ISO 8601(`2026-07-18`, `2026-09-30T14:00:00+09:00`).\n- **인증**: `Authorization: Bearer <accessToken>`. 쿠키는 쓰지 않는다 — 프론트(Cloudflare Pages, `pages.dev`)와 Render(`onrender.com`)는 사이트가 달라 서드파티 쿠키 차단에 걸린다.\n  - 토큰은 JWT(HS256, 서명 키는 환경변수 `JWT_SECRET`). 만료는 가입 계정 7일, 체험 계정 24시간(계정도 그때 지운다).\n  - 로그아웃은 프론트가 토큰을 버리는 것으로 끝난다(서버 호출 없음).\n- **권한**: `공개` / `로그인`(역할 무관) / `STUDENT` / `CENTER`. 아래 목록의 '권한' 열.\n- **오류**: HTTP 상태 코드 + `{\"code\": \"...\", \"message\": \"사람이 읽는 설명\"}`. 입력 검증 실패(`INVALID_INPUT`)만 `fields`를 더 준다. 코드 표는 맨 아래.\n- **개인정보**\n  - 프로필(학과·학년·평점 등)은 요청 **본문**으로만 보낸다. URL·쿼리에 넣지 않는다 — 그래서 판정·추천·지망 점검·통근 조회가 GET이 아니라 POST다.\n  - 서버에 저장하는 건 `PUT /api/me/profile`에 `consent: true`로 보냈을 때뿐이다. 탈퇴하면 즉시 지운다.\n  - 사는 곳은 시·군·구까지만 받는다(`homeAreaCode`). 정확한 주소는 받지 않는다.\n  - 요청·응답 본문을 로그에 남기지 않는다.\n  - 지원서(#37~#41)의 이름·생년월일·성별·연락처·주소·학번은 개인정보 수집·이용 동의(`consents.collect: true`) 뒤에만 저장한다. 사진·계좌는 받지 않는다. 센터는 자기 범위(체험 묶음 또는 실제)의 낸 지원서만 보고, 학과(부)장 승인 화면에는 이름·학번·학과·학년·지망만 보인다. 탈퇴하면 함께 지운다([ADR-0033](../decisions/0033-internship-flow.md)).\n  - 직무 탐색(#29)의 경험 글과 커리어 리포트(#34)의 실습 내용은 `consent: true`일 때만 받아 결과와 함께 저장한다(계정당 마지막 1건, 지우기·탈퇴 때 바로 삭제). AI에는 학과·학년·평점을 보내지 않는다([ADR-0031](../decisions/0031-explore-ai.md)·[0032](../decisions/0032-ncs-career.md)).\n- **모집 신호 = 관심**: 관심은 **내 지망에 담은 사람 수**다(순위와 상관없이 [담기]한 사람, 1인 1표). 모집기간 리플레이 가상 값에 실제 사용자가 담은 수를 더해 보여 준다(ADR-0019). 신호를 주는 응답에는 `isVirtual`과 `signalSource`를 반드시 넣는다.\n- **호출 제한**(초기값, 설정으로 조정): 체험 계정 만들기 IP당 1시간 300회(환경변수 `GUEST_PER_IP_PER_HOUR`, 0이면 끔 — 시연장·학교 와이파이는 여럿이 한 IP) → 넘으면 429 + `Retry-After`(초). 이유 문장(LLM) 계정당 1시간 30회·IP당 60회 → 넘으면 **200 + 기본 문장**(화면이 깨지지 않게). 직무 탐색 AI(탐색 1번·'왜 맞나요' 1곳이 각 1회) 계정당 1시간 10회·IP당 60회·서버 전체 하루 300회 → 넘으면 **200 + 규칙 추천**(`source: RULE`, `fallbackReason: LIMITED`). 커리어 리포트(#34)도 같은 한도를 1회씩 쓰고, 넘으면 200 + AI 정리 없이(`source: NONE`). 통근 조회 계정당 1시간 30회·서버 전체 하루 900회(카카오 무료 하루 1,000건 안에서 멈춤) → 넘으면 **200 + `available: false`**.\n- **실행 중 외부 호출**은 Claude(이유 문장·직무 탐색·커리어 리포트)·카카오(통근 조회 — 주소 검색과 대중교통) 둘뿐이다(ADR-0002, ADR-0007, ADR-0031). 임베딩은 쓰지 않는다(E5 결과, ADR-0018). 둘 다 실패해도 200으로 화면을 유지한다.\n- **코드값**은 영문 대문자이고 DB CHECK와 같은 집합이다(`V1__init.sql`). 화면 표기는 `GET /api/codes`에서 가져간다.\n- **예시 값**: 기관·직무·인용문은 전부 가상이다(`(가상)` 표시). 실제 값은 시드에서 나온다. 목록 응답의 예시는 일부 행만 보여 준다.\n- CORS: `CorsConfig`가 `GET`·`POST`·`PUT`·`DELETE`·`OPTIONS`와 모든 헤더(`Authorization` 포함)를 허용한다(Backend#16). 응답 헤더 `Retry-After`(429)·`Content-Disposition`(CSV 파일 이름)은 프론트 JS가 읽을 수 있게 노출한다. 통근 조회에는 환경변수 `KAKAO_REST_API_KEY`(카카오 디벨로퍼스 REST API 키)가 필요하다."
   },
   "externalDocs": {
     "description": "docs/api/README.md",
@@ -461,7 +461,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -509,7 +509,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Credentials"
+                "$ref": "#/components/schemas/LoginRequest"
               },
               "examples": {
                 "auth-login.request.json": {
@@ -563,7 +563,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -688,7 +688,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -1032,7 +1032,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -1763,7 +1763,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -1987,7 +1987,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -2143,7 +2143,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -2577,7 +2577,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -2797,7 +2797,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -3052,7 +3052,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -3259,7 +3259,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -3888,7 +3888,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -4071,7 +4071,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -4363,7 +4363,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -5556,7 +5556,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -6622,7 +6622,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -7335,7 +7335,7 @@
             }
           },
           "409": {
-            "description": "APPLICATION_LOCKED · APPLICATION_CLOSED",
+            "description": "APPLICATION_LOCKED · APPLICATION_CLOSED · STATE_CONFLICT",
             "content": {
               "application/json": {
                 "schema": {
@@ -7352,6 +7352,12 @@
                     "value": {
                       "code": "APPLICATION_CLOSED",
                       "message": "기준일이 신청 기간 밖"
+                    }
+                  },
+                  "STATE_CONFLICT": {
+                    "value": {
+                      "code": "STATE_CONFLICT",
+                      "message": "지금 단계에서 할 수 없는 처리(확정 전 매칭이 덜 됨, 결과 대기, 내용이 바뀐 승인 링크, 합격 전 서류 등)"
                     }
                   }
                 }
@@ -9017,7 +9023,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -9734,7 +9740,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -10471,7 +10477,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -11237,7 +11243,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -11543,7 +11549,7 @@
                   "INVALID_INPUT": {
                     "value": {
                       "code": "INVALID_INPUT",
-                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다",
+                      "message": "형식·범위 위반. `fields: [{field, reason}]`를 준다. 글에 NUL 문자(`\\u0000`)가 있어도 이것(`fields` 없음)",
                       "fields": [
                         {
                           "field": "profile.gpa",
@@ -15808,6 +15814,24 @@
           "UNSPECIFIED"
         ],
         "description": "`KOSPI` 코스피 · `KOSDAQ` 코스닥 · `UNLISTED` 비상장 · `UNSPECIFIED` 미기재"
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "description": "대소문자 상관없이 찾는다. 형식은 따지지 않는다(틀리면 401)"
+          },
+          "password": {
+            "type": "string",
+            "description": "형식을 따지지 않는다. 틀리면 401 LOGIN_FAILED"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
       },
       "MajorMatch": {
         "type": "string",

@@ -23,6 +23,11 @@ public final class AuthDtos {
             @NotNull(message = "필수예요") @Size(min = 8, message = "8자 이상") String password) {
     }
 
+    /** 로그인은 형식을 따지지 않는다(가입 규칙과 다른 값이면 400이 아니라 401 LOGIN_FAILED). */
+    public record LoginRequest(@NotBlank(message = "필수예요") @Size(max = 254, message = "254자 이하") String email,
+                               @NotNull(message = "필수예요") String password) {
+    }
+
     /**
      * @param stage     체험 학생의 시점(APPLYING 지원 중 · PRACTICING 실습 중 · DONE 실습 마친 뒤). 없으면 APPLYING. 센터는 무시
      * @param demoGroup 같은 브라우저에서 먼저 만든 체험 계정의 묶음. 없거나 만료됐으면 새 묶음(ADR-0033)

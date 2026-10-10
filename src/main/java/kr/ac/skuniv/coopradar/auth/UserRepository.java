@@ -48,16 +48,27 @@ public class UserRepository {
                 .optional();
     }
 
-    public Optional<AuthUser> findAuthUser(long id) {
-        return db.sql("SELECT id, role, is_guest, expires_at FROM app_user WHERE id = :id")
+    /** 요청한 계정과 그 계정이 만들어진 시각 표시(토큰의 {@code acc}와 맞춰 본다). */
+    public record AuthRow(AuthUser user, long accountStamp) {
+    }
+
+    public Optional<AuthRow> findAuthUser(long id) {
+        return db.sql("SELECT id, role, is_guest, expires_at, " + STAMP + " AS stamp FROM app_user WHERE id = :id")
                 .param("id", id)
                 .query((rs, i) -> {
                     OffsetDateTime exp = rs.getObject("expires_at", OffsetDateTime.class);
-                    return new AuthUser(rs.getLong("id"), Role.valueOf(rs.getString("role")), rs.getBoolean("is_guest"),
-                            exp == null ? null : exp.toInstant());
+                    return new AuthRow(new AuthUser(rs.getLong("id"), Role.valueOf(rs.getString("role")),
+                            rs.getBoolean("is_guest"), exp == null ? null : exp.toInstant()), rs.getLong("stamp"));
                 })
                 .optional();
     }
+
+    /** 계정 생성 시각(마이크로초). 토큰을 낼 때 넣는다. */
+    public long accountStamp(long id) {
+        return db.sql("SELECT " + STAMP + " FROM app_user WHERE id = :id").param("id", id).query(Long.class).single();
+    }
+
+    private static final String STAMP = "(extract(epoch FROM created_at) * 1000000)::bigint";
 
     public Optional<Account> findAccount(long id) {
         return db.sql("""

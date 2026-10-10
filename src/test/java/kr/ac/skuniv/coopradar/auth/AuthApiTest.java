@@ -115,6 +115,13 @@ class AuthApiTest {
                 .andExpect(jsonPath("$.code").value("LOGIN_FAILED"))
                 .andReturn().getResponse().getContentAsString();
         assertThat(noAccount).isEqualTo(wrongPassword);
+        // 가입 규칙(8자 이상·이메일 형식)과 다른 값도 400이 아니라 401(로그인은 형식을 따지지 않는다)
+        mvc.perform(json(post("/api/auth/login"), creds(email, "short")))
+                .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("LOGIN_FAILED"));
+        mvc.perform(json(post("/api/auth/login"), creds("not-an-email", "password-8")))
+                .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("LOGIN_FAILED"));
+        mvc.perform(json(post("/api/auth/login"), creds(email, "가".repeat(30))))
+                .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("LOGIN_FAILED"));
     }
 
     // ───────── 토큰 ─────────
@@ -135,7 +142,7 @@ class AuthApiTest {
                 .andExpect(jsonPath("$.code").value("AUTH_REQUIRED"));
 
         long id = JwtTestSupport.subject(token);
-        String expired = jwt.issue(id, Role.STUDENT, false, Instant.now().minusSeconds(5));
+        String expired = jwt.issue(id, Role.STUDENT, false, Instant.now().minusSeconds(5), 0);
         mvc.perform(get("/api/me").header("Authorization", "Bearer " + expired)).andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("TOKEN_EXPIRED"));
     }

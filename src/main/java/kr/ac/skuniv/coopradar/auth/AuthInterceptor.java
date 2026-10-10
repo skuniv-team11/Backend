@@ -42,9 +42,12 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (header == null || !header.regionMatches(true, 0, BEARER, 0, BEARER.length())) {
             throw new ApiException(ErrorCode.AUTH_REQUIRED, "로그인이 필요해요");
         }
-        long userId = jwt.verify(header.substring(BEARER.length()).trim());
-        AuthUser user = users.findAuthUser(userId)
-                .orElseThrow(() -> new ApiException(ErrorCode.AUTH_REQUIRED, "로그인이 필요해요")); // 탈퇴·정리된 계정
+        JwtService.Verified token = jwt.verify(header.substring(BEARER.length()).trim());
+        UserRepository.AuthRow row = users.findAuthUser(token.userId())
+                .filter(r -> token.accountStamp() != null && token.accountStamp() == r.accountStamp())
+                // 탈퇴·정리된 계정, DB를 다시 만들어 같은 id를 다른 사람이 쓰는 경우, 표시가 없는 옛 토큰
+                .orElseThrow(() -> new ApiException(ErrorCode.AUTH_REQUIRED, "로그인이 필요해요"));
+        AuthUser user = row.user();
         if (user.guest() && user.expiresAt() != null && !clock.instant().isBefore(user.expiresAt())) {
             throw new ApiException(ErrorCode.TOKEN_EXPIRED, "체험 시간이 끝났어요. 다시 시작해 주세요");
         }

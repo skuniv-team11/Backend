@@ -68,12 +68,15 @@ public class CenterFlowService {
     static final int REASON_MAX = 300;
 
     private final ApplicationRepository repo;
+    private final ApplicationService applications;
     private final RoundService rounds;
     private final InternshipProperties props;
     private final Clock clock;
 
-    public CenterFlowService(ApplicationRepository repo, RoundService rounds, InternshipProperties props, Clock clock) {
+    public CenterFlowService(ApplicationRepository repo, ApplicationService applications, RoundService rounds,
+                             InternshipProperties props, Clock clock) {
         this.repo = repo;
+        this.applications = applications;
         this.rounds = rounds;
         this.props = props;
         this.clock = clock;
@@ -84,8 +87,13 @@ public class CenterFlowService {
     }
 
     private Row inScope(AuthUser user, long applicationId) {
+        return inScope(user, applicationId, false);
+    }
+
+    /** @param lock 바꾸는 요청이면 행을 잠근다(학생의 저장·다시 내기와 겹치지 않게) */
+    private Row inScope(AuthUser user, long applicationId, boolean lock) {
         Scope scope = scope(user);
-        return repo.byId(applicationId)
+        return (lock ? repo.byIdForUpdate(applicationId) : repo.byId(applicationId))
                 .filter(r -> r.status() != Status.DRAFT && r.roundId() == rounds.current().id())
                 .filter(r -> scope.demo() ? Objects.equals(r.group(), scope.group()) && scope.group() != null
                         : r.group() == null)
@@ -136,35 +144,49 @@ public class CenterFlowService {
         return view(inScope(user, applicationId));
     }
 
+    /**
+     * 접수(RECEIVED)는 새로 들어온(SUBMITTED) 지원서만 — 보완 요청 중인 지원서는 학생이 다시 내야 접수한다(이미 접수 완료면 그대로).
+     * 보완 요청은 낸 지원서(새로 들어옴·접수 완료·보완 요청 중)에 매칭 확정 전까지.
+     */
     @Transactional
     public Application setStatus(AuthUser user, long applicationId, Status target, String reason) {
-        Row r = inScope(user, applicationId);
+        Row r = inScope(user, applicationId, true);
         if (r.status() == Status.MATCHED) {
             throw new ApiException(ErrorCode.STATE_CONFLICT, "매칭이 확정된 지원서는 상태를 바꿀 수 없어요");
         }
         if (target == Status.RECEIVED) {
-            repo.receive(r.id(), clock.instant());
+            if (r.status() == Status.FIX_REQUESTED) {
+                throw new ApiException(ErrorCode.STATE_CONFLICT, "보완 요청 중인 지원서는 학생이 고쳐서 다시 내면 접수할 수 있어요");
+            }
+            if (r.status() == Status.SUBMITTED && repo.receive(r.id(), clock.instant()) != 1) {
+                throw new ApiException(ErrorCode.STATE_CONFLICT, "지원서 상태가 바뀌었어요. 다시 불러 주세요");
+            }
         } else if (target == Status.FIX_REQUESTED) {
             String why = ApplicationService.blankToNull(reason);
             if (why == null || why.length() < REASON_MIN || why.length() > REASON_MAX) {
                 throw ApiException.invalid("reason", "보완 요청 이유를 5~300자로 적어 주세요");
             }
-            repo.requestFix(r.id(), why, clock.instant());
+            if (repo.requestFix(r.id(), why, clock.instant()) != 1) {
+                throw new ApiException(ErrorCode.STATE_CONFLICT, "지원서 상태가 바뀌었어요. 다시 불러 주세요");
+            }
         } else {
             throw ApiException.invalid("status", "RECEIVED 또는 FIX_REQUESTED");
         }
         return view(repo.byId(r.id()).orElseThrow());
     }
 
-    /** 센터가 보는 지원서 한 부(제5호 서식 보기). 승인 링크 값은 주지 않는다. */
+    /**
+     * 센터가 보는 지원서 한 부(제5호 서식 보기). 승인 링크 값은 주지 않는다. 지망은 낸 그대로(마감 여부는 낸 날 기준),
+     * 승인 상태는 학생 화면과 같은 값이다(보완 요청 중이면 학생이 고치는 지금 내용으로 본다).
+     */
     private Application view(Row r) {
         CurrentRound round = rounds.current();
         LocalDate asOf = LocalDate.now(clock.withZone(Times.KST));
         List<PickRow> pickRows = repo.picks(List.of(r.id())).getOrDefault(r.id(), List.of());
         List<Integer> pickIds = pickRows.stream().map(PickRow::jobId).toList();
-        List<Pick> picks = ApplicationViews.snapshotPicks(pickRows, repo.jobs(pickIds), asOf);
+        List<Pick> picks = ApplicationViews.snapshotPicks(pickRows, repo.jobs(pickIds), ApplicationViews.submittedOn(r, asOf));
         ApprovalRow approvalRow = repo.approval(r.id(), ApprovalKind.APPLICATION).orElse(null);
-        var approval = ApplicationViews.approval(approvalRow, ApplicationViews.contentHash(r, pickIds), false);
+        var approval = ApplicationViews.approval(approvalRow, ApplicationViews.contentHash(r, applications.basis(r)), false);
         var academic = ApplicationViews.academic(r);
         return new Application(r.id(), r.status(), r.receiptNo(), r.virtual(), new RoundRef(round.id(), round.termCode()),
                 asOf, ApplicationService.period(round, asOf), r.applicant(), academic, picks, r.resume(), r.essays(),
@@ -219,15 +241,19 @@ public class CenterFlowService {
 
     @Transactional
     public PlacementBoard match(AuthUser user, long applicationId, Integer rank) {
-        Row r = inScope(user, applicationId);
+        Row r = inScope(user, applicationId, true);
         if (r.status() != Status.RECEIVED) {
             throw new ApiException(ErrorCode.STATE_CONFLICT, "접수 완료한 지원서만 매칭할 수 있어요(확정 뒤에는 못 바꿔요)");
         }
-        int picks = repo.picks(List.of(r.id())).getOrDefault(r.id(), List.of()).size();
-        if (rank != null && (rank < 1 || rank > picks)) {
-            throw ApiException.invalid("rank", "이 지원서의 지망(1~" + picks + ") 중 하나");
+        List<Integer> ranks = repo.picks(List.of(r.id())).getOrDefault(r.id(), List.of()).stream().map(PickRow::rank)
+                .toList();
+        if (rank != null && !ranks.contains(rank)) {
+            throw ApiException.invalid("rank", "이 지원서의 지망(" + ranks.stream().map(String::valueOf)
+                    .collect(Collectors.joining("·")) + "지망) 중 하나");
         }
-        repo.setMatchedRank(r.id(), rank, clock.instant());
+        if (repo.setMatchedRank(r.id(), rank, clock.instant()) != 1) {
+            throw new ApiException(ErrorCode.STATE_CONFLICT, "지원서 상태가 바뀌었어요. 다시 불러 주세요");
+        }
         return placement(user);
     }
 
@@ -250,14 +276,16 @@ public class CenterFlowService {
     @Transactional
     public PlacementBoard select(AuthUser user, long applicationId, OffsetDateTime interviewAt, InterviewMode mode,
                                  Result result) {
-        Row r = inScope(user, applicationId);
+        Row r = inScope(user, applicationId, true);
         if (r.status() != Status.MATCHED || r.notifiedAt() != null) {
             throw new ApiException(ErrorCode.STATE_CONFLICT, "매칭이 확정되고 결과를 아직 알리지 않은 학생만 넣을 수 있어요");
         }
         if (result == null) {
             throw ApiException.invalid("result", "WAIT·PASS·FAIL");
         }
-        repo.setSelection(r.id(), interviewAt, mode, result, clock.instant());
+        if (repo.setSelection(r.id(), interviewAt, mode, result, clock.instant()) != 1) {
+            throw new ApiException(ErrorCode.STATE_CONFLICT, "매칭이 확정되고 결과를 아직 알리지 않은 학생만 넣을 수 있어요");
+        }
         return placement(user);
     }
 
@@ -294,6 +322,10 @@ public class CenterFlowService {
             var approval = ApplicationViews.approval(approvals.get(r.id()), null, true);
             List<CloseItem> missing = missing(c, approval.status() == InternshipDtos.ApprovalStatus.APPROVED);
             JobInfo j = l.matchedJob(r);
+            if (j == null) {
+                // 매칭된 직무가 시드에서 빠졌다(지망 줄이 cascade로 지워짐). 마무리 표에서 뺀다
+                continue;
+            }
             boolean instDone = c.evaluation() != null && c.attendance() != null;
             institutionDone.merge(j.institution().id(), instDone, Boolean::logicalAnd);
             if (c.report() != null && c.credit() != null && c.survey() != null) {
@@ -337,7 +369,7 @@ public class CenterFlowService {
     /** 기관 서류 받음 표시(null이면 그대로). 평가표·출근부를 모두 받으면 학점 인정 승인 링크를 만든다. */
     @Transactional
     public CloseBoard institutionDocuments(AuthUser user, long applicationId, Boolean evaluation, Boolean attendance) {
-        Row r = inScope(user, applicationId);
+        Row r = inScope(user, applicationId, true);
         if (!TimelineService.passed(r)) {
             throw new ApiException(ErrorCode.STATE_CONFLICT, "합격을 알린 학생만 마무리 서류를 받아요");
         }

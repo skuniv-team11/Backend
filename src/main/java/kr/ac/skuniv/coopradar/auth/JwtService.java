@@ -26,6 +26,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtService {
 
+    static final String ACCOUNT_STAMP = "acc";
+
     private static final Logger log = LoggerFactory.getLogger(JwtService.class);
     private static final int MIN_SECRET_BYTES = 32;
 
@@ -51,9 +53,14 @@ public class JwtService {
         this.verifier = new MACVerifier(secret);
     }
 
-    public String issue(long userId, Role role, boolean guest, Instant expiresAt) {
+    /**
+     * 계정이 만들어진 시각(마이크로초, {@code app_user.created_at})을 함께 넣는다. DB를 다시 만들어 같은 id가 다른 사람에게
+     * 가도 옛 토큰이 새 계정으로 들어가지 못하게 한다(ADR-0005 재생성 · 10/10 리뷰).
+     */
+    public String issue(long userId, Role role, boolean guest, Instant expiresAt, long accountStamp) {
         JWTClaimsSet claims = new JWTClaimsSet.Builder()
                 .subject(Long.toString(userId))
+                .claim(ACCOUNT_STAMP, accountStamp)
                 .issueTime(Date.from(clock.instant()))
                 .expirationTime(Date.from(expiresAt))
                 .claim("role", role.name())
@@ -68,8 +75,12 @@ public class JwtService {
         return jwt.serialize();
     }
 
+    /** 확인한 토큰의 계정 id와 계정 생성 표시. 옛 토큰에는 표시가 없다(null). */
+    public record Verified(long userId, Long accountStamp) {
+    }
+
     /** 서명·알고리즘·만료를 확인하고 계정 id를 돌려준다. 만료면 TOKEN_EXPIRED, 그 밖은 AUTH_REQUIRED. */
-    public long verify(String token) {
+    public Verified verify(String token) {
         try {
             SignedJWT jwt = SignedJWT.parse(token);
             if (!JWSAlgorithm.HS256.equals(jwt.getHeader().getAlgorithm()) || !jwt.verify(verifier)) {
@@ -83,7 +94,7 @@ public class JwtService {
             if (!clock.instant().isBefore(exp.toInstant())) {
                 throw new ApiException(ErrorCode.TOKEN_EXPIRED, "로그인이 만료됐어요. 다시 로그인해 주세요");
             }
-            return Long.parseLong(claims.getSubject());
+            return new Verified(Long.parseLong(claims.getSubject()), claims.getLongClaim(ACCOUNT_STAMP));
         } catch (ParseException | JOSEException | NumberFormatException e) {
             throw invalid();
         }

@@ -10,13 +10,17 @@ spring:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/coopradar}
     username: ${DB_USER:coopradar}
     password: ${DB_PASSWORD:coopradar}
+    hikari:
+      data-source-properties:
+        # DB 오류 메시지에 행 값('Failing row contains …' — 이름·연락처일 수 있다)을 싣지 않는다(ADR-0008)
+        logServerErrorDetail: false
   flyway:
     # 앱이 뜰 때 V*.sql을 순서대로 적용한다(ADR-0010). 이미 적용한 파일은 고치지 않고 다음 번호를 새로 만든다
     locations: classpath:db/migration
 
 springdoc:
   # Swagger UI 드롭다운에 스펙 두 개(ADR-0011)
-  #  계약 = docs/api로 만든 정적 파일(static/openapi/contract.json, scripts/build_openapi.py가 생성) — 26개 전부
+  #  계약 = docs/api로 만든 정적 파일(static/openapi/contract.json, scripts/build_openapi.py가 생성) — 계약의 API 전부
   #  구현 = springdoc이 지금 컨트롤러에서 만든 것(/v3/api-docs) — 구현된 것만
   paths-to-match: /api/**
   swagger-ui:

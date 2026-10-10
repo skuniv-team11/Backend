@@ -113,8 +113,20 @@ public class ApplicationRepository {
                 .param("user", userId).param("round", roundId).query(ApplicationRepository::row).optional();
     }
 
+    /** 학생이 고치는 경로: 행을 잠가 같은 지원서를 두 요청이 동시에 바꾸지 않게 한다. */
+    Optional<Row> byUserForUpdate(long userId, int roundId) {
+        return db.sql(ROW_SQL + " WHERE a.user_id = :user AND a.round_id = :round FOR UPDATE OF a")
+                .param("user", userId).param("round", roundId).query(ApplicationRepository::row).optional();
+    }
+
     Optional<Row> byId(long id) {
         return db.sql(ROW_SQL + " WHERE a.id = :id").param("id", id).query(ApplicationRepository::row).optional();
+    }
+
+    /** 센터가 바꾸는 경로: 행을 잠근다. */
+    Optional<Row> byIdForUpdate(long id) {
+        return db.sql(ROW_SQL + " WHERE a.id = :id FOR UPDATE OF a").param("id", id).query(ApplicationRepository::row)
+                .optional();
     }
 
     /** 범위 안의 낸 지원서(작성 중 제외), 접수번호 순. */
@@ -125,24 +137,26 @@ public class ApplicationRepository {
                 .query(ApplicationRepository::row).list();
     }
 
-    long insertDraft(long userId, int roundId, UUID group) {
-        return db.sql("""
+    /** 작성 중 지원서를 만들고 잠근다. 같은 학생이 동시에 처음 저장해도 한 건만 생긴다. */
+    Row insertDraft(long userId, int roundId, UUID group) {
+        db.sql("""
                         INSERT INTO application (round_id, user_id, demo_group_id) VALUES (:round, :user, :group)
-                        RETURNING id""")
+                        ON CONFLICT (user_id, round_id) WHERE user_id IS NOT NULL DO NOTHING""")
                 .param("round", roundId).param("user", userId).param("group", group)
-                .query(Long.class).single();
+                .update();
+        return byUserForUpdate(userId, roundId).orElseThrow();
     }
 
-    /** 학생이 쓴 칸(신청서·이력서·자기소개서·서약·동의·서명). */
-    void saveForm(long id, Applicant a, Resume resume, List<String> essays, boolean pledge, boolean collect,
-                  boolean thirdParty, String signature, Instant now) {
-        db.sql("""
+    /** 학생이 쓴 칸(신청서·이력서·자기소개서·서약·동의·서명). 고칠 수 있는 상태일 때만 바꾼다. 바뀐 행 수. */
+    int saveForm(long id, Applicant a, Resume resume, List<String> essays, boolean pledge, boolean collect,
+                 boolean thirdParty, String signature, Instant now) {
+        return db.sql("""
                         UPDATE application SET name_ko = :nameKo, name_en = :nameEn, birth_date = :birth, gender = :gender,
                                phone = :phone, email = :email, address = :address, student_no = :studentNo,
                                minor_major = :minor, resume = CAST(:resume AS jsonb), essays = :essays, pledge = :pledge,
                                consent_collect = :collect, consent_third_party = :third, signature = :signature,
                                updated_at = :now
-                        WHERE id = :id""")
+                        WHERE id = :id AND status IN ('DRAFT', 'FIX_REQUESTED')""")
                 .param("nameKo", a.nameKo()).param("nameEn", a.nameEn()).param("birth", a.birthDate())
                 .param("gender", a.gender()).param("phone", a.phone()).param("email", a.email())
                 .param("address", a.address()).param("studentNo", a.studentNo()).param("minor", a.minorMajor())
@@ -156,8 +170,11 @@ public class ApplicationRepository {
         db.sql("DELETE FROM application WHERE id = :id").param("id", id).update();
     }
 
-    /** 다음 접수번호(회차·묶음 안에서 '2026-2-001'부터). */
+    /** 다음 접수번호(회차·묶음 안에서 '2026-2-001'부터). 범위마다 트랜잭션 잠금을 잡아 두 학생이 같은 번호를 받지 않게 한다. */
     String nextReceiptNo(int roundId, UUID group, String termCode) {
+        db.sql("SELECT 1 FROM (SELECT pg_advisory_xact_lock(hashtext(:key))) l")
+                .param("key", "receipt:" + roundId + ":" + (group == null ? "real" : group))
+                .query(Integer.class).single();
         Integer max = db.sql("""
                         SELECT max(CAST(substring(receipt_no FROM '[0-9]+$') AS integer)) FROM application
                         WHERE round_id = :round AND receipt_no IS NOT NULL AND """
@@ -167,36 +184,45 @@ public class ApplicationRepository {
         return "%s-%03d".formatted(termCode, (max == null ? 0 : max) + 1);
     }
 
-    /** 내기: 접수번호·학적(저장한 프로필)·지망을 고정한다. */
-    void submit(long id, String receiptNo, int departmentId, int grade, int semesters, BigDecimal gpa,
-                boolean graduationExpected, Instant now) {
-        db.sql("""
+    /**
+     * 내기: 접수번호·학적(저장한 프로필)·지망을 고정한다. 바뀐 행 수. 낸 시각은 처음 낸 때 그대로 둔다(보완 뒤 다시 내도 —
+     * 접수번호와 같이, 낸 지망의 마감 여부를 그날로 본다).
+     */
+    int submit(long id, String receiptNo, int departmentId, int grade, int semesters, BigDecimal gpa,
+               boolean graduationExpected, Instant submittedAt, Instant now) {
+        return db.sql("""
                         UPDATE application SET status = 'SUBMITTED', receipt_no = coalesce(receipt_no, :receipt),
                                department_id = :dep, grade = :grade, completed_semesters = :sem, gpa = :gpa,
-                               graduation_expected = :grad, fix_reason = NULL, submitted_at = :now, updated_at = :now
-                        WHERE id = :id""")
+                               graduation_expected = :grad, fix_reason = NULL,
+                               submitted_at = coalesce(submitted_at, :submitted),
+                               updated_at = :now
+                        WHERE id = :id AND status IN ('DRAFT', 'FIX_REQUESTED')""")
                 .param("receipt", receiptNo).param("dep", departmentId).param("grade", grade).param("sem", semesters)
-                .param("gpa", gpa).param("grad", graduationExpected).param("now", Times.utc(now)).param("id", id)
+                .param("gpa", gpa).param("grad", graduationExpected).param("submitted", Times.utc(submittedAt))
+                .param("now", Times.utc(now)).param("id", id)
                 .update();
     }
 
-    void receive(long id, Instant now) {
-        db.sql("""
+    /** 새로 들어온 지원서만 접수 완료로. 바뀐 행 수. */
+    int receive(long id, Instant now) {
+        return db.sql("""
                         UPDATE application SET status = 'RECEIVED', fix_reason = NULL, received_at = :now, updated_at = :now
-                        WHERE id = :id""")
+                        WHERE id = :id AND status = 'SUBMITTED'""")
                 .param("now", Times.utc(now)).param("id", id).update();
     }
 
-    void requestFix(long id, String reason, Instant now) {
-        db.sql("""
+    /** 낸 지원서(매칭 확정 전)에 보완 요청. 바뀐 행 수. */
+    int requestFix(long id, String reason, Instant now) {
+        return db.sql("""
                         UPDATE application SET status = 'FIX_REQUESTED', fix_reason = :reason, matched_rank = NULL,
                                updated_at = :now
-                        WHERE id = :id""")
+                        WHERE id = :id AND status IN ('SUBMITTED', 'RECEIVED', 'FIX_REQUESTED')""")
                 .param("reason", reason).param("now", Times.utc(now)).param("id", id).update();
     }
 
-    void setMatchedRank(long id, Integer rank, Instant now) {
-        db.sql("UPDATE application SET matched_rank = :rank, updated_at = :now WHERE id = :id")
+    /** 접수 완료(확정 전) 지원서의 매칭 지망. 바뀐 행 수. */
+    int setMatchedRank(long id, Integer rank, Instant now) {
+        return db.sql("UPDATE application SET matched_rank = :rank, updated_at = :now WHERE id = :id AND status = 'RECEIVED'")
                 .param("rank", rank).param("now", Times.utc(now)).param("id", id).update();
     }
 
@@ -208,10 +234,11 @@ public class ApplicationRepository {
                 .param("now", Times.utc(now)).param("round", roundId).param("group", scope.group()).update();
     }
 
-    void setSelection(long id, OffsetDateTime interviewAt, InterviewMode mode, Result result, Instant now) {
-        db.sql("""
+    /** 매칭 확정 뒤, 결과를 알리기 전에만. 바뀐 행 수. */
+    int setSelection(long id, OffsetDateTime interviewAt, InterviewMode mode, Result result, Instant now) {
+        return db.sql("""
                         UPDATE application SET interview_at = :at, interview_mode = :mode, result = :result, updated_at = :now
-                        WHERE id = :id""")
+                        WHERE id = :id AND status = 'MATCHED' AND result_notified_at IS NULL""")
                 .param("at", interviewAt).param("mode", mode == null ? null : mode.name()).param("result", result.name())
                 .param("now", Times.utc(now)).param("id", id).update();
     }
@@ -227,6 +254,10 @@ public class ApplicationRepository {
     // ───────────── 지망 ─────────────
 
     record PickRow(int rank, int jobId, Verdict verdict) {
+    }
+
+    /** 지망 순위와 직무. 순위는 담은 직무(#22)의 값 그대로다(2·3지망만 정했으면 2·3). */
+    record RankedJob(int rank, int jobId) {
     }
 
     Map<Long, List<PickRow>> picks(List<Long> applicationIds) {
@@ -254,9 +285,9 @@ public class ApplicationRepository {
     }
 
     /** 담은 직무 순위(1~3지망). */
-    List<Integer> rankedPlan(long userId) {
-        return db.sql("SELECT job_id FROM plan_item WHERE user_id = :user AND rank IS NOT NULL ORDER BY rank")
-                .param("user", userId).query(Integer.class).list();
+    List<RankedJob> rankedPlan(long userId) {
+        return db.sql("SELECT rank, job_id FROM plan_item WHERE user_id = :user AND rank IS NOT NULL ORDER BY rank")
+                .param("user", userId).query((rs, n) -> new RankedJob(rs.getInt("rank"), rs.getInt("job_id"))).list();
     }
 
     // ───────────── 직무 ─────────────
@@ -468,9 +499,17 @@ public class ApplicationRepository {
                 .param("notified", notifiedAt == null ? null : Times.utc(notifiedAt)).param("id", id).update();
     }
 
-    /** 묶음이 있으면 만료를 늦추고(같은 브라우저의 다음 체험 계정), 없으면 새로 만든다. 새로 만들었으면 true. */
-    boolean upsertGroup(UUID id, Instant expiresAt) {
-        int touched = db.sql("UPDATE demo_group SET expires_at = greatest(expires_at, :exp) WHERE id = :id AND expires_at > now()")
+    /**
+     * 묶음이 있으면 만료를 늦추고(같은 브라우저의 다음 체험 계정), 없으면 새로 만든다. 새로 만들었으면 true.
+     * 만료됐지만 정리 작업이 아직 지우지 않은 묶음은 먼저 지운다(묶음 만료 = 구성원 만료의 최댓값이라 지워지는 것은 이미 만료된
+     * 체험 계정·가상 지원자뿐이다).
+     */
+    boolean upsertGroup(UUID id, Instant expiresAt, Instant now) {
+        db.sql("SELECT 1 FROM (SELECT pg_advisory_xact_lock(hashtext(:key))) l").param("key", "demo:" + id)
+                .query(Integer.class).single();
+        db.sql("DELETE FROM demo_group WHERE id = :id AND expires_at <= :now")
+                .param("id", id).param("now", Times.utc(now)).update();
+        int touched = db.sql("UPDATE demo_group SET expires_at = greatest(expires_at, :exp) WHERE id = :id")
                 .param("exp", Times.utc(expiresAt)).param("id", id).update();
         if (touched > 0) {
             return false;
@@ -498,6 +537,15 @@ public class ApplicationRepository {
 
     Optional<Integer> departmentId(String name) {
         return db.sql("SELECT id FROM department WHERE name = :name").param("name", name).query(Integer.class).optional();
+    }
+
+    /** 시드에 있는 직무만 남긴다(체험 템플릿의 직무가 시드에서 빠져도 체험 계정은 만들어지게). */
+    List<Integer> existingJobs(List<Integer> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        List<Integer> have = db.sql("SELECT id FROM job WHERE id IN (:ids)").param("ids", ids).query(Integer.class).list();
+        return ids.stream().filter(have::contains).toList();
     }
 
     // ───────────── 도우미 ─────────────

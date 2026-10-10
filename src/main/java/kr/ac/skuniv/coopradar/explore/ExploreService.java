@@ -73,6 +73,8 @@ import org.springframework.stereotype.Service;
 public class ExploreService {
 
     static final int WHY_AT_RUN = 3;
+    /** 규칙 추천 이유. #15의 문장에는 학년·평점·학과가 들어가 저장하지 않는다(ADR-0008, 동의는 경험 글에 대한 것). */
+    static final String RULE_REASON = "지원 조건과 적합도 점수로 고른 자리예요.";
 
     private final EligibilityService eligibility;
     private final RecommendService recommend;
@@ -286,7 +288,7 @@ public class ExploreService {
 
     /**
      * 적합도 추천(#15)으로 대신한다: 같은 직무·순서, HIGH → STRONG, MEDIUM → GOOD, 근거는 운영계획서 인용(없으면 첫 인용),
-     * 이유는 기본 문장. 추천이 0개면 #15의 blockedBy를 그대로 둔다.
+     * 이유는 {@link #RULE_REASON}. 추천이 0개면 #15의 blockedBy를 그대로 둔다.
      */
     private Outcome rule(ProfileInput profile, Map<Integer, JobDoc> docs, Fallback reason) {
         Recommendations recs = recommend.recommend(profile);
@@ -297,7 +299,7 @@ public class ExploreService {
             items.add(new Stored(items.size() + 1, r.jobId(), r.verdict(),
                     r.fit() == kr.ac.skuniv.coopradar.recommend.RecommendDtos.Fit.HIGH ? Fit.STRONG : Fit.GOOD, null,
                     c == null ? null : c.quote(), c == null ? null : c.documentTitle(), c == null ? null : c.page(),
-                    r.reasonTemplate()));
+                    RULE_REASON));
         }
         return new Outcome(Source.RULE, reason, items, Map.of(), items.isEmpty() ? recs.blockedBy() : List.of());
     }
@@ -346,9 +348,12 @@ public class ExploreService {
     private static List<String> resolveCards(List<String> ids, Map<Integer, JobDoc> docs) {
         List<String> out = new ArrayList<>();
         for (String id : ids) {
-            String[] parts = id.split("-");
+            String[] parts = id == null ? new String[0] : id.split("-");
             JobDoc d;
             int n;
+            if (parts.length != 2) {
+                throw ApiException.invalid("cardIds", "POST /api/explore/cards의 id");
+            }
             try {
                 d = docs.get(Integer.parseInt(parts[0]));
                 n = Integer.parseInt(parts[1]);

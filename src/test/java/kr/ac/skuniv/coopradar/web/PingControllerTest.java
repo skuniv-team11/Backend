@@ -26,7 +26,19 @@ class PingControllerTest {
     void ping() throws Exception {
         mvc.perform(get("/api/ping"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("ok"));
+                .andExpect(jsonPath("$.status").value("ok"))
+                // 한국 시간, 초 단위(계약 예시 2026-09-30T14:00:00+09:00)
+                .andExpect(jsonPath("$.time").value(org.hamcrest.Matchers.matchesPattern(
+                        "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\+09:00$")));
+    }
+
+    @Test
+    void 다른_출처_JS가_Retry_After와_파일_이름을_읽을_수_있다() throws Exception {
+        mvc.perform(get("/api/ping").header("Origin", "https://coop-radar.vercel.app"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Expose-Headers",
+                        org.hamcrest.Matchers.allOf(org.hamcrest.Matchers.containsString("Retry-After"),
+                                org.hamcrest.Matchers.containsString("Content-Disposition"))));
     }
 
     @Test

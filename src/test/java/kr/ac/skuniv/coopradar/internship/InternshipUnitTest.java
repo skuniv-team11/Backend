@@ -7,6 +7,8 @@ import java.util.List;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Verdict;
 import kr.ac.skuniv.coopradar.internship.ApplicationRepository.ApprovalRow;
 import kr.ac.skuniv.coopradar.internship.ApplicationRepository.CloseRow;
+import kr.ac.skuniv.coopradar.internship.ApplicationRepository.RankedJob;
+import kr.ac.skuniv.coopradar.internship.ApplicationViews.Basis;
 import kr.ac.skuniv.coopradar.internship.InternshipDtos.Applicant;
 import kr.ac.skuniv.coopradar.internship.InternshipDtos.ApprovalKind;
 import kr.ac.skuniv.coopradar.internship.InternshipDtos.ApprovalStatus;
@@ -114,11 +116,24 @@ class InternshipUnitTest {
     void 승인은_내용_해시로_묶고_바뀌면_STALE() {
         Applicant a = new Applicant("예시", null, null, null, null, null, null, null, null);
         List<String> essays = List.of("1", "2", "3", "4");
-        String h1 = ApplicationViews.contentHash(a, Resume.EMPTY, essays, true, true, true, "예시", List.of(122, 120));
-        assertThat(h1).hasSize(64).isEqualTo(
-                ApplicationViews.contentHash(a, Resume.EMPTY, essays, true, true, true, "예시", List.of(122, 120)));
-        String h2 = ApplicationViews.contentHash(a, Resume.EMPTY, essays, true, true, true, "예시", List.of(120, 122));
+        var dep = new kr.ac.skuniv.coopradar.me.ProfileView.DepartmentRef(7, "메이크업디자인학과");
+        var academic = new InternshipDtos.Academic(dep, 3, 5, new java.math.BigDecimal("3.4"), false);
+        Basis basis = new Basis(List.of(new RankedJob(1, 122), new RankedJob(2, 120)), academic);
+        String h1 = ApplicationViews.contentHash(a, Resume.EMPTY, essays, true, true, true, "예시", basis);
+        assertThat(h1).hasSize(64).isEqualTo(ApplicationViews.contentHash(a, Resume.EMPTY, essays, true, true, true, "예시",
+                new Basis(List.of(new RankedJob(1, 122), new RankedJob(2, 120)),
+                        new InternshipDtos.Academic(dep, 3, 5, new java.math.BigDecimal("3.40"), false))));
+        // 지망 순서
+        String h2 = ApplicationViews.contentHash(a, Resume.EMPTY, essays, true, true, true, "예시",
+                new Basis(List.of(new RankedJob(1, 120), new RankedJob(2, 122)), academic));
         assertThat(h2).isNotEqualTo(h1);
+        // 같은 직무라도 순위 값이 다르면(2지망 → 3지망) 다르다
+        assertThat(ApplicationViews.contentHash(a, Resume.EMPTY, essays, true, true, true, "예시",
+                new Basis(List.of(new RankedJob(1, 122), new RankedJob(3, 120)), academic))).isNotEqualTo(h1);
+        // 학과·학년이 바뀌어도 다르다(학과(부)장은 학과·학년을 보고 승인한다)
+        assertThat(ApplicationViews.contentHash(a, Resume.EMPTY, essays, true, true, true, "예시",
+                new Basis(basis.picks(), new InternshipDtos.Academic(dep, 4, 5, new java.math.BigDecimal("3.4"), false))))
+                .isNotEqualTo(h1);
         ApprovalRow approved = new ApprovalRow(1, ApprovalKind.APPLICATION, "t", h1, null, java.time.OffsetDateTime.now());
         assertThat(ApplicationViews.approvalStatus(approved, h1)).isEqualTo(ApprovalStatus.APPROVED);
         assertThat(ApplicationViews.approvalStatus(approved, h2)).isEqualTo(ApprovalStatus.STALE);

@@ -1,10 +1,12 @@
 package kr.ac.skuniv.coopradar.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -77,6 +79,20 @@ public class ApiErrorHandler {
     ResponseEntity<ErrorBody> typeMismatch(MethodArgumentTypeMismatchException e) {
         return body(ErrorCode.INVALID_INPUT, "입력값을 확인해 주세요",
                 List.of(new FieldProblem(e.getName(), "형식이 맞지 않아요")));
+    }
+
+    /**
+     * Postgres가 받지 않는 NUL 문자(\u0000)는 입력 오류다 — text는 SQLState 22021, jsonb는 22P05(\u0000 이스케이프).
+     * 그 밖의 DB 오류는 500.
+     */
+    @ExceptionHandler(DataAccessException.class)
+    ResponseEntity<ErrorBody> dataAccess(DataAccessException e) throws Exception {
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            if (t instanceof SQLException sql && ("22021".equals(sql.getSQLState()) || "22P05".equals(sql.getSQLState()))) {
+                return body(ErrorCode.INVALID_INPUT, "글에 쓸 수 없는 문자(NUL)가 들어 있어요", null);
+            }
+        }
+        return unexpected(e);
     }
 
     @ExceptionHandler(Exception.class)

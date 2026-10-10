@@ -43,7 +43,7 @@ class AuthUnitTest {
     void 역할이_다르면_403_FORBIDDEN_ROLE_메서드_표시가_클래스보다_먼저() throws Exception {
         JwtService jwt = new JwtService(props, clock);
         AuthInterceptor interceptor = new AuthInterceptor(jwt, usersWith(new AuthUser(7, Role.STUDENT, false, null)), clock);
-        String token = jwt.issue(7, Role.STUDENT, false, clock.instant().plusSeconds(60));
+        String token = jwt.issue(7, Role.STUDENT, false, clock.instant().plusSeconds(60), STAMP);
 
         assertThatThrownBy(() -> interceptor.preHandle(withToken(token), new MockHttpServletResponse(), handler("board")))
                 .isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.code()).isEqualTo(ErrorCode.FORBIDDEN_ROLE));
@@ -56,9 +56,18 @@ class AuthUnitTest {
         JwtService jwt = new JwtService(props, clock);
         // 토큰에는 CENTER라고 적혀 있어도 DB가 STUDENT면 막는다
         AuthInterceptor interceptor = new AuthInterceptor(jwt, usersWith(new AuthUser(8, Role.STUDENT, false, null)), clock);
-        String token = jwt.issue(8, Role.CENTER, false, clock.instant().plusSeconds(60));
+        String token = jwt.issue(8, Role.CENTER, false, clock.instant().plusSeconds(60), STAMP);
         assertThatThrownBy(() -> interceptor.preHandle(withToken(token), new MockHttpServletResponse(), handler("board")))
                 .isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.code()).isEqualTo(ErrorCode.FORBIDDEN_ROLE));
+    }
+
+    @Test
+    void DB를_다시_만들어_같은_id가_다른_계정이면_옛_토큰은_401() throws Exception {
+        JwtService jwt = new JwtService(props, clock);
+        AuthInterceptor interceptor = new AuthInterceptor(jwt, usersWith(new AuthUser(7, Role.CENTER, false, null)), clock);
+        String old = jwt.issue(7, Role.CENTER, false, clock.instant().plusSeconds(60), STAMP - 1); // 지난 DB의 7번
+        assertThatThrownBy(() -> interceptor.preHandle(withToken(old), new MockHttpServletResponse(), handler("board")))
+                .isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.code()).isEqualTo(ErrorCode.AUTH_REQUIRED));
     }
 
     // ───────── 호출 제한 ─────────
@@ -100,13 +109,15 @@ class AuthUnitTest {
                 .isInstanceOf(IllegalStateException.class);
         JwtService a = new JwtService(new AuthProperties("", null, null, 1, null), clock);
         JwtService b = new JwtService(new AuthProperties(" ", null, null, 1, null), clock);
-        String token = a.issue(1, Role.STUDENT, false, clock.instant().plusSeconds(60));
-        assertThat(a.verify(token)).isEqualTo(1);
+        String token = a.issue(1, Role.STUDENT, false, clock.instant().plusSeconds(60), STAMP);
+        assertThat(a.verify(token).userId()).isEqualTo(1);
         assertThatThrownBy(() -> b.verify(token)) // 다른 임시 키로는 검증 실패
                 .isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.code()).isEqualTo(ErrorCode.AUTH_REQUIRED));
     }
 
     // ───────── 도우미 ─────────
+
+    private static final long STAMP = 1_790_000_000_000_000L;
 
     private static HandlerMethod handler(String name) throws NoSuchMethodException {
         return new HandlerMethod(new CenterOnly(), CenterOnly.class.getMethod(name));
@@ -121,8 +132,8 @@ class AuthUnitTest {
     private static UserRepository usersWith(AuthUser user) {
         return new UserRepository(null) {
             @Override
-            public Optional<AuthUser> findAuthUser(long id) {
-                return id == user.id() ? Optional.of(user) : Optional.empty();
+            public Optional<AuthRow> findAuthUser(long id) {
+                return id == user.id() ? Optional.of(new AuthRow(user, STAMP)) : Optional.empty();
             }
         };
     }

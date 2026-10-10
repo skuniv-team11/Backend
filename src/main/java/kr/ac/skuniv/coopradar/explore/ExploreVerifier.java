@@ -60,10 +60,11 @@ public final class ExploreVerifier {
             Optional<String> reason = sentence(r.reason());
             Optional<String> sq = studentQuote(r.studentQuote(), student);
             Optional<Piece> piece = jobPiece(r.jobQuote(), doc);
-            if (doc == null || reason.isEmpty() || sq.isEmpty() || piece.isEmpty()) {
+            Optional<String> jq = jobQuote(r.jobQuote(), doc);
+            if (doc == null || reason.isEmpty() || sq.isEmpty() || piece.isEmpty() || jq.isEmpty()) {
                 continue;
             }
-            out.add(new Ranked(id, sq.get(), r.jobQuote().strip(), piece.get(), reason.get()));
+            out.add(new Ranked(id, sq.get(), jq.get(), piece.get(), reason.get()));
         }
         return out;
     }
@@ -81,8 +82,9 @@ public final class ExploreVerifier {
             }
             Optional<String> text = sentence(p.text());
             Optional<String> sq = studentQuote(p.studentQuote(), student);
-            if (text.isPresent() && sq.isPresent() && jobPiece(p.jobQuote(), doc).isPresent()) {
-                points.add(new Point(text.get(), sq.get(), p.jobQuote().strip()));
+            Optional<String> jq = jobQuote(p.jobQuote(), doc);
+            if (text.isPresent() && sq.isPresent() && jq.isPresent()) {
+                points.add(new Point(text.get(), sq.get(), jq.get()));
             }
         }
         if (summary.isEmpty() || points.isEmpty()) {
@@ -102,10 +104,11 @@ public final class ExploreVerifier {
             return Optional.empty();
         }
         Optional<String> text = sentence(p.text());
-        if (text.isEmpty() || jobPiece(p.jobQuote(), doc).isEmpty()) {
+        Optional<String> jq = jobQuote(p.jobQuote(), doc);
+        if (text.isEmpty() || jq.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(new JobPhrase(text.get(), p.jobQuote().strip()));
+        return Optional.of(new JobPhrase(text.get(), jq.get()));
     }
 
     /** 화면에 낼 문장(공백 정리·별표 제거). 규칙을 어기면 빈 값. */
@@ -129,8 +132,17 @@ public final class ExploreVerifier {
         if (q == null) {
             return Optional.empty();
         }
-        return student.pieces().stream().anyMatch(p -> ExploreText.squash(p).contains(q))
-                ? Optional.of(quote.strip()) : Optional.empty();
+        return student.pieces().stream().map(p -> ExploreText.slice(p, q)).flatMap(Optional::stream).findFirst();
+    }
+
+    /** 직무 구절을 원문 그대로(칸 안에서 찾은 구간). */
+    static Optional<String> jobQuote(String quote, JobDoc doc) {
+        String q = quoteKey(quote);
+        if (q == null || doc == null) {
+            return Optional.empty();
+        }
+        return ExploreText.pieces(doc).stream().map(p -> ExploreText.slice(p.text(), q)).flatMap(Optional::stream)
+                .findFirst();
     }
 
     static Optional<Piece> jobPiece(String quote, JobDoc doc) {
@@ -151,6 +163,6 @@ public final class ExploreVerifier {
             return null;
         }
         String q = ExploreText.squashQuote(t);
-        return q.length() < QUOTE_MIN - 1 ? null : q;
+        return q.length() < ExploreText.KEY_MIN ? null : q;
     }
 }

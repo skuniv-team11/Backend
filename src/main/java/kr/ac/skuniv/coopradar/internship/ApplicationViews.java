@@ -14,6 +14,7 @@ import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Verdict;
 import kr.ac.skuniv.coopradar.internship.ApplicationRepository.ApprovalRow;
 import kr.ac.skuniv.coopradar.internship.ApplicationRepository.JobInfo;
 import kr.ac.skuniv.coopradar.internship.ApplicationRepository.PickRow;
+import kr.ac.skuniv.coopradar.internship.ApplicationRepository.RankedJob;
 import kr.ac.skuniv.coopradar.internship.ApplicationRepository.Row;
 import kr.ac.skuniv.coopradar.internship.InternshipDtos.Academic;
 import kr.ac.skuniv.coopradar.internship.InternshipDtos.Applicant;
@@ -52,12 +53,31 @@ final class ApplicationViews {
         return HexFormat.of().formatHex(b);
     }
 
-    /** 학과(부)장이 본 내용의 해시: 신청서·이력서·자기소개서·서약·동의·서명·1~3지망. 바뀌면 승인을 다시 받아야 한다. */
+    /**
+     * 학과(부)장이 보는 지망·학적. 고칠 수 있는 상태면 담은 직무 순위와 저장한 프로필, 낸 뒤면 낸 지망과 그때 고정한 학적이다.
+     * 학생 화면·승인 화면·센터 화면이 모두 이것으로 해시를 만든다(한 곳만 바뀌어 APPROVED와 STALE이 갈라지지 않게).
+     */
+    record Basis(List<RankedJob> picks, Academic academic) {
+
+        List<Integer> jobIds() {
+            return picks.stream().map(RankedJob::jobId).toList();
+        }
+    }
+
+    /**
+     * 학과(부)장이 본 내용의 해시: 신청서·이력서·자기소개서·서약·동의·서명·1~3지망(순위와 직무)·학적(학과·학년·이수 학기·평점·
+     * 졸업예정). 바뀌면 승인을 다시 받아야 한다.
+     */
     static String contentHash(Applicant a, Resume resume, List<String> essays, boolean pledge, boolean collect,
-                              boolean thirdParty, String signature, List<Integer> pickJobIds) {
+                              boolean thirdParty, String signature, Basis basis) {
+        List<List<Integer>> picks = basis.picks().stream().map(p -> List.of(p.rank(), p.jobId())).toList();
+        Academic ac = basis.academic();
+        List<Object> academic = ac == null ? List.of() : java.util.Arrays.asList(
+                ac.department() == null ? null : ac.department().id(), ac.grade(), ac.completedSemesters(),
+                ac.gpa() == null ? null : ac.gpa().stripTrailingZeros().toPlainString(), ac.graduationExpected());
         String canonical = JSON.writeValueAsString(List.of(
                 a == null ? Applicant.EMPTY : a, resume == null ? Resume.EMPTY : resume, essays, pledge, collect,
-                thirdParty, signature == null ? "" : signature, pickJobIds));
+                thirdParty, signature == null ? "" : signature, picks, academic));
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
                     .digest(canonical.getBytes(StandardCharsets.UTF_8)));
@@ -66,9 +86,14 @@ final class ApplicationViews {
         }
     }
 
-    static String contentHash(Row r, List<Integer> pickJobIds) {
+    static String contentHash(Row r, Basis basis) {
         return contentHash(r.applicant(), r.resume(), r.essays(), r.pledge(), r.consentCollect(), r.consentThirdParty(),
-                r.signature(), pickJobIds);
+                r.signature(), basis);
+    }
+
+    /** 낸 지원서의 지망·학적(행에 고정한 값). */
+    static Basis submittedBasis(Row r, List<PickRow> picks) {
+        return new Basis(picks.stream().map(p -> new RankedJob(p.rank(), p.jobId())).toList(), academic(r));
     }
 
     static ApprovalStatus approvalStatus(ApprovalRow approval, String currentHash) {
@@ -149,18 +174,23 @@ final class ApplicationViews {
     }
 
     static List<CenterPick> centerPicks(List<PickRow> picks, Map<Integer, JobInfo> jobs) {
-        return picks.stream().map(p -> {
+        return picks.stream().filter(p -> jobs.containsKey(p.jobId())).map(p -> {
             JobInfo j = jobs.get(p.jobId());
             return new CenterPick(p.rank(), p.jobId(), j.title(), j.institution(), p.verdict());
         }).toList();
     }
 
-    /** 낸 지원서의 지망(낼 때 판정). closed는 기준일 기준. */
-    static List<Pick> snapshotPicks(List<PickRow> picks, Map<Integer, JobInfo> jobs, LocalDate asOf) {
-        return picks.stream().map(p -> {
+    /** 낸 지원서의 지망(낼 때 판정). closed는 낸 날 기준이다(낸 뒤 마감돼도 낸 지망은 그대로 유효하다). */
+    static List<Pick> snapshotPicks(List<PickRow> picks, Map<Integer, JobInfo> jobs, LocalDate submittedOn) {
+        return picks.stream().filter(p -> jobs.containsKey(p.jobId())).map(p -> {
             JobInfo j = jobs.get(p.jobId());
-            return new Pick(p.rank(), p.jobId(), j.title(), j.team(), j.institution(), p.verdict(), closed(j, asOf));
+            return new Pick(p.rank(), p.jobId(), j.title(), j.team(), j.institution(), p.verdict(), closed(j, submittedOn));
         }).toList();
+    }
+
+    /** 낸 지원서의 '낸 날'(없으면 기준일). */
+    static LocalDate submittedOn(Row r, LocalDate fallback) {
+        return r.submittedAt() != null ? r.submittedAt().toLocalDate() : fallback;
     }
 
     static boolean closed(JobInfo j, LocalDate asOf) {

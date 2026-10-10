@@ -61,6 +61,7 @@ import org.springframework.stereotype.Service;
 public class CareerService {
 
     static final int QUOTE_MIN = 4;
+    static final int PRACTICE_MIN = 100;
     static final int QUOTE_MAX = 100;
     static final int MORE_MAX = 3;
     private static final Pattern SENTENCE_END = Pattern.compile("(?<=[.!?。])\\s+");
@@ -100,7 +101,10 @@ public class CareerService {
         if (job.subcategory() == null) {
             throw ApiException.invalid("jobId", "NCS 세분류가 정해지지 않은 직무예요");
         }
-        String text = ExploreText.mask(req.practiceText());
+        String text = ExploreText.maskLines(req.practiceText()); // 줄바꿈을 남겨야 '한 줄 안' 대조가 된다
+        if (text.length() < PRACTICE_MIN) {
+            throw ApiException.invalid("practiceText", "가린 뒤 " + PRACTICE_MIN + "자 이상이어야 해요");
+        }
         List<Unit> units = repository.units(job.subcategory().code());
         Map<String, String[]> covered = new LinkedHashMap<>();
         Fallback fallback = null;
@@ -186,7 +190,10 @@ public class CareerService {
         return out;
     }
 
-    /** 같은 세분류 한 단계 위: 채운 단위에 가장 많은 수준(같으면 낮은 쪽)에서 안 채운 것, 그다음 한 수준 위 것. */
+    /**
+     * 같은 세분류 한 단계 위: 채운 단위에 가장 많은 수준(같으면 낮은 쪽)에서 안 채운 것, 그다음 그보다 높은 수준 중 실제로 있는
+     * 가장 낮은 수준의 것(수준이 건너뛰는 세분류가 있다 — 응용SW엔지니어링은 3 다음이 5).
+     */
     static NextLevel nextLevel(List<Unit> units, Set<String> done) {
         Map<Integer, Long> counts = units.stream()
                 .filter(u -> done.contains(u.code()) && u.level() != null)
@@ -200,8 +207,11 @@ public class CareerService {
         if (base == null) {
             return new NextLevel(null, List.of());
         }
+        int from = base;
+        Integer next = units.stream().map(Unit::level).filter(l -> l != null && l > from).min(Integer::compare)
+                .orElse(null);
         List<UnitRef> pick = new ArrayList<>();
-        for (int level : new int[] {base, base + 1}) {
+        for (Integer level : next == null ? List.of(base) : List.of(base, next)) {
             for (Unit u : units) {
                 if (pick.size() < MORE_MAX && !done.contains(u.code()) && Objects.equals(u.level(), level)) {
                     pick.add(ref(u));
@@ -234,9 +244,12 @@ public class CareerService {
                 continue;
             }
             String key = ExploreText.squashQuote(quote);
-            if (key.length() >= QUOTE_MIN - 1 && pieces.stream().anyMatch(p -> ExploreText.squash(p).contains(key))) {
-                out.put(code, new String[] {quote, reason.get()});
+            if (key.length() < ExploreText.KEY_MIN) {
+                continue;
             }
+            // 화면에는 AI 문자열이 아니라 실습 내용 원문 구간을 낸다
+            pieces.stream().map(p -> ExploreText.slice(p, key)).flatMap(Optional::stream).findFirst()
+                    .ifPresent(source -> out.put(code, new String[] {source, reason.get()}));
         }
         return out;
     }

@@ -10,6 +10,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import kr.ac.skuniv.coopradar.common.AccountLock;
+import kr.ac.skuniv.coopradar.common.ApiException;
+import kr.ac.skuniv.coopradar.common.ErrorCode;
 import kr.ac.skuniv.coopradar.common.Times;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Verdict;
 import kr.ac.skuniv.coopradar.explore.ExploreDtos.Fallback;
@@ -132,6 +135,10 @@ public class ExploreRepository {
      */
     @Transactional
     public Saved replace(long userId, NewRun run, List<Stored> items, Map<Integer, WhyText> whys) {
+        // 같은 계정이 두 번 겹쳐 보내도(두 번 누름) 차례로 바꾸게 계정 행을 잠근다(탈퇴와도 겹치지 않는다)
+        if (!AccountLock.lock(db, userId)) {
+            throw new ApiException(ErrorCode.AUTH_REQUIRED, "계정이 없어요. 다시 로그인해 주세요");
+        }
         db.sql("DELETE FROM explore_run WHERE user_id = :user").param("user", userId).update();
         Saved saved = db.sql("""
                         INSERT INTO explore_run (user_id, round_id, experiences, card_texts, interest_text, source,
@@ -177,8 +184,17 @@ public class ExploreRepository {
         return saved;
     }
 
-    /** '왜 맞나요' 하나를 넣는다. 같은 직무가 이미 있으면(동시에 두 번 열림) 그대로 둔다. */
-    void insertWhy(long runId, int jobId, WhyText why) {
+    /**
+     * '왜 맞나요' 하나를 넣는다. 같은 직무가 이미 있으면(동시에 두 번 열림) 그대로 둔다. AI를 기다리는 동안 탐색이 지워졌거나
+     * 바뀌었으면(#31·다시 탐색·탈퇴) 넣지 않고 false.
+     */
+    @Transactional
+    public boolean insertWhy(long runId, int jobId, WhyText why) {
+        boolean alive = db.sql("SELECT 1 FROM explore_run WHERE id = :run FOR KEY SHARE").param("run", runId)
+                .query(Integer.class).optional().isPresent();
+        if (!alive) {
+            return false;
+        }
         db.sql("""
                         INSERT INTO explore_why (run_id, job_id, body) VALUES (:run, :job, CAST(:body AS jsonb))
                         ON CONFLICT (run_id, job_id) DO NOTHING""")
@@ -186,6 +202,7 @@ public class ExploreRepository {
                 .param("job", jobId)
                 .param("body", JSON.writeValueAsString(why))
                 .update();
+        return true;
     }
 
     /** 계정의 탐색을 지운다(자리·설명은 cascade). 없어도 그대로 끝난다. */

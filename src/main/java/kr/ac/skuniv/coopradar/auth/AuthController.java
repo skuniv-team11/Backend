@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import kr.ac.skuniv.coopradar.auth.AuthDtos.CredentialsRequest;
 import kr.ac.skuniv.coopradar.auth.AuthDtos.GuestRequest;
 import kr.ac.skuniv.coopradar.auth.AuthDtos.GuestTokenResponse;
+import kr.ac.skuniv.coopradar.auth.AuthDtos.LoginRequest;
 import kr.ac.skuniv.coopradar.auth.AuthDtos.TokenResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,7 +35,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public TokenResponse login(@Valid @RequestBody CredentialsRequest body) {
+    public TokenResponse login(@Valid @RequestBody LoginRequest body) {
         return auth.login(body.email(), body.password());
     }
 

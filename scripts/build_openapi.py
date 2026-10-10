@@ -157,6 +157,10 @@ S.update({
         "email": {"type": "string", "format": "email", "description": "소문자로 맞춰 저장"},
         "password": {"type": "string", "minLength": 8, "description": "8자 이상, UTF-8 72바이트 이하(BCrypt 한도)"},
     }),
+    "LoginRequest": obj({
+        "email": {"type": "string", "maxLength": 254, "description": "대소문자 상관없이 찾는다. 형식은 따지지 않는다(틀리면 401)"},
+        "password": {"type": "string", "description": "형식을 따지지 않는다. 틀리면 401 LOGIN_FAILED"},
+    }),
     "GuestRequest": obj({
         "role": R("Role"),
         "stage": d(nul(R("GuestStage")), "체험 학생의 시점. 없으면 APPLYING. CENTER는 무시(ADR-0033)"),
@@ -760,7 +764,7 @@ ENDPOINTS = {
     "GET /api/codes": dict(op="getCodes", ok={200: ("Codes", ["codes.json"])}),
     "POST /api/auth/signup": dict(op="signup", req=("Credentials", ["auth-signup.request.json"]),
                                   ok={201: ("AuthToken", ["auth-token.json"])}, errors=["EMAIL_TAKEN"]),
-    "POST /api/auth/login": dict(op="login", req=("Credentials", ["auth-login.request.json"]),
+    "POST /api/auth/login": dict(op="login", req=("LoginRequest", ["auth-login.request.json"]),
                                  ok={200: ("AuthToken", ["auth-token.json"])}, errors=["LOGIN_FAILED"]),
     "POST /api/auth/guest": dict(op="createGuest", req=("GuestRequest", ["auth-guest.request.json"]),
                                  ok={201: ("GuestAuthToken", ["auth-guest.json"])}, errors=["RATE_LIMITED"]),
@@ -826,7 +830,7 @@ ENDPOINTS = {
                                               errors=["APPLICATION_NOT_FOUND", "PROFILE_NOT_FOUND", "APPLICATION_LOCKED"]),
     "POST /api/me/application/submit": dict(op="submitMyApplication", ok={200: ("Application", ["me-application.json"])},
                                             errors=["APPLICATION_INCOMPLETE", "APPLICATION_NOT_FOUND", "APPLICATION_LOCKED",
-                                                    "APPLICATION_CLOSED"]),
+                                                    "APPLICATION_CLOSED", "STATE_CONFLICT"]),
     "GET /api/approvals/{token}": dict(op="getApproval", ok={200: ("ApprovalView", ["approval.json"])},
                                        errors=["APPROVAL_NOT_FOUND"]),
     "POST /api/approvals/{token}": dict(op="approve", ok={200: ("ApprovalView", ["approval.json"])},

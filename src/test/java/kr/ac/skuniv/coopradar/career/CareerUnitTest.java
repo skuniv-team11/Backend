@@ -86,4 +86,32 @@ class CareerUnitTest {
         assertThat(CareerService.nextLevel(units, Set.of()).baseLevel()).isEqualTo(2);
         assertThat(CareerService.nextLevel(units, Set.of()).units()).extracting(UnitRef::name).containsExactly("U8", "U1", "U2");
     }
+
+    @Test
+    void 한_단계_위는_수준이_건너뛰면_실제로_있는_다음_수준() {
+        // 응용SW엔지니어링처럼 3 다음이 5인 세분류
+        List<Unit> units = List.of(
+                new Unit("1111111101_21v1", "U1", 3, null), new Unit("1111111102_21v1", "U2", 3, null),
+                new Unit("1111111103_21v1", "U3", 5, null), new Unit("1111111104_21v1", "U4", 5, null));
+        var next = CareerService.nextLevel(units, Set.of("1111111101_21v1", "1111111102_21v1"));
+        assertThat(next.baseLevel()).isEqualTo(3);
+        assertThat(next.units()).extracting(UnitRef::name).containsExactly("U3", "U4");
+    }
+
+    @Test
+    void 가린_뒤에도_줄은_남아_두_줄에_걸친_구절은_빠진다() {
+        // 마침표 없는 글머리표 줄(수행결과보고서에 흔하다)
+        String raw = "- 경쟁사 신제품 30개 가격 조사\n- SNS 게시물 반응 매주 집계 (담당자 010 1234 5678)\n\n- 결과 보고서 작성";
+        String text = kr.ac.skuniv.coopradar.explore.ExploreText.maskLines(raw);
+        assertThat(text).isEqualTo("- 경쟁사 신제품 30개 가격 조사\n- SNS 게시물 반응 매주 집계 (담당자 [가림])\n- 결과 보고서 작성");
+        var ok = CareerService.verify(new UnitsDraft(List.of(
+                new CoveredDraft("0201030109_21v4", "경쟁사 신제품 30개 가격 조사", "경쟁사 가격을 조사한 일이 시장 환경 분석이에요."),
+                new CoveredDraft("0201030115_16v3", "가격 조사 - SNS 게시물 반응", "두 줄에 걸친 구절이라 빠져요."))), UNITS, text);
+        assertThat(ok).containsOnlyKeys("0201030109_21v4");
+        // 저장하는 구절은 원문 그대로(AI가 띄어쓰기를 바꿔도)
+        var loose = CareerService.verify(new UnitsDraft(List.of(
+                new CoveredDraft("0201030109_21v4", "경쟁사 신제품30개 가격조사", "경쟁사 가격을 조사한 일이 시장 환경 분석이에요."))),
+                UNITS, text);
+        assertThat(loose.get("0201030109_21v4")[0]).isEqualTo("경쟁사 신제품 30개 가격 조사");
+    }
 }

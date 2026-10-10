@@ -86,7 +86,7 @@ public class TimelineService {
         if (row != null) {
             ApprovalRow a = repo.approval(row.id(), ApprovalKind.APPLICATION).orElse(null);
             Approval approval = a == null ? Approval.NONE
-                    : new Approval(applications.approvalStatus(row, user.id()), a.token(), a.requestedAt(), a.approvedAt());
+                    : new Approval(applications.approvalStatus(row), a.token(), a.requestedAt(), a.approvedAt());
             brief = new ApplicationBrief(row.id(), row.status(), row.receiptNo(), row.submittedAt(), approval,
                     row.fixReason(), row.counselCount(), row.virtual());
             Optional<JobInfo> job = placedJob(row);
