@@ -509,7 +509,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Credentials"
+                "$ref": "#/components/schemas/LoginRequest"
               },
               "examples": {
                 "auth-login.request.json": {
@@ -15808,6 +15808,24 @@
           "UNSPECIFIED"
         ],
         "description": "`KOSPI` 코스피 · `KOSDAQ` 코스닥 · `UNLISTED` 비상장 · `UNSPECIFIED` 미기재"
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "description": "대소문자 상관없이 찾는다. 형식은 따지지 않는다(틀리면 401)"
+          },
+          "password": {
+            "type": "string",
+            "description": "형식을 따지지 않는다. 틀리면 401 LOGIN_FAILED"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
       },
       "MajorMatch": {
         "type": "string",
