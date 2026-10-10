@@ -184,13 +184,17 @@ public class ApplicationRepository {
         return "%s-%03d".formatted(termCode, (max == null ? 0 : max) + 1);
     }
 
-    /** 내기: 접수번호·학적(저장한 프로필)·지망을 고정한다. 바뀐 행 수. */
+    /**
+     * 내기: 접수번호·학적(저장한 프로필)·지망을 고정한다. 바뀐 행 수. 낸 시각은 처음 낸 때 그대로 둔다(보완 뒤 다시 내도 —
+     * 접수번호와 같이, 낸 지망의 마감 여부를 그날로 본다).
+     */
     int submit(long id, String receiptNo, int departmentId, int grade, int semesters, BigDecimal gpa,
                boolean graduationExpected, Instant submittedAt, Instant now) {
         return db.sql("""
                         UPDATE application SET status = 'SUBMITTED', receipt_no = coalesce(receipt_no, :receipt),
                                department_id = :dep, grade = :grade, completed_semesters = :sem, gpa = :gpa,
-                               graduation_expected = :grad, fix_reason = NULL, submitted_at = :submitted,
+                               graduation_expected = :grad, fix_reason = NULL,
+                               submitted_at = coalesce(submitted_at, :submitted),
                                updated_at = :now
                         WHERE id = :id AND status IN ('DRAFT', 'FIX_REQUESTED')""")
                 .param("receipt", receiptNo).param("dep", departmentId).param("grade", grade).param("sem", semesters)

@@ -455,8 +455,13 @@ class InternshipFlowApiTest {
         perform(get("/api/me/application"), student, null)
                 .andExpect(jsonPath("$.period.open").value(false))
                 .andExpect(jsonPath("$.picks[0].closed").value(false));
-        perform(post("/api/me/application/submit"), student, null)
-                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SUBMITTED"));
+        // 다시 내도 낸 시각(처음 낸 날 7/23)은 그대로라, 낸 지망은 마감이 아니고 빠진 것도 없다
+        String again = perform(post("/api/me/application/submit"), student, null)
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SUBMITTED"))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<String>read(again, "$.submittedAt")).startsWith("2026-07-23T");
+        assertThat(JsonPath.<List<Boolean>>read(again, "$.picks[*].closed")).containsOnly(false);
+        assertThat(JsonPath.<List<Boolean>>read(again, "$.checklist[*].done")).containsOnly(true);
         perform(put("/api/center/applications/" + id + "/status"), center, "{\"status\": \"RECEIVED\"}")
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("RECEIVED"));
         // 이미 접수 완료면 그대로
