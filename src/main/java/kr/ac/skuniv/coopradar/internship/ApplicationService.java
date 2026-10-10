@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import kr.ac.skuniv.coopradar.auth.AuthUser;
 import kr.ac.skuniv.coopradar.common.ApiErrorHandler.FieldProblem;
 import kr.ac.skuniv.coopradar.common.ApiException;
@@ -168,7 +170,12 @@ public class ApplicationService {
                 p.graduationExpected(), submittedAt, now) != 1) {
             throw new ApiException(ErrorCode.APPLICATION_LOCKED, "이미 낸 지원서예요");
         }
-        return view(user, repo.byId(row.id()).orElseThrow());
+        Application after = view(user, repo.byId(row.id()).orElseThrow());
+        // 위에서 확인한 뒤 다른 탭에서 프로필이 바뀌었으면 고정한 학적이 승인한 값과 다르다 — 되돌리고 다시 승인받게 한다
+        if (after.approval().status() != ApprovalStatus.APPROVED) {
+            throw new ApiException(ErrorCode.STATE_CONFLICT, "내는 사이 프로필이 바뀌었어요. 학과(부)장 승인을 다시 받아 주세요");
+        }
+        return after;
     }
 
     static final Map<Item, String> MISSING = Map.of(
@@ -199,10 +206,16 @@ public class ApplicationService {
         if (ApplicationViews.editable(status)) {
             Optional<SavedProfile> saved = profiles.findSaved(user.id(), user.guest());
             basis = liveBasis(user.id(), saved);
-            // 보완 요청 중이면 처음 낸 날에 열려 있던 지망은 그대로 낼 수 있다
-            LocalDate closedAsOf = row != null && row.status() == Status.FIX_REQUESTED && row.submittedAt() != null
-                    && row.submittedAt().toLocalDate().isBefore(asOf) ? row.submittedAt().toLocalDate() : asOf;
-            picks = livePicks(round, basis.picks(), saved, closedAsOf);
+            // 보완 요청 중이면 처음 낸 지망은 낸 날 기준으로 본다(그날 열려 있었으면 그대로 다시 낸다).
+            // 보완 중에 새로 넣은 지망은 오늘 기준 — 마감된 직무를 새로 넣어 낼 수 없게
+            Set<Integer> firstPicks = Set.of();
+            LocalDate firstOn = asOf;
+            if (row != null && row.status() == Status.FIX_REQUESTED && row.submittedAt() != null) {
+                firstPicks = repo.picks(List.of(row.id())).getOrDefault(row.id(), List.of()).stream()
+                        .map(PickRow::jobId).collect(Collectors.toSet());
+                firstOn = row.submittedAt().toLocalDate().isBefore(asOf) ? row.submittedAt().toLocalDate() : asOf;
+            }
+            picks = livePicks(round, basis.picks(), saved, asOf, firstPicks, firstOn);
         } else {
             List<PickRow> rows = repo.picks(List.of(row.id())).getOrDefault(row.id(), List.of());
             basis = ApplicationViews.submittedBasis(row, rows);
@@ -253,7 +266,11 @@ public class ApplicationService {
     }
 
     /** 담은 직무 순위 → 1~3지망(순위 값 그대로, 저장한 프로필로 판정, 없으면 verdict null). */
-    private List<Pick> livePicks(CurrentRound round, List<RankedJob> ranked, Optional<SavedProfile> saved, LocalDate asOf) {
+    /**
+     * @param firstPicks 보완 요청 중일 때 처음 낸 지망 직무(이 직무는 firstOn 기준으로 마감을 본다)
+     */
+    private List<Pick> livePicks(CurrentRound round, List<RankedJob> ranked, Optional<SavedProfile> saved, LocalDate asOf,
+                                 Set<Integer> firstPicks, LocalDate firstOn) {
         if (ranked.isEmpty()) {
             return List.of();
         }
@@ -268,7 +285,7 @@ public class ApplicationService {
             JobInfo j = jobs.get(r.jobId());
             if (j != null) {
                 out.add(new Pick(r.rank(), j.id(), j.title(), j.team(), j.institution(), verdicts.get(j.id()),
-                        ApplicationViews.closed(j, asOf)));
+                        ApplicationViews.closed(j, firstPicks.contains(j.id()) ? firstOn : asOf)));
             }
         }
         return out;

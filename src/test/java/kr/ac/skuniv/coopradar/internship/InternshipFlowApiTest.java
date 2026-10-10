@@ -455,6 +455,17 @@ class InternshipFlowApiTest {
         perform(get("/api/me/application"), student, null)
                 .andExpect(jsonPath("$.period.open").value(false))
                 .andExpect(jsonPath("$.picks[0].closed").value(false));
+        // 보완 중에 새로 넣은 지망은 오늘(7/30) 기준이라 마감된 직무(101, 7/18 마감)로는 낼 수 없다
+        perform(post("/api/me/plan/items"), student, "{\"jobId\": 101}").andExpect(status().is2xxSuccessful());
+        perform(put("/api/me/plan/ranks"), student, "{\"ranks\": [{\"jobId\": 122, \"rank\": 1}, {\"jobId\": 101, \"rank\": 2}]}")
+                .andExpect(status().isOk());
+        String late = perform(post("/api/me/application/submit"), student, null).andExpect(status().isBadRequest())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<List<String>>read(late, "$.fields[*].field")).contains("PICKS");
+        perform(get("/api/me/application"), student, null).andExpect(jsonPath("$.picks[1].closed").value(true))
+                .andExpect(jsonPath("$.picks[0].closed").value(false));
+        perform(put("/api/me/plan/ranks"), student, "{\"ranks\": [{\"jobId\": 122, \"rank\": 1}]}").andExpect(status().isOk());
+        approve(student);
         // 다시 내도 낸 시각(처음 낸 날 7/23)은 그대로라, 낸 지망은 마감이 아니고 빠진 것도 없다
         String again = perform(post("/api/me/application/submit"), student, null)
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SUBMITTED"))
@@ -539,6 +550,9 @@ class InternshipFlowApiTest {
         assertThat(count("SELECT count(*) FROM application a JOIN app_user u ON u.id = a.user_id"
                 + " WHERE u.demo_group_id = '" + student.group() + "'")).isEqualTo(1);
         perform(put("/api/me/application"), student, form(ESSAY + "\\u0000"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_INPUT"));
+        // 이력서(jsonb)에 든 NUL도 400(jsonb는 다른 오류 코드로 거절한다)
+        perform(put("/api/me/application"), student, form(ESSAY).replace("컴퓨터활용능력 2급", "컴퓨터활용능력\\u0000"))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_INPUT"));
     }
 

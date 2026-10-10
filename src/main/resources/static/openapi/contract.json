@@ -7335,7 +7335,7 @@
             }
           },
           "409": {
-            "description": "APPLICATION_LOCKED · APPLICATION_CLOSED",
+            "description": "APPLICATION_LOCKED · APPLICATION_CLOSED · STATE_CONFLICT",
             "content": {
               "application/json": {
                 "schema": {
@@ -7352,6 +7352,12 @@
                     "value": {
                       "code": "APPLICATION_CLOSED",
                       "message": "기준일이 신청 기간 밖"
+                    }
+                  },
+                  "STATE_CONFLICT": {
+                    "value": {
+                      "code": "STATE_CONFLICT",
+                      "message": "지금 단계에서 할 수 없는 처리(확정 전 매칭이 덜 됨, 결과 대기, 내용이 바뀐 승인 링크, 합격 전 서류 등)"
                     }
                   }
                 }

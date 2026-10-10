@@ -830,7 +830,7 @@ ENDPOINTS = {
                                               errors=["APPLICATION_NOT_FOUND", "PROFILE_NOT_FOUND", "APPLICATION_LOCKED"]),
     "POST /api/me/application/submit": dict(op="submitMyApplication", ok={200: ("Application", ["me-application.json"])},
                                             errors=["APPLICATION_INCOMPLETE", "APPLICATION_NOT_FOUND", "APPLICATION_LOCKED",
-                                                    "APPLICATION_CLOSED"]),
+                                                    "APPLICATION_CLOSED", "STATE_CONFLICT"]),
     "GET /api/approvals/{token}": dict(op="getApproval", ok={200: ("ApprovalView", ["approval.json"])},
                                        errors=["APPROVAL_NOT_FOUND"]),
     "POST /api/approvals/{token}": dict(op="approve", ok={200: ("ApprovalView", ["approval.json"])},
