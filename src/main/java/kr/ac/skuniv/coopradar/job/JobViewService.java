@@ -1,12 +1,11 @@
 package kr.ac.skuniv.coopradar.job;
 
-import java.time.Clock;
 import java.time.LocalDate;
 import kr.ac.skuniv.coopradar.auth.AuthUser;
 import kr.ac.skuniv.coopradar.auth.Role;
 import kr.ac.skuniv.coopradar.common.ApiException;
 import kr.ac.skuniv.coopradar.common.ErrorCode;
-import kr.ac.skuniv.coopradar.common.Times;
+import kr.ac.skuniv.coopradar.reference.ReferenceDates;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -23,11 +22,11 @@ public class JobViewService {
     private static final Logger log = LoggerFactory.getLogger(JobViewService.class);
 
     private final JdbcClient db;
-    private final Clock clock;
+    private final ReferenceDates dates;
 
-    public JobViewService(JdbcClient db, Clock clock) {
+    public JobViewService(JdbcClient db, ReferenceDates dates) {
         this.db = db;
-        this.clock = clock;
+        this.dates = dates;
     }
 
     /**
@@ -69,7 +68,7 @@ public class JobViewService {
     }
 
     private LocalDate today() {
-        return LocalDate.now(clock.withZone(Times.KST));
+        return dates.today();
     }
 
     /**

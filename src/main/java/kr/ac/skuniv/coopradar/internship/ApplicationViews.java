@@ -28,6 +28,7 @@ import kr.ac.skuniv.coopradar.internship.InternshipDtos.Pick;
 import kr.ac.skuniv.coopradar.internship.InternshipDtos.Resume;
 import kr.ac.skuniv.coopradar.internship.InternshipDtos.Status;
 import kr.ac.skuniv.coopradar.internship.InternshipDtos.StudentBrief;
+import kr.ac.skuniv.coopradar.reference.ReferenceDates.AsOf;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -181,7 +182,7 @@ final class ApplicationViews {
     }
 
     /** 낸 지원서의 지망(낼 때 판정). closed는 낸 날 기준이다(낸 뒤 마감돼도 낸 지망은 그대로 유효하다). */
-    static List<Pick> snapshotPicks(List<PickRow> picks, Map<Integer, JobInfo> jobs, LocalDate submittedOn) {
+    static List<Pick> snapshotPicks(List<PickRow> picks, Map<Integer, JobInfo> jobs, AsOf submittedOn) {
         return picks.stream().filter(p -> jobs.containsKey(p.jobId())).map(p -> {
             JobInfo j = jobs.get(p.jobId());
             return new Pick(p.rank(), p.jobId(), j.title(), j.team(), j.institution(), p.verdict(), closed(j, submittedOn));
@@ -193,8 +194,9 @@ final class ApplicationViews {
         return r.submittedAt() != null ? r.submittedAt().toLocalDate() : fallback;
     }
 
-    static boolean closed(JobInfo j, LocalDate asOf) {
-        return j.closesOn() != null && asOf != null && !j.closesOn().isAfter(asOf);
+    /** 마감 규칙은 하나다({@link AsOf#closed}, ADR-0035). */
+    static boolean closed(JobInfo j, AsOf asOf) {
+        return asOf.closed(j.closesOn());
     }
 
     private static boolean filled(String s) {

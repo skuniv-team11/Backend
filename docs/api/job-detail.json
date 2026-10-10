@@ -99,6 +99,68 @@
     "closeReason": null,
     "closesOnIsVirtual": false
   },
+  "views": 37,
+  "todayViews": 5,
+  "planned": true,
+  "planRank": 1,
+  "myEligibility": {
+    "verdict": "ELIGIBLE",
+    "majorMatch": "MATCH",
+    "reasons": [
+      {
+        "layer": "SCHOOL_RULE",
+        "item": "이수 학기",
+        "requirement": "4학기 이상",
+        "mine": "5학기",
+        "result": "MET",
+        "citation": {
+          "sourceType": "SCHOOL_NOTICE",
+          "documentTitle": "2026학년도 2학기 표준 현장실습학기제 학생 모집안내",
+          "page": null,
+          "quote": "4학기 이상 수료한 재학생(편입생의 경우 본교에서 1학기 이상 이수한 학생)"
+        }
+      },
+      {
+        "layer": "INSTITUTION",
+        "item": "학년",
+        "requirement": "3·4학년",
+        "mine": "3학년",
+        "result": "MET",
+        "citation": {
+          "sourceType": "INSTITUTION_LIST",
+          "documentTitle": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
+          "page": null,
+          "quote": "학년 : 3, 4학년"
+        }
+      },
+      {
+        "layer": "INSTITUTION",
+        "item": "학점",
+        "requirement": "3.0 이상",
+        "mine": "3.4",
+        "result": "MET",
+        "citation": {
+          "sourceType": "INSTITUTION_LIST",
+          "documentTitle": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
+          "page": null,
+          "quote": "학점 3.0 이상"
+        }
+      },
+      {
+        "layer": "MAJOR",
+        "item": "선호 전공",
+        "requirement": "미용예술대학, 경영학과",
+        "mine": "메이크업디자인학과",
+        "result": "INFO",
+        "citation": {
+          "sourceType": "INSTITUTION_LIST",
+          "documentTitle": "2026학년도 2학기 표준 현장실습학기제 참여기관 리스트",
+          "page": null,
+          "quote": "전공 : 미용예술대학, 경영학과"
+        }
+      }
+    ]
+  },
   "evidence": [
     {
       "fieldKey": "stipendAmount",

@@ -21,11 +21,13 @@ public class JobController {
         this.views = views;
     }
 
+    /** 조회를 먼저 센 뒤(없는 직무면 세지 않는다) 상세를 만든다 — 응답의 views에 이번 조회가 들어간다. */
     @GetMapping("/api/jobs/{jobId}")
     public JobDetail detail(AuthUser user, @PathVariable long jobId) {
-        JobDetail detail = jobs.detail(jobId);
-        views.record(jobId, user);
-        return detail;
+        if (jobs.exists(jobId)) {
+            views.record(jobId, user);
+        }
+        return jobs.detail(user, jobId);
     }
 
     @GetMapping("/api/jobs/{jobId}/views")

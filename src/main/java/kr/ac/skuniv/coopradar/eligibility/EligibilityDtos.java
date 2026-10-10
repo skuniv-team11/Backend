@@ -56,9 +56,39 @@ public final class EligibilityDtos {
                                  MajorMatch majorMatch, Closing closing, int alertCount, List<ReasonLine> reasons) {
     }
 
+    /** NCS 세분류(코드·이름). */
+    public record NcsRef(String code, String name) {
+    }
+
+    /**
+     * #14 응답 행(계약 스키마 EligibilityJob): 판정 + 목록에 함께 보이는 값(ADR-0035).
+     *
+     * @param ncs      그 직무의 NCS 세분류(없으면 null)
+     * @param views    지금까지 조회 수(#25와 같은 값)
+     * @param planned  내가 담은 직무인지
+     * @param planRank 내 지망 순위(정하지 않았거나 담지 않았으면 null)
+     */
+    public record EligibilityRow(int jobId, String title, String team, InstitutionRef institution, Verdict verdict,
+                                 MajorMatch majorMatch, Closing closing, int alertCount, NcsRef ncs, int views,
+                                 boolean planned, Integer planRank, List<ReasonLine> reasons) {
+
+        public static EligibilityRow of(EligibilityJob j, NcsRef ncs, int views, boolean planned, Integer planRank) {
+            return new EligibilityRow(j.jobId(), j.title(), j.team(), j.institution(), j.verdict(), j.majorMatch(),
+                    j.closing(), j.alertCount(), ncs, views, planned, planRank, j.reasons());
+        }
+    }
+
+    /** 저장한 프로필로 본 직무 하나의 판정(#17 myEligibility, 계약 스키마 MyEligibility). */
+    public record MyEligibility(Verdict verdict, MajorMatch majorMatch, List<ReasonLine> reasons) {
+
+        public static MyEligibility of(EligibilityJob j) {
+            return new MyEligibility(j.verdict(), j.majorMatch(), j.reasons());
+        }
+    }
+
     public record Summary(int total, int eligible, int needsCheck, int ineligible) {
     }
 
-    public record Eligibility(RoundRef round, Summary summary, List<EligibilityJob> jobs) {
+    public record Eligibility(RoundRef round, Summary summary, List<EligibilityRow> jobs) {
     }
 }

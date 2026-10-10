@@ -362,6 +362,31 @@ class ExploreApiTest {
         mvc.perform(get("/api/me/explore").header("Authorization", "Bearer " + center)).andExpect(status().isForbidden());
     }
 
+    @Test
+    void 프로필을_빼면_저장한_프로필로_카드와_탐색을_만든다() throws Exception {
+        String token = guestToken("STUDENT");   // 예시 프로필이 저장돼 있다(본문 profile과 같은 학생)
+        mvc.perform(post("/api/explore/cards").header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.candidates.total").value(CANDIDATES.size()));
+        NEXT_RANK.set(Optional.of(goodRanking()));
+        mvc.perform(post("/api/explore").header("Authorization", "Bearer " + token).header("CF-Connecting-IP", "198.51.100.8")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"experiences\": [\"" + EXP1 + "\"], \"cardIds\": [], \"consent\": true}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.source").value("AI"))
+                .andExpect(jsonPath("$.candidates.total").value(CANDIDATES.size()));
+        // 저장한 프로필이 없으면 404
+        String signup = mvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"x." + java.util.UUID.randomUUID() + "@example.com\",\"password\":\"password-8\"}"))
+                .andReturn().getResponse().getContentAsString();
+        String member = JsonPath.read(signup, "$.accessToken");
+        mvc.perform(post("/api/explore/cards").header("Authorization", "Bearer " + member)
+                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("PROFILE_NOT_FOUND"));
+        mvc.perform(post("/api/explore").header("Authorization", "Bearer " + member).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"experiences\": [\"" + EXP1 + "\"], \"consent\": true}"))
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("PROFILE_NOT_FOUND"));
+    }
+
     private ResultActions explore(String token, List<String> experiences, List<String> cardIds, boolean consent)
             throws Exception {
         String exps = String.join(",", experiences.stream().map(e -> "\"" + e + "\"").toList());

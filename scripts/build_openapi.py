@@ -192,6 +192,8 @@ S.update({
     "Profile": obj(PROFILE_PROPS, optional=PROFILE_OPTIONAL,
                    desc="학생 프로필. 요청 본문으로만 보낸다(URL·쿼리에 넣지 않는다)"),
     "ProfileBody": obj({"profile": R("Profile")}),
+    "OptionalProfileBody": obj({"profile": R("Profile")}, optional=("profile",),
+                               desc="profile을 빼면 저장한 프로필(GET /api/me/profile)로 본다. 둘 다 없으면 404 PROFILE_NOT_FOUND"),
     "ProfileSaveRequest": obj({
         **PROFILE_PROPS,
         "consent": d(BOOL, "true가 아니면 400 CONSENT_REQUIRED"),
@@ -246,8 +248,17 @@ S.update({
         "majorMatch": R("MajorMatch"),
         "closing": d(CLOSING, "직무 상세의 closing과 같은 값. 목록은 closesOn ≤ 기준일이면 '마감' 꼬리표를 단다"),
         "alertCount": d({"type": "integer", "minimum": 0}, "그 직무에 걸린 검토 알림 수(jobId가 그 직무인 것만, 기관 단위 알림은 세지 않는다). '문서 검토' 꼬리표"),
+        "ncs": d(nul(obj({"code": NCS_CODE, "name": STR})), "그 직무의 NCS 세분류(GET /api/jobs/{jobId}/career의 ncs와 같은 세분류). 없으면 null"),
+        "views": d({"type": "integer", "minimum": 0}, "지금까지 조회 수(GET /api/jobs/{jobId}/views의 views와 같은 값)"),
+        "planned": d(BOOL, "내가 담은 직무인지"),
+        "planRank": d(nul({"type": "integer", "minimum": 1, "maximum": 3}), "내 지망 순위. 정하지 않았거나 담지 않았으면 null"),
         "reasons": arr(R("ReasonLine")),
     }),
+    "MyEligibility": obj({
+        "verdict": R("Verdict"),
+        "majorMatch": R("MajorMatch"),
+        "reasons": arr(R("ReasonLine")),
+    }, desc="저장한 프로필로 본 이 직무의 판정(POST /api/eligibility 행의 같은 칸과 같은 값)"),
     "Eligibility": obj({
         "round": R("RoundRef"),
         "summary": obj({"total": INT, "eligible": INT, "needsCheck": INT, "ineligible": INT}),
@@ -343,6 +354,11 @@ S.update({
             "hasCoordinates": d(BOOL, "true면 프론트가 `POST /api/jobs/{jobId}/commute`를 부른다"),
         })), "근로지. V1 job.workplace_id가 null을 허용해 null일 수 있다"),
         "closing": CLOSING,
+        "views": d({"type": "integer", "minimum": 0}, "지금까지 조회 수(이번 조회까지 센 뒤, GET /api/jobs/{jobId}/views와 같은 값)"),
+        "todayViews": d({"type": "integer", "minimum": 0}, "오늘(한국 시간) 조회 수"),
+        "planned": d(BOOL, "내가 담은 직무인지(센터는 false)"),
+        "planRank": d(nul({"type": "integer", "minimum": 1, "maximum": 3}), "내 지망 순위. 정하지 않았거나 담지 않았으면(센터도) null"),
+        "myEligibility": d(nul(R("MyEligibility")), "저장한 프로필로 본 판정. 저장한 프로필이 없거나 센터면 null"),
         "evidence": d(arr(obj({
             "fieldKey": R("EvidenceFieldKey"),
             "label": STR,
@@ -494,12 +510,12 @@ S.update({
                        maxItems=60), "후보 직무를 번갈아 놓은 순서. 거의 같은 글은 하나로 합친다"),
     }),
     "ExploreRequest": obj({
-        "profile": R("Profile"),
+        "profile": d(R("Profile"), "빼면 저장한 프로필로 본다(둘 다 없으면 404 PROFILE_NOT_FOUND)"),
         "experiences": d(arr({"type": "string", "minLength": 20, "maxLength": 200}, maxItems=3),
                          "해 본 일 0~3개. 경험 1개 이상 또는 카드 3개 이상이어야 한다"),
         "cardIds": d(arr(CARD_ID, maxItems=5), "POST /api/explore/cards의 id, 중복 불가"),
         "consent": d(BOOL, "경험 글을 AI에 보내고 결과와 함께 저장하는 데 동의. true가 아니면 400 CONSENT_REQUIRED"),
-    }),
+    }, optional=("profile",)),
     "ExploreWhyText": obj({
         "summary": STR,
         "points": arr(obj({"text": STR, "studentQuote": STR, "jobQuote": STR}), minItems=1, maxItems=3),
@@ -759,6 +775,7 @@ S["ErrorCode"] = {"type": "string", "enum": list(ERR),
 # req: (스키마, [예시 파일]) / ok: {상태: (스키마 또는 None, [예시 파일])} / errors: 공통 규칙 밖에서 더 나는 오류 코드
 # 공통 규칙: 본문이 있으면 INVALID_INPUT, 공개가 아니면 AUTH_REQUIRED·TOKEN_EXPIRED, STUDENT·CENTER면 FORBIDDEN_ROLE
 PB = ("ProfileBody", ["profile-body.request.json"])
+OPB = ("OptionalProfileBody", ["profile-body.request.json"])
 ENDPOINTS = {
     "GET /api/ping": dict(op="ping", ok={200: ("Ping", ["ping.json"])}),
     "GET /api/codes": dict(op="getCodes", ok={200: ("Codes", ["codes.json"])}),
@@ -778,7 +795,8 @@ ENDPOINTS = {
     "GET /api/departments": dict(op="getDepartments", ok={200: ("Departments", ["departments.json"])}),
     "GET /api/areas": dict(op="getAreas", ok={200: ("Areas", ["areas.json"])}),
     "GET /api/rounds/current": dict(op="getCurrentRound", ok={200: ("CurrentRound", ["rounds-current.json"])}),
-    "POST /api/eligibility": dict(op="checkEligibility", req=PB, ok={200: ("Eligibility", ["eligibility.json"])}),
+    "POST /api/eligibility": dict(op="checkEligibility", req=OPB, ok={200: ("Eligibility", ["eligibility.json"])},
+                                  errors=["PROFILE_NOT_FOUND"]),
     "POST /api/recommendations": dict(op="getRecommendations", req=PB,
                                       ok={200: ("Recommendations", ["recommendations.json"])}),
     "POST /api/recommendations/{jobId}/reason": dict(op="getRecommendationReason", req=PB,
@@ -805,9 +823,10 @@ ENDPOINTS = {
         op="getPlanItemAlternatives", req=("PlanCheckRequest", ["me-plan-check.request.json"]),
         ok={200: ("PlanItemAlternatives", ["me-plan-item-alternatives.json"])},
         errors=["PLAN_ITEM_NOT_FOUND", "AS_OF_OUT_OF_RANGE"]),
-    "POST /api/explore/cards": dict(op="getExploreCards", req=PB, ok={200: ("ExploreCards", ["explore-cards.json"])}),
+    "POST /api/explore/cards": dict(op="getExploreCards", req=OPB, ok={200: ("ExploreCards", ["explore-cards.json"])},
+                                    errors=["PROFILE_NOT_FOUND"]),
     "POST /api/explore": dict(op="explore", req=("ExploreRequest", ["explore.request.json"]),
-                              ok={200: ("Explore", ["explore.json"])}, errors=["CONSENT_REQUIRED"]),
+                              ok={200: ("Explore", ["explore.json"])}, errors=["CONSENT_REQUIRED", "PROFILE_NOT_FOUND"]),
     "GET /api/me/explore": dict(op="getMyExplore", ok={200: ("Explore", ["explore.json"])}, errors=["EXPLORE_NOT_FOUND"]),
     "DELETE /api/me/explore": dict(op="deleteMyExplore", ok={204: (None, [])}),
     "GET /api/jobs/{jobId}/career": dict(op="getJobCareer", ok={200: ("JobCareer", ["job-career.json"])},

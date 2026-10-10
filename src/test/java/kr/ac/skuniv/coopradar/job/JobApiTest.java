@@ -185,6 +185,45 @@ class JobApiTest {
                 .andExpect(jsonPath("$.code").value("AUTH_REQUIRED"));
     }
 
+    @Test
+    void 상세에_이번_조회까지_센_조회수와_내_담기_순위_판정이_있다() throws Exception {
+        String token = guestToken("STUDENT");   // 예시 프로필이 저장돼 있다
+        mvc.perform(post("/api/me/plan/items").header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"jobId\": 122}"));
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/me/plan/ranks")
+                        .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"ranks\": [{\"jobId\": 122, \"rank\": 2}]}"))
+                .andExpect(status().isOk());
+        int before = count("SELECT count(*) FROM job_view WHERE job_id = 122");
+        String body = detail(token, "122").andExpect(status().isOk())
+                .andExpect(jsonPath("$.views").value(before + 1))
+                .andExpect(jsonPath("$.planned").value(true))
+                .andExpect(jsonPath("$.planRank").value(2))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<Integer>read(body, "$.todayViews")).isGreaterThanOrEqualTo(1);
+        // 같은 날 다시 열어도 한 번만 센다
+        detail(token, "122").andExpect(jsonPath("$.views").value(before + 1));
+        // 판정은 #14 행의 같은 칸과 같다
+        String eligibility = mvc.perform(post("/api/eligibility").header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content("{}")).andReturn().getResponse().getContentAsString();
+        List<Map<String, Object>> row = JsonPath.read(eligibility, "$.jobs[?(@.jobId == 122)]");
+        assertThat(JsonPath.<String>read(body, "$.myEligibility.verdict")).isEqualTo(row.getFirst().get("verdict"));
+        assertThat(JsonPath.<String>read(body, "$.myEligibility.majorMatch")).isEqualTo(row.getFirst().get("majorMatch"));
+        assertThat(JsonPath.<List<Object>>read(body, "$.myEligibility.reasons")).isEqualTo(row.getFirst().get("reasons"));
+        Contract.assertSameShape(body, Contract.responseExample("getJob", 200, null));
+
+        // 센터는 담기·판정이 없고 조회로 세지 않는다
+        detail(guestToken("CENTER"), "122").andExpect(jsonPath("$.planned").value(false))
+                .andExpect(jsonPath("$.planRank").isEmpty()).andExpect(jsonPath("$.myEligibility").isEmpty())
+                .andExpect(jsonPath("$.views").value(before + 1));
+        // 저장한 프로필이 없는 학생은 판정이 없다
+        String signup = mvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"d." + java.util.UUID.randomUUID() + "@example.com\",\"password\":\"password-8\"}"))
+                .andReturn().getResponse().getContentAsString();
+        detail(JsonPath.read(signup, "$.accessToken"), "122").andExpect(jsonPath("$.myEligibility").isEmpty())
+                .andExpect(jsonPath("$.planned").value(false));
+    }
+
     // ───────── 도우미 ─────────
 
     private ResultActions detail(String token, String jobId) throws Exception {

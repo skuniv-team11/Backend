@@ -3,10 +3,12 @@ package kr.ac.skuniv.coopradar.job;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.MyEligibility;
 
 /**
  * 직무 상세(docs/api #17, 계약 스키마 JobDetail, job-detail.json). 필드 이름이 JSON 이름이다.
  * 코드값은 영문 대문자 그대로 주고 화면 표기는 {@code GET /api/codes}가 맡는다. 통근 시간은 여기 없다(#18을 따로 부른다).
+ * 조회 수·내 담기·지망 순위·저장한 프로필로 본 판정(myEligibility)을 함께 준다 — 상세 화면이 #25·#14를 따로 부르지 않게(ADR-0035).
  */
 public record JobDetail(
         int id,
@@ -22,6 +24,11 @@ public record JobDetail(
         Requirements requirements,
         Workplace workplace,
         Closing closing,
+        int views,
+        int todayViews,
+        boolean planned,
+        Integer planRank,
+        MyEligibility myEligibility,
         List<Evidence> evidence,
         List<Alert> alerts,
         List<SeniorNote> seniorNotes,

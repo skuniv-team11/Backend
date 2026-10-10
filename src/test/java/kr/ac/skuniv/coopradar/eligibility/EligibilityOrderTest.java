@@ -10,12 +10,14 @@ import java.util.Set;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityService.Judged;
 import kr.ac.skuniv.coopradar.job.InstitutionRef;
 import kr.ac.skuniv.coopradar.job.JobDetail.Closing;
+import kr.ac.skuniv.coopradar.reference.ReferenceDates.AsOf;
 import org.junit.jupiter.api.Test;
 
 /** 판정 목록 순서(ADR-0027): 판정 → 모집 중 먼저 → 적합도 순 → 리스트 순번. */
 class EligibilityOrderTest {
 
     private static final LocalDate AS_OF = LocalDate.of(2026, 7, 23);
+    private static final LocalDate END = LocalDate.of(2026, 7, 24);
     private static final ProfileInput ME = new ProfileInput(43, 3, 5, new BigDecimal("3.4"), false, null, null, List.of());
 
     @Test
@@ -31,14 +33,14 @@ class EligibilityOrderTest {
         // 적합도 순위(지원 불가 제외): 105 → 104 → 106 → 102 → 101
         List<Integer> fit = List.of(105, 104, 106, 102, 101);
 
-        assertThat(EligibilityService.order(judged, fit, AS_OF)).extracting(j -> j.requirement().jobId())
+        assertThat(EligibilityService.order(judged, fit, new AsOf(AS_OF, END))).extracting(j -> j.requirement().jobId())
                 .containsExactly(105, 106, 102, 101, 104, 103, 107);
     }
 
     @Test
     void 적합도_순위가_없으면_리스트_순번() {
         List<Judged> judged = List.of(judge(102, 2, "Y3_4", "NONE", null), judge(101, 1, "Y3_4", "NONE", null));
-        assertThat(EligibilityService.order(judged, List.of(), AS_OF)).extracting(j -> j.requirement().jobId())
+        assertThat(EligibilityService.order(judged, List.of(), new AsOf(AS_OF, END))).extracting(j -> j.requirement().jobId())
                 .containsExactly(101, 102);
     }
 
@@ -47,6 +49,19 @@ class EligibilityOrderTest {
         assertThat(EligibilityService.closedOn(judge(1, 1, "Y3_4", "NONE", AS_OF), AS_OF)).isTrue();
         assertThat(EligibilityService.closedOn(judge(1, 1, "Y3_4", "NONE", AS_OF.plusDays(1)), AS_OF)).isFalse();
         assertThat(EligibilityService.closedOn(judge(1, 1, "Y3_4", "NONE", null), AS_OF)).isFalse();
+    }
+
+    @Test
+    void 마감은_한_규칙이다_마감일_당일부터이거나_모집이_끝난_뒤() {
+        AsOf inPeriod = new AsOf(AS_OF, END);
+        assertThat(inPeriod.closed(AS_OF)).isTrue();
+        assertThat(inPeriod.closed(AS_OF.plusDays(1))).isFalse();
+        assertThat(inPeriod.closed(null)).isFalse();
+        // 모집 종료일 뒤면 마감일이 없거나 늦어도 마감(ADR-0035)
+        AsOf after = new AsOf(END.plusDays(1), END);
+        assertThat(after.closed(null)).isTrue();
+        assertThat(after.closed(END.plusDays(30))).isTrue();
+        assertThat(new AsOf(END, END).closed(null)).isFalse();
     }
 
     private static Judged judge(int id, int listSeq, String gradeRule, String portfolio, LocalDate closesOn) {

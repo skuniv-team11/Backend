@@ -159,4 +159,44 @@ public class EligibilityRepository {
                 })
                 .list();
     }
+
+    // ───────── #14 행에 함께 보이는 값(ADR-0035) ─────────
+
+    /** 회차 직무의 NCS 세분류(job_ncs). */
+    Map<Integer, EligibilityDtos.NcsRef> ncsByJob(int roundId) {
+        Map<Integer, EligibilityDtos.NcsRef> out = new HashMap<>();
+        db.sql("""
+                        SELECT n.job_id, s.code, s.name FROM job_ncs n
+                        JOIN ncs_subcategory s ON s.code = n.subcategory_code
+                        JOIN job j ON j.id = n.job_id WHERE j.round_id = :round""")
+                .param("round", roundId)
+                .query(rs -> {
+                    out.put(rs.getInt("job_id"), new EligibilityDtos.NcsRef(rs.getString("code"), rs.getString("name")));
+                });
+        return out;
+    }
+
+    /** 회차 직무의 지금까지 조회 수(#25의 views와 같은 값, 0이면 빠진다). */
+    Map<Integer, Integer> viewsByJob(int roundId) {
+        Map<Integer, Integer> out = new HashMap<>();
+        db.sql("""
+                        SELECT v.job_id, count(*) AS views FROM job_view v JOIN job j ON j.id = v.job_id
+                        WHERE j.round_id = :round GROUP BY v.job_id""")
+                .param("round", roundId)
+                .query(rs -> {
+                    out.put(rs.getInt("job_id"), rs.getInt("views"));
+                });
+        return out;
+    }
+
+    record Planned(int jobId, Integer rank) {
+    }
+
+    /** 계정이 담은 직무와 순위. */
+    List<Planned> plan(long userId) {
+        return db.sql("SELECT job_id, rank FROM plan_item WHERE user_id = :user")
+                .param("user", userId)
+                .query((rs, n) -> new Planned(rs.getInt("job_id"), (Integer) rs.getObject("rank")))
+                .list();
+    }
 }

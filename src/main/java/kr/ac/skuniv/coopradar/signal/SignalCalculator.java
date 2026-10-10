@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
+import kr.ac.skuniv.coopradar.reference.ReferenceDates;
 import kr.ac.skuniv.coopradar.signal.Signal.Status;
 
 /**
@@ -54,7 +55,7 @@ public final class SignalCalculator {
             }
         }
         int liveInterest = liveCounts && !liveOn.isAfter(asOf) ? live : 0;
-        boolean closed = asOf.isAfter(recruitEnd) || (closesOn != null && !closesOn.isAfter(asOf));
+        boolean closed = new ReferenceDates.AsOf(asOf, recruitEnd).closed(closesOn); // 마감 규칙은 하나(ADR-0035)
         Status status = closed ? Status.CLOSED : Status.OPEN;
         LocalDate expected = closed ? null
                 : expectedFullOn(all, interest, headcount, closesOn, recruitStart, recruitEnd, asOf);

@@ -16,6 +16,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - **오류**: HTTP 상태 코드 + `{"code": "...", "message": "사람이 읽는 설명"}`. 입력 검증 실패(`INVALID_INPUT`)만 `fields`를 더 준다. 코드 표는 맨 아래.
 - **개인정보**
   - 프로필(학과·학년·평점 등)은 요청 **본문**으로만 보낸다. URL·쿼리에 넣지 않는다 — 그래서 판정·추천·지망 점검·통근 조회가 GET이 아니라 POST다.
+  - 판정(#14)·탐색 카드(#28)·탐색(#29)은 본문 `profile`을 빼도 된다 — 빼면 저장한 프로필(#8)로 보고, 둘 다 없으면 404 `PROFILE_NOT_FOUND`. 저장하지 않고 써 보는 길(본문 `profile`)은 그대로다. 화면은 저장한 뒤에는 `profile`을 보내지 않는다(탐색 결과를 다시 열어도 같은 프로필로 판정되게).
   - 서버에 저장하는 건 `PUT /api/me/profile`에 `consent: true`로 보냈을 때뿐이다. 탈퇴하면 즉시 지운다.
   - 사는 곳은 시·군·구까지만 받는다(`homeAreaCode`). 정확한 주소는 받지 않는다.
   - 요청·응답 본문을 로그에 남기지 않는다.
@@ -26,6 +27,10 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - **실행 중 외부 호출**은 Claude(이유 문장·직무 탐색·커리어 리포트)·카카오(통근 조회 — 주소 검색과 대중교통) 둘뿐이다(ADR-0002, ADR-0007, ADR-0031). 임베딩은 쓰지 않는다(E5 결과, ADR-0018). 둘 다 실패해도 200으로 화면을 유지한다.
 - **코드값**은 영문 대문자이고 DB CHECK와 같은 집합이다(`V1__init.sql`). 화면 표기는 `GET /api/codes`에서 가져간다.
 - **예시 값**: 기관·직무·인용문은 전부 가상이다(`(가상)` 표시). 실제 값은 시드에서 나온다. 목록 응답의 예시는 일부 행만 보여 준다.
+- **기준일** 두 가지(`ReferenceDates`, ADR-0035)
+  - **모집 판정 기준일**: 판정(#14)·추천(#15)·탐색(#28~#32)·지망 점검(#23) 목록의 '마감'과 후보를 이 날로 본다. 리플레이 중에는 `rounds/current`의 `replay.defaultAsOf`(7/23, 회차 모집기간 안으로 맞춤), 운영 때는 오늘로 바꿀 자리가 이 하나다.
+  - **진행 기준일**: 지원서(#37~#41)·내 현장실습(#44)은 `asOf`(#44만) → 체험 학생의 `demoToday` → 오늘(한국 시간) 순으로 정한다. 센터 지원서 화면(#47)은 오늘이다.
+  - **마감**은 한 규칙이다: `closesOn` ≤ 기준일이거나, 기준일이 회차 모집 종료일 뒤면 마감이다(낸 지원서의 지망은 낸 날로 본다).
 - CORS: `CorsConfig`가 `GET`·`POST`·`PUT`·`DELETE`·`OPTIONS`와 모든 헤더(`Authorization` 포함)를 허용한다(Backend#16). 응답 헤더 `Retry-After`(429)·`Content-Disposition`(CSV 파일 이름)은 프론트 JS가 읽을 수 있게 노출한다. 통근 조회에는 환경변수 `KAKAO_REST_API_KEY`(카카오 디벨로퍼스 REST API 키)가 필요하다.
 
 ## 목록
@@ -181,7 +186,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 **내 정보**
 - `DELETE /api/me` → 204. 계정·프로필·담은 지망·탐색 결과·커리어 리포트·지원서가 함께 지워진다(DB cascade). 직무 조회 기록은 조회수로 남고 계정 연결만 끊긴다(`job_view.user_id` NULL).
 - `PUT /api/me/profile`: `consent`가 true가 아니면 400 `CONSENT_REQUIRED`. `GET`에 저장한 게 없으면 404 `PROFILE_NOT_FOUND`. `certificates`는 보낸 그대로(null·`[]`·코드 목록) 저장하고 돌려준다 — 코드는 중복을 빼고 `GET /api/certificates` 순서로 맞춘다.
-- `hasProfile`(`/api/me`)이 false여도 판정·추천은 된다 — 프론트가 입력받은 프로필을 본문에 넣어 보내면 된다.
+- `hasProfile`(`/api/me`)이 false여도 판정·추천은 된다 — 프론트가 입력받은 프로필을 본문에 넣어 보내면 된다. 저장했으면 판정(#14)·탐색(#28·#29)은 `profile` 없이 부른다.
 
 **자격증 선택지**(`GET /api/certificates`, [ADR-0021](../decisions/0021-certificate-profile.md)) — `{certificates: [{code, label}]}`. 현재 회차 직무가 요구(`REQUIRED`)하거나 우대(`PREFERRED`)하는 자격증만, 코드표 순서로 준다(2026-2는 2개). 판정에 쓰지 않는 자격증은 묻지 않는다(최소 수집).
 - 프로필 화면(S1)의 체크 목록으로 쓴다. 하나도 고르지 않았으면 `certificates: []`(없음)를 보낸다. 필드를 빼면(null) 없음과 같다 — **묻지 않으면 필수 자격증 직무(2026-2 미용 시술 보조)는 지원 불가로 보인다**(ADR-0024).
@@ -190,6 +195,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - `eligibility`: 회차 직무 **전부**(2026-2는 40행)를 돌려준다. S4의 '요건 ↔ 내 판정'도 이 응답의 해당 행을 쓴다(별도 API 없음). 순서([ADR-0027](../decisions/0027-job-list-order.md))는 판정(`ELIGIBLE` → `NEEDS_CHECK` → `INELIGIBLE`) → 같은 판정 안에서 모집 중 먼저, 기준일(아래 `recommendations`와 같다)에 마감된 직무는 아래 → 모집 중인 `ELIGIBLE`·`NEEDS_CHECK`는 적합도 순(추천할 이유가 있는 직무 먼저, 그 안에서 `HIGH` → 점수 — 아래 '적합도', 추천과 같은 순서라 `ELIGIBLE` 맨 위가 추천 카드와 이어진다) → 나머지(`INELIGIBLE`, 마감)는 센터 참여기관 리스트 순번. 적합도·점수는 이 응답에 넣지 않는다(순서에만 쓴다). 학과가 `departments`에 없으면 400 `INVALID_INPUT`(`profile.departmentId`), 자격증 코드가 `certificate` 코드표에 없으면 400 `INVALID_INPUT`(`profile.certificates`). `homeAreaCode`는 판정에 쓰지 않아 형식만 본다.
   - `closing`: `{closesOn, closeReason, closesOnIsVirtual}` — 직무 상세의 `closing`과 같은 값이다(기준일과 상관없이 고정, 마감이 없으면 `closesOn`·`closeReason`이 null). 목록은 `closesOn` ≤ 기준일(아래 `recommendations`와 같다)이면 '마감' 꼬리표를 단다.
   - `alertCount`: 그 직무에 걸린 검토 알림 수. `jobId`가 그 직무인 알림만 세고, 기관 단위 알림은 세지 않는다.
+  - `ncs`: 그 직무의 NCS 세분류 `{code, name}`(#33의 `ncs`와 같은 세분류, 없으면 null). `views`: 지금까지 조회 수(#25의 `views`와 같은 값). `planned`: 내가 담은 직무인지, `planRank`: 내 지망 순위(1~3, 정하지 않았거나 담지 않았으면 null). 목록 화면이 직무마다 #25·#33·#19를 따로 부르지 않게 한 응답에 넣는다.
 - `recommendations`: `INELIGIBLE`과 기준일(리플레이 중에는 `rounds/current`의 `replay.defaultAsOf`, 운영 때는 오늘)에 마감된(`closesOn` ≤ 기준일) 직무를 뺀 직무 중 **추천할 이유가 있는 직무**(위 '적합도')를 적합도 점수 순으로 **5개까지** 준다 — 이유가 있는 직무가 적으면 5개보다 적고, 0개일 수도 있다. 점수는 응답에 넣지 않는다. 이유는 `reasonTemplate`(규칙 문장)을 바로 주고 `reasonStatus: PENDING`이면 프론트가 카드마다 16번을 부른다. 0개면 `items: []`와 `blockedBy: [{item, count}]` — 지원 불가로 막은 항목별 직무 수(못 맞춘 판정 이유 줄의 `item`, 처음 나온 순서. 예: 2학년·3학기면 이수 학기 40 · 학년 40 · 학점 5 · 자격증 1)와, 지원 불가는 아니지만 마감돼 빠진 직무 수(`item` '모집 마감'), 지원할 수 있고 마감 전이지만 추천할 이유가 없어(위 '적합도'의 추천할 이유) 뺀 직무 수(`item` '관심 분야'). 1~4개일 때는 `blockedBy`가 `[]`이다.
   - `reasonTemplate`(ADR-0020·[0024](../decisions/0024-verdict-clarity-and-fit-sentences.md)): '왜 나에게 맞는지'를 내 값으로 먼저 말한다. 한 문장씩 이 순서로 잇는다.
     1. 판정 한 줄 — 판정 이유 줄(요건 ↔ 내 값)을 그대로 옮긴다.
@@ -222,6 +228,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - `caption`은 사진 아래에 인쇄된 설명 원문(없으면 null). 얼굴이 보이는 사진도 있다 — 서식에 '현장실습학기제 홍보자료로 사용될 수 있습니다'라고 적혀 있다(10/10 결정).
 - `conditions.stipend.minWageRatio`는 소수 둘째 자리에서 반올림한다. 기준이 `UNSPECIFIED`거나 금액이 없으면 null.
 - 학생(`STUDENT`)이 이 응답을 받으면 조회수에 센다 — 계정마다 직무별로 하루(한국 시간) 한 번. 센터 담당자는 세지 않는다. 기록이 실패해도 상세는 그대로 준다.
+- `views`·`todayViews`: 조회 수(#25와 같은 값, 이번 조회까지 센 뒤). `planned`·`planRank`: 내가 담았는지·지망 순위(학생만, 센터는 false·null). `myEligibility`: 저장한 프로필(#8)로 본 이 직무의 판정 `{verdict, majorMatch, reasons}`(#14 행의 같은 칸과 같은 값). 저장한 프로필이 없거나 센터면 null — 화면은 판정 한 줄을 보려고 #14 전체를 부르지 않는다.
 
 **조회수**(`GET /api/jobs/{jobId}/views`, ADR-0019) — 로그인(역할 무관). 없는 직무는 404 `JOB_NOT_FOUND`.
 - `{jobId, views, todayViews}`. `views`는 지금까지, `todayViews`는 오늘(한국 시간) 조회 수. 둘 다 실제 값이다(리플레이·가상 값 없음, 기준일과 상관없음).
