@@ -24,7 +24,8 @@ public record JobDetail(
         Closing closing,
         List<Evidence> evidence,
         List<Alert> alerts,
-        List<SeniorNote> seniorNotes) {
+        List<SeniorNote> seniorNotes,
+        List<Photo> photos) {
 
     /** 사업자번호·대표자명은 두지 않는다(ADR-0004). {@code logoPath}는 {@link InstitutionRef}와 같다(ADR-0019). */
     public record Institution(int id, String name, String logoPath, String size, String listing, String businessType,
@@ -79,11 +80,21 @@ public record JobDetail(
     }
 
     /**
-     * 같은 기관의 선배 수기. 이름·학과·학년·소감은 없다(시드에도 없다).
+     * 같은 기관의 선배 수기 전문(ADR-0030). 이름·사진은 없다(시드에도 없다). '우수' 수기라 긍정 쪽으로 치우쳐 있다 — 화면이 밝힌다.
      *
-     * @param outcomes 실습 결과 중 원문 그대로 자른 사실 구절(만든 결과물·맡은 일 등, 0~3개). '우수' 수기라 감상·평가는 뺐다(ADR-0020)
+     * @param outcomes 실습 결과 중 원문 그대로 자른 사실 구절(만든 결과물·맡은 일 등, 0~3개). 추천 근거용(ADR-0020)
+     * @param results  실습 결과 문단 전문. 수기에 없으면 null
      */
-    public record SeniorNote(String termCode, String teamText, String documentTitle, int page, List<String> activities,
-                             List<String> outcomes) {
+    public record SeniorNote(String termCode, String teamText, String documentTitle, int page, String major, String grade,
+                             String oneLine, String companyIntro, List<String> activities, List<String> outcomes,
+                             String results, String reflection) {
+    }
+
+    /**
+     * 실습기관 소개서의 '회사 전경 및 활동사진'(ADR-0030). {@code path}는 로고처럼 API 서버의 정적 경로다(예: /photos/7/1.jpg).
+     *
+     * @param caption 사진 아래에 인쇄된 설명 원문. 없으면 null
+     */
+    public record Photo(int seq, String path, String caption, String documentTitle, int page, int width, int height) {
     }
 }

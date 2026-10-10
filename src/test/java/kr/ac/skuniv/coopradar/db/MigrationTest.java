@@ -36,7 +36,8 @@ class MigrationTest {
                         """)
                 .query(Integer.class)
                 .single();
-        assertThat(tables).isEqualTo(26); // V1 21개 + V3 job_view + V5 certificate + V6 requirement_source + V7 학과 묶음 2개
+        assertThat(tables).isEqualTo(27); // V1 21개 + V3 job_view + V5 certificate + V6 requirement_source + V7 학과 묶음 2개
+                                          // + V8 institution_photo
     }
 
     @Test
@@ -78,14 +79,15 @@ class MigrationTest {
                 .query(Boolean.class)
                 .single();
         assertThat(success).isTrue();
-        // ADR-0020: 실습 결과 중 사실 구절만. 소감 칸은 두지 않는다
+        // ADR-0020: 실습 결과 사실 구절 칸. V8(ADR-0030)이 수기 전문 칸을 더했다 — 이름·사진 칸은 없다
         List<String> columns = jdbc.sql("""
                         SELECT column_name FROM information_schema.columns
                         WHERE table_schema = 'public' AND table_name = 'testimonial'""")
                 .query(String.class)
                 .list();
         assertThat(columns).containsExactlyInAnyOrder("id", "source_document_id", "institution_id", "team_text",
-                "activities", "outcomes", "page");
+                "activities", "outcomes", "page", "one_line", "company_intro", "results", "reflection", "major_text",
+                "grade_text");
     }
 
     @Test

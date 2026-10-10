@@ -1,0 +1,59 @@
+{
+ "type": "object",
+ "properties": {
+  "photo_section": {
+   "type": "boolean",
+   "description": "이 쪽의 사진이 소개서 서식의 '회사 전경 및 활동사진' 칸(표 안 사진 + 캡션 칸)에 들어 있으면 true"
+  },
+  "items": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "n": {
+      "type": "integer",
+      "description": "빨간 상자 번호"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "사진",
+       "로고",
+       "그래픽",
+       "문서",
+       "직인서명"
+      ]
+     },
+     "scene": {
+      "type": "string",
+      "enum": [
+       "근무환경",
+       "활동행사",
+       "건물전경",
+       "제품",
+       "인물",
+       "기타"
+      ],
+      "description": "사진이 아니면 기타"
+     },
+     "caption": {
+      "type": "string",
+      "description": "상자 바로 아래나 위에 인쇄된 설명 원문. 없으면 빈 문자열"
+     }
+    },
+    "required": [
+     "n",
+     "kind",
+     "scene",
+     "caption"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "photo_section",
+  "items"
+ ],
+ "additionalProperties": false
+}

@@ -187,5 +187,27 @@ class NormalizeTest(unittest.TestCase):
         b.check_allowed_keys()
 
 
+class AlertNotationTest(unittest.TestCase):
+    """검토 알림: 표기만 다른 차이는 알리지 않는다(ADR-0030)."""
+
+    def test_띄어쓰기_끝의_외_포함_관계는_표기_차이(self):
+        self.assertTrue(b.trivial_difference("광고영화 및 비디오물 제작업", "광고 영화 및 비디오물 제작업 외"))
+        self.assertTrue(b.trivial_difference("응용소프트웨어 개발 및 공급업", "소프트웨어 개발 및 공급업"))
+        self.assertTrue(b.trivial_difference("정보통신업", "정보통신업 외"))
+
+    def test_글자_한두_개_오타는_표기_차이(self):
+        self.assertTrue(b.trivial_difference("마케팅 콘텐츠 기획 및 운영", "마케팅 컨텐츠 기획 및 운영"))
+
+    def test_숫자가_다르면_표기_차이가_아니다(self):
+        self.assertFalse(b.trivial_difference("한국표준산업분류코드 743002", "한국표준산업분류코드 71310"))
+        self.assertFalse(b.trivial_difference("2026년 9월 1일 ~ 2026년 12월 12일", "* 15~16주차: 제작한 콘텐츠"))
+        self.assertFalse(b.trivial_difference("[1,700,000]원", "1,617,660원"))
+
+    def test_뜻이_다른_전공은_표기_차이가_아니다(self):
+        self.assertFalse(b.trivial_difference("컴퓨터공학 전공 학생들이 실제 산업 현장에서", "소프트웨어학과"))
+        self.assertFalse(b.trivial_difference("무대패션전공, 광고홍보콘텐츠학과, 영화영상학과, 경영학부",
+                                              "무대패션전공, 광고홍보콘텐츠학과, 경영학부"))
+
+
 if __name__ == "__main__":
     unittest.main()

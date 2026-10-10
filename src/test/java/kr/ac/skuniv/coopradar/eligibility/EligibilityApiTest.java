@@ -110,18 +110,20 @@ class EligibilityApiTest {
         assertThat(reason(job117, "학년")).containsEntry("requirement", "졸업예정자").containsEntry("result", "NOT_MET");
         assertThat(reason(job117, "학점")).containsEntry("requirement", "3.5 이상").containsEntry("mine", "3.4");
 
-        // 116: 선호 전공·기간 불일치 알림(3·4)은 판정을 바꾸지 않는다(ADR-0016) → 지원 가능, alertCount 2
+        // 116: 선호 전공 불일치 알림(1)은 판정을 바꾸지 않는다(ADR-0016) → 지원 가능, alertCount 1
+        // (계획서 실습기간 오타는 알림을 만들지 않는다, ADR-0030)
         Map<String, Object> job116 = job(body, 116);
         assertThat(job116.get("verdict")).isEqualTo("ELIGIBLE");
-        assertThat(job116.get("alertCount")).isEqualTo(2);
+        assertThat(job116.get("alertCount")).isEqualTo(1);
         // 시드의 알림은 판정 항목(학년·학점·포트폴리오·자격증)에 걸린 게 없어 alertId 줄이 없다
         List<Integer> alertIds = JsonPath.read(body, "$.jobs[*].reasons[*].alertId");
         assertThat(alertIds).isEmpty();
         assertThat(body).doesNotContain("\"alertId\":null");
-        // alertCount = 직무 알림 수(기관 단위 제외): 115·130·131·138 각 1, 116 2, 나머지 0
+        // alertCount = 직무 알림 수(기관 단위 제외): 116·130·131·138 각 1, 나머지 0
         List<Integer> counts = JsonPath.read(body, "$.jobs[*].alertCount");
-        assertThat(counts.stream().mapToInt(Integer::intValue).sum()).isEqualTo(6);
-        assertThat(job(body, 102).get("alertCount")).isEqualTo(0); // 세정 기관 단위 알림은 세지 않는다
+        assertThat(counts.stream().mapToInt(Integer::intValue).sum()).isEqualTo(4);
+        assertThat(job(body, 115).get("alertCount")).isEqualTo(0); // 실습기간 오타는 알림이 아니다(ADR-0030)
+        assertThat(job(body, 119).get("alertCount")).isEqualTo(0); // 선도소프트 기관 단위 알림은 세지 않는다
 
         // closing: 직무 상세와 같은 값(101은 7/18 센터 모집마감)
         assertThat(JsonPath.<List<String>>read(body, "$.jobs[?(@.jobId == 101)].closing.closesOn"))

@@ -120,6 +120,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 **InstitutionRef** — `{id, name, logoPath}`. 판정·추천·지망·지망 점검·현황판·검토 알림의 `institution`. 직무 상세의 `institution`(규모·소재지 등이 더 있는 객체)에도 같은 `logoPath`가 있다(ADR-0019).
 - `logoPath`: 기관 로고 PNG 경로(API 서버 기준, 예: `/logos/3.png`). 프론트는 API 기본 주소(`VITE_API_BASE_URL`) 뒤에 붙여 `<img>`로 띄운다. 로그인 없이 받고(`/api` 밖이라 CORS도 필요 없다), 캐시는 하루. 로고가 없으면 null → 기관명 첫 글자로 대신한다. 2026-2 기관 18곳은 모두 있다.
 - 로고는 투명 배경 PNG이고 여백을 잘라 낸 원래 비율이다(최대 600×200). 가로로 긴 글자 로고와 정사각형 아이콘이 섞여 있으니 고정 크기 상자에 `object-fit: contain`으로 넣는다.
+- 소개서 사진(`photos[].path`, `/photos/{기관 id}/{순번}.jpg`)도 같은 방식으로 받는다(ADR-0030).
 
 **Citation** — `{sourceType, documentTitle, page, quote}`. `sourceType`은 `OPERATION_PLAN` · `TESTIMONIAL`(추천 근거), 판정 이유 행의 `citation`은 `INSTITUTION_LIST` · `SCHOOL_NOTICE`도 쓰고 그때 `page`는 null이다. 원문 PDF 링크는 주지 않는다.
 
@@ -174,11 +175,16 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - LLM은 하는 일만 학생이 할 일로 쓴다('~을 맡아요'). `text` = `reasonTemplate`의 1번(판정 한 줄) + 2번(내 학과와 선호 전공) + 3번 중 조금·적게 겹친다는 문장 + LLM 문장 + 5번(같은 팀 직무와의 차이)이다(ADR-0024·0026). LLM에는 관심 분야와 겹치는 정도(많음·조금·거의 없음)도 보내 '거의 없음'이면 관심 분야와 잇지 않게 한다. 모두 `reasonTemplate`와 같은 글이라, 화면이 기본 문장을 LLM 문장으로 바꿔도 '왜 나에게 맞는지'·선호 전공·차이가 남는다. 그래서 `text`는 200자를 넘을 수 있다.
   - 키(`ANTHROPIC_API_KEY`)가 없으면 부르지 않고 `TEMPLATE`.
 
-**직무** — 없으면 404 `JOB_NOT_FOUND`. `evidence`는 AI가 운영계획서에서 뽑은 값과 근거(허용 필드만), `seniorNotes`는 같은 기관의 선배 수기(이름·학과·학년·소감 없음). 통근 시간은 이 응답에 없다 — `workplace.hasCoordinates`가 true면 프론트가 통근 조회를 따로 부른다. 근로지 주소가 있으면 true다(좌표는 DB에 없고 통근 조회 때 카카오 주소 검색으로 구한다. 이름은 그대로 둔다).
+**직무** — 없으면 404 `JOB_NOT_FOUND`. `evidence`는 AI가 운영계획서에서 뽑은 값과 근거(허용 필드만), `seniorNotes`는 같은 기관의 선배 수기 전문(이름·사진 없음), `photos`는 그 기관 실습기관 소개서의 사진([ADR-0030](../decisions/0030-intro-photos-full-testimonials-alert-noise.md)). 통근 시간은 이 응답에 없다 — `workplace.hasCoordinates`가 true면 프론트가 통근 조회를 따로 부른다. 근로지 주소가 있으면 true다(좌표는 DB에 없고 통근 조회 때 카카오 주소 검색으로 구한다. 이름은 그대로 둔다).
 - `requirements.majorAliases`: `[{label, departments: [{id, name}]}]` — 직무의 선호 전공 표기(`job_major_alias`)마다 확정된 학과 대응(`major_alias_department`, EXACT·CONFIRMED만 적재됨). `majorOpen`이면 `[]`. 화면의 '선호 전공 안내'(표기 → 학과)와 판정 이유의 '표기 해석'에 쓴다. 표기 순서는 표기 id 순, 학과는 id 순. 확정 전 표기(`DRAFT`, 2026-2는 없음)는 `departments: []`.
 - `evidence`: 이 직무의 근거 + 그 기관의 근거(기관명·규모·소재지·접수 마감 등). 순서는 직무 필드(V1 허용 목록 순서: 부서 → 직무명 → … → 자격증) 다음 기관 필드. `label`은 서버가 붙이는 한글 표기(예: `stipendAmount` → '실습지원비').
 - `alerts`: 이 직무에 걸린 알림 + 기관 전체에 걸린 알림(`jobId` null), id 순. 판정 항목이 아닌 알림(선호 전공·기간·지원비 불일치 등)도 여기에는 보인다. `documentTitle`은 `pageA`·`quoteA`(`DOC_INCONSISTENCY`면 `pageB`·`quoteB`도)가 있는 문서 이름이다(예: '소서 운영계획서', ADR-0023). `LIST_MISMATCH`의 리스트 쪽 값은 `description`에 들어 있다.
-- `seniorNotes`: 최근 학기 먼저, 같은 학기는 쪽 순. `activities`는 실습 내용(원문 항목), `outcomes`는 실습 결과 문단에서 원문 그대로 자른 **사실 구절** 0~3개(60자 이내 — 만든 결과물·맡은 일·참여한 프로젝트·채택된 제안). 수기가 전부 '우수' 수기라 감상·배운 점·평가·개인 진로(입사·채용 등)는 넣지 않았다(ADR-0020). 화면에는 '우수 참여수기 기준'임을 밝힌다(`documentTitle`에 들어 있다).
+- `seniorNotes`: 최근 학기 먼저, 같은 학기는 쪽 순. 수기 **전문**이다(10/10, ADR-0030): `major`·`grade`(수기에 적힌 학과·학년 원문), `oneLine`(한 줄 소개), `companyIntro`(기관·부서 소개), `activities`(실습 내용 원문 항목), `results`(실습 결과 문단), `reflection`(소감). 수기에 없는 칸은 null. 이름·사진은 없다(추출하지 않는다). 원문은 이미지 PDF를 AI로 옮겨 적은 것이다(E2).
+  - 수기가 전부 '우수' 수기(학교가 고른 것)라 긍정 쪽으로 치우쳐 있다. 화면에는 '우수 참여수기 기준'임을 꼭 밝힌다(`documentTitle`에 들어 있다). 기관을 평가하는 데 쓰지 않는다.
+  - `outcomes`는 실습 결과 문단에서 원문 그대로 자른 **사실 구절** 0~3개(60자 이내 — 만든 결과물·맡은 일·참여한 프로젝트·채택된 제안)로, 추천 근거(`citations`)용으로 그대로 둔다(ADR-0020).
+- `photos`: 그 기관 실습기관 소개서(별지 제1-2호)의 '회사 전경 및 활동사진' 칸 사진, 순번 순(ADR-0030). 소개서에 그 칸이 없는 기관(회사 소개 책자를 낸 곳, 2026-2는 4곳)은 `[]`.
+  - `path`는 로고처럼 API 서버의 정적 경로다(`/photos/{기관 id}/{순번}.jpg`, 로그인 없이 받고 캐시 하루). JPEG, 긴 변 약 1,000px. `width`·`height`로 자리를 먼저 잡는다.
+  - `caption`은 사진 아래에 인쇄된 설명 원문(없으면 null). 얼굴이 보이는 사진도 있다 — 서식에 '현장실습학기제 홍보자료로 사용될 수 있습니다'라고 적혀 있다(10/10 결정).
 - `conditions.stipend.minWageRatio`는 소수 둘째 자리에서 반올림한다. 기준이 `UNSPECIFIED`거나 금액이 없으면 null.
 - 학생(`STUDENT`)이 이 응답을 받으면 조회수에 센다 — 계정마다 직무별로 하루(한국 시간) 한 번. 센터 담당자는 세지 않는다. 기록이 실패해도 상세는 그대로 준다.
 

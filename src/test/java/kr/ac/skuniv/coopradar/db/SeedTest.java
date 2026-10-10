@@ -48,6 +48,17 @@ class SeedTest {
     }
 
     @Test
+    void 소개서_사진과_검토_알림_수가_시드와_같다() {
+        // ADR-0030: 사진 칸이 있는 소개서 14곳 55장, 표기 차이·오타·사람 판단 6건을 뺀 검토 알림 6건
+        assertThat(count("SELECT count(*) FROM institution_photo")).isEqualTo(55);
+        assertThat(count("SELECT count(DISTINCT institution_id) FROM institution_photo")).isEqualTo(14);
+        assertThat(count("SELECT count(*) FROM source_document WHERE kind = 'INTRODUCTION'")).isEqualTo(14);
+        assertThat(count("SELECT count(*) FROM review_alert")).isEqualTo(6);
+        // 수기는 전문이 들어 있다(실습 결과·소감)
+        assertThat(count("SELECT count(*) FROM testimonial WHERE results IS NULL OR reflection IS NULL")).isZero();
+    }
+
+    @Test
     void 예시_프로필_학과가_있고_학과는_모두_재학생이_있다() {
         assertThat(count("SELECT count(*) FROM department WHERE name = '메이크업디자인학과'")).isEqualTo(1);
         assertThat(count("SELECT count(*) FROM department WHERE enrolled_count = 0")).isZero();
