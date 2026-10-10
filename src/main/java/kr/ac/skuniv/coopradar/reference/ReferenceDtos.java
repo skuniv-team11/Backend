@@ -33,7 +33,21 @@ public final class ReferenceDtos {
      * 판정·지망 점검·현황판의 asOf 범위 검사도 이 값을 쓴다(README '지망' — asOf는 회차 기간 안).
      */
     public record CurrentRound(int id, String programName, String termCode, int roundNo, LocalDate recruitStart,
-                               LocalDate recruitEnd, Replay replay) {
+                               LocalDate recruitEnd, Replay replay, List<StageInfo> stages) {
+    }
+
+    /** 회차 일정 단계(ADR-0033, round_stage). 순서는 seq. */
+    public enum Stage { PICK, APPLY, MATCH, SELECT, CONTRACT, ORIENTATION, PRACTICE, MIDCHECK, CLOSE, DEBRIEF, CREDIT }
+
+    public enum Phase { APPLY, PREPARE, PRACTICE, CLOSE }
+
+    /**
+     * 일정 한 단계. 날짜가 없으면 null(학점 인정 등).
+     *
+     * @param confirmed true 진로취업처 학생 모집안내에 있는 날짜 · false 공지에 날짜가 없어 정한 값(센터 확인 전)
+     */
+    public record StageInfo(Stage code, Phase phase, LocalDate startsOn, LocalDate endsOn, boolean confirmed,
+                            String source) {
     }
 
     /**

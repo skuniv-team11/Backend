@@ -1,3 +1,5 @@
 {
-  "role": "STUDENT"
+  "role": "STUDENT",
+  "stage": "PRACTICING",
+  "demoGroup": null
 }

@@ -1,0 +1,49 @@
+{
+  "kind": "APPLICATION",
+  "status": "REQUESTED",
+  "requestedAt": "2026-07-23T14:02:00+09:00",
+  "approvedAt": null,
+  "student": {
+    "nameKo": "예시 학생",
+    "studentNo": "2023000000",
+    "department": {
+      "id": 43,
+      "name": "메이크업디자인학과"
+    },
+    "grade": 3
+  },
+  "round": {
+    "id": 1,
+    "termCode": "2026-2"
+  },
+  "picks": [
+    {
+      "rank": 1,
+      "title": "국내 마케팅",
+      "institution": {
+        "id": 3,
+        "name": "누리뷰티(가상)",
+        "logoPath": "/logos/3.png"
+      }
+    },
+    {
+      "rank": 2,
+      "title": "AMD",
+      "institution": {
+        "id": 3,
+        "name": "누리뷰티(가상)",
+        "logoPath": "/logos/3.png"
+      }
+    },
+    {
+      "rank": 3,
+      "title": "국내 인플루언서 관리 및 마케팅 제반 업무",
+      "institution": {
+        "id": 7,
+        "name": "다온커머스(가상)",
+        "logoPath": "/logos/7.png"
+      }
+    }
+  ],
+  "placement": null
+}

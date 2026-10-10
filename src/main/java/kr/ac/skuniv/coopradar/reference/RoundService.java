@@ -31,7 +31,8 @@ public class RoundService {
         });
         LocalDate defaultAsOf = clamp(replay.defaultAsOf(), row.recruitStart(), row.recruitEnd());
         return new CurrentRound(row.id(), row.programName(), row.termCode(), row.roundNo(), row.recruitStart(),
-                row.recruitEnd(), new Replay(defaultAsOf, row.recruitStart(), row.recruitEnd(), true));
+                row.recruitEnd(), new Replay(defaultAsOf, row.recruitStart(), row.recruitEnd(), true),
+                repository.stages(row.id()));
     }
 
     /** 설정한 기준일이 없거나 모집기간 밖이면 가까운 끝 날짜(없으면 시작일). */

@@ -1,0 +1,162 @@
+{
+  "counts": {
+    "all": 7,
+    "submitted": 3,
+    "received": 3,
+    "fixRequested": 1,
+    "matched": 0
+  },
+  "items": [
+    {
+      "applicationId": 27,
+      "receiptNo": "2026-2-001",
+      "submittedAt": "2026-07-16T10:00:00+09:00",
+      "status": "RECEIVED",
+      "virtual": true,
+      "student": {
+        "nameKo": "가상 지원자 1",
+        "department": {
+          "id": 10,
+          "name": "광고홍보콘텐츠학과"
+        },
+        "grade": 4,
+        "completedSemesters": 7,
+        "gpa": 3.8,
+        "graduationExpected": false
+      },
+      "counselCount": 1,
+      "picks": [
+        {
+          "rank": 1,
+          "jobId": 122,
+          "title": "국내 마케팅",
+          "institution": {
+            "id": 3,
+            "name": "누리뷰티(가상)",
+            "logoPath": "/logos/3.png"
+          },
+          "verdict": "ELIGIBLE"
+        },
+        {
+          "rank": 2,
+          "jobId": 134,
+          "title": "디지털 통합 광고대행사 실습",
+          "institution": {
+            "id": 9,
+            "name": "라온스튜디오(가상)",
+            "logoPath": "/logos/9.png"
+          },
+          "verdict": "NEEDS_CHECK"
+        },
+        {
+          "rank": 3,
+          "jobId": 123,
+          "title": "해외 마케팅",
+          "institution": {
+            "id": 3,
+            "name": "누리뷰티(가상)",
+            "logoPath": "/logos/3.png"
+          },
+          "verdict": "ELIGIBLE"
+        }
+      ]
+    },
+    {
+      "applicationId": 30,
+      "receiptNo": "2026-2-004",
+      "submittedAt": "2026-07-21T10:00:00+09:00",
+      "status": "FIX_REQUESTED",
+      "virtual": true,
+      "student": {
+        "nameKo": "가상 지원자 4",
+        "department": {
+          "id": 1,
+          "name": "글로벌비즈니스어학부"
+        },
+        "grade": 4,
+        "completedSemesters": 7,
+        "gpa": 3.3,
+        "graduationExpected": false
+      },
+      "counselCount": 0,
+      "picks": [
+        {
+          "rank": 1,
+          "jobId": 133,
+          "title": "디지털 기술무역/ 협업(OI) 과제 기획 /중개행사",
+          "institution": {
+            "id": 12,
+            "name": "바른무역(가상)",
+            "logoPath": "/logos/12.png"
+          },
+          "verdict": "ELIGIBLE"
+        },
+        {
+          "rank": 2,
+          "jobId": 138,
+          "title": "통역 프로젝트 매니저",
+          "institution": {
+            "id": 13,
+            "name": "소리통역(가상)",
+            "logoPath": "/logos/13.png"
+          },
+          "verdict": "ELIGIBLE"
+        }
+      ]
+    },
+    {
+      "applicationId": 7,
+      "receiptNo": "2026-2-007",
+      "submittedAt": "2026-07-23T14:30:00+09:00",
+      "status": "SUBMITTED",
+      "virtual": false,
+      "student": {
+        "nameKo": "예시 학생",
+        "department": {
+          "id": 43,
+          "name": "메이크업디자인학과"
+        },
+        "grade": 3,
+        "completedSemesters": 5,
+        "gpa": 3.4,
+        "graduationExpected": false
+      },
+      "counselCount": 0,
+      "picks": [
+        {
+          "rank": 1,
+          "jobId": 122,
+          "title": "국내 마케팅",
+          "institution": {
+            "id": 3,
+            "name": "누리뷰티(가상)",
+            "logoPath": "/logos/3.png"
+          },
+          "verdict": "ELIGIBLE"
+        },
+        {
+          "rank": 2,
+          "jobId": 120,
+          "title": "AMD",
+          "institution": {
+            "id": 3,
+            "name": "누리뷰티(가상)",
+            "logoPath": "/logos/3.png"
+          },
+          "verdict": "ELIGIBLE"
+        },
+        {
+          "rank": 3,
+          "jobId": 103,
+          "title": "국내 인플루언서 관리 및 마케팅 제반 업무",
+          "institution": {
+            "id": 7,
+            "name": "다온커머스(가상)",
+            "logoPath": "/logos/7.png"
+          },
+          "verdict": "ELIGIBLE"
+        }
+      ]
+    }
+  ]
+}

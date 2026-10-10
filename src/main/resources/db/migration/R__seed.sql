@@ -1,10 +1,11 @@
 -- R__seed.sql — 시드 데이터(Flyway 반복 마이그레이션, ADR-0014). 손으로 고치지 않는다.
 -- 만드는 법: python pipeline/seed/build_seed.py ... · ncs_seed.py ... → python pipeline/seed/to_sql.py (pipeline/seed/README.md)
--- seed.json sha256: 572352db961b6409fd6bb6463e062944f7c959f8873459f0c17ac74038355a3e
+-- seed.json sha256: 97f945213d13dc38463dd1d9d12b62987f5c357dd2f106b229c61ca453d44807
 -- ncs.json sha256: d9ce3779ce9fd49e53a1c777ec145ebb5af78acc731f2f36e1442dd600f02147
--- body sha256: 488aab1a8efc25be8b2afc293d3b2e7e38280ddf210e5e80bc215ee89168b2ab
+-- body sha256: 0e550e9a8bef4b4e05ed547a70f1066b158a6d733a3cfe33698c03eeaf336640
 
 -- 1. 자식 테이블은 통째로 지운다(다시 넣는다)
+DELETE FROM round_stage;
 DELETE FROM ncs_unit_link;
 DELETE FROM ncs_expand;
 DELETE FROM job_ncs;
@@ -3325,6 +3326,20 @@ INSERT INTO replay_signal (job_id, signal_date, interest_count) VALUES
   (133, DATE '2026-07-23', 1),
   (136, DATE '2026-07-15', 1),
   (136, DATE '2026-07-22', 1);
+
+-- round_stage 11행
+INSERT INTO round_stage (round_id, seq, code, phase, starts_on, ends_on, confirmed, source) VALUES
+  (1, 1, 'PICK', 'APPLY', DATE '2026-07-13', DATE '2026-07-24', TRUE, '학생 모집안내(job.skuniv.ac.kr/notice/8899) — 신청 기간(1지망 필수, 2·3지망 선택)'),
+  (1, 2, 'APPLY', 'APPLY', DATE '2026-07-13', DATE '2026-07-24', TRUE, '학생 모집안내(job.skuniv.ac.kr/notice/8899) — 신청 기간(학과(부)장 승인 뒤 제출)'),
+  (1, 3, 'MATCH', 'APPLY', DATE '2026-07-27', DATE '2026-07-28', TRUE, '학생 모집안내(job.skuniv.ac.kr/notice/8899) — 기관-학생 매칭'),
+  (1, 4, 'SELECT', 'APPLY', DATE '2026-07-29', DATE '2026-08-05', TRUE, '학생 모집안내(job.skuniv.ac.kr/notice/8899) — 학생 면접 및 선발'),
+  (1, 5, 'CONTRACT', 'PREPARE', DATE '2026-08-10', DATE '2026-08-28', TRUE, '학생 모집안내(job.skuniv.ac.kr/notice/8899) — 협약 체결·보험 가입'),
+  (1, 6, 'ORIENTATION', 'PREPARE', DATE '2026-08-26', DATE '2026-08-26', TRUE, '학생 모집안내(job.skuniv.ac.kr/notice/8899) — 사전 교육(OT)'),
+  (1, 7, 'PRACTICE', 'PRACTICE', DATE '2026-09-01', DATE '2026-12-12', TRUE, '학생 모집안내(job.skuniv.ac.kr/notice/8899) — 실습 기간 15주'),
+  (1, 8, 'MIDCHECK', 'PRACTICE', DATE '2026-10-19', DATE '2026-10-23', FALSE, '운영서식 제6호 중간점검서 — 공지에 날짜가 없어 8주차로 둠(센터 확인 전)'),
+  (1, 9, 'CLOSE', 'CLOSE', DATE '2026-12-12', NULL, TRUE, '학생 모집안내(job.skuniv.ac.kr/notice/8899) — 종료 후 서류 제출 및 평가(실습 기간 종료 후)'),
+  (1, 10, 'DEBRIEF', 'CLOSE', DATE '2026-12-17', DATE '2026-12-17', TRUE, '학생 모집안내(job.skuniv.ac.kr/notice/8899) — 후기 간담회'),
+  (1, 11, 'CREDIT', 'CLOSE', NULL, NULL, FALSE, '학생 모집안내(job.skuniv.ac.kr/notice/8899) — 학점 인정(12학점, P/NP)·대학 지원금(월 20만 원, 최대 3개월) — 날짜는 공지에 없음');
 
 -- ncs_occupation 213행
 INSERT INTO ncs_occupation (subcategory_code, occupation_code, source) VALUES

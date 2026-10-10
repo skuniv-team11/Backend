@@ -77,8 +77,11 @@ public class UserRepository {
     }
 
     public int deleteExpiredGuests(Instant now) {
-        return db.sql("DELETE FROM app_user WHERE is_guest AND expires_at <= :now")
+        int deleted = db.sql("DELETE FROM app_user WHERE is_guest AND expires_at <= :now")
                 .param("now", Times.utc(now))
                 .update();
+        // 체험 묶음(ADR-0033): 마지막 체험 계정과 같이 만료된다. 지우면 가상 지원자도 함께 지워진다(cascade)
+        db.sql("DELETE FROM demo_group WHERE expires_at <= :now").param("now", Times.utc(now)).update();
+        return deleted;
     }
 }

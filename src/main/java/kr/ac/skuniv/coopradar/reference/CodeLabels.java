@@ -53,7 +53,29 @@ public final class CodeLabels {
             group("exploreJudgedWith", "SAVED_PROFILE", "저장한 프로필로 다시 판정", "RUN_PROFILE", "탐색 때 보낸 프로필"),
             group("careerSource", "AI", "AI가 능력단위를 고름", "NONE", "AI 정리 없음(능력단위 목록만)"),
             group("ncsRelation", "SAME_SMALL", "같은 분야(소분류)", "SAME_MIDDLE", "가까운 분야(중분류)", "OTHER", "다른 분야"),
-            group("occupationOrigin", "KEIS", "한국고용정보원 연계표", "CURATED", "연계표에 없어 팀이 고름"));
+            group("occupationOrigin", "KEIS", "한국고용정보원 연계표", "CURATED", "연계표에 없어 팀이 고름"),
+            group("applicationStatus", "NONE", "작성 전", "DRAFT", "작성 중", "SUBMITTED", "새로 들어옴", "RECEIVED", "접수 완료",
+                    "FIX_REQUESTED", "보완 요청", "MATCHED", "매칭"),
+            group("applicationItem", "PROFILE", "프로필", "PICKS", "1~3지망", "APPLICANT", "신청서 기본정보", "PLEDGE", "서약",
+                    "ESSAYS", "자기소개서 4문항", "CONSENTS", "개인정보 동의 2개", "SIGNATURE", "본인 서명", "APPROVAL", "학과(부)장 승인"),
+            group("approvalStatus", "NONE", "요청 전", "REQUESTED", "승인 대기", "APPROVED", "승인됨", "STALE", "다시 요청(내용이 바뀜)"),
+            group("approvalKind", "APPLICATION", "지원서", "CREDIT", "학점 인정"),
+            group("gender", "M", "남", "F", "여"),
+            group("resumeKind", "CERTIFICATE", "자격증", "LANGUAGE", "어학", "EDUCATION", "교육"),
+            group("stage", "PICK", "지망 정하기", "APPLY", "지원서", "MATCH", "매칭", "SELECT", "면접·선발", "CONTRACT", "협약·보험",
+                    "ORIENTATION", "사전교육", "PRACTICE", "실습", "MIDCHECK", "중간점검", "CLOSE", "종료·제출",
+                    "DEBRIEF", "후기 간담회", "CREDIT", "학점 인정"),
+            group("stagePhase", "APPLY", "지원", "PREPARE", "준비", "PRACTICE", "실습", "CLOSE", "마무리"),
+            group("stageState", "DONE", "완료", "NOW", "지금", "NEXT", "앞으로"),
+            group("nextKind", "START", "시작까지", "END", "마감까지"),
+            group("interviewMode", "IN_PERSON", "대면", "ONLINE", "화상", "PHONE", "전화"),
+            group("selectionResult", "WAIT", "대기", "PASS", "합격", "FAIL", "불합격"),
+            group("studentDocument", "REPORT", "수행결과보고서(제9호)", "CREDIT", "학점인정신청서(제7호)", "SURVEY", "설문조사서(제8호)"),
+            group("closeItem", "REPORT", "수행결과보고서", "CREDIT", "학점인정신청서", "SURVEY", "설문조사서", "EVALUATION", "기관 평가표",
+                    "ATTENDANCE", "출근부", "APPROVAL", "학과(부)장 승인"),
+            group("guestStage", "APPLYING", "지원 중(7/23)", "PRACTICING", "실습 중(10/14)", "DONE", "실습 마친 뒤(12/17)"),
+            group("demoStep", "RECEIVED", "접수까지", "MATCHED", "매칭 확정까지", "SELECTED", "선발 결과 알림까지",
+                    "CLOSING", "마무리 서류까지"));
 
     private CodeLabels() {
     }

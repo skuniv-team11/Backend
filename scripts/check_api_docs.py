@@ -70,6 +70,33 @@ FILE_FIELD_CODE = {name: {"fit": "exploreFit", "source": "exploreSource", "fallb
 FILE_FIELD_CODE["job-career.json"] = {"relation": "ncsRelation", "origin": "occupationOrigin"}
 FILE_FIELD_CODE["career-report.json"] = {"relation": "ncsRelation", "origin": "occupationOrigin", "source": "careerSource",
                                          "fallbackReason": "exploreFallback"}
+# 현장실습 진행(ADR-0033): 같은 필드 이름이 자리마다 다른 코드 묶음이라 경로로 정한다(뒤에서부터 맞는 첫 규칙)
+PATH_CODE = [
+    (r"\.stages\[\d+\]$", "code", "stage"), (r"\.stages\[\d+\]$", "phase", "stagePhase"),
+    (r"\.stages\[\d+\]$", "state", "stageState"), (r"\.next$", "code", "stage"), (r"\.next$", "kind", "nextKind"),
+    (r"(approval|creditApproval)$", "status", "approvalStatus"), (r"\.checklist\[\d+\]$", "item", "applicationItem"),
+    (r"\.certificates\[\d+\]$", "kind", "resumeKind"), (r"\.applicant$", "gender", "gender"),
+    (r"(interview)$", "mode", "interviewMode"), (r"\.missing$", None, "closeItem"),
+    (r"^$", "kind", "approvalKind"), (r"^$", "to", "demoStep"), (r"^$", "interviewMode", "interviewMode"),
+    (r"^$", "stage", "guestStage"),
+]
+INTERNSHIP_FILES = {"me-application.json", "me-application.request.json", "approval.json", "me-internship.json",
+                    "center-applications.json", "center-application.json", "center-application-status.request.json",
+                    "center-placement.json", "center-selection.request.json", "center-close.json",
+                    "center-demo-advance.request.json", "center-demo-advance.json", "rounds-current.json",
+                    "auth-guest.request.json"}
+for name in INTERNSHIP_FILES:
+    FILE_FIELD_CODE.setdefault(name, {}).update({"status": "applicationStatus", "result": "selectionResult"})
+FILE_FIELD_CODE["approval.json"]["status"] = "approvalStatus"
+
+def path_code(fname, path, k):
+    if fname not in INTERNSHIP_FILES:
+        return None
+    for pat, field, group in PATH_CODE:
+        if field == k and re.search(pat, path):
+            return group
+    return None
+
 def walk(o, path, fn):
     if isinstance(o, dict):
         for k, v in o.items():
@@ -85,6 +112,10 @@ def code_check(fname):
             return
         check(re.fullmatch(r"[a-z][A-Za-z0-9]*", k) is not None, f"{fname}{path}.{k}: camelCase 아님")
         field_code = {**FIELD_CODE, **FILE_FIELD_CODE.get(fname, {})}
+        if path_code(fname, path, k):
+            field_code = {**field_code, k: path_code(fname, path, k)}
+        if k == "missing" and fname in INTERNSHIP_FILES:
+            check(all(x in codes["closeItem"] for x in v), f"{fname}{path}.missing 코드")
         if k in field_code and isinstance(v, str) and v.isupper() and fname != "certificates.json":
             # 자격증 code는 코드표(codes.json)가 아니라 시드의 자격증 코드표(certificate)에서 온다(ADR-0021)
             check(v in codes[field_code[k]], f"{fname}{path}.{k}={v} 코드표에 없음")
@@ -227,6 +258,39 @@ jc = docs["job-career.json"]
 check(all(u["code"][:8] == jc["ncs"]["code"] for u in jc["ncs"]["units"]), "직무 커리어 단위가 그 세분류 것")
 crq = docs["career-report.request.json"]
 check(crq["consent"] is True and 100 <= len(crq["practiceText"]) <= 3000, "커리어 리포트 요청 규칙")
+
+# 현장실습 진행(ADR-0033)
+import datetime as _dt
+STAGES = list(codes["stage"])
+check([x["code"] for x in docs["rounds-current.json"]["stages"]] == STAGES, "rounds-current 일정 11단계 순서")
+mi = docs["me-internship.json"]
+check([x["code"] for x in mi["stages"]] == STAGES, "내 현장실습 단계 순서")
+nows = [x["code"] for x in mi["stages"] if x["state"] == "NOW"]
+check(nows == [mi["now"]], "내 현장실습 NOW 단계는 하나이고 now와 같다")
+i_now = STAGES.index(mi["now"])
+check(all(x["state"] == "DONE" for x in mi["stages"][:i_now]), "지금보다 앞 단계는 DONE")
+nx = mi["next"]
+check(nx is None or (_dt.date.fromisoformat(nx["on"]) - _dt.date.fromisoformat(mi["asOf"])).days == nx["days"], "next.days = on - asOf")
+pr = mi["placement"]["practice"]
+check(pr["week"] == (pr["day"] - 1) // 7 + 1 and pr["weeks"] == (pr["days"] + 6) // 7, "실습 주차 계산")
+for name in ("me-application.json", "center-application.json"):
+    a = docs[name]
+    check([c["item"] for c in a["checklist"]] == list(codes["applicationItem"]), f"{name} checklist 항목·순서")
+    check(len(a["essays"]) == 4 and all(0 <= w["index"] < 4 for w in a["essayWarnings"]), f"{name} 자기소개서 4문항")
+    check([p_["rank"] for p_ in a["picks"]] == list(range(1, len(a["picks"]) + 1)), f"{name} 지망 1부터")
+check(docs["center-application.json"]["approval"]["token"] is None, "센터 응답에는 승인 링크 값이 없다")
+check(docs["me-application.json"]["approval"]["token"] is not None, "학생 응답에는 승인 링크 값이 있다")
+for r_ in docs["center-close.json"]["rows"]:
+    check(r_["ready"] == (r_["missing"] == []), f"마무리 {r_['applicationId']} ready ↔ missing")
+    order = list(codes["closeItem"])
+    check(r_["missing"] == sorted(r_["missing"], key=order.index), f"마무리 {r_['applicationId']} missing 순서")
+pl = docs["center-placement.json"]
+check(all((x["matchedRank"] is None) == (x["matchedJob"] is None) for x in pl["applicants"]), "매칭 순위 ↔ 매칭 자리")
+check(all(x["notifiedAt"] is None or x["result"] != "WAIT" for x in pl["applicants"]), "알린 결과는 대기가 아니다")
+inb = docs["center-applications.json"]
+check(inb["counts"]["all"] >= len(inb["items"]) and all(x["status"] != "DRAFT" for x in inb["items"]), "접수함에 작성 중은 없다")
+dm = docs["center-board.json"]["demand"]["rows"]
+check([(-r_["students"], r_["seats"]) for r_ in dm] == sorted((-r_["students"], r_["seats"]) for r_ in dm), "탐색 수요 순서")
 
 # 지망 순위: 1~3, 중복 없음
 ranks = [i["rank"] for i in docs["me-plan.json"]["items"] if i["rank"] is not None]

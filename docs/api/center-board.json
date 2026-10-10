@@ -39,7 +39,8 @@
       "eligiblePool": 910,
       "risks": [],
       "alertCount": 0,
-      "pastZeroRounds": []
+      "pastZeroRounds": [],
+      "views": 23
     },
     {
       "jobId": 102,
@@ -64,7 +65,8 @@
       "eligiblePool": 910,
       "risks": [],
       "alertCount": 0,
-      "pastZeroRounds": []
+      "pastZeroRounds": [],
+      "views": 9
     },
     {
       "jobId": 105,
@@ -100,7 +102,8 @@
         }
       ],
       "alertCount": 0,
-      "pastZeroRounds": []
+      "pastZeroRounds": [],
+      "views": 3
     },
     {
       "jobId": 103,
@@ -131,7 +134,8 @@
         }
       ],
       "alertCount": 1,
-      "pastZeroRounds": []
+      "pastZeroRounds": [],
+      "views": 4
     }
   ],
   "alerts": [
@@ -152,5 +156,43 @@
       "pageB": 3,
       "quoteB": "(가상) 경영 계열 전공"
     }
-  ]
+  ],
+  "todo": {
+    "newApplications": 2,
+    "fixRequested": 1,
+    "counselPending": null
+  },
+  "demand": {
+    "explorers": 3,
+    "rows": [
+      {
+        "ncsCode": "02010301",
+        "ncsName": "마케팅전략기획",
+        "students": 3,
+        "jobs": 2,
+        "seats": 4
+      },
+      {
+        "ncsCode": "20030306",
+        "ncsName": "소셜미디어방송서비스",
+        "students": 2,
+        "jobs": 1,
+        "seats": 2
+      },
+      {
+        "ncsCode": "10030102",
+        "ncsName": "전자상거래",
+        "students": 1,
+        "jobs": 1,
+        "seats": 2
+      },
+      {
+        "ncsCode": "08020101",
+        "ncsName": "시각디자인",
+        "students": 0,
+        "jobs": 1,
+        "seats": 1
+      }
+    ]
+  }
 }

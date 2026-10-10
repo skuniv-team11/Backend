@@ -1,0 +1,163 @@
+{
+  "applicationId": 7,
+  "status": "SUBMITTED",
+  "receiptNo": "2026-2-007",
+  "virtual": false,
+  "round": {
+    "id": 1,
+    "termCode": "2026-2"
+  },
+  "asOf": "2026-07-23",
+  "period": {
+    "startsOn": "2026-07-13",
+    "endsOn": "2026-07-24",
+    "open": false
+  },
+  "applicant": {
+    "nameKo": "예시 학생",
+    "nameEn": "Yesi Haksaeng",
+    "birthDate": "2004-03-15",
+    "gender": "F",
+    "phone": "010-0000-0000",
+    "email": "student@skuniv.ac.kr",
+    "address": "서울특별시 노원구 (예시)",
+    "studentNo": "2023000000",
+    "minorMajor": null
+  },
+  "academic": {
+    "department": {
+      "id": 43,
+      "name": "메이크업디자인학과"
+    },
+    "grade": 3,
+    "completedSemesters": 5,
+    "gpa": 3.4,
+    "graduationExpected": false
+  },
+  "picks": [
+    {
+      "rank": 1,
+      "jobId": 122,
+      "title": "국내 마케팅",
+      "team": "마케팅팀",
+      "institution": {
+        "id": 3,
+        "name": "누리뷰티(가상)",
+        "logoPath": "/logos/3.png"
+      },
+      "verdict": "ELIGIBLE",
+      "closed": false
+    },
+    {
+      "rank": 2,
+      "jobId": 120,
+      "title": "AMD",
+      "team": "세일즈팀",
+      "institution": {
+        "id": 3,
+        "name": "누리뷰티(가상)",
+        "logoPath": "/logos/3.png"
+      },
+      "verdict": "ELIGIBLE",
+      "closed": false
+    },
+    {
+      "rank": 3,
+      "jobId": 103,
+      "title": "국내 인플루언서 관리 및 마케팅 제반 업무",
+      "team": "브랜드마케팅팀",
+      "institution": {
+        "id": 7,
+        "name": "다온커머스(가상)",
+        "logoPath": "/logos/7.png"
+      },
+      "verdict": "ELIGIBLE",
+      "closed": false
+    }
+  ],
+  "resume": {
+    "certificates": [
+      {
+        "kind": "CERTIFICATE",
+        "name": "컴퓨터활용능력 2급",
+        "issuer": "대한상공회의소",
+        "acquiredOn": "2025-08"
+      }
+    ],
+    "awards": [],
+    "careers": [
+      {
+        "period": "2025.03 ~ 2025.10",
+        "company": "화장품 매장(예시)",
+        "role": "판매 아르바이트",
+        "note": null
+      }
+    ]
+  },
+  "essays": [
+    "(가상) 졸업작품 홍보를 위해 학과 인스타그램 계정을 1년 동안 운영하며 게시 시간과 첫 문장을 바꿔 저장 수를 비교했습니다. 누리뷰티 마케팅팀의 …",
+    "(가상) 저는 한 번 맡은 일을 끝까지 정리하는 편입니다. …",
+    "(가상) 졸업작품 전시에서 홍보 담당을 맡아 다섯 명과 계정을 운영했습니다. …",
+    "(가상) SNS 콘텐츠를 기획하고 반응을 보며 고치는 일을 꾸준히 해 왔기 때문에 이 직무를 희망합니다. …"
+  ],
+  "essayWarnings": [
+    {
+      "index": 0,
+      "institutions": [
+        "누리뷰티"
+      ]
+    }
+  ],
+  "pledge": true,
+  "consents": {
+    "collect": true,
+    "thirdParty": true
+  },
+  "signature": "예시 학생",
+  "approval": {
+    "status": "APPROVED",
+    "token": null,
+    "requestedAt": "2026-07-23T14:02:00+09:00",
+    "approvedAt": "2026-07-23T14:20:00+09:00"
+  },
+  "checklist": [
+    {
+      "item": "PROFILE",
+      "done": true
+    },
+    {
+      "item": "PICKS",
+      "done": true
+    },
+    {
+      "item": "APPLICANT",
+      "done": true
+    },
+    {
+      "item": "PLEDGE",
+      "done": true
+    },
+    {
+      "item": "ESSAYS",
+      "done": true
+    },
+    {
+      "item": "CONSENTS",
+      "done": true
+    },
+    {
+      "item": "SIGNATURE",
+      "done": true
+    },
+    {
+      "item": "APPROVAL",
+      "done": true
+    }
+  ],
+  "counselCount": 0,
+  "fixReason": null,
+  "createdAt": "2026-07-22T21:10:00+09:00",
+  "updatedAt": "2026-07-23T14:30:00+09:00",
+  "submittedAt": "2026-07-23T14:30:00+09:00",
+  "receivedAt": null
+}

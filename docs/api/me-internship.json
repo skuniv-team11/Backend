@@ -1,0 +1,246 @@
+{
+  "asOf": "2026-10-14",
+  "round": {
+    "id": 1,
+    "termCode": "2026-2"
+  },
+  "stages": [
+    {
+      "code": "PICK",
+      "phase": "APPLY",
+      "startsOn": "2026-07-13",
+      "endsOn": "2026-07-24",
+      "confirmed": true,
+      "state": "DONE"
+    },
+    {
+      "code": "APPLY",
+      "phase": "APPLY",
+      "startsOn": "2026-07-13",
+      "endsOn": "2026-07-24",
+      "confirmed": true,
+      "state": "DONE"
+    },
+    {
+      "code": "MATCH",
+      "phase": "APPLY",
+      "startsOn": "2026-07-27",
+      "endsOn": "2026-07-28",
+      "confirmed": true,
+      "state": "DONE"
+    },
+    {
+      "code": "SELECT",
+      "phase": "APPLY",
+      "startsOn": "2026-07-29",
+      "endsOn": "2026-08-05",
+      "confirmed": true,
+      "state": "DONE"
+    },
+    {
+      "code": "CONTRACT",
+      "phase": "PREPARE",
+      "startsOn": "2026-08-10",
+      "endsOn": "2026-08-28",
+      "confirmed": true,
+      "state": "DONE"
+    },
+    {
+      "code": "ORIENTATION",
+      "phase": "PREPARE",
+      "startsOn": "2026-08-26",
+      "endsOn": "2026-08-26",
+      "confirmed": true,
+      "state": "DONE"
+    },
+    {
+      "code": "PRACTICE",
+      "phase": "PRACTICE",
+      "startsOn": "2026-09-01",
+      "endsOn": "2026-12-12",
+      "confirmed": true,
+      "state": "NOW"
+    },
+    {
+      "code": "MIDCHECK",
+      "phase": "PRACTICE",
+      "startsOn": "2026-10-19",
+      "endsOn": "2026-10-23",
+      "confirmed": false,
+      "state": "NEXT"
+    },
+    {
+      "code": "CLOSE",
+      "phase": "CLOSE",
+      "startsOn": "2026-12-12",
+      "endsOn": null,
+      "confirmed": true,
+      "state": "NEXT"
+    },
+    {
+      "code": "DEBRIEF",
+      "phase": "CLOSE",
+      "startsOn": "2026-12-17",
+      "endsOn": "2026-12-17",
+      "confirmed": true,
+      "state": "NEXT"
+    },
+    {
+      "code": "CREDIT",
+      "phase": "CLOSE",
+      "startsOn": null,
+      "endsOn": null,
+      "confirmed": false,
+      "state": "NEXT"
+    }
+  ],
+  "now": "PRACTICE",
+  "next": {
+    "code": "MIDCHECK",
+    "kind": "START",
+    "on": "2026-10-19",
+    "days": 5
+  },
+  "picks": [
+    {
+      "rank": 1,
+      "jobId": 122,
+      "title": "국내 마케팅",
+      "institution": {
+        "id": 3,
+        "name": "누리뷰티(가상)",
+        "logoPath": "/logos/3.png"
+      },
+      "ncs": {
+        "code": "02010301",
+        "name": "마케팅전략기획"
+      },
+      "closed": false
+    },
+    {
+      "rank": 2,
+      "jobId": 120,
+      "title": "AMD",
+      "institution": {
+        "id": 3,
+        "name": "누리뷰티(가상)",
+        "logoPath": "/logos/3.png"
+      },
+      "ncs": {
+        "code": "10030102",
+        "name": "전자상거래"
+      },
+      "closed": false
+    },
+    {
+      "rank": 3,
+      "jobId": 103,
+      "title": "국내 인플루언서 관리 및 마케팅 제반 업무",
+      "institution": {
+        "id": 7,
+        "name": "다온커머스(가상)",
+        "logoPath": "/logos/7.png"
+      },
+      "ncs": {
+        "code": "20030306",
+        "name": "소셜미디어방송서비스"
+      },
+      "closed": false
+    },
+    {
+      "rank": null,
+      "jobId": 123,
+      "title": "해외 마케팅",
+      "institution": {
+        "id": 3,
+        "name": "누리뷰티(가상)",
+        "logoPath": "/logos/3.png"
+      },
+      "ncs": {
+        "code": "02010301",
+        "name": "마케팅전략기획"
+      },
+      "closed": false
+    }
+  ],
+  "application": {
+    "applicationId": 19,
+    "status": "MATCHED",
+    "receiptNo": "2026-2-007",
+    "submittedAt": "2026-07-23T14:00:00+09:00",
+    "approval": {
+      "status": "APPROVED",
+      "token": "111c92ff99015653d55ba4bcc2de8adc",
+      "requestedAt": "2026-07-23T12:00:00+09:00",
+      "approvedAt": "2026-07-23T12:50:00+09:00"
+    },
+    "fixReason": null,
+    "counselCount": 0,
+    "virtual": true
+  },
+  "placement": {
+    "jobId": 122,
+    "title": "국내 마케팅",
+    "team": "마케팅팀",
+    "institution": {
+      "id": 3,
+      "name": "누리뷰티(가상)",
+      "logoPath": "/logos/3.png"
+    },
+    "rank": 1,
+    "matchedAt": "2026-07-28T17:00:00+09:00",
+    "interview": {
+      "at": "2026-07-30T14:30:00+09:00",
+      "mode": "IN_PERSON"
+    },
+    "result": "PASS",
+    "notifiedAt": "2026-08-05T17:00:00+09:00",
+    "practice": {
+      "startsOn": "2026-09-01",
+      "endsOn": "2026-12-12",
+      "day": 44,
+      "days": 103,
+      "week": 7,
+      "weeks": 15,
+      "weekdays": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "workHours": "08:00 ~ 17:00",
+      "weeklyHours": 40.0,
+      "stipend": {
+        "basis": "MONTHLY",
+        "amount": 1617660,
+        "minWageRatio": 75.0
+      },
+      "courseName": "표준 현장실습 D",
+      "credits": 12,
+      "currentPlan": {
+        "weeks": "7~8주차",
+        "content": "자사 관련 온라인 콘텐츠 팔로우업/제품 개발 관련 아이디어 발표"
+      },
+      "nextPlan": {
+        "weeks": "9~10주차",
+        "content": "SNS 콘텐츠 아이디어 도출 및 기획/제품 개발 기획 회의 참여"
+      }
+    }
+  },
+  "documents": {
+    "report": null,
+    "credit": null,
+    "survey": null,
+    "evaluation": null,
+    "attendance": null,
+    "careerReportId": null,
+    "creditApproval": {
+      "status": "NONE",
+      "token": null,
+      "requestedAt": null,
+      "approvedAt": null
+    },
+    "remindedAt": null
+  }
+}

@@ -233,6 +233,29 @@ def list_deadline(note):
 
 # ───────────── 입력 읽기 ─────────────
 
+STAGE_CODES = ["PICK", "APPLY", "MATCH", "SELECT", "CONTRACT", "ORIENTATION", "PRACTICE", "MIDCHECK", "CLOSE",
+               "DEBRIEF", "CREDIT"]
+
+
+def stage_rows(rnd):
+    """회차 일정 11단계(curated/round.json stages, ADR-0033). 순서는 STAGE_CODES와 같아야 한다."""
+    stages = rnd.get("stages", [])
+    codes = [s["code"] for s in stages]
+    if codes != STAGE_CODES:
+        sys.exit(f"round.json stages 순서가 다름: {codes}")
+    rows = []
+    for seq, s in enumerate(stages, 1):
+        for k in ("starts_on", "ends_on"):
+            if s[k] is not None:
+                dt.date.fromisoformat(s[k])
+        if s["starts_on"] and s["ends_on"] and s["starts_on"] > s["ends_on"]:
+            sys.exit(f"round.json {s['code']}: 시작일이 끝일보다 늦음")
+        rows.append({"round_id": rnd["round"]["id"], "seq": seq, "code": s["code"], "phase": s["phase"],
+                     "starts_on": s["starts_on"], "ends_on": s["ends_on"], "confirmed": s["confirmed"],
+                     "source": s["source"]})
+    return rows
+
+
 def load_curated():
     rnd = json.loads((CURATED / "round.json").read_text(encoding="utf-8"))
     deps = list(csv.DictReader((CURATED / "departments.csv").open(encoding="utf-8")))
@@ -412,11 +435,12 @@ def build(a):
                             "job", "major_alias", "major_alias_department", "department_cluster", "department_cluster_member",
                             "job_major_alias", "job_weekly_plan",
                             "source_document", "field_evidence", "review_alert", "requirement_source", "testimonial",
-                            "institution_photo", "replay_signal"]}
+                            "institution_photo", "replay_signal", "round_stage"]}
     # 판정 이유 줄 출처의 문서명: 리스트 파일 이름에서 끝의 괄호(상시 업데이트 진행중 등)를 뗀다(ADR-0023)
     list_title = re.sub(r"\s*\([^)]*\)\s*$", "", pathlib.Path(a.list).stem).strip()
     seed["program"].append(rnd["program"])
     seed["recruit_round"].append(round_)
+    seed["round_stage"] = stage_rows(rnd)
     seed["area"] = area_rows(areas)
     seed["certificate"] = certificate_rows(certs)
     cert_codes = {c["code"] for c in seed["certificate"]}
@@ -826,7 +850,19 @@ def validate(seed):
             fail(f"job {j['id']}: 리플레이 관심 합 {total} ≠ 배정 {j['final_assigned']}")
 
 
+def stages_only(out):
+    """seed.json의 회차 일정만 curated/round.json으로 다시 쓴다(원본 문서 없이 일정만 바꿀 때)."""
+    path = pathlib.Path(out)
+    seed = json.loads(path.read_text(encoding="utf-8"))
+    rnd = json.loads((CURATED / "round.json").read_text(encoding="utf-8"))
+    seed["round_stage"] = stage_rows(rnd)
+    path.write_text(json.dumps(seed, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
+    print(f"회차 일정 {len(seed['round_stage'])}단계 → {path}\n다음: python to_sql.py")
+
+
 def main():
+    if "--stages-only" in sys.argv:
+        return stages_only(HERE / "seed.json")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--list", required=True, help="참여기관 리스트 xlsx")
     ap.add_argument("--plans", required=True, help="운영계획서 본 추출 결과 폴더(e1 out/full)")

@@ -34,10 +34,27 @@ public final class CenterDtos {
      * @param pastZeroRounds 지난 회차 0명 이력. 원소 모양은 지난 회차 결과를 적재할 때 정한다(지금은 빈 배열)
      */
     public record Row(int jobId, InstitutionRef institution, String title, int headcount, Signal signal,
-                      int eligiblePool, List<Risk> risks, int alertCount, List<Object> pastZeroRounds) {
+                      int eligiblePool, List<Risk> risks, int alertCount, List<Object> pastZeroRounds, int views) {
+    }
+
+    /**
+     * 처리할 것(ADR-0033).
+     *
+     * @param counselPending 상담 확정 대기. 상담 기능 전이라 null
+     */
+    public record Todo(int newApplications, int fixRequested, Integer counselPending) {
+    }
+
+    /** 학생이 찾는 직무(직무 탐색 1~3위의 NCS 세분류) vs 이번 회차 공고. */
+    public record DemandRow(String ncsCode, String ncsName, int students, int jobs, int seats) {
+    }
+
+    /** @param explorers 범위 안에서 직무 탐색 결과가 있는 학생 수 */
+    public record Demand(int explorers, List<DemandRow> rows) {
     }
 
     public record CenterBoard(LocalDate asOf, boolean isVirtual, Signal.Source signalSource, RoundRef round,
-                              Summary summary, boolean historyAvailable, List<Row> rows, List<Alert> alerts) {
+                              Summary summary, boolean historyAvailable, List<Row> rows, List<Alert> alerts, Todo todo,
+                              Demand demand) {
     }
 }
