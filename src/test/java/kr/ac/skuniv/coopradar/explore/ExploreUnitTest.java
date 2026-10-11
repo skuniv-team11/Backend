@@ -3,15 +3,23 @@ package kr.ac.skuniv.coopradar.explore;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import kr.ac.skuniv.coopradar.explore.ExploreDrafts.LinkDraft;
+import kr.ac.skuniv.coopradar.explore.ExploreDrafts.LinkKind;
+import kr.ac.skuniv.coopradar.explore.ExploreDrafts.LinkedJob;
 import kr.ac.skuniv.coopradar.explore.ExploreDrafts.PhraseDraft;
 import kr.ac.skuniv.coopradar.explore.ExploreDrafts.PointDraft;
+import kr.ac.skuniv.coopradar.explore.ExploreDrafts.RankDraft;
 import kr.ac.skuniv.coopradar.explore.ExploreDrafts.WhyDraft;
+import kr.ac.skuniv.coopradar.explore.ExploreDtos.Basis;
+import kr.ac.skuniv.coopradar.explore.ExploreDtos.Fit;
 import kr.ac.skuniv.coopradar.explore.ExploreText.Field;
 import kr.ac.skuniv.coopradar.explore.ExploreText.Student;
 import kr.ac.skuniv.coopradar.job.InstitutionRef;
 import org.junit.jupiter.api.Test;
 
-/** 직무 탐색 규칙(가리기·카드·구절 대조·문장 규칙). DB·AI 없이. */
+/** 직무 탐색 규칙(가리기·카드·구절 대조·짝의 단계·문장 규칙). DB·AI 없이. */
 class ExploreUnitTest {
 
     static final JobDoc DOC = new JobDoc(122, 22, new InstitutionRef(7, "소서(가상)"), "마케팅팀", "국내 마케팅",
@@ -121,5 +129,48 @@ class ExploreUnitTest {
                 List.of(new PointDraft("지어낸 경험은 빠져야 해요.", "동아리 회장을 맡았어요", "오피스 프로그램 우수자")),
                 List.of(), null);
         assertThat(ExploreVerifier.why(bad, s, DOC)).isEmpty();
+    }
+
+    @Test
+    void 짝의_단계는_학생_구절이_어디서_왔는지로_정한다() {
+        Student s = new Student(List.of("동아리 인스타그램 계정을 1년 동안 운영했어요."), List.of("브랜드 콘텐츠 제작"), "뷰티 SNS 마케팅");
+        String job = "자사 SNS 채널 콘텐츠 운영 및 홍보 마케팅 업무 지원";
+        RankDraft draft = new RankDraft(List.of(new LinkedJob(122, List.of(
+                new LinkDraft(LinkKind.같은일, "인스타그램 계정을 1년 동안 운영했어요", job),
+                new LinkDraft(LinkKind.쓰이는능력, "동아리 인스타그램 계정을", "오피스 프로그램 우수자"),
+                // 관심 분야 구절을 같은일이라 해도 WISH
+                new LinkDraft(LinkKind.같은일, "뷰티 SNS 마케팅", job),
+                // 카드 앞 번호를 옮겨 써도 찾고, 카드면 WISH
+                new LinkDraft(LinkKind.하고싶은일, "[122] 브랜드 콘텐츠 제작", "브랜드 콘텐츠 제작 및 레퍼런스 서치"),
+                // 해 본 일을 하고싶은일이라 하면 어긋난 짝이라 버린다
+                new LinkDraft(LinkKind.하고싶은일, "동아리 인스타그램 계정을 1년", job),
+                // 같은 짝 두 번은 하나로
+                new LinkDraft(LinkKind.같은일, "인스타그램 계정을 1년 동안 운영했어요", job)),
+                "계정을 바로 운영해 본 경험이 SNS 채널 운영과 이어져요.")));
+        var verified = ExploreVerifier.links(draft, Set.of(122), s, Map.of(122, DOC));
+        assertThat(verified.drafted()).isEqualTo(6);
+        var links = verified.jobs().get(0).links();
+        assertThat(links).extracting(ExploreVerifier.VerifiedLink::kind)
+                .containsExactly(Fit.SAME_TASK, Fit.TRANSFER, Fit.WISH, Fit.WISH);
+        assertThat(links).extracting(ExploreVerifier.VerifiedLink::basis)
+                .containsExactly(Basis.EXPERIENCE, Basis.EXPERIENCE, Basis.INTEREST, Basis.CARD);
+        assertThat(links.get(3).studentQuote()).isEqualTo("브랜드 콘텐츠 제작");
+        // '바로' 같은 강도 표현이 든 이유는 쓰지 않는다(서비스가 단계 문장으로 바꾼다)
+        assertThat(verified.jobs().get(0).reason()).isNull();
+        // 후보 밖 자리는 짝을 세되 남기지 않는다
+        var outside = ExploreVerifier.links(draft, Set.of(123), s, Map.of(122, DOC));
+        assertThat(outside.jobs()).isEmpty();
+        assertThat(outside.drafted()).isEqualTo(6);
+    }
+
+    @Test
+    void 카드_자리_번호는_탐색_때만_붙인다() {
+        Student s = new Student(List.of(), List.of("브랜드 숏폼 콘텐츠 기획", "기획전 제작 및 운영"), null);
+        assertThat(s.text(List.of(105, 120))).contains("해 본 일: 쓰지 않음")
+                .contains("하고 싶은 일(고른 카드): [105] 브랜드 숏폼 콘텐츠 기획 / [120] 기획전 제작 및 운영")
+                .contains("관심 분야: 적지 않음");
+        assertThat(s.text()).contains("하고 싶은 일(고른 카드): 브랜드 숏폼 콘텐츠 기획 / 기획전 제작 및 운영");
+        assertThat(ExploreText.sameCard("인플루언서 소통 및 관리", "인플루언서 소통 및  관리")).isTrue();
+        assertThat(ExploreText.sameCard("인플루언서 소통 및 관리", "브랜드 숏폼 콘텐츠 기획")).isFalse();
     }
 }

@@ -2,25 +2,34 @@ package kr.ac.skuniv.coopradar.explore;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
+import kr.ac.skuniv.coopradar.explore.ExploreDrafts.LinkDraft;
+import kr.ac.skuniv.coopradar.explore.ExploreDrafts.LinkKind;
+import kr.ac.skuniv.coopradar.explore.ExploreDrafts.LinkedJob;
 import kr.ac.skuniv.coopradar.explore.ExploreDrafts.PhraseDraft;
 import kr.ac.skuniv.coopradar.explore.ExploreDrafts.PointDraft;
 import kr.ac.skuniv.coopradar.explore.ExploreDrafts.RankDraft;
-import kr.ac.skuniv.coopradar.explore.ExploreDrafts.RankedJob;
 import kr.ac.skuniv.coopradar.explore.ExploreDrafts.WhyDraft;
+import kr.ac.skuniv.coopradar.explore.ExploreDtos.Basis;
+import kr.ac.skuniv.coopradar.explore.ExploreDtos.Fit;
 import kr.ac.skuniv.coopradar.explore.ExploreDtos.JobPhrase;
 import kr.ac.skuniv.coopradar.explore.ExploreDtos.Point;
 import kr.ac.skuniv.coopradar.explore.ExploreDtos.WhyText;
 import kr.ac.skuniv.coopradar.explore.ExploreText.Piece;
 import kr.ac.skuniv.coopradar.explore.ExploreText.Student;
+import kr.ac.skuniv.coopradar.explore.ExploreText.StudentPiece;
 
 /**
  * AI 초안을 원문과 대조해 통과한 것만 남긴다(ADR-0031, AGENTS.md '검증 없이 내보내지 않는다').
  * <ul>
- *   <li>자리 번호: 후보(ELIGIBLE·NEEDS_CHECK, 마감 전) 안, 한 번만</li>
+ *   <li>자리 번호: 후보(ELIGIBLE·NEEDS_CHECK, 마감 전) 안. 같은 자리가 두 번 나오면 짝을 합친다</li>
+ *   <li>짝의 종류(ADR-0038): 학생 구절이 해 본 일에 있으면 같은일 → SAME_TASK, 쓰이는능력 → TRANSFER(하고싶은일이라 하면
+ *       버린다 — 해 본 일을 희망으로 적은 어긋난 짝). 고른 카드·관심 분야에 있으면 AI가 무엇이라 했든 WISH</li>
  *   <li>구절: 학생 구절은 학생 글 한 조각(경험·카드·관심 분야 하나) 안에, 직무 구절은 그 직무 원문 한 칸 안에 그대로
  *       (띄어쓰기·따옴표·가운뎃점·글머리표·끝 문장부호는 무시). 4~80자</li>
  *   <li>문장: 해요체로 끝남, '습니다'·'당신'·'선호 전공' 없음, 별표는 지움. 탐색 이유 10~150자, '왜 맞나요' 문장 10~150자</li>
@@ -28,6 +37,7 @@ import kr.ac.skuniv.coopradar.explore.ExploreText.Student;
  */
 public final class ExploreVerifier {
 
+    /** 탐색 결과로 보여 주는 자리 수. */
     static final int LIMIT = 5;
     static final int QUOTE_MIN = 4;
     static final int QUOTE_MAX = 80;
@@ -37,36 +47,105 @@ public final class ExploreVerifier {
     private ExploreVerifier() {
     }
 
-    /** 확인을 통과한 탐색 자리 하나. piece는 직무 구절이 든 칸. */
-    record Ranked(int jobId, String studentQuote, String jobQuote, Piece piece, String reason) {
+    /** 탐색에서 AI가 볼 자리 수와 자리마다 볼 짝 수. */
+    static final int MAX_JOBS = 10;
+    static final int MAX_LINKS = 5;
+    /** 자리 이유에 쓰지 않는 강도 표현(독립 검토 10/10: '바로·곧장' 과장). 있으면 규칙 문장으로 바꾼다. */
+    private static final Pattern STRONG_WORDS = Pattern.compile("바로|곧장|그대로|완벽|딱 맞");
+    /** 학생 구절 앞에 카드 자리 번호([105])를 옮겨 쓴 것. */
+    private static final Pattern CARD_PREFIX = Pattern.compile("^\\s*\\[\\d+]\\s*");
+
+    /** 대조를 통과한 짝. piece는 직무 구절이 든 칸. */
+    record VerifiedLink(Fit kind, Basis basis, String studentQuote, String jobQuote, Piece piece) {
     }
 
-    /** 순서 초안 → 통과한 자리(순서 그대로, 5개까지). */
-    static List<Ranked> ranking(RankDraft draft, Set<Integer> candidates, Student student, Map<Integer, JobDoc> docs) {
-        List<Ranked> out = new ArrayList<>();
-        if (draft == null || draft.ranking() == null) {
-            return out;
+    /** 대조를 통과한 짝이 하나 이상인 자리. reason은 규칙을 어겼으면 null(서비스가 단계 문장으로 바꾼다). */
+    record VerifiedJob(int jobId, List<VerifiedLink> links, String reason) {
+    }
+
+    /**
+     * @param jobs    통과한 자리(AI가 쓴 순서 — 순서는 서비스가 규칙으로 다시 정한다)
+     * @param drafted AI가 낸 짝 수(0이면 AI가 이어지는 곳이 없다고 본 것, 0보다 큰데 jobs가 비면 대조 실패)
+     */
+    record Verified(List<VerifiedJob> jobs, int drafted) {
+    }
+
+    /** 탐색 초안 → 통과한 짝과 자리. */
+    static Verified links(RankDraft draft, Set<Integer> candidates, Student student, Map<Integer, JobDoc> docs) {
+        Map<Integer, List<VerifiedLink>> links = new LinkedHashMap<>();
+        Map<Integer, String> reasons = new LinkedHashMap<>();
+        Map<Integer, Set<String>> seen = new LinkedHashMap<>();
+        int drafted = 0;
+        if (draft == null || draft.jobs() == null) {
+            return new Verified(List.of(), 0);
         }
-        Set<Integer> seen = new HashSet<>();
-        for (RankedJob r : draft.ranking()) {
-            if (r == null || out.size() >= LIMIT) {
+        Set<Integer> looked = new HashSet<>();
+        for (LinkedJob j : draft.jobs()) {
+            if (j == null || j.links() == null) {
                 continue;
             }
-            int id = (int) r.id();
-            if (r.id() != id || !candidates.contains(id) || !seen.add(id)) {
+            drafted += j.links().size();
+            int id = (int) j.id();
+            if (j.id() != id || !candidates.contains(id) || docs.get(id) == null) {
                 continue;
             }
+            if (!looked.contains(id) && looked.size() >= MAX_JOBS) {
+                continue;
+            }
+            looked.add(id);
             JobDoc doc = docs.get(id);
-            Optional<String> reason = sentence(r.reason());
-            Optional<String> sq = studentQuote(r.studentQuote(), student);
-            Optional<Piece> piece = jobPiece(r.jobQuote(), doc);
-            Optional<String> jq = jobQuote(r.jobQuote(), doc);
-            if (doc == null || reason.isEmpty() || sq.isEmpty() || piece.isEmpty() || jq.isEmpty()) {
-                continue;
+            for (LinkDraft l : j.links().subList(0, Math.min(MAX_LINKS, j.links().size()))) {
+                verify(l, student, doc).ifPresent(v -> {
+                    String key = v.kind() + "|" + ExploreText.squash(v.piece().text()) + "|" + ExploreText.squash(v.studentQuote());
+                    if (seen.computeIfAbsent(id, k -> new HashSet<>()).add(key)) {
+                        links.computeIfAbsent(id, k -> new ArrayList<>()).add(v);
+                    }
+                });
             }
-            out.add(new Ranked(id, sq.get(), jq.get(), piece.get(), reason.get()));
+            if (!reasons.containsKey(id)) {
+                reasons.put(id, sentence(j.reason()).filter(r -> !STRONG_WORDS.matcher(r).find()).orElse(null));
+            }
         }
-        return out;
+        List<VerifiedJob> out = new ArrayList<>();
+        links.forEach((id, ls) -> out.add(new VerifiedJob(id, List.copyOf(ls), reasons.get(id))));
+        return new Verified(out, drafted);
+    }
+
+    /** 짝 하나: 학생 구절의 출처로 단계를 정하고, 직무 구절은 그 자리 원문 한 칸 안에 있어야 한다. */
+    private static Optional<VerifiedLink> verify(LinkDraft l, Student student, JobDoc doc) {
+        if (l == null || l.kind() == null) {
+            return Optional.empty();
+        }
+        String raw = l.studentQuote() == null ? null : CARD_PREFIX.matcher(l.studentQuote()).replaceFirst("");
+        String q = quoteKey(raw);
+        if (q == null) {
+            return Optional.empty();
+        }
+        Optional<StudentPiece> from = Optional.empty();
+        Optional<String> sq = Optional.empty();
+        for (StudentPiece p : student.typedPieces()) {
+            sq = ExploreText.slice(p.text(), q);
+            if (sq.isPresent()) {
+                from = Optional.of(p);
+                break;
+            }
+        }
+        Optional<Piece> piece = jobPiece(l.jobQuote(), doc);
+        Optional<String> jq = jobQuote(l.jobQuote(), doc);
+        if (from.isEmpty() || piece.isEmpty() || jq.isEmpty()) {
+            return Optional.empty();
+        }
+        Basis basis = from.get().basis();
+        Fit kind;
+        if (basis == Basis.EXPERIENCE) {
+            if (l.kind() == LinkKind.하고싶은일) {
+                return Optional.empty();
+            }
+            kind = l.kind() == LinkKind.같은일 ? Fit.SAME_TASK : Fit.TRANSFER;
+        } else {
+            kind = Fit.WISH;
+        }
+        return Optional.of(new VerifiedLink(kind, basis, sq.get(), jq.get(), piece.get()));
     }
 
     /** '왜 맞나요' 초안 → 통과한 것. summary가 통과하지 못하거나 points가 하나도 남지 않으면 빈 값. */

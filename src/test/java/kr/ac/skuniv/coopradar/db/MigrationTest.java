@@ -57,6 +57,24 @@ class MigrationTest {
     }
 
     @Test
+    void V13이_적용되고_탐색_자리에_근거_단계_출처_짝이_있다() {
+        Boolean success = jdbc.sql("SELECT success FROM flyway_schema_history WHERE version = '13'")
+                .query(Boolean.class)
+                .single();
+        assertThat(success).isTrue();
+        List<String> columns = jdbc.sql("""
+                        SELECT column_name FROM information_schema.columns
+                        WHERE table_schema = 'public' AND table_name = 'explore_item' AND column_name IN ('basis', 'links')
+                        ORDER BY column_name""")
+                .query(String.class).list();
+        assertThat(columns).containsExactly("basis", "links");
+        String check = jdbc.sql("""
+                        SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conname = 'explore_item_fit_check'""")
+                .query(String.class).single();
+        assertThat(check).contains("SAME_TASK", "TRANSFER", "WISH", "NONE").doesNotContain("STRONG"); // ADR-0038
+    }
+
+    @Test
     void V2가_적용되고_좌표_칸이_없다() {
         Boolean success = jdbc.sql("SELECT success FROM flyway_schema_history WHERE version = '2'")
                 .query(Boolean.class)

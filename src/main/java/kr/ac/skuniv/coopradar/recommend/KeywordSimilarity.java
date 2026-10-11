@@ -9,13 +9,13 @@ import java.util.Map;
  * 관심 문장 ↔ 직무 텍스트의 키워드 유사도: 글자 2~3-gram TF-IDF 코사인(ADR-0018).
  * E5의 키워드 기준선({@code pipeline/e5_embedding/hit_at_k.py}의 TfidfChar)과 같은 방식이다. 외부 호출이 없다.
  */
-final class KeywordSimilarity {
+public final class KeywordSimilarity {
 
     private final Map<String, Integer> documentFrequency = new HashMap<>();
     private final int documents;
 
     /** IDF는 직무 텍스트와 질의를 모두 문서로 보고 센다(E5와 같음). */
-    KeywordSimilarity(Collection<String> corpus) {
+    public KeywordSimilarity(Collection<String> corpus) {
         for (String text : corpus) {
             for (String gram : new HashSet<>(grams(text).keySet())) {
                 documentFrequency.merge(gram, 1, Integer::sum);
@@ -24,14 +24,14 @@ final class KeywordSimilarity {
         this.documents = corpus.size();
     }
 
-    Map<String, Double> vector(String text) {
+    public Map<String, Double> vector(String text) {
         Map<String, Double> v = new HashMap<>();
         grams(text).forEach((gram, count) -> v.put(gram,
                 count * Math.log((documents + 1.0) / (documentFrequency.getOrDefault(gram, 0) + 1.0))));
         return v;
     }
 
-    static double cosine(Map<String, Double> a, Map<String, Double> b) {
+    public static double cosine(Map<String, Double> a, Map<String, Double> b) {
         double dot = 0;
         for (var e : a.entrySet()) {
             Double other = b.get(e.getKey());

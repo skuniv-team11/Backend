@@ -59,7 +59,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | 24 | 센터 | GET | `/api/center/board` | CENTER | C4 | 현황판(직무별 정원·조건 위험·문서 검토) · 처리할 것 · 학생이 찾는 직무 | [응답](center-board.json) |
 | 26 | 기준 정보 | GET | `/api/certificates` | 공개 | S1 | 자격증 선택지(이번 회차 직무가 요구·우대하는 것만, ADR-0021) | [응답](certificates.json) |
 | 28 | 탐색 | POST | `/api/explore/cards` | STUDENT | 탐색 | '하고 싶은 일' 카드(지원할 수 있는 직무의 하는 일, 기관 이름 가림, ADR-0031) | [요청](profile-body.request.json) · [응답](explore-cards.json) |
-| 29 | 탐색 | POST | `/api/explore` | STUDENT | 탐색 | 경험 글·카드로 직무 탐색(AI 순서·근거 + 상위 3곳 '왜 맞나요', 실패하면 규칙 추천) | [요청](explore.request.json) · [응답](explore.json) |
+| 29 | 탐색 | POST | `/api/explore` | STUDENT | 탐색 | 경험 글·카드로 직무 탐색(AI가 짝·종류, 규칙이 순서 + 상위 3곳 '왜 맞나요', 실패하면 규칙 추천) | [요청](explore.request.json) · [응답](explore.json) |
 | 30 | 탐색 | GET | `/api/me/explore` | STUDENT | 탐색·S3 | 저장된 탐색 결과(저장한 프로필로 다시 판정) | [응답](explore.json) |
 | 31 | 탐색 | DELETE | `/api/me/explore` | STUDENT | 탐색·M1 | 탐색 결과·경험 글 지우기 | 204 |
 | 32 | 탐색 | GET | `/api/me/explore/jobs/{jobId}/why` | STUDENT | S4 | 직무 상세 '왜 맞나요'(없으면 이때 만든다) | [응답](explore-why.json) |
@@ -219,7 +219,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 - `PUT ranks`는 **순위 전체**를 보낸다. 여기 없는 담은 직무는 순위가 지워진다(`rank: null`). 순위는 1~3, 중복 불가, 한 직무에 하나, 3개까지, 담은 직무만 → 어기면 400 `RANK_INVALID`(아무것도 바꾸지 않음). `ranks`가 없거나 원소의 `jobId`·`rank`가 빠지면 400 `INVALID_INPUT`. `[]`이면 순위를 모두 지운다.
 - 1~3지망은 지원서(#37)가 순위 값 그대로 가져간다(2·3지망만 정했으면 2·3지망). 모집 신호·빈 자리 제안(#23·#27)은 ADR-0036에서 지웠다.
 
-**직무 탐색**([ADR-0031](../decisions/0031-explore-ai.md)) — 학생이 쓴 경험 글과 고른 '하고 싶은 일' 카드를 AI(Claude Sonnet)가 공고와 함께 읽고, 지원할 수 있는 자리 중 이어지는 곳을 순서대로 고른다. 지원 조건은 규칙이 먼저 거른다(AI는 판정하지 않는다).
+**직무 탐색**([ADR-0031](../decisions/0031-explore-ai.md)·[0038](../decisions/0038-explore-links-rule-order.md)) — 학생이 쓴 경험 글과 고른 '하고 싶은 일' 카드를 AI(Claude Sonnet)가 공고와 함께 읽고, 지원할 수 있는 자리마다 학생 글과 업무가 이어지는 **짝**과 그 **종류**를 찾는다. 지원 조건은 규칙이 먼저 거르고(AI는 판정하지 않는다), 구절은 서버가 원문과 대조하고, **순서는 규칙**이 정한다(AI는 순서를 정하지 않는다).
 - **후보** = 판정(#14)이 `ELIGIBLE`·`NEEDS_CHECK`이고 모집 판정 기준일에 마감되지 않은 직무. `INELIGIBLE`·마감 직무는 카드 목록(#28)·AI에 보내는 직무 원문·결과·'왜 맞나요' 어디에도 나오지 않는다(#29에 낸 `cardIds`는 회차 직무 전부의 카드에서 찾는다 — 프로필이 바뀌어도 이미 고른 카드는 찾게. 카드 글은 학생이 고른 '하고 싶은 일'로만 AI에 간다). `candidates` = `{total, eligible, needsCheck}`(total = 후보 수).
 - `cards`(#28): 후보 직무의 직무 개요 항목(없거나 2개 미만이면 주차 계획 항목)을 원문 그대로 짧게(6~50자, 직무당 4개까지) 준다. 기관 이름은 '회사'로 가리고, 거의 같은 글(글자 2-gram 자카드 0.8 이상)은 하나로 합친다. 직무를 번갈아 가며 놓아 앞쪽이 한 회사로 몰리지 않는다(최대 60개). `id`는 `{jobId}-{순번}`이고 #29 `cardIds`로 보낸다. 카드는 학생이 고르는 재료일 뿐 어느 직무인지 알려 주지 않는다.
 - 요청(#29): `{profile, experiences, cardIds, consent}`.
@@ -227,19 +227,24 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
   - `consent`가 true가 아니면 400 `CONSENT_REQUIRED`(경험 글을 AI에 보내고 결과와 함께 저장하는 데 동의).
   - 경험 글의 전화번호(+82·띄어 쓴 번호 포함)·이메일·주민등록번호 모양·8~10자리 숫자(학번 등, `2023-12345`처럼 나눈 것 포함)는 `[가림]`으로 바꾼 뒤 AI에 보내고 저장한다. 화면은 이름을 쓰지 말라고 안내한다.
   - AI에는 경험 글·고른 카드 글·`interestText`와 후보 직무의 원문(부서·직무명·직무 개요·교육 목표·요구 역량·주차 계획)만 보낸다. 학과·학년·평점·자격증·사는 곳은 보내지 않는다.
-- **순서**: AI가 후보 중 5곳을 고르고 자리마다 `studentQuote`(학생 글 한 줄 안의 구절) · `jobQuote`(그 직무 원문 한 칸 안의 구절) · `reason`(해요체 한 문장)을 단다. 서버가 확인해 통과한 것만 쓴다 — 후보 안의 직무 · 두 구절이 원문에 그대로 있음(띄어쓰기·따옴표·글머리표 무시, 한 줄·한 칸 안) · `reason` 10~150자 해요체('습니다'·'당신'·'선호 전공' 없음). 같은 직무가 두 번 나오면 앞의 것만.
-  - `fit`: 1~2위 `STRONG`, 3~5위 `GOOD`. 맞는 정도는 AI 점수가 아니라 순위로 정한다(E7 — AI가 덜 맞는 자리에도 이유를 붙여서).
+- **짝**: AI가 후보 중 이어지는 자리(최대 10곳)마다 짝 1~5개 `{kind, studentQuote, jobQuote}`와 자리 이유(해요체 한 문장)를 낸다. 이어지는 곳이 없으면 내지 않는다(억지로 채우지 않는다). 서버가 짝마다 확인해 통과한 것만 쓴다 — 후보 안의 직무 · 두 구절이 원문에 그대로 있음(띄어쓰기·따옴표·글머리표 무시, 학생 구절은 경험·카드·관심 분야 한 조각 안, 직무 구절은 원문 한 칸 안). 같은 직무가 두 번 나오면 짝을 합친다.
+  - 짝의 단계(`kind`)는 학생 구절이 어디서 왔는지로 정한다: 해 본 일이면 AI가 '같은 일'이라 한 짝은 `SAME_TASK`, '해 본 일의 능력이 쓰이는 일'이라 한 짝은 `TRANSFER`(해 본 일을 '하고 싶은 일'이라 한 짝은 버린다). 고른 카드·관심 분야면 AI가 무엇이라 했든 `WISH`. `basis`는 그 출처(`EXPERIENCE` · `CARD` · `INTEREST`).
+  - **고른 카드가 나온 자리**(그 카드와 거의 같은 글이 있는 후보 자리 포함 — 카드를 합칠 때와 같은 기준)는 규칙이 `WISH`·`CARD` 짝을 넣는다(카드는 그 자리 원문이라 AI가 판단할 일이 없다). AI에는 카드 앞에 나온 자리 번호를 붙여 보내고, 카드로는 같은 일을 다른 말로 적은 다른 자리를 찾게 한다.
+  - 자리 이유는 해요체 10~150자('습니다'·'당신'·'선호 전공' 없음, '바로'·'곧장'·'그대로' 같은 강도 표현 없음). 어기거나 AI가 쓰지 않은 자리(카드가 나온 자리)는 단계 문장 — "해 본 일과 같은 일을 하는 자리예요." · "해 본 일에서 쓴 능력이 이 자리 업무에 쓰여요." · "고른 '하고 싶은 일'과 같은 일을 하는 자리예요." · "관심 분야와 같은 일을 하는 자리예요."
+- **순서(규칙)**: ① 근거 단계 — 해 본 일과 같은 일(`SAME_TASK`) → 해 본 일의 능력이 쓰이는 일(`TRANSFER`) → 고른 카드와 같은 일(`WISH`·`CARD`) → 관심 분야와 같은 일(`WISH`·`INTEREST`) ② 선호 전공(`MATCH` → `NEAR` → `OPEN` → `NOT_LISTED`) ③ 대조를 통과한 짝 수(근거가 많은 자리) ④ 학생 글 전부 ↔ 직무 원문 전부 키워드 유사도(글자 2~3-gram TF-IDF, 판정의 관심 유사도와 같은 방식) ⑤ 리스트 순번. 위에서 **5곳까지**. 이어지는 근거가 있는 자리가 적으면 5곳보다 적고, 0곳일 수도 있다(`source: AI`, `items: []`).
+  - `fit`: 그 자리에서 가장 높은 단계(`SAME_TASK` · `TRANSFER` · `WISH`). 순위로 정하지 않는다.
+  - `evidence`: 대표 짝(`links`의 첫 짝) `{basis, studentQuote, jobQuote, documentTitle, page}`와 자리 이유 `reason`. `links`: 통과한 짝 전부 `{kind, basis, studentQuote, jobQuote, documentTitle, page}`, 단계 높은 것부터(같은 단계는 AI가 쓴 순서). 카드가 나온 자리를 규칙으로 넣었는데 원문 칸에서 그 글을 찾지 못하면 그 짝의 `jobQuote`·`documentTitle`·`page`는 null.
   - `evidence.documentTitle`·`page`: `jobQuote`가 든 칸의 운영계획서와 쪽(직무 개요·요구 역량·교육 목표). 부서·직무명이면 `page` null, 주차 계획은 규칙 추천 인용과 같이 직무 개요와 전공 요건이 같은 쪽일 때만 그 쪽이다.
   - 1~3위는 같은 요청에서 '왜 맞나요'(`why`, 아래)를 함께 만들어 둔다. 실패한 곳과 4~5위는 null — 직무 상세에서 #32를 부르면 그때 만든다.
-- **규칙 추천으로 대신**(`source: RULE`): AI 키 없음(`NO_KEY`) · 호출 한도(`LIMITED`) · AI 실패·30초 초과(`AI_ERROR`) · 확인을 통과한 자리가 0곳(`VERIFY_FAILED`)이면 규칙 추천(위 '판정'의 규칙 추천)과 같은 직무·순서를 준다 — `fit`은 `HIGH` → `STRONG`, `MEDIUM` → `GOOD`, `evidence`는 `studentQuote` null · `jobQuote`는 운영계획서 근거 인용(없으면 첫 인용) · `reason`은 기본 문장 "지원 조건과 적합도 점수로 고른 자리예요."(규칙 문장에는 학년·평점·학과가 들어가 저장하지 않는다), `why`는 null. 후보가 0곳이면 AI를 부르지 않고 `NO_CANDIDATES`, `items: []`, `blockedBy`는 규칙 추천의 것. 규칙 추천으로 대신했는데 규칙 추천이 0개여도 `items: []`·`blockedBy`는 규칙 추천의 것. 그 밖에는 `blockedBy: []`.
+- **규칙 추천으로 대신**(`source: RULE`): AI 키 없음(`NO_KEY`) · 호출 한도(`LIMITED`) · AI 실패·30초 초과(`AI_ERROR`) · AI가 짝을 냈는데 확인을 통과한 짝이 하나도 없고 고른 카드도 없음(`VERIFY_FAILED` — AI가 짝을 하나도 내지 않은 것은 실패가 아니라 빈 결과다)이면 규칙 추천(위 '판정'의 규칙 추천)과 같은 직무·순서를 준다 — `fit`은 `NONE`(AI가 이은 근거 없음), `links: []`, `evidence`는 `basis`·`studentQuote` null · `jobQuote`는 운영계획서 근거 인용(없으면 첫 인용) · `reason`은 기본 문장 "지원 조건과 적합도 점수로 고른 자리예요."(규칙 문장에는 학년·평점·학과가 들어가 저장하지 않는다), `why`는 null. 후보가 0곳이면 AI를 부르지 않고 `NO_CANDIDATES`, `items: []`, `blockedBy`는 규칙 추천의 것. 규칙 추천으로 대신했는데 규칙 추천이 0개여도 `items: []`·`blockedBy`는 규칙 추천의 것. 그 밖에는 `blockedBy: []`.
 - **저장**: 결과는 계정당 마지막 1건만 둔다(새로 탐색하면 바꾼다, 탈퇴·체험 계정 정리 때 함께 지운다). AI는 실행마다 순서가 조금 달라서 다시 계산하지 않는다. `input`은 저장한 경험 글(가린 뒤)·카드 글·관심 분야다.
 - `GET /api/me/explore`(#30): 없으면 404 `EXPLORE_NOT_FOUND`. 저장한 프로필(#8)이 있으면 그 프로필로 다시 판정해(`judgedWith: SAVED_PROFILE`) 후보에서 빠진 직무를 숨기고(`hiddenCount`) 판정을 지금 값으로 바꾼다. `rank`는 남은 자리끼리 1부터 다시 매기고(저장한 순서는 그대로), `fit`은 저장한 그대로다. 저장한 프로필이 없으면 탐색 때 판정 그대로(`RUN_PROFILE`, #29 응답도 이것). 프로필을 바꿨으면 화면이 다시 탐색을 권한다.
 - 화면 연결: 직무 찾기(S3)의 맨 위 추천은 탐색 결과(`items`)다. 탐색 전에는 추천을 띄우지 않는다(v2).
 - `DELETE /api/me/explore`(#31): 저장한 결과·경험 글·'왜 맞나요'를 지운다. 없어도 204.
 - **'왜 맞나요'**(`why`, #32 `GET /api/me/explore/jobs/{jobId}/why`): `{summary, points, tryNew, prepare}` — `summary` 한 문장, `points` 1~3개 `{text, studentQuote, jobQuote}`(학생이 한 일 → 이 자리의 어떤 일 → 왜 도움), `tryNew` 0~2개 `{text, jobQuote}`(이 실습에서 새로 해 볼 일), `prepare` `{text, jobQuote}` 또는 null(지원 전에 채우면 좋은 것). 문장은 해요체 10~150자이고 구절은 순서와 같은 방식으로 확인해 통과한 것만 남긴다. `summary`가 통과하지 못하거나 `points`가 0개면 실패다.
-  - #32 응답 `{jobId, fit, why, fallbackReason}`. `fit`은 탐색 결과 안이면 그 값, 밖이면 `WEAK` — 결과 밖 자리는 덜 이어지는 까닭도 함께 쓰게 한다. 한 번 만든 것은 저장해 다시 준다. 만들지 못하면(키 없음·한도·실패·확인 실패) 200 + `why: null`과 `fallbackReason`.
+  - #32 응답 `{jobId, fit, why, fallbackReason}`. `fit`은 탐색 결과 안이면 그 값, 밖이면 `NONE` — 결과 밖 자리는 덜 이어지는 까닭도 함께 쓰게 한다. 한 번 만든 것은 저장해 다시 준다. 만들지 못하면(키 없음·한도·실패·확인 실패) 200 + `why: null`과 `fallbackReason`.
   - 탐색 결과가 없으면 404 `EXPLORE_NOT_FOUND`, 없는 직무 404 `JOB_NOT_FOUND`, 지금 후보가 아닌 직무(위 다시 판정과 같은 기준)는 409 `EXPLORE_NOT_CANDIDATE`.
-- 응답 시간: AI 탐색 약 5초 + '왜 맞나요' 3곳 동시 약 6초(E7 실측). 화면은 '분석 중'을 보여 준다.
+- 응답 시간: AI 탐색 약 5초(E9 실측 중앙값 5.1~5.4초, 최대 약 13초) + '왜 맞나요' 3곳 동시 약 6초. 화면은 '분석 중'을 보여 준다.
 
 **커리어**([ADR-0032](../decisions/0032-ncs-career.md)) — 실습이 다음 진로로 이어지게 직무를 NCS(국가직무능력표준)로 풀어 준다. NCS 값은 시드로 미리 넣고 실행 중에 공공 API를 부르지 않는다.
 - **직무 ↔ NCS**: 직무마다 세분류 하나(사람이 직무 원문과 능력단위를 보고 고름, `pipeline/seed/curated/job_ncs.csv`). `ncs`는 `{code, name, path, note, units}` — `path`는 `[대분류, 중분류, 소분류]`, `note`는 고른 까닭, `units`는 그 세분류의 능력단위 `{code, name, level, definition}`(능력단위 번호 순, `level`은 NCS 수준 1~8 — 원본에 없으면 null). 구버전 단위는 빼고 이름이 같은 단위는 최신 개정 하나만 둔다. 세분류가 없는 직무면 `ncs: null`·`expand: []`·`occupations: []`(2026-2는 40개 모두 있다).
