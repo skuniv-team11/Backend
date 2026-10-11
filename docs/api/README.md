@@ -58,7 +58,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 | 22 | 지망 | PUT | `/api/me/plan/ranks` | STUDENT | S5 | 1~3지망 순위 정하기 | [요청](me-plan-ranks.request.json) · [응답](me-plan.json) |
 | 24 | 센터 | GET | `/api/center/board` | CENTER | C4 | 현황판(직무별 정원·조건 위험·문서 검토) · 처리할 것 · 학생이 찾는 직무 | [응답](center-board.json) |
 | 26 | 기준 정보 | GET | `/api/certificates` | 공개 | S1 | 자격증 선택지(이번 회차 직무가 요구·우대하는 것만, ADR-0021) | [응답](certificates.json) |
-| 28 | 탐색 | POST | `/api/explore/cards` | STUDENT | 탐색 | '하고 싶은 일' 카드(지원할 수 있는 직무의 하는 일, 기관 이름 가림, ADR-0031) | [요청](profile-body.request.json) · [응답](explore-cards.json) |
+| 28 | 탐색 | POST | `/api/explore/cards` | STUDENT | 탐색 | '하고 싶은 일' 카드(지원할 수 있는 직무의 하는 일, 기관 이름 가림, 선호 전공 자리 먼저, ADR-0031·0039) | [요청](profile-body.request.json) · [응답](explore-cards.json) |
 | 29 | 탐색 | POST | `/api/explore` | STUDENT | 탐색 | 경험 글·카드로 직무 탐색(AI가 짝·종류, 규칙이 순서 + 상위 3곳 '왜 맞나요', 실패하면 규칙 추천) | [요청](explore.request.json) · [응답](explore.json) |
 | 30 | 탐색 | GET | `/api/me/explore` | STUDENT | 탐색·S3 | 저장된 탐색 결과(저장한 프로필로 다시 판정) | [응답](explore.json) |
 | 31 | 탐색 | DELETE | `/api/me/explore` | STUDENT | 탐색·M1 | 탐색 결과·경험 글 지우기 | 204 |
@@ -221,7 +221,7 @@ Notion API LIST는 이 문서의 사본이다. 둘이 다르면 이 문서가 �
 
 **직무 탐색**([ADR-0031](../decisions/0031-explore-ai.md)·[0038](../decisions/0038-explore-links-rule-order.md)) — 학생이 쓴 경험 글과 고른 '하고 싶은 일' 카드를 AI(Claude Sonnet)가 공고와 함께 읽고, 지원할 수 있는 자리마다 학생 글과 업무가 이어지는 **짝**과 그 **종류**를 찾는다. 지원 조건은 규칙이 먼저 거르고(AI는 판정하지 않는다), 구절은 서버가 원문과 대조하고, **순서는 규칙**이 정한다(AI는 순서를 정하지 않는다).
 - **후보** = 판정(#14)이 `ELIGIBLE`·`NEEDS_CHECK`이고 모집 판정 기준일에 마감되지 않은 직무. `INELIGIBLE`·마감 직무는 카드 목록(#28)·AI에 보내는 직무 원문·결과·'왜 맞나요' 어디에도 나오지 않는다(#29에 낸 `cardIds`는 회차 직무 전부의 카드에서 찾는다 — 프로필이 바뀌어도 이미 고른 카드는 찾게. 카드 글은 학생이 고른 '하고 싶은 일'로만 AI에 간다). `candidates` = `{total, eligible, needsCheck}`(total = 후보 수).
-- `cards`(#28): 후보 직무의 직무 개요 항목(없거나 2개 미만이면 주차 계획 항목)을 원문 그대로 짧게(6~50자, 직무당 4개까지) 준다. 기관 이름은 '회사'로 가리고, 거의 같은 글(글자 2-gram 자카드 0.8 이상)은 하나로 합친다. 직무를 번갈아 가며 놓아 앞쪽이 한 회사로 몰리지 않는다(최대 60개). `id`는 `{jobId}-{순번}`이고 #29 `cardIds`로 보낸다. 카드는 학생이 고르는 재료일 뿐 어느 직무인지 알려 주지 않는다.
+- `cards`(#28): 후보 직무의 직무 개요 항목(없거나 2개 미만이면 주차 계획 항목)을 원문 그대로 짧게(6~50자, 직무당 4개까지) 준다. 기관 이름은 '회사'로 가리고, 거의 같은 글(글자 2-gram 자카드 0.8 이상)은 하나로 합친다. 자리는 선호 전공 묶음(일치 → 가까운 전공 → 전공 무관 → 그 밖, 탐색 순서 ②와 같은 기준) 순서로 놓고, 묶음 안에서는 리스트 순번으로 직무를 번갈아 놓아 앞쪽이 한 회사로 몰리지 않는다(모두 합쳐 최대 60개, [ADR-0039](../decisions/0039-explore-cards-major-first.md)). 선호 전공 밖 자리의 카드도 숨기지 않는다. `id`는 `{jobId}-{순번}`이고 #29 `cardIds`로 보낸다. 카드는 학생이 고르는 재료일 뿐 어느 직무인지 알려 주지 않는다.
 - 요청(#29): `{profile, experiences, cardIds, consent}`.
   - `experiences`: 해 본 일 0~3개, 하나에 20~200자. `cardIds`: 0~5개(중복 불가, 카드 목록의 id). 경험을 하나 이상 쓰거나 카드를 3개 이상 골라야 한다 — 아니면 400 `INVALID_INPUT`(`experiences`). 없는 카드 id는 400 `INVALID_INPUT`(`cardIds`).
   - `consent`가 true가 아니면 400 `CONSENT_REQUIRED`(경험 글을 AI에 보내고 결과와 함께 저장하는 데 동의).

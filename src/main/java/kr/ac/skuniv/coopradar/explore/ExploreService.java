@@ -7,6 +7,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -138,13 +140,21 @@ public class ExploreService {
         return new Pool(candidates, verdicts, new Candidates(candidates.size(), eligible, candidates.size() - eligible));
     }
 
-    /** #28 '하고 싶은 일' 카드. */
+    /**
+     * #28 '하고 싶은 일' 카드. 후보 직무를 선호 전공 묶음(일치 → 가까운 전공 → 전공 무관 → 그 밖, 탐색 순서의 ②와 같은 기준) 순서로,
+     * 묶음 안은 리스트 순번으로 놓는다(ADR-0039). 카드를 숨기지는 않는다 — 선호 전공 밖이어도 매칭된 학생이 있어서다.
+     */
     public Cards cards(ProfileInput profile) {
         var round = rounds.current();
         Pool pool = pool(round.id(), profile);
         Map<Integer, JobDoc> docs = docs(round.id());
-        List<JobDoc> candidates = docs.values().stream().filter(d -> pool.ids().contains(d.jobId())).toList();
-        return new Cards(new RoundRef(round.id(), round.termCode()), pool.counts(), ExploreText.cards(candidates));
+        Map<Integer, MajorMatch> major = new HashMap<>();
+        pool.candidates().forEach(j -> major.put(j.result().jobId(), j.result().majorMatch()));
+        Map<Integer, List<JobDoc>> groups = docs.values().stream()
+                .filter(d -> major.containsKey(d.jobId()))
+                .collect(Collectors.groupingBy(d -> majorRank(major.get(d.jobId())), TreeMap::new, Collectors.toList()));
+        return new Cards(new RoundRef(round.id(), round.termCode()), pool.counts(),
+                ExploreText.cardsInGroups(List.copyOf(groups.values())));
     }
 
     /** #29 탐색. */

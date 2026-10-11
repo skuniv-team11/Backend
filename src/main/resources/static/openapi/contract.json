@@ -3099,7 +3099,7 @@
           "탐색"
         ],
         "operationId": "getExploreCards",
-        "summary": "'하고 싶은 일' 카드(지원할 수 있는 직무의 하는 일, 기관 이름 가림, ADR-0031)",
+        "summary": "'하고 싶은 일' 카드(지원할 수 있는 직무의 하는 일, 기관 이름 가림, 선호 전공 자리 먼저, ADR-0031·0039)",
         "x-auth": "STUDENT",
         "description": "권한: **STUDENT** · 화면: 탐색 · 규칙은 [docs/api/README.md](https://github.com/skuniv-team11/Backend/blob/develop/docs/api/README.md) '엔드포인트별 규칙'",
         "requestBody": {
