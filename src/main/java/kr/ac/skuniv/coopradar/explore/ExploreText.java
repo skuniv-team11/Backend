@@ -295,27 +295,35 @@ public final class ExploreText {
         return Pattern.compile("(?:\\(주\\)|㈜|주식회사)?\\s*" + Pattern.quote(name)).matcher(text).replaceAll("회사");
     }
 
-    /**
-     * 후보 직무의 카드를 직무를 번갈아 가며 놓는다(앞쪽이 한 회사로 몰리지 않게). 거의 같은 글(글자 2-gram 자카드 0.8 이상)은
-     * 먼저 나온 것 하나만. 최대 60개.
-     */
+    /** 후보 직무 한 묶음의 카드({@link #cardsInGroups}에 묶음 하나). */
     static List<ExploreDtos.Card> cards(List<JobDoc> candidates) {
-        List<List<String>> perJob = candidates.stream().map(ExploreText::cardTexts).toList();
+        return cardsInGroups(List.of(candidates));
+    }
+
+    /**
+     * 후보 직무의 카드. 묶음(선호 전공 일치 → 가까운 전공 → 전공 무관 → 그 밖, ADR-0039) 순서대로 놓고, 한 묶음 안에서는 직무를
+     * 번갈아 가며 놓는다(앞쪽이 한 회사로 몰리지 않게). 거의 같은 글(글자 2-gram 자카드 0.8 이상)은 먼저 나온 것 하나만 — 묶음을
+     * 넘어서도 같다. 모두 합쳐 최대 60개.
+     */
+    static List<ExploreDtos.Card> cardsInGroups(List<List<JobDoc>> groups) {
         List<ExploreDtos.Card> out = new ArrayList<>();
         List<Set<String>> grams = new ArrayList<>();
-        int depth = perJob.stream().mapToInt(List::size).max().orElse(0);
-        for (int n = 0; n < depth && out.size() < CARDS_MAX; n++) {
-            for (int j = 0; j < candidates.size() && out.size() < CARDS_MAX; j++) {
-                List<String> texts = perJob.get(j);
-                if (n >= texts.size()) {
-                    continue;
+        for (List<JobDoc> candidates : groups) {
+            List<List<String>> perJob = candidates.stream().map(ExploreText::cardTexts).toList();
+            int depth = perJob.stream().mapToInt(List::size).max().orElse(0);
+            for (int n = 0; n < depth && out.size() < CARDS_MAX; n++) {
+                for (int j = 0; j < candidates.size() && out.size() < CARDS_MAX; j++) {
+                    List<String> texts = perJob.get(j);
+                    if (n >= texts.size()) {
+                        continue;
+                    }
+                    Set<String> g = bigrams(texts.get(n));
+                    if (grams.stream().anyMatch(x -> jaccard(x, g) >= SAME_CARD)) {
+                        continue;
+                    }
+                    grams.add(g);
+                    out.add(new ExploreDtos.Card(candidates.get(j).jobId() + "-" + (n + 1), texts.get(n)));
                 }
-                Set<String> g = bigrams(texts.get(n));
-                if (grams.stream().anyMatch(x -> jaccard(x, g) >= SAME_CARD)) {
-                    continue;
-                }
-                grams.add(g);
-                out.add(new ExploreDtos.Card(candidates.get(j).jobId() + "-" + (n + 1), texts.get(n)));
             }
         }
         return out;

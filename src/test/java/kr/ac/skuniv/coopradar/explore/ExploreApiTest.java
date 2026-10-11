@@ -190,8 +190,27 @@ class ExploreApiTest {
         assertThat(texts).noneMatch(t -> t.contains("소서") || t.contains("세정") || t.contains("오뷔엘알"));
         // 소서 국내 마케팅(122) 개요 항목, 오뷔엘알 국내 인플루언서(103)는 개요가 머리말뿐이라 주차 계획 항목
         assertThat(texts).contains("자사 SNS 채널 콘텐츠 운영 및 홍보 마케팅 업무 지원", "인플루언서 소통 및 관리");
-        // 직무를 번갈아 놓는다: 앞 10개가 10개 직무에서 하나씩
-        assertThat(ids.subList(0, 10).stream().map(id -> id.split("-")[0]).distinct().count()).isEqualTo(10);
+        // 선호 전공 묶음 순서(일치 → 가까운 전공 → 전공 무관 → 그 밖, ADR-0039): 판정(#14)의 majorMatch로 본 묶음 순위가 줄지 않는다
+        String judged = mvc.perform(post("/api/eligibility").header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON).content(profileBody(5, "3.4")))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        List<Integer> jobIds = JsonPath.read(judged, "$.jobs[*].jobId");
+        List<String> majors = JsonPath.read(judged, "$.jobs[*].majorMatch");
+        Map<Integer, Integer> rank = new java.util.HashMap<>();
+        for (int i = 0; i < jobIds.size(); i++) {
+            rank.put(jobIds.get(i), List.of("MATCH", "NEAR", "OPEN", "NOT_LISTED").indexOf(majors.get(i)));
+        }
+        List<Integer> order = ids.stream().map(id -> rank.get(Integer.parseInt(id.split("-")[0]))).toList();
+        assertThat(order).isSorted();
+        assertThat(order.get(0)).isEqualTo(0);
+        // 묶음 안에서는 직무를 번갈아 놓는다: 선호 전공 자리 수만큼 앞 카드가 서로 다른 직무에서 하나씩
+        long matchJobs = ids.stream().filter(id -> rank.get(Integer.parseInt(id.split("-")[0])) == 0)
+                .map(id -> id.split("-")[0]).distinct().count();
+        assertThat(matchJobs).isGreaterThan(1);
+        assertThat(ids.subList(0, (int) matchJobs).stream().map(id -> id.split("-")[0]).distinct().count()).isEqualTo(matchJobs);
+        // 그 밖 묶음 안에서도 번갈아: 그 묶음 첫 10장이 10개 직무에서 하나씩
+        List<String> outside = ids.stream().filter(id -> rank.get(Integer.parseInt(id.split("-")[0])) == 3).toList();
+        assertThat(outside.subList(0, 10).stream().map(id -> id.split("-")[0]).distinct().count()).isEqualTo(10);
     }
 
     @Test

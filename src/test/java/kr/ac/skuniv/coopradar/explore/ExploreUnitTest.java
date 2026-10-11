@@ -85,6 +85,21 @@ class ExploreUnitTest {
     }
 
     @Test
+    void 카드는_선호_전공_묶음_순서로_놓고_묶음_안에서_번갈아_놓는다() {
+        JobDoc other = new JobDoc(123, 23, new InstitutionRef(7, "소서(가상)"), "마케팅팀", "해외 마케팅",
+                "*자사 SNS 콘텐츠 운영 및 홍보 마케팅 업무 지원\n*해외 바이어 응대 및 자료 번역", null, null, List.of(),
+                4, 4, 4, 4, "소서(가상) 운영계획서");
+        JobDoc third = new JobDoc(130, 30, new InstitutionRef(9, "누리(가상)"), "물류팀", "물류",
+                "*입출고 재고 관리\n*해외 수출 서류 준비", null, null, List.of(), 4, 4, 4, 4, "누리(가상) 운영계획서");
+        // 묶음 1(선호 전공) = 130, 묶음 2(그 밖) = 122·123 — 리스트 순번이 뒤여도 묶음이 앞이면 먼저
+        List<ExploreDtos.Card> cards = ExploreText.cardsInGroups(List.of(List.of(third), List.of(DOC, other)));
+        assertThat(cards).extracting(ExploreDtos.Card::id).containsExactly("130-1", "130-2", "122-1", "123-1", "123-2");
+        // 거의 같은 글은 묶음을 넘어서도 먼저 나온 하나만
+        assertThat(ExploreText.cardsInGroups(List.of(List.of(other), List.of(DOC))))
+                .extracting(ExploreDtos.Card::id).containsExactly("123-1", "123-2", "122-1");
+    }
+
+    @Test
     void 구절은_한_조각_안에_그대로_있어야_한다() {
         Student s = new Student(List.of("인스타그램 계정을 1년 동안 운영했어요."), List.of("인플루언서 소통 및 관리"), "뷰티");
         assertThat(ExploreVerifier.studentQuote("인스타그램 계정을 1년 동안 운영했어요", s)).isPresent();
