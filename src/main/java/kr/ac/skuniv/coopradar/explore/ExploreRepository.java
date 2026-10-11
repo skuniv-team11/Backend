@@ -15,8 +15,10 @@ import kr.ac.skuniv.coopradar.common.ApiException;
 import kr.ac.skuniv.coopradar.common.ErrorCode;
 import kr.ac.skuniv.coopradar.common.Times;
 import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Verdict;
+import kr.ac.skuniv.coopradar.explore.ExploreDtos.Basis;
 import kr.ac.skuniv.coopradar.explore.ExploreDtos.Fallback;
 import kr.ac.skuniv.coopradar.explore.ExploreDtos.Fit;
+import kr.ac.skuniv.coopradar.explore.ExploreDtos.Link;
 import kr.ac.skuniv.coopradar.explore.ExploreDtos.Source;
 import kr.ac.skuniv.coopradar.explore.ExploreDtos.WhyText;
 import kr.ac.skuniv.coopradar.job.InstitutionRef;
@@ -28,7 +30,7 @@ import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
-/** 직무 탐색 읽기·쓰기(ADR-0031). 시드 테이블은 읽기만 한다. 학생 글은 로그에 남기지 않는다. */
+/** 직무 탐색 읽기·쓰기(ADR-0031·0038). 시드 테이블은 읽기만 한다. 학생 글은 로그에 남기지 않는다. */
 @Repository
 public class ExploreRepository {
 
@@ -72,9 +74,9 @@ public class ExploreRepository {
                OffsetDateTime createdAt) {
     }
 
-    /** 저장된 탐색 자리. */
-    record Stored(int rank, int jobId, Verdict verdict, Fit fit, String studentQuote, String jobQuote,
-                  String documentTitle, Integer page, String reason) {
+    /** 저장된 탐색 자리. fit·basis·학생 구절·직무 구절은 대표 짝(links의 첫 짝), 규칙 추천이면 fit NONE·links 빈 목록. */
+    record Stored(int rank, int jobId, Verdict verdict, Fit fit, Basis basis, String studentQuote, String jobQuote,
+                  String documentTitle, Integer page, String reason, List<Link> links) {
     }
 
     /** 새로 저장할 탐색. */
@@ -109,12 +111,16 @@ public class ExploreRepository {
 
     List<Stored> items(long runId) {
         return db.sql("""
-                        SELECT rank, job_id, verdict, fit, student_quote, job_quote, document_title, page, reason
+                        SELECT rank, job_id, verdict, fit, basis, student_quote, job_quote, document_title, page, reason,
+                               links::text AS links
                         FROM explore_item WHERE run_id = :run ORDER BY rank""")
                 .param("run", runId)
                 .query((rs, n) -> new Stored(rs.getInt("rank"), rs.getInt("job_id"), Verdict.valueOf(rs.getString("verdict")),
-                        Fit.valueOf(rs.getString("fit")), rs.getString("student_quote"), rs.getString("job_quote"),
-                        rs.getString("document_title"), page(rs, "page"), rs.getString("reason")))
+                        Fit.valueOf(rs.getString("fit")),
+                        rs.getString("basis") == null ? null : Basis.valueOf(rs.getString("basis")),
+                        rs.getString("student_quote"), rs.getString("job_quote"),
+                        rs.getString("document_title"), page(rs, "page"), rs.getString("reason"),
+                        JSON.readValue(rs.getString("links"), new TypeReference<List<Link>>() { })))
                 .list();
     }
 
@@ -165,19 +171,22 @@ public class ExploreRepository {
                 .single();
         for (Stored i : items) {
             db.sql("""
-                            INSERT INTO explore_item (run_id, rank, job_id, verdict, fit, student_quote, job_quote,
-                                                      document_title, page, reason)
-                            VALUES (:run, :rank, :job, :verdict, :fit, :sq, :jq, :doc, :page, :reason)""")
+                            INSERT INTO explore_item (run_id, rank, job_id, verdict, fit, basis, student_quote, job_quote,
+                                                      document_title, page, reason, links)
+                            VALUES (:run, :rank, :job, :verdict, :fit, :basis, :sq, :jq, :doc, :page, :reason,
+                                    CAST(:links AS jsonb))""")
                     .param("run", saved.id())
                     .param("rank", i.rank())
                     .param("job", i.jobId())
                     .param("verdict", i.verdict().name())
                     .param("fit", i.fit().name())
+                    .param("basis", i.basis() == null ? null : i.basis().name())
                     .param("sq", i.studentQuote())
                     .param("jq", i.jobQuote())
                     .param("doc", i.documentTitle())
                     .param("page", i.page())
                     .param("reason", i.reason())
+                    .param("links", JSON.writeValueAsString(i.links()))
                     .update();
         }
         new LinkedHashMap<>(whys).forEach((jobId, why) -> insertWhy(saved.id(), jobId, why));

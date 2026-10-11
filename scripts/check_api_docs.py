@@ -68,8 +68,9 @@ FIELD_CODE = {"verdict": "verdict", "layer": "reasonLayer", "result": "reasonRes
               "role": "role",
               "provider": "commuteProvider", "unavailableReason": "commuteUnavailable"}
 # 직무 탐색(ADR-0031)은 같은 필드 이름에 다른 코드 묶음을 쓴다
-FILE_FIELD_CODE = {name: {"fit": "exploreFit", "source": "exploreSource", "fallbackReason": "exploreFallback",
-                          "judgedWith": "exploreJudgedWith"} for name in ("explore.json", "explore-why.json")}
+FILE_FIELD_CODE = {name: {"fit": "exploreFit", "kind": "exploreFit", "basis": "exploreBasis", "source": "exploreSource",
+                          "fallbackReason": "exploreFallback", "judgedWith": "exploreJudgedWith"}
+                   for name in ("explore.json", "explore-why.json")}
 FILE_FIELD_CODE["job-career.json"] = {"relation": "ncsRelation", "origin": "occupationOrigin"}
 FILE_FIELD_CODE["career-report.json"] = {"relation": "ncsRelation", "origin": "occupationOrigin", "source": "careerSource",
                                          "fallbackReason": "exploreFallback"}
@@ -177,7 +178,8 @@ for j in docs["eligibility.json"]["jobs"]:
 s = docs["eligibility.json"]["summary"]
 check(s["eligible"] + s["needsCheck"] + s["ineligible"] == s["total"], "판정 요약 합계")
 
-# 직무 탐색(ADR-0031): 후보 합계, 순위 연속, 지원 불가 없음, fit = 순위(AI), why는 1~3위만, AI면 대신 사유 없음
+# 직무 탐색(ADR-0031·0038): 후보 합계, 순위 연속, 지원 불가 없음, fit = 근거 단계(순서 규칙의 첫 기준), why는 1~3위만,
+# AI면 대신 사유 없음
 ex = docs["explore.json"]
 for name in ("explore.json", "explore-cards.json"):
     c = docs[name]["candidates"]
@@ -187,9 +189,24 @@ check(len(xs) <= 5 and [i["rank"] for i in xs] == list(range(1, len(xs) + 1)), "
 check(all(i["verdict"] in ("ELIGIBLE", "NEEDS_CHECK") for i in xs), "탐색에 지원 불가 포함")
 check(len({i["jobId"] for i in xs}) == len(xs), "탐색 직무 중복")
 check((ex["source"] == "AI") == (ex["fallbackReason"] is None), "탐색 source ↔ fallbackReason")
+TIER = {"SAME_TASK": 4, "TRANSFER": 3, "WISH": 2, "NONE": 0}
+def tier(link):
+    return TIER[link["kind"]] - (1 if link["kind"] == "WISH" and link["basis"] == "INTEREST" else 0)
 if ex["source"] == "AI":
-    check(all(i["fit"] == ("STRONG" if i["rank"] <= 2 else "GOOD") for i in xs), "탐색 fit은 순위(1~2 STRONG, 3~5 GOOD)")
-    check(all(i["evidence"]["studentQuote"] for i in xs), "AI 탐색 근거에 학생 구절")
+    check(all(i["fit"] in ("SAME_TASK", "TRANSFER", "WISH") and i["links"] for i in xs), "AI 탐색 fit은 근거 단계, 짝이 있음")
+    check(all(i["evidence"]["studentQuote"] and i["evidence"]["basis"] for i in xs), "AI 탐색 근거에 학생 구절·출처")
+    for i in xs:
+        ls, e = i["links"], i["evidence"]
+        check([tier(l) for l in ls] == sorted((tier(l) for l in ls), reverse=True), f"탐색 {i['jobId']} 짝은 단계 높은 것부터")
+        check(ls[0]["kind"] == i["fit"] and (ls[0]["basis"], ls[0]["studentQuote"], ls[0]["jobQuote"])
+              == (e["basis"], e["studentQuote"], e["jobQuote"]), f"탐색 {i['jobId']} fit·evidence = 첫 짝")
+        check(all((l["kind"] == "WISH") == (l["basis"] in ("CARD", "INTEREST")) for l in ls),
+              f"탐색 {i['jobId']} 해 본 일 짝은 SAME_TASK·TRANSFER, 카드·관심 분야 짝은 WISH")
+    tiers = [tier(i["links"][0]) for i in xs]
+    check(tiers == sorted(tiers, reverse=True), "탐색 순서의 첫 기준은 근거 단계")
+else:
+    check(all(i["fit"] == "NONE" and i["links"] == [] and i["evidence"]["basis"] is None for i in xs),
+          "규칙 추천으로 대신하면 fit NONE · links 없음")
 check(all(i["why"] is None or i["rank"] <= 3 for i in xs), "탐색 때 만드는 '왜 맞나요'는 1~3위만")
 check(ex["blockedBy"] == [] or xs == [], "탐색 blockedBy는 items가 비었을 때만")
 card_ids = [c["id"] for c in docs["explore-cards.json"]["cards"]]

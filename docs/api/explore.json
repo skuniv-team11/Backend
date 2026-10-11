@@ -38,19 +38,46 @@
         "logoPath": "/logos/3.png"
       },
       "verdict": "ELIGIBLE",
-      "fit": "STRONG",
+      "fit": "SAME_TASK",
       "evidence": {
+        "basis": "EXPERIENCE",
         "studentQuote": "졸업작품 홍보용 인스타그램 계정을 1년 동안 운영하면서",
         "jobQuote": "(가상) 자사 SNS 채널 콘텐츠 운영 지원",
         "documentTitle": "누리뷰티(가상) 운영계획서",
         "page": 3,
-        "reason": "인스타그램 계정을 1년 동안 운영하며 반응을 비교한 경험이 SNS 채널 운영 지원과 바로 이어져요."
+        "reason": "인스타그램 계정을 1년 동안 운영하며 반응을 비교한 경험이 SNS 채널 운영 지원과 같은 일이에요."
       },
+      "links": [
+        {
+          "kind": "SAME_TASK",
+          "basis": "EXPERIENCE",
+          "studentQuote": "졸업작품 홍보용 인스타그램 계정을 1년 동안 운영하면서",
+          "jobQuote": "(가상) 자사 SNS 채널 콘텐츠 운영 지원",
+          "documentTitle": "누리뷰티(가상) 운영계획서",
+          "page": 3
+        },
+        {
+          "kind": "SAME_TASK",
+          "basis": "EXPERIENCE",
+          "studentQuote": "게시 시간과 첫 문장을 바꿔 가며 저장 수를 비교했어요",
+          "jobQuote": "(가상) 자사 SNS 채널 콘텐츠 운영 지원",
+          "documentTitle": "누리뷰티(가상) 운영계획서",
+          "page": 3
+        },
+        {
+          "kind": "WISH",
+          "basis": "CARD",
+          "studentQuote": "(가상) 자사 SNS 채널 콘텐츠 운영 지원",
+          "jobQuote": "(가상) 자사 SNS 채널 콘텐츠 운영 지원",
+          "documentTitle": "누리뷰티(가상) 운영계획서",
+          "page": 3
+        }
+      ],
       "why": {
-        "summary": "인스타그램을 1년 동안 운영하며 반응을 비교해 본 경험이 이 자리의 SNS 채널 운영과 바로 이어져요.",
+        "summary": "인스타그램을 1년 동안 운영하며 반응을 비교해 본 경험이 이 자리의 SNS 채널 운영과 같은 일이에요.",
         "points": [
           {
-            "text": "게시 시간과 첫 문장을 바꿔 가며 저장 수를 비교한 경험은, 채널 콘텐츠를 운영하며 반응을 살피는 일에 바로 쓸 수 있어요.",
+            "text": "게시 시간과 첫 문장을 바꿔 가며 저장 수를 비교한 경험은, 채널 콘텐츠를 운영하며 반응을 살피는 일에 쓸 수 있어요.",
             "studentQuote": "게시 시간과 첫 문장을 바꿔 가며 저장 수를 비교했어요",
             "jobQuote": "(가상) 자사 SNS 채널 콘텐츠 운영 지원"
           },
@@ -83,14 +110,33 @@
         "logoPath": "/logos/5.png"
       },
       "verdict": "NEEDS_CHECK",
-      "fit": "STRONG",
+      "fit": "SAME_TASK",
       "evidence": {
+        "basis": "EXPERIENCE",
         "studentQuote": "게시 시간과 첫 문장을 바꿔 가며 저장 수를 비교했어요",
         "jobQuote": "(가상) 브랜드 숏폼 콘텐츠 기획",
         "documentTitle": "한빛코스메틱(가상) 운영계획서",
         "page": null,
-        "reason": "게시 요소를 바꿔 가며 반응을 비교한 경험이 숏폼 콘텐츠를 기획하고 고치는 일에 쓰여요."
+        "reason": "게시 요소를 바꿔 가며 반응을 비교한 경험이 숏폼 콘텐츠를 기획하고 고치는 일과 같은 일이에요."
       },
+      "links": [
+        {
+          "kind": "SAME_TASK",
+          "basis": "EXPERIENCE",
+          "studentQuote": "게시 시간과 첫 문장을 바꿔 가며 저장 수를 비교했어요",
+          "jobQuote": "(가상) 브랜드 숏폼 콘텐츠 기획",
+          "documentTitle": "한빛코스메틱(가상) 운영계획서",
+          "page": null
+        },
+        {
+          "kind": "WISH",
+          "basis": "CARD",
+          "studentQuote": "(가상) 브랜드 숏폼 콘텐츠 기획",
+          "jobQuote": "(가상) 브랜드 숏폼 콘텐츠 기획",
+          "documentTitle": "한빛코스메틱(가상) 운영계획서",
+          "page": null
+        }
+      ],
       "why": {
         "summary": "계정을 운영하며 콘텐츠를 만들어 본 경험이 숏폼 콘텐츠 기획으로 이어져요.",
         "points": [
@@ -120,14 +166,25 @@
         "logoPath": "/logos/5.png"
       },
       "verdict": "ELIGIBLE",
-      "fit": "GOOD",
+      "fit": "TRANSFER",
       "evidence": {
-        "studentQuote": "화장품 매장 아르바이트에서 손님이 자주 묻는 질문을 메모해 두고",
+        "basis": "EXPERIENCE",
+        "studentQuote": "손님이 자주 묻는 질문을 메모해 두고 진열을 바꿔 봤어요",
         "jobQuote": "(가상) 기획전 제작 및 운영",
         "documentTitle": "한빛코스메틱(가상) 운영계획서",
         "page": 4,
-        "reason": "손님 질문을 모아 진열을 바꿔 본 경험이 기획전을 만들고 운영하는 일과 이어져요."
+        "reason": "손님 질문을 모아 진열을 바꿔 본 경험이 기획전을 만들고 운영하는 일에 쓰여요."
       },
+      "links": [
+        {
+          "kind": "TRANSFER",
+          "basis": "EXPERIENCE",
+          "studentQuote": "손님이 자주 묻는 질문을 메모해 두고 진열을 바꿔 봤어요",
+          "jobQuote": "(가상) 기획전 제작 및 운영",
+          "documentTitle": "한빛코스메틱(가상) 운영계획서",
+          "page": 4
+        }
+      ],
       "why": null
     },
     {
@@ -141,14 +198,33 @@
         "logoPath": "/logos/3.png"
       },
       "verdict": "ELIGIBLE",
-      "fit": "GOOD",
+      "fit": "WISH",
       "evidence": {
-        "studentQuote": "학과 졸업작품 홍보용 인스타그램 계정을 1년 동안 운영하면서",
+        "basis": "CARD",
+        "studentQuote": "(가상) 인플루언서 소통 및 관리",
         "jobQuote": "(가상) 인플루언서 소통 및 관리",
         "documentTitle": "누리뷰티(가상) 운영계획서",
         "page": null,
-        "reason": "인스타그램 계정을 운영한 경험이 인플루언서와 소통하며 SNS 채널을 관리하는 일에 쓰여요."
+        "reason": "고른 '하고 싶은 일'과 같은 일을 하는 자리예요."
       },
+      "links": [
+        {
+          "kind": "WISH",
+          "basis": "CARD",
+          "studentQuote": "(가상) 인플루언서 소통 및 관리",
+          "jobQuote": "(가상) 인플루언서 소통 및 관리",
+          "documentTitle": "누리뷰티(가상) 운영계획서",
+          "page": null
+        },
+        {
+          "kind": "WISH",
+          "basis": "INTEREST",
+          "studentQuote": "뷰티 브랜드 SNS 마케팅",
+          "jobQuote": "(가상) 인스타그램 등 SNS 채널 관리",
+          "documentTitle": "누리뷰티(가상) 운영계획서",
+          "page": null
+        }
+      ],
       "why": null
     }
   ],

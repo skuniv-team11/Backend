@@ -18,7 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Claude(Sonnet)로 탐색 순서와 '왜 맞나요'를 만든다(ADR-0031). 구조화 출력으로 받고, 생각 단계는 쓰지 않는다
+ * Claude(Sonnet)로 탐색 짝(ADR-0038)과 '왜 맞나요'를 만든다(ADR-0031). 구조화 출력으로 받고, 생각 단계는 쓰지 않는다
  * ({@code between_tools} — 도구가 없어 생각하지 않음, E7과 같은 설정). 시스템 글(후보 직무 원문 + 규칙)은 프롬프트 캐시에 둔다.
  * 키가 없으면 부르지 않는다. 재시도 없이 제한 시간 안에 끝내고, 실패하면 빈 값. 학생 글·응답은 로그에 남기지 않는다.
  */
@@ -26,7 +26,8 @@ import org.springframework.stereotype.Component;
 public class ClaudeExploreWriter implements ExploreWriter {
 
     private static final Logger log = LoggerFactory.getLogger(ClaudeExploreWriter.class);
-    private static final long RANK_MAX_TOKENS = 1500;
+    /** 자리 10곳 × 짝 5개까지(ADR-0038, E9 실측 출력 중앙값 약 800토큰). */
+    private static final long RANK_MAX_TOKENS = 4000;
     private static final long WHY_MAX_TOKENS = 1200;
 
     private final ExploreProperties props;
@@ -55,7 +56,7 @@ public class ClaudeExploreWriter implements ExploreWriter {
 
     @Override
     public Optional<RankDraft> rank(String system, String user) {
-        return call(system, user, RANK_MAX_TOKENS, RankDraft.class, "탐색 순서");
+        return call(system, user, RANK_MAX_TOKENS, RankDraft.class, "탐색 짝");
     }
 
     @Override

@@ -426,14 +426,24 @@ S.update({
         "jobId": ID, "title": STR, "team": STR,
         "institution": R("InstitutionRef"),
         "verdict": d(R("Verdict"), "ELIGIBLE 또는 NEEDS_CHECK(지원 불가는 나오지 않는다)"),
-        "fit": d(R("ExploreFit"), "1~2위 STRONG, 3~5위 GOOD(RULE이면 추천 적합도 HIGH → STRONG, MEDIUM → GOOD)"),
+        "fit": d(R("ExploreFit"), "근거 단계 — 그 자리 짝 중 가장 높은 것(SAME_TASK · TRANSFER · WISH). 순위로 정하지 않는다. "
+                 "RULE이면 NONE(ADR-0038)"),
         "evidence": obj({
+            "basis": d(nul(R("ExploreBasis")), "대표 짝(links의 첫 짝)의 학생 쪽 출처. RULE이면 null"),
             "studentQuote": d(nul(STR), "학생 글에서 그대로 옮긴 구절. RULE이면 null"),
             "jobQuote": d(nul(STR), "직무 원문에서 그대로 옮긴 구절"),
             "documentTitle": nul(STR),
             "page": d(nul(PAGE), "jobQuote가 든 운영계획서 쪽. 부서·직무명이면 null, 주차 계획은 직무 개요와 같은 쪽일 때만"),
-            "reason": d(STR, "해요체 한 문장. RULE이면 reasonTemplate"),
+            "reason": d(STR, "해요체 한 문장(규칙을 어기면 단계 문장). RULE이면 reasonTemplate"),
         }),
+        "links": d(arr(obj({
+            "kind": d(R("ExploreFit"), "이 짝의 단계. 해 본 일 구절이면 SAME_TASK·TRANSFER, 카드·관심 분야 구절이면 WISH"),
+            "basis": R("ExploreBasis"),
+            "studentQuote": STR,
+            "jobQuote": d(nul(STR), "고른 카드가 나온 자리를 규칙으로 넣었는데 원문 칸에서 찾지 못하면 null"),
+            "documentTitle": nul(STR),
+            "page": nul(PAGE),
+        })), "대조를 통과한 짝 전부, 단계 높은 것부터. RULE이면 빈 목록"),
         "why": d(nul(R("ExploreWhyText")), "1~3위는 탐색 때 함께 만든다. null이면 GET /api/me/explore/jobs/{jobId}/why"),
     }),
     "Explore": obj({
@@ -659,7 +669,7 @@ S.update({
     "DemoAdvanced": obj({"to": R("DemoStep"), "changed": d(COUNT, "바뀐 지원서 수(단계마다 셈)")}),
     "ExploreJobWhy": obj({
         "jobId": ID,
-        "fit": d(R("ExploreFit"), "탐색 결과 안이면 그 값, 밖이면 WEAK"),
+        "fit": d(R("ExploreFit"), "탐색 결과 안이면 그 값, 밖이면 NONE"),
         "why": nul(R("ExploreWhyText")),
         "fallbackReason": d(nul(R("ExploreFallback")), "why가 null인 까닭(NO_KEY·LIMITED·AI_ERROR·VERIFY_FAILED)"),
     }),

@@ -13,7 +13,7 @@ public interface ExploreWriter {
     /** 모델 이름(결과에 남긴다). */
     String model();
 
-    /** 탐색 순서. system = 후보 직무 원문 + 규칙(같은 후보면 같은 글 — 프롬프트 캐시). */
+    /** 탐색 짝(ADR-0038). system = 후보 직무 원문 + 규칙(같은 후보면 같은 글 — 프롬프트 캐시). */
     Optional<RankDraft> rank(String system, String user);
 
     /** 직무 하나의 '왜 맞나요'. */

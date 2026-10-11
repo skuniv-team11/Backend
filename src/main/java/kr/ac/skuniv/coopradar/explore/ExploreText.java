@@ -6,6 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
+import kr.ac.skuniv.coopradar.explore.ExploreDtos.Basis;
 import kr.ac.skuniv.coopradar.recommend.EvidenceText;
 
 /**
@@ -124,6 +125,16 @@ public final class ExploreText {
     record Student(List<String> experiences, List<String> cards, String interestText) {
 
         String text() {
+            return text(List.of());
+        }
+
+        /**
+         * AI에 보내는 학생 글. 탐색(ADR-0038)은 고른 카드 앞에 그 카드가 나온 자리 번호를 붙인다 — 그 자리는 서버가 넣으므로
+         * AI는 카드와 같은 일을 다른 말로 적은 자리를 찾는다.
+         *
+         * @param cardJobIds 카드마다 나온 자리 번호(카드와 같은 순서). 비우면 번호 없이
+         */
+        String text(List<Integer> cardJobIds) {
             StringBuilder b = new StringBuilder();
             if (experiences.isEmpty()) {
                 b.append("해 본 일: 쓰지 않음\n");
@@ -131,7 +142,11 @@ public final class ExploreText {
             for (int i = 0; i < experiences.size(); i++) {
                 b.append("해 본 일 ").append(i + 1).append(": ").append(experiences.get(i)).append('\n');
             }
-            b.append(cards.isEmpty() ? "하고 싶은 일: 고르지 않음" : "하고 싶은 일(고른 카드): " + String.join(" / ", cards))
+            List<String> shown = new ArrayList<>();
+            for (int i = 0; i < cards.size(); i++) {
+                shown.add(cardJobIds.size() == cards.size() ? "[" + cardJobIds.get(i) + "] " + cards.get(i) : cards.get(i));
+            }
+            b.append(cards.isEmpty() ? "하고 싶은 일: 고르지 않음" : "하고 싶은 일(고른 카드): " + String.join(" / ", shown))
                     .append('\n');
             b.append("관심 분야: ").append(interestText == null || interestText.isBlank() ? "적지 않음" : interestText);
             return b.toString();
@@ -139,13 +154,27 @@ public final class ExploreText {
 
         /** 학생 구절을 찾을 조각(경험 · 카드 · 관심 분야 하나씩). */
         List<String> pieces() {
-            List<String> out = new ArrayList<>(experiences);
-            out.addAll(cards);
+            return typedPieces().stream().map(StudentPiece::text).toList();
+        }
+
+        /** 학생 구절을 찾을 조각과 그 출처. 해 본 일이 먼저다(같은 구절이 둘에 있으면 해 본 일로 본다). */
+        List<StudentPiece> typedPieces() {
+            List<StudentPiece> out = new ArrayList<>();
+            experiences.forEach(e -> out.add(new StudentPiece(Basis.EXPERIENCE, e)));
+            cards.forEach(c -> out.add(new StudentPiece(Basis.CARD, c)));
             if (interestText != null && !interestText.isBlank()) {
-                out.add(interestText);
+                out.add(new StudentPiece(Basis.INTEREST, interestText));
             }
             return out;
         }
+
+        /** 키워드 유사도(같은 단계 끝 동점 가르기)에 쓰는 학생 글 전부. */
+        String joined() {
+            return String.join(" ", pieces());
+        }
+    }
+
+    record StudentPiece(Basis basis, String text) {
     }
 
     /** 직무 원문의 칸. 쪽은 운영계획서 근거 쪽(field_evidence). */
@@ -179,7 +208,7 @@ public final class ExploreText {
         }
     }
 
-    /** 탐색 순서 시스템 글의 직무 한 칸(E7 job_card와 같은 모양·길이). */
+    /** 탐색 시스템 글의 직무 한 칸(E7 job_card와 같은 모양·길이). */
     static String rankCard(JobDoc d) {
         return "[" + d.jobId() + "] " + d.team() + " · " + d.title() + "\n"
                 + "하는 일: " + cut(d.overview(), 260) + "\n"
@@ -193,7 +222,7 @@ public final class ExploreText {
         StringBuilder b = new StringBuilder(student.text()).append("\n\n");
         b.append("# 자리 [").append(d.jobId()).append("] ").append(d.team()).append(" · ").append(d.title());
         if (outside) {
-            b.append(" (탐색 5곳 밖)");
+            b.append(" (탐색 결과 밖)");
         }
         b.append('\n');
         b.append("하는 일: ").append(orDash(d.overview())).append('\n');
@@ -290,6 +319,19 @@ public final class ExploreText {
             }
         }
         return out;
+    }
+
+    /** 거의 같은 카드 글인지(카드를 하나로 합칠 때와 같은 기준). 고른 카드가 나온 자리를 찾을 때 쓴다(ADR-0038). */
+    static boolean sameCard(String a, String b) {
+        return jaccard(bigrams(a), bigrams(b)) >= SAME_CARD;
+    }
+
+    /** 직무 원문 전부(부서·직무명·개요·교육 목표·요구 역량·주차 계획). 같은 단계 끝 동점을 가르는 키워드 유사도에 쓴다. */
+    static String fullText(JobDoc d) {
+        List<String> parts = new ArrayList<>(List.of(orDash(d.team()), orDash(d.title()), orDash(d.overview()),
+                orDash(d.educationGoal()), orDash(d.competencies())));
+        parts.addAll(d.weeklyPlan());
+        return String.join(" ", parts);
     }
 
     static Set<String> bigrams(String s) {

@@ -138,9 +138,15 @@
     "NO_CANDIDATES": "지원할 수 있는 자리 없음"
   },
   "exploreFit": {
-    "STRONG": "잘 맞음",
-    "GOOD": "맞음",
-    "WEAK": "덜 맞음"
+    "SAME_TASK": "해 본 일과 같은 일",
+    "TRANSFER": "해 본 일이 쓰이는 일",
+    "WISH": "하고 싶은 일과 같은 일",
+    "NONE": "이어진 근거 없음"
+  },
+  "exploreBasis": {
+    "EXPERIENCE": "해 본 일",
+    "CARD": "고른 하고 싶은 일",
+    "INTEREST": "관심 분야"
   },
   "exploreJudgedWith": {
     "SAVED_PROFILE": "저장한 프로필로 다시 판정",
