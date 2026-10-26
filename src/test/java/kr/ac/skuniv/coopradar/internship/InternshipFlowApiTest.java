@@ -1,6 +1,7 @@
 package kr.ac.skuniv.coopradar.internship;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -185,7 +186,10 @@ class InternshipFlowApiTest {
                 .getContentAsString(), "$.approval.token");
         mvc.perform(get("/api/approvals/" + lastToken)).andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("APPROVAL_NOT_FOUND"));
+        // 체험 학생의 기준일은 센터가 진행한 단계로 따라간다(ADR-0040): 매칭 확정 → 매칭 끝날
         perform(get("/api/me/internship"), student, null)
+                .andExpect(jsonPath("$.asOf").value("2026-07-28"))
+                .andExpect(jsonPath("$.now").value("MATCH"))
                 .andExpect(jsonPath("$.placement.jobId").value(122))
                 .andExpect(jsonPath("$.placement.result").isEmpty());
 
@@ -202,11 +206,19 @@ class InternshipFlowApiTest {
         dump("center-placement.json", notified);
         shape(notified, "getCenterPlacement");
 
-        // 마무리: 수행결과보고서는 커리어 리포트가 있어야 낸다
+        // 합격 알림 → 협약·보험 시작일. asOf를 주면 그날 그대로
+        perform(get("/api/me/internship"), student, null)
+                .andExpect(jsonPath("$.asOf").value("2026-08-10"))
+                .andExpect(jsonPath("$.now").value("CONTRACT"))
+                .andExpect(jsonPath("$.placement.result").value("PASS"));
+        perform(get("/api/me/internship").param("asOf", "2026-07-23"), student, null)
+                .andExpect(jsonPath("$.asOf").value("2026-07-23"));
+
+        // 마무리: 수행결과보고서는 커리어 리포트가 있어야 낸다. 체험 학생이 낸 시각은 기준일 날짜(지원서 낸 시각과 같은 방식)
         perform(put("/api/me/internship/documents/REPORT"), student, null)
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("CAREER_REPORT_REQUIRED"));
         perform(put("/api/me/internship/documents/CREDIT"), student, null)
-                .andExpect(jsonPath("$.documents.credit").isNotEmpty());
+                .andExpect(jsonPath("$.documents.credit", startsWith("2026-08-10T")));
         perform(put("/api/me/internship/documents/SURVEY"), student, null).andExpect(status().isOk());
         perform(post("/api/me/career-report"), student, "{\"jobId\": 122, \"consent\": true, \"practiceText\": \""
                 + "인스타그램 계정의 주간 게시물 성과를 표로 정리해 팀 회의에서 공유했습니다. ".repeat(4) + "\"}")
@@ -237,7 +249,10 @@ class InternshipFlowApiTest {
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertThat(csv).startsWith("﻿접수번호,학번,성명").contains("\"2026-2-007\"").contains("\"예시 학생\"")
                 .contains("\"표준 현장실습 D\",12");
+        // 기관 서류(평가표·출근부)를 받으면 종료·제출 시작일
         String internship = perform(get("/api/me/internship"), student, null)
+                .andExpect(jsonPath("$.asOf").value("2026-12-12"))
+                .andExpect(jsonPath("$.now").value("CLOSE"))
                 .andExpect(jsonPath("$.placement.result").value("PASS"))
                 .andExpect(jsonPath("$.documents.creditApproval.status").value("APPROVED"))
                 .andReturn().getResponse().getContentAsString();
