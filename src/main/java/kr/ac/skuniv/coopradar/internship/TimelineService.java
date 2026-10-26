@@ -1,7 +1,9 @@
 package kr.ac.skuniv.coopradar.internship;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -13,6 +15,7 @@ import java.util.regex.Pattern;
 import kr.ac.skuniv.coopradar.auth.AuthUser;
 import kr.ac.skuniv.coopradar.common.ApiException;
 import kr.ac.skuniv.coopradar.common.ErrorCode;
+import kr.ac.skuniv.coopradar.common.Times;
 import kr.ac.skuniv.coopradar.internship.ApplicationRepository.ApprovalRow;
 import kr.ac.skuniv.coopradar.internship.ApplicationRepository.CloseRow;
 import kr.ac.skuniv.coopradar.internship.ApplicationRepository.Demo;
@@ -49,7 +52,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 내 현장실습(#44·#45, ADR-0033): 회차 일정 11단계를 기준일로 나누고(완료·지금·앞으로), 그 위에 내 지원서·매칭·선발·실습·
- * 마무리 서류를 얹는다. 기준일은 asOf → 체험 학생의 기준일 → 오늘(한국 시간).
+ * 마무리 서류를 얹는다. 기준일은 asOf → 체험 학생의 기준일 → 오늘(한국 시간). 체험 학생의 기준일은 시점의 날(demoToday)과
+ * 같은 묶음 센터가 진행한 단계의 날 중 늦은 날이다(ADR-0040).
  * 선발 결과는 센터가 학생에게 알린 뒤에만 보인다. 실습 주차는 직무의 실습 기간으로 센다.
  */
 @Service
@@ -76,7 +80,8 @@ public class TimelineService {
     public Internship timeline(AuthUser user, LocalDate requestedAsOf) {
         var round = rounds.current();
         Demo demo = repo.demo(user.id());
-        LocalDate asOf = dates.progress(requestedAsOf, demo.today());
+        Row row = repo.byUser(user.id(), round.id()).orElse(null);
+        LocalDate asOf = asOf(requestedAsOf, demo, row, round.stages());
         AsOf closing = ReferenceDates.on(asOf, round);
         Stages stages = stages(round.stages(), asOf);
         List<PlanPick> picks = repo.plan(user.id()).stream()
@@ -84,7 +89,6 @@ public class TimelineService {
                         p.ncsCode() == null ? null : new NcsRef(p.ncsCode(), p.ncsName()),
                         closing.closed(p.closesOn())))
                 .toList();
-        Row row = repo.byUser(user.id(), round.id()).orElse(null);
         ApplicationBrief brief = null;
         Placement placement = null;
         Documents documents = null;
@@ -122,8 +126,61 @@ public class TimelineService {
             case CREDIT -> "credit_submitted_at";
             case SURVEY -> "survey_submitted_at";
         };
-        repo.setClose(row.id(), column, clock.instant());
+        repo.setClose(row.id(), column, stamp(user, row));
         return timeline(user, null);
+    }
+
+    /**
+     * 기준일(ADR-0040). asOf를 주면 그날, 아니면 체험 학생은 시점의 날(demoToday)과 지원서가 닿은 단계의 날({@link #reached}) 중
+     * 늦은 날, 가입 계정은 오늘. 같은 묶음 센터가 매칭·선발·마무리를 진행하면(시연 버튼 포함) 학생 화면도 그 단계로 넘어간다.
+     */
+    LocalDate asOf(LocalDate requested, Demo demo, Row row, List<StageInfo> stages) {
+        LocalDate base = dates.progress(requested, demo.today());
+        if (requested != null || demo.today() == null || row == null) {
+            return base;
+        }
+        CloseRow close = passed(row) ? repo.closes(List.of(row.id())).get(row.id()) : null;
+        return later(base, reached(row, close, stages));
+    }
+
+    /**
+     * 지원서가 닿은 단계의 날: 매칭 확정 → 매칭 끝날, 선발 결과 알림 → 합격은 협약·보험 시작일·불합격은 면접·선발 끝날,
+     * 기관 서류(평가표·출근부) 받음 → 종료·제출 시작일. 매칭 전이면 null.
+     */
+    static LocalDate reached(Row r, CloseRow close, List<StageInfo> stages) {
+        if (r.status() != Status.MATCHED || r.matchedAt() == null) {
+            return null;
+        }
+        LocalDate on = date(stages, Stage.MATCH, false);
+        if (r.notifiedAt() != null) {
+            on = later(on, r.result() == Result.PASS ? date(stages, Stage.CONTRACT, true) : date(stages, Stage.SELECT, false));
+            if (r.result() == Result.PASS && close != null && (close.evaluation() != null || close.attendance() != null)) {
+                on = later(on, date(stages, Stage.CLOSE, true));
+            }
+        }
+        return on;
+    }
+
+    /** 학생 서류를 낸 시각. 체험 학생은 기준일 + 지금 시각(지원서 낸 시각과 같은 방식), 가입 계정은 지금. */
+    private Instant stamp(AuthUser user, Row row) {
+        Demo demo = repo.demo(user.id());
+        if (demo.today() == null) {
+            return clock.instant();
+        }
+        LocalDate on = asOf(null, demo, row, rounds.current().stages());
+        return on.atTime(LocalTime.now(clock.withZone(Times.KST))).atZone(Times.KST).toInstant();
+    }
+
+    private static LocalDate date(List<StageInfo> stages, Stage code, boolean start) {
+        return stages.stream().filter(s -> s.code() == code).findFirst()
+                .map(s -> start ? s.startsOn() : s.endsOn()).orElse(null);
+    }
+
+    private static LocalDate later(LocalDate a, LocalDate b) {
+        if (a == null) {
+            return b;
+        }
+        return b != null && b.isAfter(a) ? b : a;
     }
 
     static boolean passed(Row r) {
