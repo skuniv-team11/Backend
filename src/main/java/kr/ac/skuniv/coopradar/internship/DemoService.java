@@ -6,7 +6,6 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -102,11 +101,8 @@ public class DemoService {
         }
     }
 
-    static final Instant MATCHED_AT = at(LocalDate.of(2026, 7, 28), 17);
-    static final Instant NOTIFIED_AT = at(LocalDate.of(2026, 8, 5), 17);
-
     private static Instant at(LocalDate day, int hour) {
-        return day.atTime(LocalTime.of(hour, 0)).atZone(Times.KST).toInstant();
+        return DemoTimes.at(day, hour);
     }
 
     // ───────────── 체험 계정 ─────────────
@@ -200,9 +196,9 @@ public class DemoService {
                 p.certificates())));
         approveDemo(id, submitted.minusSeconds(3600));
         repo.receiveAt(id, at(t.submittedOn().plusDays(1), 10));
-        repo.setPlacementDirect(id, 1, MATCHED_AT, t.interview(), t.mode(), t.result(), NOTIFIED_AT);
+        repo.setPlacementDirect(id, 1, DemoTimes.MATCHED_AT, t.interview(), t.mode(), t.result(), DemoTimes.NOTIFIED_AT);
         if (stage == GuestStage.DONE) {
-            closeDemo(id, t.close(), at(LocalDate.of(2026, 12, 16), 10));
+            closeDemo(id, t.close(), DemoTimes.CLOSED_AT);
         }
     }
 
@@ -250,6 +246,7 @@ public class DemoService {
      * 체험 센터 계정의 묶음을 그 단계까지 한 번에 진행한다(앞 단계도 함께). 가입 계정은 403 DEMO_ONLY.
      * RECEIVED 낸 지원서 접수 · MATCHED 지망 고르지 않은 지원자를 1지망으로 매칭하고 확정 · SELECTED 면접 일정·결과를 넣고 알림 ·
      * CLOSING 기관 서류(평가표·출근부)를 받고, 가상 지원자는 학생 서류·학과(부)장 승인까지. 보완 요청 중인 지원서는 그대로 둔다.
+     * 처리 시각은 일정의 날이다({@link DemoTimes}, ADR-0041).
      */
     @Transactional
     public Advanced advance(AuthUser user, DemoStep to) {
@@ -265,18 +262,18 @@ public class DemoService {
         TEMPLATE.applicants().forEach(v -> byReceipt.put(v.receiptNo(), v));
         for (Row r : repo.inScope(scope, roundId)) {
             if (r.status() == Status.SUBMITTED) {
-                repo.receive(r.id(), now);
+                repo.receive(r.id(), DemoTimes.received(r, now));
                 changed++;
             }
         }
         if (to.compareTo(DemoStep.MATCHED) >= 0) {
             for (Row r : repo.inScope(scope, roundId)) {
                 if (r.status() == Status.RECEIVED && r.matchedRank() == null) {
-                    repo.setMatchedRank(r.id(), 1, now);
+                    repo.setMatchedRank(r.id(), 1, DemoTimes.MATCHED_AT);
                     changed++;
                 }
             }
-            changed += repo.confirmMatches(scope, roundId, now);
+            changed += repo.confirmMatches(scope, roundId, DemoTimes.MATCHED_AT);
         }
         if (to.compareTo(DemoStep.SELECTED) >= 0) {
             Student s = TEMPLATE.student();
@@ -289,7 +286,7 @@ public class DemoService {
                     changed++;
                 }
             }
-            changed += repo.notifyResults(scope, roundId, now);
+            changed += repo.notifyResults(scope, roundId, DemoTimes.NOTIFIED_AT);
         }
         if (to == DemoStep.CLOSING) {
             List<Row> passed = repo.inScope(scope, roundId).stream().filter(TimelineService::passed).toList();
@@ -301,11 +298,11 @@ public class DemoService {
                 }
                 Virtual v = r.virtual() && r.userId() == null ? byReceipt.get(r.receiptNo()) : null;
                 if (v != null && v.close() != null) {
-                    closeDemo(r.id(), v.close(), now);
+                    closeDemo(r.id(), v.close(), DemoTimes.CLOSED_AT);
                 } else if (!closes.containsKey(r.id()) || closes.get(r.id()).evaluation() == null) {
-                    repo.setClose(r.id(), "evaluation_received_at", now);
-                    repo.setClose(r.id(), "attendance_received_at", now);
-                    repo.requestApproval(r.id(), ApprovalKind.CREDIT, ApplicationViews.token(), null, now);
+                    repo.setClose(r.id(), "evaluation_received_at", DemoTimes.CLOSED_AT);
+                    repo.setClose(r.id(), "attendance_received_at", DemoTimes.CLOSED_AT);
+                    repo.requestApproval(r.id(), ApprovalKind.CREDIT, ApplicationViews.token(), null, DemoTimes.CLOSED_AT);
                 }
                 changed++;
             }

@@ -162,7 +162,8 @@ class InternshipFlowApiTest {
         perform(post("/api/me/application/submit"), student, null)
                 .andExpect(jsonPath("$.status").value("SUBMITTED")).andExpect(jsonPath("$.receiptNo").value("2026-2-007"));
         perform(put("/api/center/applications/" + mine + "/status"), center, "{\"status\": \"RECEIVED\"}")
-                .andExpect(jsonPath("$.status").value("RECEIVED"));
+                .andExpect(jsonPath("$.status").value("RECEIVED"))
+                .andExpect(jsonPath("$.receivedAt", startsWith("2026-07-")));
 
         // 매칭: 접수 완료한 사람을 모두 골라야 확정된다
         perform(post("/api/center/placement/confirm"), center, null)
@@ -190,6 +191,7 @@ class InternshipFlowApiTest {
         perform(get("/api/me/internship"), student, null)
                 .andExpect(jsonPath("$.asOf").value("2026-07-28"))
                 .andExpect(jsonPath("$.now").value("MATCH"))
+                .andExpect(jsonPath("$.placement.matchedAt").value("2026-07-28T17:00:00+09:00"))
                 .andExpect(jsonPath("$.placement.jobId").value(122))
                 .andExpect(jsonPath("$.placement.result").isEmpty());
 
@@ -210,7 +212,8 @@ class InternshipFlowApiTest {
         perform(get("/api/me/internship"), student, null)
                 .andExpect(jsonPath("$.asOf").value("2026-08-10"))
                 .andExpect(jsonPath("$.now").value("CONTRACT"))
-                .andExpect(jsonPath("$.placement.result").value("PASS"));
+                .andExpect(jsonPath("$.placement.result").value("PASS"))
+                .andExpect(jsonPath("$.placement.notifiedAt").value("2026-08-05T17:00:00+09:00"));
         perform(get("/api/me/internship").param("asOf", "2026-07-23"), student, null)
                 .andExpect(jsonPath("$.asOf").value("2026-07-23"));
 
@@ -249,9 +252,9 @@ class InternshipFlowApiTest {
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertThat(csv).startsWith("﻿접수번호,학번,성명").contains("\"2026-2-007\"").contains("\"예시 학생\"")
                 .contains("\"표준 현장실습 D\",12");
-        // 기관 서류(평가표·출근부)를 받으면 종료·제출 시작일
+        // 기관 서류(평가표·출근부)를 받으면 받은 날(체험 묶음은 12/16, ADR-0041)
         String internship = perform(get("/api/me/internship"), student, null)
-                .andExpect(jsonPath("$.asOf").value("2026-12-12"))
+                .andExpect(jsonPath("$.asOf").value("2026-12-16"))
                 .andExpect(jsonPath("$.now").value("CLOSE"))
                 .andExpect(jsonPath("$.placement.result").value("PASS"))
                 .andExpect(jsonPath("$.documents.creditApproval.status").value("APPROVED"))

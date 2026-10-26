@@ -69,7 +69,7 @@ class OperationPlanRequestsTest {
         String sample = """
             {"institution":{
               "name":{"value":"㈜선도소프트","page":1,"quote":"㈜선도소프트"},
-              "businessNo":{"value":"119-86-82412","page":1,"quote":"119-86-82412"},
+              "businessNo":{"value":"000-00-00000","page":1,"quote":"000-00-00000"},
               "openedOn":{"value":"2014. 01. 17","page":1,"quote":"2014. 01. 17"},
               "ksicCode":{"value":"58222","page":1,"quote":"58222"},
               "employees":{"value":"80명","page":1,"quote":"80명"},

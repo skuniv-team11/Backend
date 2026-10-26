@@ -89,6 +89,15 @@ public class CenterFlowService {
         return Scope.of(repo.demo(user.id()));
     }
 
+    /** 처리 시각: 체험 묶음이면 일정의 날({@link DemoTimes}, ADR-0041), 가입 센터는 지금. */
+    private Instant stamp(AuthUser user, Instant demoAt) {
+        return scope(user).demo() ? demoAt : clock.instant();
+    }
+
+    private Instant stampReceived(AuthUser user, Row r) {
+        return scope(user).demo() ? DemoTimes.received(r, clock.instant()) : clock.instant();
+    }
+
     private Row inScope(AuthUser user, long applicationId) {
         return inScope(user, applicationId, false);
     }
@@ -161,7 +170,7 @@ public class CenterFlowService {
             if (r.status() == Status.FIX_REQUESTED) {
                 throw new ApiException(ErrorCode.STATE_CONFLICT, "보완 요청 중인 지원서는 학생이 고쳐서 다시 내면 접수할 수 있어요");
             }
-            if (r.status() == Status.SUBMITTED && repo.receive(r.id(), clock.instant()) != 1) {
+            if (r.status() == Status.SUBMITTED && repo.receive(r.id(), stampReceived(user, r)) != 1) {
                 throw new ApiException(ErrorCode.STATE_CONFLICT, "지원서 상태가 바뀌었어요. 다시 불러 주세요");
             }
         } else if (target == Status.FIX_REQUESTED) {
@@ -169,7 +178,7 @@ public class CenterFlowService {
             if (why == null || why.length() < REASON_MIN || why.length() > REASON_MAX) {
                 throw ApiException.invalid("reason", "보완 요청 이유를 5~300자로 적어 주세요");
             }
-            if (repo.requestFix(r.id(), why, clock.instant()) != 1) {
+            if (repo.requestFix(r.id(), why, stampReceived(user, r)) != 1) {
                 throw new ApiException(ErrorCode.STATE_CONFLICT, "지원서 상태가 바뀌었어요. 다시 불러 주세요");
             }
         } else {
@@ -255,7 +264,7 @@ public class CenterFlowService {
             throw ApiException.invalid("rank", "이 지원서의 지망(" + ranks.stream().map(String::valueOf)
                     .collect(Collectors.joining("·")) + "지망) 중 하나");
         }
-        if (repo.setMatchedRank(r.id(), rank, clock.instant()) != 1) {
+        if (repo.setMatchedRank(r.id(), rank, stamp(user, DemoTimes.MATCHED_AT)) != 1) {
             throw new ApiException(ErrorCode.STATE_CONFLICT, "지원서 상태가 바뀌었어요. 다시 불러 주세요");
         }
         return placement(user);
@@ -273,7 +282,7 @@ public class CenterFlowService {
         if (received.isEmpty()) {
             throw new ApiException(ErrorCode.STATE_CONFLICT, "확정할 매칭이 없어요");
         }
-        repo.confirmMatches(scope, roundId, clock.instant());
+        repo.confirmMatches(scope, roundId, scope.demo() ? DemoTimes.MATCHED_AT : clock.instant());
         return placement(user);
     }
 
@@ -306,7 +315,7 @@ public class CenterFlowService {
         if (pending.isEmpty()) {
             throw new ApiException(ErrorCode.STATE_CONFLICT, "알릴 결과가 없어요");
         }
-        repo.notifyResults(scope, roundId, clock.instant());
+        repo.notifyResults(scope, roundId, scope.demo() ? DemoTimes.NOTIFIED_AT : clock.instant());
         return placement(user);
     }
 
@@ -377,7 +386,7 @@ public class CenterFlowService {
         if (!TimelineService.passed(r)) {
             throw new ApiException(ErrorCode.STATE_CONFLICT, "합격을 알린 학생만 마무리 서류를 받아요");
         }
-        Instant now = clock.instant();
+        Instant now = stamp(user, DemoTimes.CLOSED_AT);
         if (evaluation != null) {
             repo.setClose(r.id(), "evaluation_received_at", evaluation ? now : null);
         }
@@ -394,7 +403,7 @@ public class CenterFlowService {
 
     @Transactional
     public Reminded remind(AuthUser user) {
-        Instant now = clock.instant();
+        Instant now = stamp(user, DemoTimes.CLOSED_AT);
         int n = 0;
         for (InternshipDtos.CloseRow row : close(user).rows()) {
             if (row.missing().stream().anyMatch(m -> m == CloseItem.REPORT || m == CloseItem.CREDIT || m == CloseItem.SURVEY)) {

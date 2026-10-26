@@ -145,7 +145,7 @@ public class TimelineService {
 
     /**
      * 지원서가 닿은 단계의 날: 매칭 확정 → 매칭 끝날, 선발 결과 알림 → 합격은 협약·보험 시작일·불합격은 면접·선발 끝날,
-     * 기관 서류(평가표·출근부) 받음 → 종료·제출 시작일. 매칭 전이면 null.
+     * 기관 서류(평가표·출근부) 받음 → 종료·제출 시작일과 받은 날 중 늦은 날(ADR-0041). 매칭 전이면 null.
      */
     static LocalDate reached(Row r, CloseRow close, List<StageInfo> stages) {
         if (r.status() != Status.MATCHED || r.matchedAt() == null) {
@@ -156,6 +156,8 @@ public class TimelineService {
             on = later(on, r.result() == Result.PASS ? date(stages, Stage.CONTRACT, true) : date(stages, Stage.SELECT, false));
             if (r.result() == Result.PASS && close != null && (close.evaluation() != null || close.attendance() != null)) {
                 on = later(on, date(stages, Stage.CLOSE, true));
+                on = later(on, kstDate(close.evaluation()));
+                on = later(on, kstDate(close.attendance()));
             }
         }
         return on;
@@ -174,6 +176,10 @@ public class TimelineService {
     private static LocalDate date(List<StageInfo> stages, Stage code, boolean start) {
         return stages.stream().filter(s -> s.code() == code).findFirst()
                 .map(s -> start ? s.startsOn() : s.endsOn()).orElse(null);
+    }
+
+    private static LocalDate kstDate(java.time.OffsetDateTime at) {
+        return at == null ? null : at.atZoneSameInstant(Times.KST).toLocalDate();
     }
 
     private static LocalDate later(LocalDate a, LocalDate b) {
