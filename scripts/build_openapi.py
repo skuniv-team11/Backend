@@ -560,7 +560,7 @@ S.update({
                            "자기소개서에 1~3지망 기관 이름이 들어 있음(한 부가 세 기관에 같이 간다)"),
         "pledge": d(BOOL, "서약"),
         "consents": obj({"collect": d(BOOL, "개인정보 수집·이용"), "thirdParty": d(BOOL, "제3자 제공(실습기관·보험사)")}),
-        "signature": d(nul(STR), "본인 서명(이름)"),
+        "signature": d(nul(STR), "본인 서명(이름). 신청서 성명(한글)과 공백을 빼고 같아야 `SIGNATURE` 확인이 끝난다"),
         "approval": R("Approval"),
         "checklist": d(arr(obj({"item": R("ApplicationItem"), "done": BOOL})), "내기 전 확인. 하나라도 false면 400 APPLICATION_INCOMPLETE"),
         "counselCount": d({"type": "integer", "minimum": 0, "maximum": 5}, "진로취업상담 이수(가점). 상담 기능 전에는 가상 지원자만 값이 있다"),

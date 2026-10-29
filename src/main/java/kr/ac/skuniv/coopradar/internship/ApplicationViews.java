@@ -128,8 +128,18 @@ final class ApplicationViews {
                 new Check(Item.PLEDGE, pledge),
                 new Check(Item.ESSAYS, essays.size() == 4 && essays.stream().allMatch(e -> chars(e) >= essayMinChars)),
                 new Check(Item.CONSENTS, collect && thirdParty),
-                new Check(Item.SIGNATURE, signature != null && signature.strip().length() >= 2),
+                new Check(Item.SIGNATURE, signedAsApplicant(signature, a)),
                 new Check(Item.APPROVAL, approval == ApprovalStatus.APPROVED));
+    }
+
+    /** 본인 서명은 신청서의 성명(한글)과 같아야 한다(공백은 보지 않음, 2자 이상, ADR-0042). */
+    static boolean signedAsApplicant(String signature, Applicant a) {
+        String sign = withoutSpaces(signature);
+        return sign.codePointCount(0, sign.length()) >= 2 && a != null && sign.equals(withoutSpaces(a.nameKo()));
+    }
+
+    private static String withoutSpaces(String s) {
+        return s == null ? "" : s.replaceAll("\\s+", "");
     }
 
     static boolean applicantDone(Applicant a) {
