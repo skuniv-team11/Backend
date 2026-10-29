@@ -11260,7 +11260,7 @@
               "string",
               "null"
             ],
-            "description": "본인 서명(이름)"
+            "description": "본인 서명(이름). 신청서 성명(한글)과 공백을 빼고 같아야 `SIGNATURE` 확인이 끝난다"
           },
           "approval": {
             "$ref": "#/components/schemas/Approval"

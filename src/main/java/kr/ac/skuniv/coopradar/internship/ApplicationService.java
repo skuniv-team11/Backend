@@ -192,7 +192,7 @@ public class ApplicationService {
             Item.PLEDGE, "서약에 동의해 주세요",
             Item.ESSAYS, "자기소개서 4문항을 각각 300자 이상 써 주세요",
             Item.CONSENTS, "개인정보 수집·이용과 제3자 제공에 모두 동의해 주세요",
-            Item.SIGNATURE, "본인 서명(이름)을 적어 주세요",
+            Item.SIGNATURE, "본인 서명은 신청서의 성명(한글)과 같게 적어 주세요",
             Item.APPROVAL, "학과(부)장 승인을 받아 주세요(승인 뒤 내용을 바꾸면 다시 받아야 해요)");
 
     /** 내 지원서(잠금). */

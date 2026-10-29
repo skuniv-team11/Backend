@@ -103,6 +103,14 @@ class InternshipUnitTest {
                 List.of(essay, "짧음", essay, essay), true, false, " ", ApprovalStatus.STALE, 300);
         assertThat(bad).filteredOn(c -> !c.done()).extracting(Check::item).containsExactly(Item.PROFILE, Item.PICKS,
                 Item.APPLICANT, Item.PLEDGE, Item.ESSAYS, Item.CONSENTS, Item.SIGNATURE, Item.APPROVAL);
+        // 서명은 성명(한글)과 같아야 한다 — 공백은 보지 않는다
+        assertThat(ApplicationViews.checklist(true, picks, a, true, List.of(essay, essay, essay, essay), true, true,
+                "예시학생", ApprovalStatus.APPROVED, 300).get(6).done()).isTrue();
+        assertThat(ApplicationViews.checklist(true, picks, a, true, List.of(essay, essay, essay, essay), true, true,
+                "다른 학생", ApprovalStatus.APPROVED, 300).get(6).done()).isFalse();
+        assertThat(ApplicationViews.signedAsApplicant("예", new Applicant("예", null, null, null, null, null, null, null,
+                null))).isFalse();
+        assertThat(ApplicationViews.signedAsApplicant("예시 학생", null)).isFalse();
         // 지원 불가·마감·판정 없음(프로필 없음)은 1~3지망을 막는다
         assertThat(ApplicationViews.checklist(true, List.of(new Pick(1, 1, "t", "t", inst, Verdict.INELIGIBLE, false)), a,
                 true, List.of(essay, essay, essay, essay), true, true, "이름", ApprovalStatus.APPROVED, 300).get(1).done())
