@@ -8,6 +8,7 @@ import kr.ac.skuniv.coopradar.eligibility.EligibilityDtos.Verdict;
 import kr.ac.skuniv.coopradar.internship.ApplicationRepository.ApprovalRow;
 import kr.ac.skuniv.coopradar.internship.ApplicationRepository.CloseRow;
 import kr.ac.skuniv.coopradar.internship.ApplicationRepository.RankedJob;
+import kr.ac.skuniv.coopradar.internship.ApplicationRepository.WeekPlanRow;
 import kr.ac.skuniv.coopradar.internship.ApplicationViews.Basis;
 import kr.ac.skuniv.coopradar.internship.InternshipDtos.Applicant;
 import kr.ac.skuniv.coopradar.internship.InternshipDtos.ApprovalKind;
@@ -85,6 +86,21 @@ class InternshipUnitTest {
         assertThat(TimelineService.weeksOf("모든 주차", 3)).containsExactly(1, 2, 3);
         assertThat(TimelineService.weeksOf("15주차", 15)).containsExactly(15);
         assertThat(TimelineService.weeksOf("이후", 15)).isEmpty();
+    }
+
+    @Test
+    void 다음_계획은_이번_계획과_다른_글인_칸이다() {
+        // 103번 직무처럼 같은 일을 두 칸에 이어 적은 주차 계획(ADR-0043)
+        List<WeekPlanRow> plans = List.of(new WeekPlanRow(1, "1~2주차", "브랜드 소개 및 마케팅 업무 소개, 시딩 리스트업"),
+                new WeekPlanRow(2, "3~4주차", "브랜드 소개 및 마케팅 업무 소개, 시딩 리스트업"),
+                new WeekPlanRow(3, "5~6주차", "인플루언서 소통 및 관리"),
+                new WeekPlanRow(4, "7~8주차", "인플루언서  소통 및 관리"),
+                new WeekPlanRow(5, "9~10주차", "제공 제품 발송 및 관리"));
+        assertThat(TimelineService.nextPlan(plans, 0).weeks()).isEqualTo("5~6주차");
+        assertThat(TimelineService.nextPlan(plans, 2).weeks()).isEqualTo("9~10주차");
+        assertThat(TimelineService.nextPlan(plans, 3).weeks()).isEqualTo("9~10주차");
+        assertThat(TimelineService.nextPlan(plans, 4)).isNull();
+        assertThat(TimelineService.nextPlan(plans.subList(2, 4), 0)).isNull();
     }
 
     @Test

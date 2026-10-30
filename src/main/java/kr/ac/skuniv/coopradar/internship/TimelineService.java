@@ -239,12 +239,31 @@ public class TimelineService {
         }
         if (at >= 0) {
             current = plan(plans.get(at));
-            next = at + 1 < plans.size() ? plan(plans.get(at + 1)) : null;
+            WeekPlanRow after = nextPlan(plans, at);
+            next = after == null ? null : plan(after);
         } else if (week == 0 && !plans.isEmpty()) {
             next = plan(plans.get(0));
         }
         return new Practice(j.periodStart(), j.periodEnd(), day, days, week, weeks, j.weekdays(), j.workHours(),
                 j.weeklyHours(), j.stipend(), props.course(), props.credits(), current, next);
+    }
+
+    /**
+     * at 다음 계획. 이번 계획과 같은 글(띄어쓰기 무시)인 칸은 건너뛴다 — 주차 계획에 같은 일을 여러 칸 이어 적은 직무가 있어
+     * '이번 주'와 '다음'이 같은 글로 보였다(ADR-0043). 다른 글이 없으면 null.
+     */
+    static WeekPlanRow nextPlan(List<WeekPlanRow> plans, int at) {
+        String now = flat(plans.get(at).content());
+        for (int i = at + 1; i < plans.size(); i++) {
+            if (!flat(plans.get(i).content()).equals(now)) {
+                return plans.get(i);
+            }
+        }
+        return null;
+    }
+
+    private static String flat(String s) {
+        return s == null ? "" : s.replaceAll("\\s+", "");
     }
 
     private static WeekPlan plan(WeekPlanRow r) {
