@@ -1,6 +1,7 @@
 package kr.ac.skuniv.coopradar.explore;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,6 +29,8 @@ import kr.ac.skuniv.coopradar.explore.ExploreText.StudentPiece;
  * AI 초안을 원문과 대조해 통과한 것만 남긴다(ADR-0031, AGENTS.md '검증 없이 내보내지 않는다').
  * <ul>
  *   <li>자리 번호: 후보(ELIGIBLE·NEEDS_CHECK, 마감 전) 안. 같은 자리가 두 번 나오면 짝을 합친다</li>
+ *   <li>같은 짝(직무 칸 · 학생 구절이 같음)은 하나만. 종류만 다르면 단계가 높은 쪽(ADR-0043). '왜 맞나요'는 학생 구절이
+ *       겹치는 point를 하나만 남긴다</li>
  *   <li>짝의 종류(ADR-0038): 학생 구절이 해 본 일에 있으면 같은일 → SAME_TASK, 쓰이는능력 → TRANSFER(하고싶은일이라 하면
  *       버린다 — 해 본 일을 희망으로 적은 어긋난 짝). 고른 카드·관심 분야에 있으면 AI가 무엇이라 했든 WISH</li>
  *   <li>구절: 학생 구절은 학생 글 한 조각(경험·카드·관심 분야 하나) 안에, 직무 구절은 그 직무 원문 한 칸 안에 그대로
@@ -74,7 +77,7 @@ public final class ExploreVerifier {
     static Verified links(RankDraft draft, Set<Integer> candidates, Student student, Map<Integer, JobDoc> docs) {
         Map<Integer, List<VerifiedLink>> links = new LinkedHashMap<>();
         Map<Integer, String> reasons = new LinkedHashMap<>();
-        Map<Integer, Set<String>> seen = new LinkedHashMap<>();
+        Map<Integer, Map<String, Integer>> seen = new LinkedHashMap<>();
         int drafted = 0;
         if (draft == null || draft.jobs() == null) {
             return new Verified(List.of(), 0);
@@ -96,9 +99,15 @@ public final class ExploreVerifier {
             JobDoc doc = docs.get(id);
             for (LinkDraft l : j.links().subList(0, Math.min(MAX_LINKS, j.links().size()))) {
                 verify(l, student, doc).ifPresent(v -> {
-                    String key = v.kind() + "|" + ExploreText.squash(v.piece().text()) + "|" + ExploreText.squash(v.studentQuote());
-                    if (seen.computeIfAbsent(id, k -> new HashSet<>()).add(key)) {
-                        links.computeIfAbsent(id, k -> new ArrayList<>()).add(v);
+                    // 같은 칸 · 같은 학생 구절이면 같은 짝이다. 종류만 다르게 두 번 오면(같은일·쓰이는능력) 단계가 높은 쪽 하나만
+                    // 그 자리에 남긴다(ADR-0043)
+                    String key = ExploreText.squash(v.piece().text()) + "|" + ExploreText.squash(v.studentQuote());
+                    List<VerifiedLink> kept = links.computeIfAbsent(id, k -> new ArrayList<>());
+                    Integer at = seen.computeIfAbsent(id, k -> new HashMap<>()).putIfAbsent(key, kept.size());
+                    if (at == null) {
+                        kept.add(v);
+                    } else if (higher(v.kind(), kept.get(at).kind())) {
+                        kept.set(at, v);
                     }
                 });
             }
@@ -109,6 +118,20 @@ public final class ExploreVerifier {
         List<VerifiedJob> out = new ArrayList<>();
         links.forEach((id, ls) -> out.add(new VerifiedJob(id, List.copyOf(ls), reasons.get(id))));
         return new Verified(out, drafted);
+    }
+
+    /** a가 b보다 높은 단계인지(같은 일 > 해 본 일이 쓰이는 일 > 하고 싶은 일). 같은 학생 구절이면 출처가 같아 이 셋만 견준다. */
+    static boolean higher(Fit a, Fit b) {
+        return rank(a) > rank(b);
+    }
+
+    private static int rank(Fit f) {
+        return switch (f) {
+            case SAME_TASK -> 3;
+            case TRANSFER -> 2;
+            case WISH -> 1;
+            case NONE -> 0;
+        };
     }
 
     /** 짝 하나: 학생 구절의 출처로 단계를 정하고, 직무 구절은 그 자리 원문 한 칸 안에 있어야 한다. */
@@ -148,13 +171,18 @@ public final class ExploreVerifier {
         return Optional.of(new VerifiedLink(kind, basis, sq.get(), jq.get(), piece.get()));
     }
 
-    /** '왜 맞나요' 초안 → 통과한 것. summary가 통과하지 못하거나 points가 하나도 남지 않으면 빈 값. */
+    /**
+     * '왜 맞나요' 초안 → 통과한 것. summary가 통과하지 못하거나 points가 하나도 남지 않으면 빈 값.
+     * 앞 point와 학생 구절이 같거나 한쪽이 다른 쪽을 품는 point는 버린다 — 화면이 근거를 학생 구절로 보여 줘서 같은 근거가
+     * 두 번 보인다(ADR-0043).
+     */
     static Optional<WhyText> why(WhyDraft draft, Student student, JobDoc doc) {
         if (draft == null) {
             return Optional.empty();
         }
         Optional<String> summary = sentence(draft.summary());
         List<Point> points = new ArrayList<>();
+        List<String> used = new ArrayList<>();
         for (PointDraft p : draft.points() == null ? List.<PointDraft>of() : draft.points()) {
             if (p == null || points.size() >= 3) {
                 continue;
@@ -162,9 +190,15 @@ public final class ExploreVerifier {
             Optional<String> text = sentence(p.text());
             Optional<String> sq = studentQuote(p.studentQuote(), student);
             Optional<String> jq = jobQuote(p.jobQuote(), doc);
-            if (text.isPresent() && sq.isPresent() && jq.isPresent()) {
-                points.add(new Point(text.get(), sq.get(), jq.get()));
+            if (text.isEmpty() || sq.isEmpty() || jq.isEmpty()) {
+                continue;
             }
+            String key = ExploreText.squashQuote(sq.get());
+            if (used.stream().anyMatch(u -> u.contains(key) || key.contains(u))) {
+                continue;
+            }
+            used.add(key);
+            points.add(new Point(text.get(), sq.get(), jq.get()));
         }
         if (summary.isEmpty() || points.isEmpty()) {
             return Optional.empty();

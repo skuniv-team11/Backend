@@ -147,6 +147,45 @@ class ExploreUnitTest {
     }
 
     @Test
+    void 왜_맞나요는_학생_구절이_겹치는_point를_하나만_남긴다() {
+        // 10/30 화면: 같은 경험 문장이 공고의 다른 두 칸과 짝지어져 '근거 1'·'근거 2'가 같은 글로 보였다(ADR-0043)
+        Student s = new Student(List.of("학교 근로 중에 인스타 계정을 운영하면서 여러 게시물들을 올려본적이 있어요"), List.of(),
+                "연예인들 메이크업");
+        String exp = "학교 근로 중에 인스타 계정을 운영하면서 여러 게시물들을 올려본적이 있어요";
+        WhyDraft draft = new WhyDraft("계정을 운영한 경험이 이 자리의 SNS 운영과 이어져요.",
+                List.of(new PointDraft("게시물을 올려 본 경험이 SNS 운영 지원과 이어져요.", exp,
+                                "자사 SNS 채널 콘텐츠 운영 및 홍보 마케팅 업무 지원"),
+                        new PointDraft("계정을 운영해 본 경험이 요구 역량에 닿아 있어요.", exp, "뷰티 SNS를 운영해 본 경험이 있는 자"),
+                        // 앞 구절 안에 든 짧은 구절도 같은 근거로 본다
+                        new PointDraft("인스타 계정 운영이 채널 운영에 도움이 돼요.", "인스타 계정을 운영하면서",
+                                "자사 인스타그램 운영 방식 파악"),
+                        new PointDraft("메이크업 관심이 뷰티 트렌드 분석에 힘이 돼요.", "연예인들 메이크업",
+                                "현재 뷰티 트렌드 및 경쟁사 제품 분석")),
+                List.of(), null);
+        var why = ExploreVerifier.why(draft, s, DOC).orElseThrow();
+        assertThat(why.points()).extracting(ExploreDtos.Point::studentQuote).containsExactly(exp, "연예인들 메이크업");
+        assertThat(why.points().get(0).jobQuote()).isEqualTo("자사 SNS 채널 콘텐츠 운영 및 홍보 마케팅 업무 지원");
+    }
+
+    @Test
+    void 같은_짝이_종류만_다르면_높은_단계_하나만_남긴다() {
+        Student s = new Student(List.of("동아리 인스타그램 계정을 1년 동안 운영했어요."), List.of(), null);
+        String job = "자사 SNS 채널 콘텐츠 운영 및 홍보 마케팅 업무 지원";
+        RankDraft draft = new RankDraft(List.of(new LinkedJob(122, List.of(
+                new LinkDraft(LinkKind.쓰이는능력, "인스타그램 계정을 1년 동안 운영했어요", job),
+                new LinkDraft(LinkKind.같은일, "인스타그램 계정을 1년 동안 운영했어요", job),
+                new LinkDraft(LinkKind.쓰이는능력, "인스타그램 계정을 1년 동안 운영했어요", "오피스 프로그램 우수자")),
+                "계정을 운영해 본 경험이 SNS 채널 운영과 이어져요.")));
+        var links = ExploreVerifier.links(draft, Set.of(122), s, Map.of(122, DOC)).jobs().get(0).links();
+        // 첫 짝 자리에 같은 일로 하나, 다른 칸(요구 역량)과의 짝은 따로 남는다
+        assertThat(links).extracting(ExploreVerifier.VerifiedLink::kind).containsExactly(Fit.SAME_TASK, Fit.TRANSFER);
+        assertThat(links).extracting(ExploreVerifier.VerifiedLink::jobQuote)
+                .containsExactly(job, "오피스 프로그램 우수자");
+        assertThat(ExploreVerifier.higher(Fit.SAME_TASK, Fit.TRANSFER)).isTrue();
+        assertThat(ExploreVerifier.higher(Fit.WISH, Fit.TRANSFER)).isFalse();
+    }
+
+    @Test
     void 짝의_단계는_학생_구절이_어디서_왔는지로_정한다() {
         Student s = new Student(List.of("동아리 인스타그램 계정을 1년 동안 운영했어요."), List.of("브랜드 콘텐츠 제작"), "뷰티 SNS 마케팅");
         String job = "자사 SNS 채널 콘텐츠 운영 및 홍보 마케팅 업무 지원";
