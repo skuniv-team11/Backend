@@ -40,7 +40,7 @@ git config user.email "<숫자>+<아이디>@users.noreply.github.com"   # GitHub
 | `DB_URL` · `DB_USER` · `DB_PASSWORD` | — | Render에 넣습니다(아래 'DB'). 없으면 앱이 뜨지 않습니다 |
 
 ## 배포 (Render)
-웹 서비스는 Starter(`0.5c-512mb`), DB는 무료 Postgres입니다(ADR-0005). 순서가 중요합니다 — DB 없이는 앱이 뜨지 않습니다.
+웹 서비스는 Free(`plan: free`, 11/13부터 — 그 전은 Starter `0.5c-512mb`), DB는 무료 Postgres입니다(ADR-0005). Free는 15분 동안 요청이 없으면 잠들어 첫 요청이 오래 걸립니다. 순서가 중요합니다 — DB 없이는 앱이 뜨지 않습니다.
 
 1. **DB:** Render → New → Postgres. 이름 `coop-radar-db`, Region **Singapore**(웹 서비스와 같아야 Internal URL이 됨), Version 18, Plan Free. 아래 'DB'처럼 연결값 3개를 만들어 둡니다.
 2. **main 올리기:** `git push origin origin/develop:refs/heads/main`(fast-forward).

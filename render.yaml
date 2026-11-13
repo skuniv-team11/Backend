@@ -5,7 +5,7 @@ services:
     name: coop-radar-api
     runtime: docker
     region: singapore
-    plan: 0.5c-512mb            # 옛 이름 Starter($7/월, 0.5 CPU·512MB). 10/2부터 잠들지 않게 둔다(ADR-0005). 11/12 발표 뒤 free로 내린다
+    plan: free                  # 10/2~11/13은 Starter(0.5c-512mb, $7/월)였고 11/12 발표 뒤 free로 내렸다(ADR-0005). 15분 요청이 없으면 잠든다
     branch: main                # main에 push할 때만 배포(빌드 시간 월 500분 절약). 개발은 develop
     autoDeployTrigger: commit
     healthCheckPath: /actuator/health
